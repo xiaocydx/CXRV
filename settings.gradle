@@ -8,3 +8,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Recycler"
 include ':app'
+include ':recycler'
