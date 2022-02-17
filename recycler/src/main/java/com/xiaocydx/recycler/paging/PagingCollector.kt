@@ -48,6 +48,22 @@ class PagingCollector<T : Any> internal constructor(
     }
 
     /**
+     * 刷新加载，获取新的[PagingData]
+     *
+     * [duration]表示加载开始到加载完成这个过程的至少持续时间，单位ms，
+     * 例如[duration]为200ms，加载完成耗时为150ms，则挂起50ms，50ms后才更新列表和加载状态。
+     *
+     * 下拉刷新场景可以调用该函数，对[duration]传入下拉刷新动画的至少持续时间，
+     * 可以避免刷新加载太快完成，导致下拉刷新动画很快结束的问题，提升用户体验。
+     */
+    @MainThread
+    fun refreshAtLeast(duration: Long) {
+        assertMainThread()
+        refreshCompleteWhen = SystemClock.uptimeMillis() + duration
+        mediator?.refresh()
+    }
+
+    /**
      * 重新加载，该函数会对加载状态做判断，避免冗余请求
      */
     @MainThread
@@ -63,22 +79,6 @@ class PagingCollector<T : Any> internal constructor(
     fun setRefreshScrollEnabled(enabled: Boolean) {
         assertMainThread()
         refreshScrollEnabled = enabled
-    }
-
-    /**
-     * 刷新加载，获取新的[PagingData]
-     *
-     * [duration]表示加载开始到加载完成这个过程的至少持续时间，单位ms，
-     * 例如[duration]为200ms，加载完成耗时为150ms，则挂起50ms，50ms后才更新列表和加载状态。
-     *
-     * 下拉刷新场景可以调用该函数，对[duration]传入下拉刷新动画的至少持续时间，
-     * 可以避免刷新加载太快完成，导致下拉刷新动画很快结束的问题，提升用户体验。
-     */
-    @MainThread
-    internal fun refreshAtLeast(duration: Long) {
-        assertMainThread()
-        refreshCompleteWhen = SystemClock.uptimeMillis() + duration
-        mediator?.refresh()
     }
 
     /**
