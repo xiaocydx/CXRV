@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.CallSuper
+import androidx.annotation.LayoutRes
 import androidx.annotation.MainThread
 import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.AdapterListUpdateCallback
@@ -52,6 +53,13 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
      */
     protected val ViewGroup.inflater: LayoutInflater
         get() = LayoutInflater.from(context)
+
+    /**
+     * 可用于[onCreateViewHolder]中创建itemView
+     */
+    protected fun ViewGroup.inflate(@LayoutRes resource: Int): View {
+        return inflater.inflate(resource, this, false)
+    }
 
     /**
      * 可用于[onViewRecycled]中清除itemView及其子View的点击、长按监听

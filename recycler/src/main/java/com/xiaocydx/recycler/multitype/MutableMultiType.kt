@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package com.xiaocydx.recycler.multitype
 
 /**

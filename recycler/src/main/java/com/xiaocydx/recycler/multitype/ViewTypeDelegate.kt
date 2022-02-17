@@ -6,14 +6,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.CallSuper
-import androidx.annotation.MainThread
+import androidx.annotation.LayoutRes
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.xiaocydx.recycler.list.*
+import com.xiaocydx.recycler.list.ListAdapter
+import com.xiaocydx.recycler.list.getItem
+import com.xiaocydx.recycler.list.removeItemAt
+import com.xiaocydx.recycler.list.setItem
 import com.xiaocydx.recycler.widget.SpanSizeProvider
 
 /**
@@ -48,6 +51,13 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> {
      */
     protected val ViewGroup.inflater: LayoutInflater
         get() = LayoutInflater.from(context)
+
+    /**
+     * 可用于[onCreateViewHolder]中创建itemView
+     */
+    protected fun ViewGroup.inflate(@LayoutRes resource: Int): View {
+        return inflater.inflate(resource, this, false)
+    }
 
     /**
      * 可用于[onViewRecycled]中清除itemView及其子View的点击、长按监听
