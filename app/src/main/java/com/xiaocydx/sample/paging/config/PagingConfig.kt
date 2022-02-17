@@ -1,12 +1,12 @@
-package com.xiaocydx.sample.paging
+package com.xiaocydx.sample.paging.config
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
-import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.xiaocydx.recycler.extension.PagingScope
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.paging.LoadFooter
@@ -29,8 +29,9 @@ import com.xiaocydx.sample.dp
  * )
  * ```
  */
-@MainThread
-inline fun <T : RecyclerView> T.paging(block: PagingScope.() -> Unit): T {
+inline fun <T : RecyclerView> T.paging(
+    block: PagingScope.() -> Unit
+): T {
     DefaultPagingScope(this).apply(block).init()
     return this
 }
@@ -42,23 +43,23 @@ inline fun <T : RecyclerView> T.paging(block: PagingScope.() -> Unit): T {
  * 详细的加载头尾配置描述[LoadHeader.Config]、[LoadFooter.Config]。
  * ```
  * val adapter: ListAdapter<*, *> = ...
- * recyclerView.pagingDragRefresh(
+ * recyclerView.pagingSwipeRefresh(
  *     listAdapter = adapter
  *     loadHeader { ... }
  *     loadFooter { ... }
  * )
  * ```
  */
-@MainThread
-inline fun <T : RecyclerView> T.pagingDragRefresh(block: DragRefreshPagingScope.() -> Unit): T {
-    DragRefreshPagingScope(this).apply(block).init()
+inline fun <T : RecyclerView> T.pagingSwipeRefresh(
+    block: SwipeRefreshPagingScope.() -> Unit
+): T {
+    SwipeRefreshPagingScope(this).apply(block).init()
     return this
 }
 
 /**
  * 分页场景的初始化函数，可用于链式调用场景
  */
-@MainThread
 fun <T : RecyclerView> T.paging(
     adapter: ListAdapter<*, *>
 ): T = paging { listAdapter = adapter }
@@ -66,22 +67,21 @@ fun <T : RecyclerView> T.paging(
 /**
  * 分页拖拽刷新场景的初始化函数，可用于链式调用场景
  */
-@MainThread
-fun <T : RecyclerView> T.pagingDragRefresh(
+fun <T : RecyclerView> T.pagingSwipeRefresh(
     adapter: ListAdapter<*, *>
-): T = pagingDragRefresh { listAdapter = adapter }
+): T = pagingSwipeRefresh { listAdapter = adapter }
 
 /**
  * 添加了默认配置的分页拖拽刷新初始化作用域
  */
-class DragRefreshPagingScope(
+class SwipeRefreshPagingScope(
     rv: RecyclerView
 ) : DefaultPagingScope(rv) {
-    // private val _refreshLayout: DragRefreshLayout = rv.replaceWithDragRefresh()
-    // val refreshLayout: DragToRefreshBase<*> = _refreshLayout
+    private val _refreshLayout: DefaultSwipeRefreshLayout = rv.replaceWithSwipeRefresh()
+    val refreshLayout: SwipeRefreshLayout = _refreshLayout
 
     override fun init() {
-        // _refreshLayout.setAdapter(getFinalListAdapter())
+        _refreshLayout.setAdapter(getFinalListAdapter())
         return super.init()
     }
 }

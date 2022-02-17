@@ -5,7 +5,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OVER_SCROLL_NEVER
 import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.widget.FrameLayout
 import androidx.annotation.CallSuper
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -13,8 +15,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.VERTICAL
-import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.xiaocydx.recycler.extension.pagingCollector
@@ -40,10 +40,12 @@ abstract class PagingFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View = RecyclerView(requireContext()).apply {
-        rvPaging = this
-        overScrollMode = OVER_SCROLL_NEVER
-        layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+    ): View = FrameLayout(requireContext()).apply {
+        rvPaging = RecyclerView(requireContext()).apply {
+            overScrollMode = OVER_SCROLL_NEVER
+            layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
+        }
+        addView(rvPaging)
     }
 
     final override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

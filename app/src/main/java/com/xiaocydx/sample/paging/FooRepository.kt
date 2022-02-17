@@ -8,7 +8,7 @@ import kotlinx.coroutines.delay
  * @author xcc
  * @date 2022/2/17
  */
-class FooDataSource(
+class FooRepository(
     private val maxKey: Int,
     private val resultType: ResultType
 ) {

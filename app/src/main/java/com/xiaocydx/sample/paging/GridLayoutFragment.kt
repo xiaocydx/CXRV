@@ -3,11 +3,11 @@ package com.xiaocydx.sample.paging
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.xiaocydx.recycler.extension.adapter
 import com.xiaocydx.recycler.extension.divider
 import com.xiaocydx.recycler.extension.emitAll
 import com.xiaocydx.recycler.extension.grid
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.paging.config.pagingSwipeRefresh
 import kotlinx.coroutines.launch
 
 /**
@@ -25,7 +25,10 @@ class GridLayoutFragment : PagingFragment() {
                 color = 0xFF9DAA8F.toInt()
                 verticalEdge = true
                 horizontalEdge = true
-            }.paging(adapter)
+            }
+            // .paging(adapter) // 无拖拽刷新
+            .pagingSwipeRefresh(adapter)
+
     }
 
     override fun initObserve() {

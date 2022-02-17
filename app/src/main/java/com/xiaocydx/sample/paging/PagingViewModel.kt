@@ -14,13 +14,13 @@ import com.xiaocydx.recycler.paging.cacheIn
  * @date 2022/2/17
  */
 class PagingViewModel(
-    private val dataSource: FooDataSource
+    private val repository: FooRepository
 ) : ViewModel() {
     private val pager = Pager(
         initKey = 1,
         config = PagingConfig(pageSize = 10)
     ) { params ->
-        dataSource.loadResult(params)
+        repository.loadResult(params)
     }
     val flow = pager.flow.cacheIn(viewModelScope)
 
@@ -39,21 +39,21 @@ class PagingViewModel(
     }
 
     fun createFoo(num: Int, tag: String): Foo {
-        return dataSource.createFoo(num, tag)
+        return repository.createFoo(num, tag)
     }
 
     fun enableMultiTypeFoo() {
-        dataSource.multiTypeFoo = true
+        repository.multiTypeFoo = true
     }
 
     companion object Factory : ViewModelProvider.Factory {
         override fun <T : ViewModel?> create(modelClass: Class<T>): T {
             if (modelClass === PagingViewModel::class.java) {
-                val dataSource = FooDataSource(
+                val repository = FooRepository(
                     maxKey = 5,
                     resultType = ResultType.Normal
                 )
-                return PagingViewModel(dataSource) as T
+                return PagingViewModel(repository) as T
             }
             throw IllegalArgumentException()
         }

@@ -7,6 +7,7 @@ import com.xiaocydx.recycler.extension.divider
 import com.xiaocydx.recycler.extension.emitAll
 import com.xiaocydx.recycler.extension.staggered
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.paging.config.pagingSwipeRefresh
 import kotlinx.coroutines.launch
 
 /**
@@ -24,7 +25,9 @@ class StaggeredLayoutFragment : PagingFragment() {
                 color = 0xFF9DAA8F.toInt()
                 verticalEdge = true
                 horizontalEdge = true
-            }.paging(adapter)
+            }
+            // .paging(adapter) // 无拖拽刷新
+            .pagingSwipeRefresh(adapter)
     }
 
     override fun initObserve() {
