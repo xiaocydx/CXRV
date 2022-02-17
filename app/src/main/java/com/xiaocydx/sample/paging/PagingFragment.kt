@@ -66,7 +66,6 @@ abstract class PagingFragment : Fragment() {
 
     @CallSuper
     protected open fun initObserve() {
-        sharedViewModel.setTitle(this::class.java.simpleName)
         sharedViewModel.menuAction.observe(viewLifecycleOwner) { action ->
             when (action) {
                 INCREASE_SPAN_COUNT -> increaseSpanCount()
@@ -105,8 +104,8 @@ abstract class PagingFragment : Fragment() {
 
     private fun reverseLayout() {
         when (val lm: LayoutManager? = rvPaging.layoutManager) {
-            is LinearLayoutManager -> (!lm.reverseLayout).also { lm.reverseLayout = it }
-            is StaggeredGridLayoutManager -> (!lm.reverseLayout).also { lm.reverseLayout = it }
+            is LinearLayoutManager -> lm.reverseLayout = !lm.reverseLayout
+            is StaggeredGridLayoutManager -> lm.reverseLayout = !lm.reverseLayout
             else -> return
         }
         rvPaging.invalidateItemDecorations()

@@ -29,12 +29,11 @@ class PagingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPagingBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        initMenu()
-        initObserve()
+        initMenuDrawer()
         initLinearLayout()
     }
 
-    private fun initMenu() {
+    private fun initMenuDrawer() {
         binding.rvMenu
             .linear()
             .divider {
@@ -48,12 +47,6 @@ class PagingActivity : AppCompatActivity() {
                 doOnSimpleItemClick(::executeMenuAction)
                 submitList(values().toList())
             })
-    }
-
-    private fun initObserve() {
-        viewModel.title.observe(this) {
-            supportActionBar?.title = it ?: ""
-        }
     }
 
     private fun executeMenuAction(action: MenuAction) {
@@ -81,7 +74,6 @@ class PagingActivity : AppCompatActivity() {
     }
 
     private fun forwardItemEvent() {
-        // startActivity(Intent(this, ItemEventActivity::class.java))
     }
 
     private fun replaceFragment(fragment: Fragment) {
@@ -89,5 +81,6 @@ class PagingActivity : AppCompatActivity() {
             .beginTransaction()
             .replace(R.id.flContainer, fragment)
             .commit()
+        supportActionBar?.title = fragment.javaClass.simpleName
     }
 }
