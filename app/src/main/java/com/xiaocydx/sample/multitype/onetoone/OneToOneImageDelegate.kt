@@ -42,7 +42,6 @@ class OneToOneImageDelegate : ViewTypeDelegate<OneToOneMessage.Image, OneToOneIm
         val ivContent: ImageView = AppCompatImageView(itemView.context).apply {
             scaleType = ImageView.ScaleType.CENTER_CROP
             layoutParams = MarginLayoutParams(150.dp, 150.dp)
-            flContainer.addView(this)
-        }
+        }.also(flContainer::addView)
     }
 }

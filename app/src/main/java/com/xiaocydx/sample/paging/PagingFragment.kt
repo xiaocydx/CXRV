@@ -11,7 +11,7 @@ import android.widget.FrameLayout
 import androidx.annotation.CallSuper
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -30,9 +30,10 @@ import com.xiaocydx.sample.paging.MenuAction.*
  */
 abstract class PagingFragment : Fragment() {
     private val sharedViewModel: SharedViewModel by activityViewModels()
+    protected val viewModel: PagingViewModel by viewModels(
+        factoryProducer = { PagingViewModel.Factory }
+    )
     protected val adapter = FooAdapter()
-    protected lateinit var viewModel: PagingViewModel
-        private set
     protected lateinit var rvPaging: RecyclerView
         private set
 
@@ -50,16 +51,8 @@ abstract class PagingFragment : Fragment() {
 
     final override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel = getPagingViewModel()
         initView()
         initObserve()
-    }
-
-    private fun getPagingViewModel(): PagingViewModel {
-        return ViewModelProvider(
-            this,
-            PagingViewModel.Factory
-        ).get(PagingViewModel::class.java)
     }
 
     protected abstract fun initView()

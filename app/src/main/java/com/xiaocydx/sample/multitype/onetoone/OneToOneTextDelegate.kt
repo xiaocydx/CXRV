@@ -49,7 +49,6 @@ class OneToOneTextDelegate : ViewTypeDelegate<OneToOneMessage.Text, OneToOneText
             setPadding(12.dp)
             includeFontPadding = false
             layoutParams = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
-            flContainer.addView(this)
-        }
+        }.also(flContainer::addView)
     }
 }
