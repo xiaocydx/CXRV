@@ -78,8 +78,7 @@ class BindingAdapterScope<ITEM : Any, VB : ViewBinding>
     private var areContentsTheSame: ((oldItem: ITEM, newItem: ITEM) -> Boolean)? = null
     private var getChangePayload: ((oldItem: ITEM, newItem: ITEM) -> Any?)? = null
     private var onCreateView: (VB.() -> Unit)? = null
-    private var onBindView: (VB.(item: ITEM) -> Unit)? = null
-    private var onBindViewPayloads: (VB.(item: ITEM, payloads: List<Any>) -> Unit)? = null
+    private var onBindView: (VB.(item: ITEM, payloads: List<Any>) -> Unit)? = null
     private var onViewRecycled: (VB.() -> Unit)? = null
     private var onFailedToRecycleView: (VB.() -> Boolean)? = null
     private var onViewAttachedToWindow: (VB.() -> Unit)? = null
@@ -119,14 +118,14 @@ class BindingAdapterScope<ITEM : Any, VB : ViewBinding>
      * 对应Adapter.onBindViewHolder(holder, position, payloads)
      */
     fun onBindViewPayloads(block: VB.(item: ITEM, payloads: List<Any>) -> Unit) {
-        onBindViewPayloads = block
+        onBindView = block
     }
 
     /**
      * 对应[Adapter.onBindViewHolder]
      */
-    fun onBindView(block: VB.(item: ITEM) -> Unit) {
-        onBindView = block
+    inline fun onBindView(crossinline block: VB.(item: ITEM) -> Unit) {
+        onBindViewPayloads { item, _ -> block(this, item) }
     }
 
     /**
@@ -190,15 +189,11 @@ class BindingAdapterScope<ITEM : Any, VB : ViewBinding>
     }
 
     override fun VB.onBindView(item: ITEM) {
-        onBindView?.invoke(this, item)
+        onBindView?.invoke(this, item, emptyList())
     }
 
     override fun VB.onBindView(item: ITEM, payloads: List<Any>) {
-        if (payloads.isEmpty()) {
-            onBindView(item)
-        } else {
-            onBindViewPayloads?.invoke(this, item, payloads)
-        }
+        onBindView?.invoke(this, item, payloads)
     }
 
     override fun VB.onViewRecycled() {
