@@ -22,7 +22,10 @@
             android:name=".itemclick.ItemClickActivity"
             android:exported="false" />
         <activity
-            android:name=".itemSelect.SingleSelectionActivity"
+            android:name=".itemselect.SingleSelectionActivity"
+            android:exported="false" />
+        <activity
+            android:name=".itemselect.MultiSelectionActivity"
             android:exported="false" />
         <activity
             android:name=".multitype.MultiTypeActivity"

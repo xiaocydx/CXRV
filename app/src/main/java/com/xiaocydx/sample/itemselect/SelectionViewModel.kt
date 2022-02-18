@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.itemSelect
+package com.xiaocydx.sample.itemselect
 
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
