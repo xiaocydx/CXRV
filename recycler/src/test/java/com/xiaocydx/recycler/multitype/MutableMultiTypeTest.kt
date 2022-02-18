@@ -43,13 +43,13 @@ class MutableMultiTypeTest {
 
     @Test
     fun register_OneToManyTypes_CheckTypeGroups() {
-        var exception: IllegalStateException? = null
+        var exception: IllegalArgumentException? = null
         try {
             mutableMultiTypeOf<TypeTestItem>().init {
                 register(typeADelegate)
                 register(typeBDelegate)
             }
-        } catch (e: IllegalStateException) {
+        } catch (e: IllegalArgumentException) {
             exception = e
         }
         assertThat(exception).apply {

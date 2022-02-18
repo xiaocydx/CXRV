@@ -21,14 +21,14 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * HeaderAndFooter的单元测试
+ * HeaderFooter的单元测试
  *
  * @author xcc
  * @date 2021/10/15
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class HeaderAndFooterTest {
+class HeaderFooterTest {
     private lateinit var scenario: ActivityScenario<TestActivity>
     private lateinit var headerView: View
     private lateinit var footerView: View
@@ -51,7 +51,7 @@ class HeaderAndFooterTest {
     }
 
     @Test
-    fun adapter_RepeatWithHeaderAndFooter() {
+    fun adapter_RepeatWithHeaderFooter() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             val concatAdapter = testAdapter
@@ -74,7 +74,7 @@ class HeaderAndFooterTest {
     }
 
     @Test
-    fun adapter_RepeatRemoveHeaderAndFooter() {
+    fun adapter_RepeatRemoveHeaderFooter() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             val concatAdapter = testAdapter
@@ -97,7 +97,7 @@ class HeaderAndFooterTest {
     }
 
     @Test
-    fun recyclerview_RepeatAddHeaderAndFooter() {
+    fun recyclerview_RepeatAddHeaderFooter() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             recyclerView.apply {
@@ -118,7 +118,7 @@ class HeaderAndFooterTest {
     }
 
     @Test
-    fun recyclerview_RepeatRemoveHeaderAndFooter() {
+    fun recyclerview_RepeatRemoveHeaderFooter() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             recyclerView.apply {

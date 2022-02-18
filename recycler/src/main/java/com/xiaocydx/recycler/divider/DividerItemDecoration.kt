@@ -24,10 +24,7 @@ import kotlin.math.max
  * @author xcc
  * @date 2021/9/29
  */
-class DividerItemDecoration private constructor(
-    context: Context,
-    config: Config
-) : ItemDecoration() {
+class DividerItemDecoration private constructor(config: Config) : ItemDecoration() {
     private var outRect: Rect = emptyRect
     private val divider: Drawable? = config.drawable
     private var state: State = emptyState
@@ -270,7 +267,7 @@ class DividerItemDecoration private constructor(
             topMargin = max(topMargin, 0)
             rightMargin = max(rightMargin, 0)
             bottomMargin = max(bottomMargin, 0)
-            return DividerItemDecoration(context, this)
+            return DividerItemDecoration(this)
         }
     }
 }
