@@ -19,6 +19,9 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".itemclick.ItemClickActivity"
+            android:exported="false" />
+        <activity
             android:name=".multitype.MultiTypeActivity"
             android:exported="false" />
         <activity
