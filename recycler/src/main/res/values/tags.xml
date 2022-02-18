@@ -8,4 +8,5 @@
     <item name="tag_item_long_click" type="id" />
     <item name="tag_item_click_dispatcher" type="id" />
     <item name="tag_item_touch_dispatcher" type="id" />
+    <item name="tag_view_holder" type="id" />
 </resources>

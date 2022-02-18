@@ -2,8 +2,8 @@ package com.xiaocydx.recycler.binding
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView.Adapter
-import androidx.recyclerview.widget.holder
 import androidx.viewbinding.ViewBinding
+import com.xiaocydx.recycler.R
 import com.xiaocydx.recycler.multitype.ViewTypeDelegate
 
 /**
@@ -12,7 +12,8 @@ import com.xiaocydx.recycler.multitype.ViewTypeDelegate
  * @author xcc
  * @date 2021/12/6
  */
-abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> : ViewTypeDelegate<ITEM, BindingHolder<VB>>() {
+abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> :
+    ViewTypeDelegate<ITEM, BindingHolder<VB>>() {
     /**
      * Kotlin中类的函数引用，若不是直接作为内联函数的实参，则会编译为单例，
      * 但此处仍然用属性保存函数引用，不重复获取，即使编译规则改了也不受影响。
@@ -23,9 +24,13 @@ abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> : ViewTypeDelegate<
      * 通过[VB]获取[BindingHolder]
      */
     @Suppress("UNCHECKED_CAST")
-    protected val VB.holder: BindingHolder<VB>
-        get() = requireNotNull(root.holder as? BindingHolder<VB>) {
-            "没有跟root关联的ViewHolder，请在onCreateView()之后获取ViewHolder。"
+    var VB.holder: BindingHolder<VB>
+        get() = requireNotNull(
+            value = root.getTag(R.id.tag_view_holder) as? BindingHolder<VB>,
+            lazyMessage = { "root还未关联ViewHolder。" }
+        )
+        private set(value) {
+            root.setTag(R.id.tag_view_holder, value)
         }
 
     /**
@@ -82,10 +87,12 @@ abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> : ViewTypeDelegate<
     }
 
     final override fun onBindViewHolder(holder: BindingHolder<VB>, item: ITEM, payloads: List<Any>) {
+        holder.binding.holder = holder
         holder.binding.onBindView(item, payloads)
     }
 
     final override fun onBindViewHolder(holder: BindingHolder<VB>, item: ITEM) {
+        holder.binding.holder = holder
         holder.binding.onBindView(item)
     }
 
