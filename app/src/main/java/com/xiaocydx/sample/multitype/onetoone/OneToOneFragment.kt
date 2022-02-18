@@ -10,13 +10,14 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
-import com.xiaocydx.recycler.extension.adapter
+import com.xiaocydx.recycler.extension.doOnSimpleItemClick
 import com.xiaocydx.recycler.extension.linear
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.submitList
 import com.xiaocydx.recycler.multitype.listAdapter
 import com.xiaocydx.recycler.multitype.register
 import com.xiaocydx.sample.R
+import com.xiaocydx.sample.showToast
 
 /**
  * @author xcc
@@ -30,12 +31,24 @@ class OneToOneFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
         linear()
-        adapter(listAdapter<OneToOneMessage> {
-            register(OneToOneTextDelegate())
-            register(OneToOneImageDelegate())
-        }.initMessages())
+        adapter = listAdapter<OneToOneMessage> {
+            register(getTextDelegate())
+            register(getImageDelegate())
+        }.initMessages()
         overScrollMode = OVER_SCROLL_NEVER
         layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
+    }
+
+    private fun getTextDelegate(): OneToOneTextDelegate {
+        return OneToOneTextDelegate().doOnSimpleItemClick {
+            showToast("文本类型消息 id = ${it.id}")
+        }
+    }
+
+    private fun getImageDelegate(): OneToOneImageDelegate {
+        return OneToOneImageDelegate().doOnSimpleItemClick {
+            showToast("图片类型消息 id = ${it.id}")
+        }
     }
 
     private fun ListAdapter<OneToOneMessage, *>.initMessages(): Adapter<*> {

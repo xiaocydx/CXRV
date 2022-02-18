@@ -9,13 +9,14 @@ import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.recycler.extension.adapter
+import com.xiaocydx.recycler.extension.doOnSimpleItemClick
 import com.xiaocydx.recycler.extension.linear
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.submitList
 import com.xiaocydx.recycler.multitype.listAdapter
 import com.xiaocydx.recycler.multitype.register
 import com.xiaocydx.sample.R
+import com.xiaocydx.sample.showToast
 
 class OneToManyFragment : Fragment() {
 
@@ -25,12 +26,24 @@ class OneToManyFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
         linear()
-        adapter(listAdapter<OneToManyMessage> {
-            register(OneToManyTextDelegate()) { it.type == "text" }
-            register(OneToManyImageDelegate()) { it.type == "image" }
-        }.initMessages())
+        adapter = listAdapter<OneToManyMessage> {
+            register(getTextDelegate()) { it.type == "text" }
+            register(getImageDelegate()) { it.type == "image" }
+        }.initMessages()
         overScrollMode = OVER_SCROLL_NEVER
         layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
+    }
+
+    private fun getTextDelegate(): OneToManyTextDelegate {
+        return OneToManyTextDelegate().doOnSimpleItemClick {
+            showToast("文本类型消息 id = ${it.id}")
+        }
+    }
+
+    private fun getImageDelegate(): OneToManyImageDelegate {
+        return OneToManyImageDelegate().doOnSimpleItemClick {
+            showToast("图片类型消息 id = ${it.id}")
+        }
     }
 
     private fun ListAdapter<OneToManyMessage, *>.initMessages(): RecyclerView.Adapter<*> {

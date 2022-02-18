@@ -1,7 +1,6 @@
 package com.xiaocydx.sample.paging
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -16,6 +15,7 @@ import com.xiaocydx.sample.databinding.ActivityPagingBinding
 import com.xiaocydx.sample.databinding.ItemMenuBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.paging.MenuAction.*
+import com.xiaocydx.sample.showToast
 
 /**
  * @author xcc
@@ -57,8 +57,8 @@ class PagingActivity : AppCompatActivity() {
             FORWARD_ITEM_EVENT -> forwardItemEvent()
             else -> viewModel.submitMenuAction(action)
         }
-        Toast.makeText(this, action.text, Toast.LENGTH_SHORT).show()
         binding.root.closeDrawer(binding.rvMenu)
+        showToast(action.text)
     }
 
     private fun initLinearLayout() {
