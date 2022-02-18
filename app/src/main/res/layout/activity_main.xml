@@ -11,7 +11,15 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:onClick="startItemClickActivity"
-        android:text="ItemClick示例"
+        android:text="item点击、长按示例"
+        android:textAllCaps="false" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:onClick="startSingleSelectionActivity"
+        android:text="item单项选择示例"
         android:textAllCaps="false" />
 
     <Button
@@ -19,7 +27,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:onClick="startMultiTypeActivity"
-        android:text="MultiType示例"
+        android:text="item多类型示例"
         android:textAllCaps="false" />
 
     <Button

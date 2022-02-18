@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.xiaocydx.sample.itemSelect.SingleSelectionActivity
 import com.xiaocydx.sample.itemclick.ItemClickActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
 import com.xiaocydx.sample.paging.PagingActivity
@@ -21,6 +22,10 @@ class MainActivity : AppCompatActivity() {
 
     fun startItemClickActivity(view: View) {
         startActivity<ItemClickActivity>()
+    }
+
+    fun startSingleSelectionActivity(view: View) {
+        startActivity<SingleSelectionActivity>()
     }
 
     fun startMultiTypeActivity(view: View) {

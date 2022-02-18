@@ -58,7 +58,19 @@ fun getTextType2Delegate(): ViewTypeDelegate<TextItem, *> {
     }
 }
 
-fun ListAdapter<TextItem, *>.submitTextItems(
+fun ListAdapter<TextItem, *>.initTextItems(
+    itemSize: Int = 20,
+    textPrefix: String = "",
+    type: String = "type1"
+): ListAdapter<TextItem, *> {
+    val end = max(1, itemSize)
+    submitList((1..end).map {
+        TextItem(text = "$textPrefix Text-$it", type)
+    })
+    return this
+}
+
+fun ListAdapter<TextItem, *>.initMultiTypeTextItems(
     itemSize: Int = 20,
     textPrefix: String = ""
 ): ListAdapter<TextItem, *> {

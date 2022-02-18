@@ -47,12 +47,12 @@ class ItemClickActivity : AppCompatActivity() {
             listAdapter1 = listAdapter<TextItem> {
                 register(type1Delegate)
                 register(type2Delegate)
-            }.submitTextItems(textPrefix = "ListAdapter1")
+            }.initMultiTypeTextItems(textPrefix = "ListAdapter1")
 
             listAdapter2 = listAdapter<TextItem> {
                 register(getTextType1Delegate())
                 register(getTextType2Delegate())
-            }.submitTextItems(textPrefix = "ListAdapter2")
+            }.initMultiTypeTextItems(textPrefix = "ListAdapter2")
 
             adapter = ConcatAdapter(
                 ConcatAdapter.Config.Builder()
