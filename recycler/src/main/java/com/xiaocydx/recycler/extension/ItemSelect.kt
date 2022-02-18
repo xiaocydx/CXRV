@@ -13,6 +13,126 @@ import com.xiaocydx.recycler.list.getItem
 import kotlin.math.max
 import kotlin.math.min
 
+typealias SingleSelection<ITEM, K> = SingleSelectionImpl<*, ITEM, K>
+typealias MultiSelection<ITEM, K> = MultiSelectionImpl<*, ITEM, K>
+
+/**
+ * 列表单项选择功能，负责维护状态和更新列表
+ *
+ * * 当选择新的item时，会取消上一个item的选择。
+ * * 调用[SingleSelectionImpl.toggleSelect]可以对同一个item切换选择/取消选择。
+ * * 当[onChanged]、[onItemRangeRemoved]触发时，会清除无效的`itemKey`。
+ *
+ * 单项选择的基本配置流程：
+ * ```
+ * class FooAdapter : ListAdapter<Foo, ViewHolder> {
+ *     // 第一步：初始化SingleSelection
+ *     private val selection = SingleSelection(
+ *         adapter = this,
+ *         itemKey = { item -> item.id },
+ *         itemAccess = { position -> getItem(position) }
+ *     ).apply {
+ *         // 选择时执行代码块
+ *         onSelect { ... }
+ *         // 取消选择时执行代码块
+ *         onUnselect { ... }
+ *     }
+ *
+ *     // 第二步：点击itemView时调用单项选择
+ *     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+ *          val itemView = LayoutInflater.from(parent.context)
+ *                 .inflate(R.layout.item_foo, parent, false)
+ *          val holder = ViewHolder(itemView)
+ *          itemView.setOnClickListener {
+ *              selection.select(holder)
+ *          }
+ *          return holder
+ *     }
+ *
+ *     // 第三步：添加选择视图的更新逻辑
+ *     override fun onBindViewHolder(holder: ViewHolder, item: Foo, payloads: List<Any>) {
+ *         // Payload的值为Selection.Payload
+ *         if(selection.hasPayload(holder)) {
+ *             // 仅更新选择视图
+ *             holder.selectView.isVisible = selection.isSelected(holder)
+ *         } else {
+ *             // 更新全部视图
+ *             holder.selectView.isVisible = selection.isSelected(holder)
+ *             ...
+ *         }
+ *     }
+ * }
+ * ```
+ */
+@Suppress("FunctionName", "KDocUnresolvedReference")
+fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> SingleSelection(
+    adapter: AdapterT,
+    initKey: K? = null,
+    itemKey: (item: ITEM) -> K?,
+    itemAccess: AdapterT.(position: Int) -> ITEM
+): SingleSelection<ITEM, K> {
+    return SingleSelectionImpl(adapter, initKey, itemKey, itemAccess)
+}
+
+/**
+ * 列表多项选择功能的实现类，负责维护状态和更新列表
+ *
+ * * 调用[MultiSelectionImpl.toggleSelect]可以对同一个item切换选择/取消选择。
+ * * 当[onChanged]、[onItemRangeRemoved]触发时，会清除无效的`itemKey`。
+ * * 当[onChanged]、[onItemRangeRemoved]、[onItemRangeInserted]触发时，会检查全选状态，
+ * 全选的描述请看[selectAll]和[updateSelectedAllState]。
+ *
+ * 多项选择的基本配置流程：
+ * ```
+ * class FooAdapter : ListAdapter<Foo, ViewHolder> {
+ *     // 第一步：初始化MultiSelection
+ *     private val selection = MultiSelection(
+ *         adapter = this,
+ *         itemKey = { item -> item.id },
+ *         itemAccess = { position -> getItem(position) }
+ *     ).apply {
+ *         // 选择时执行代码块
+ *         onSelect { ... }
+ *         // 取消选择时执行代码块
+ *         onUnselect { ... }
+ *     }
+ *
+ *     // 第二步：点击itemView时调用多项选择
+ *     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+ *          val itemView = LayoutInflater.from(parent.context)
+ *                 .inflate(R.layout.item_foo, parent, false)
+ *          val holder = ViewHolder(itemView)
+ *          itemView.setOnClickListener {
+ *              selection.select(holder)
+ *          }
+ *          return holder
+ *     }
+ *
+ *     // 第三步：添加选择视图的更新逻辑
+ *     override fun onBindViewHolder(holder: ViewHolder, item: Foo, payloads: List<Any>) {
+ *         // Payload的值为Selection.Payload
+ *         if(selection.hasPayload(holder)) {
+ *             // 仅更新选择视图
+ *             holder.selectView.isVisible = selection.isSelected(holder)
+ *         } else {
+ *             // 更新全部视图
+ *             holder.selectView.isVisible = selection.isSelected(holder)
+ *             ...
+ *         }
+ *     }
+ * }
+ * ```
+ */
+@Suppress("FunctionName", "KDocUnresolvedReference")
+fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> MultiSelection(
+    adapter: AdapterT,
+    itemKey: (item: ITEM) -> K?,
+    itemAccess: AdapterT.(position: Int) -> ITEM,
+    maxSelectSize: Int = Int.MAX_VALUE
+): MultiSelection<ITEM, K> {
+    return MultiSelectionImpl(adapter, itemKey, itemAccess, maxSelectSize)
+}
+
 /**
  * 列表单项选择功能
  *
@@ -25,7 +145,7 @@ import kotlin.math.min
 fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.singleSelection(
     initKey: K? = null,
     itemKey: (item: ITEM) -> K?
-): SingleSelection<*, ITEM, K> = SingleSelection(
+): SingleSelection<ITEM, K> = SingleSelection(
     adapter = this,
     initKey = initKey,
     itemKey = itemKey,
@@ -35,16 +155,16 @@ fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.singleSelection(
 /**
  * 列表多项选择功能
  *
- * 该函数结合[ListAdapter]的能力，简化[MultiSelection]的初始化代码：
+ * 该函数结合[ListAdapter]的能力，简化[MultiSelectionImpl]的初始化代码：
  * ```
  * val selection = multiSelection(itemKey = { item -> item.id })
  * ```
- * 多项选择功能的配置流程以及函数描述，请看[MultiSelection]的注释。
+ * 多项选择功能的配置流程以及函数描述，请看[MultiSelectionImpl]的注释。
  */
 fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.multiSelection(
     maxSelectSize: Int = Int.MAX_VALUE,
     itemKey: (item: ITEM) -> K?
-): MultiSelection<*, ITEM, K> = MultiSelection(
+): MultiSelection<ITEM, K> = MultiSelection(
     adapter = this,
     maxSelectSize = maxSelectSize,
     itemKey = itemKey,
@@ -52,7 +172,7 @@ fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.multiSelection(
 )
 
 /**
- * 列表选择功能，实现类有[SingleSelection]和[MultiSelection]
+ * 列表选择功能，实现类有[SingleSelectionImpl]和[MultiSelectionImpl]
  */
 sealed class Selection<AdapterT : Adapter<*>, ITEM : Any, K : Any>(
     protected val adapter: AdapterT,
@@ -189,53 +309,9 @@ sealed class Selection<AdapterT : Adapter<*>, ITEM : Any, K : Any>(
 
 /**
  * 列表单项选择功能的实现类，负责维护状态和更新列表
- *
- * * 当选择新的item时，会取消上一个item的选择。
- * * 调用[SingleSelection.toggleSelect]可以对同一个item切换选择/取消选择。
- * * 当[onChanged]、[onItemRangeRemoved]触发时，会清除无效的`itemKey`。
- *
- * 单项选择的基本配置流程：
- * ```
- * class FooAdapter : ListAdapter<Foo, ViewHolder> {
- *     // 第一步：初始化SingleSelection
- *     private val selection = SingleSelection(
- *         adapter = this,
- *         itemKey = { item -> item.id },
- *         itemAccess = { position -> getItem(position) }
- *     ).apply {
- *         // 选择时执行代码块
- *         onSelect { ... }
- *         // 取消选择时执行代码块
- *         onUnselect { ... }
- *     }
- *
- *     // 第二步：点击itemView时调用单项选择
- *     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
- *          val itemView = LayoutInflater.from(parent.context)
- *                 .inflate(R.layout.item_foo, parent, false)
- *          val holder = ViewHolder(itemView)
- *          itemView.setOnClickListener {
- *              selection.select(holder)
- *          }
- *          return holder
- *     }
- *
- *     // 第三步：添加选择视图的更新逻辑
- *     override fun onBindViewHolder(holder: ViewHolder, item: Foo, payloads: List<Any>) {
- *         // Payload的值为Selection.Payload
- *         if(selection.hasPayload(holder)) {
- *             // 仅更新选择视图
- *             holder.selectView.isVisible = selection.isSelected(holder)
- *         } else {
- *             // 更新全部视图
- *             holder.selectView.isVisible = selection.isSelected(holder)
- *             ...
- *         }
- *     }
- * }
- * ```
  */
-class SingleSelection<AdapterT : Adapter<*>, ITEM : Any, K : Any>(
+class SingleSelectionImpl<AdapterT : Adapter<*>, ITEM : Any, K : Any>
+@PublishedApi internal constructor(
     adapter: AdapterT,
     initKey: K? = null,
     itemKey: (item: ITEM) -> K?,
@@ -348,54 +424,9 @@ class SingleSelection<AdapterT : Adapter<*>, ITEM : Any, K : Any>(
 
 /**
  * 列表多项选择功能的实现类，负责维护状态和更新列表
- *
- * * 调用[MultiSelection.toggleSelect]可以对同一个item切换选择/取消选择。
- * * 当[onChanged]、[onItemRangeRemoved]触发时，会清除无效的`itemKey`。
- * * 当[onChanged]、[onItemRangeRemoved]、[onItemRangeInserted]触发时，会检查全选状态，
- * 全选的描述请看[selectAll]和[updateSelectedAllState]。
- *
- * 多项选择的基本配置流程：
- * ```
- * class FooAdapter : ListAdapter<Foo, ViewHolder> {
- *     // 第一步：初始化MultiSelection
- *     private val selection = MultiSelection(
- *         adapter = this,
- *         itemKey = { item -> item.id },
- *         itemAccess = { position -> getItem(position) }
- *     ).apply {
- *         // 选择时执行代码块
- *         onSelect { ... }
- *         // 取消选择时执行代码块
- *         onUnselect { ... }
- *     }
- *
- *     // 第二步：点击itemView时调用多项选择
- *     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
- *          val itemView = LayoutInflater.from(parent.context)
- *                 .inflate(R.layout.item_foo, parent, false)
- *          val holder = ViewHolder(itemView)
- *          itemView.setOnClickListener {
- *              selection.select(holder)
- *          }
- *          return holder
- *     }
- *
- *     // 第三步：添加选择视图的更新逻辑
- *     override fun onBindViewHolder(holder: ViewHolder, item: Foo, payloads: List<Any>) {
- *         // Payload的值为Selection.Payload
- *         if(selection.hasPayload(holder)) {
- *             // 仅更新选择视图
- *             holder.selectView.isVisible = selection.isSelected(holder)
- *         } else {
- *             // 更新全部视图
- *             holder.selectView.isVisible = selection.isSelected(holder)
- *             ...
- *         }
- *     }
- * }
- * ```
  */
-class MultiSelection<AdapterT : Adapter<*>, ITEM : Any, K : Any>(
+class MultiSelectionImpl<AdapterT : Adapter<*>, ITEM : Any, K : Any>
+@PublishedApi internal constructor(
     adapter: AdapterT,
     itemKey: (item: ITEM) -> K?,
     itemAccess: AdapterT.(position: Int) -> ITEM,
@@ -502,11 +533,10 @@ class MultiSelection<AdapterT : Adapter<*>, ITEM : Any, K : Any>(
     /**
      * 选择全部item
      *
-     * **注意**：若设置了[maxSelectSize]，则调用[selectAll]会抛出异常。
+     * **注意**：若设置了[maxSelectSize]，则调用此函数会抛出[IllegalArgumentException]异常。
      *
      * @return 返回`true`表示选择成功，`false`表示已全选
      */
-    @Throws(IllegalArgumentException::class)
     fun selectAll(parent: RecyclerView): Boolean {
         require(maxSelectSize == Int.MAX_VALUE) {
             "已设置maxSelectSize，不能调用selectAll()。"
@@ -630,7 +660,7 @@ class MultiSelection<AdapterT : Adapter<*>, ITEM : Any, K : Any>(
     private fun RecyclerView.findChangePositions(isSelect: Boolean): IntArray? {
         var startPosition = -1
         var endPosition = -1
-        val adapter = this@MultiSelection.adapter
+        val adapter = this@MultiSelectionImpl.adapter
 
         // 确定子View更新范围
         for (index in 0 until childCount) {

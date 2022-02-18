@@ -5,8 +5,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario.launch
-import com.xiaocydx.recycler.TestActivity
 import com.google.common.truth.Truth.assertThat
+import com.xiaocydx.recycler.TestActivity
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Before
@@ -16,7 +16,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * [MultiSelection]的单元测试
+ * [MultiSelectionImpl]的单元测试
  *
  * @author xcc
  * @date 2022/1/23
@@ -137,7 +137,7 @@ class MultiSelectionTest {
     @Test
     fun select_Trigger_OnSelectMax() {
         val onSelectedMax: () -> Unit = mockk(relaxed = true)
-        val selection = MultiSelection(
+        val selection = MultiSelectionImpl(
             adapter = adapter,
             maxSelectSize = 2,
             itemKey = { it.key },

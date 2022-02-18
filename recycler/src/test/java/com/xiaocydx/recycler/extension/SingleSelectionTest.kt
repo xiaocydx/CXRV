@@ -6,8 +6,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario.launch
-import com.xiaocydx.recycler.TestActivity
 import com.google.common.truth.Truth.assertThat
+import com.xiaocydx.recycler.TestActivity
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Before
@@ -17,7 +17,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * [SingleSelection]的单元测试
+ * [SingleSelectionImpl]的单元测试
  *
  * @author xcc
  * @date 2022/1/23
