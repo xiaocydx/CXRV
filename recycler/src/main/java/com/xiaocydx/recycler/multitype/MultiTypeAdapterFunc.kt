@@ -36,5 +36,5 @@ inline fun <T : Any> listAdapter(
 /**
  * 转换成item类型为[T]的[ListAdapter]
  */
-inline fun <reified T : Any> ViewTypeDelegate<T, *>.asListAdapter(): ListAdapter<T, *> =
+inline fun <reified T : Any> ViewTypeDelegate<T, *>.toListAdapter(): ListAdapter<T, *> =
         MultiTypeAdapter(multiType = SingletonMultiType(T::class.java, this))

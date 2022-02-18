@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package com.xiaocydx.recycler.multitype
 
 import android.util.SparseArray
@@ -18,7 +16,6 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
     override val size: Int
         get() = types.size()
 
-    @Throws(IllegalStateException::class)
     inline fun init(block: MutableMultiType<T>.() -> Unit): MultiType<T> {
         this.block()
         checkTypeGroups()
@@ -26,8 +23,11 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
     }
 
     override fun register(type: Type<out T>) {
-        types.put(type.delegate.viewType, type)
-        addToGroup(type)
+        val viewType = type.delegate.viewType
+        if (types.indexOfKey(viewType) < 0) {
+            types.put(viewType, type)
+            addToGroup(type)
+        }
     }
 
     override fun keyAt(viewType: Int): Type<out T>? {
@@ -38,6 +38,7 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
         return types.valueAt(index)
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun itemAt(item: T): Type<out T>? {
         return when (val group = typeGroups[item.javaClass]) {
             is Type<*> -> group as Type<out T>
@@ -47,6 +48,7 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun addToGroup(type: Type<out T>) {
         val clazz = type.clazz
         when (val group = typeGroups[clazz]) {
@@ -59,6 +61,11 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
         }
     }
 
+    /**
+     * 检查一对多类型分组的[ViewTypeDelegate]是否都设置了typeLinker，
+     * 若有[ViewTypeDelegate]未设置typeLinker，则抛出[IllegalArgumentException]异常。
+     */
+    @Suppress("UNCHECKED_CAST")
     fun checkTypeGroups() {
         typeGroups.values.forEach { group ->
             (group as? ArrayList<Type<out T>>)
@@ -67,13 +74,14 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
     }
 
     private fun checkTypeLinker(type: Type<out T>, group: ArrayList<Type<out T>>) {
-        checkNotNull(type.delegate.typeLinker) {
+        requireNotNull(type.delegate.typeLinker) {
             "对class = ${type.clazz.canonicalName}" +
                     "注册了${group.map { it.delegate.javaClass.simpleName }}，" +
                     "属于一对多关系，请对[${type.delegate.javaClass.simpleName}]设置typeLinker。"
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun ArrayList<Type<out T>>.firstOrNull(
         predicate: (Type<T>) -> Boolean
     ): Type<out T>? {
