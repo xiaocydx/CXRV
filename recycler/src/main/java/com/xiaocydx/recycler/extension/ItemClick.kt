@@ -61,7 +61,7 @@ inline fun <AdapterT, VH, RV> RV.doOnItemClick(
     adapter: AdapterT,
     crossinline block: AdapterT.(holder: VH, position: Int) -> Unit
 ): RV
-    where AdapterT : Adapter<VH>, VH : ViewHolder, RV : RecyclerView {
+    where AdapterT : Adapter<out VH>, VH : ViewHolder, RV : RecyclerView {
     addOnItemClickListener listener@{
         val holder = adapter.getValidViewHolder(it) ?: return@listener
         adapter.block(holder, holder.bindingAdapterPosition)
@@ -86,7 +86,7 @@ inline fun <AdapterT, VH, RV> RV.doOnLongItemClick(
     adapter: AdapterT,
     crossinline block: AdapterT.(holder: VH, position: Int) -> Boolean
 ): RV
-    where AdapterT : Adapter<VH>, VH : ViewHolder, RV : RecyclerView {
+    where AdapterT : Adapter<out VH>, VH : ViewHolder, RV : RecyclerView {
     addOnItemLongClickListener listener@{
         val holder = adapter.getValidViewHolder(it) ?: return@listener false
         adapter.block(holder, holder.bindingAdapterPosition)
@@ -108,7 +108,7 @@ inline fun <AdapterT, VH, RV> RV.doOnLongItemClick(
 inline fun <AdapterT, ITEM, VH> AdapterT.doOnItemClick(
     crossinline block: (holder: VH, item: ITEM) -> Unit
 ): AdapterT
-    where AdapterT : ListAdapter<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     doOnAttach { rv ->
         rv.doOnItemClick(this) { holder, position ->
             block(holder, getItem(position))
@@ -134,7 +134,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.doOnItemClick(
 inline fun <AdapterT, ITEM, VH> AdapterT.doOnSimpleItemClick(
     crossinline block: (item: ITEM) -> Unit
 ): AdapterT
-    where AdapterT : ListAdapter<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     return doOnItemClick { _, item -> block(item) }
 }
 
@@ -153,7 +153,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.doOnSimpleItemClick(
 inline fun <AdapterT, ITEM, VH> AdapterT.doOnLongItemClick(
     crossinline block: (holder: VH, item: ITEM) -> Boolean
 ): AdapterT
-    where AdapterT : ListAdapter<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     doOnAttach { rv ->
         rv.doOnLongItemClick(this) { holder, position ->
             block(holder, getItem(position))
@@ -180,7 +180,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.doOnLongItemClick(
 inline fun <AdapterT, ITEM, VH> AdapterT.doOnSimpleLongItemClick(
     crossinline block: (item: ITEM) -> Boolean
 ): AdapterT
-    where AdapterT : ListAdapter<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     return doOnLongItemClick { _, item -> block(item) }
 }
 
@@ -199,7 +199,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.doOnSimpleLongItemClick(
 inline fun <DelegateT, ITEM, VH> DelegateT.doOnItemClick(
     crossinline block: (holder: VH, item: ITEM) -> Unit
 ): DelegateT
-    where DelegateT : ViewTypeDelegate<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where DelegateT : ViewTypeDelegate<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     doOnAttachAdapter { adapter ->
         adapter.doOnItemClick { holder, item ->
             if (holder.itemViewType == viewType) {
@@ -227,7 +227,7 @@ inline fun <DelegateT, ITEM, VH> DelegateT.doOnItemClick(
 inline fun <DelegateT, ITEM, VH> DelegateT.doOnSimpleItemClick(
     crossinline block: (item: ITEM) -> Unit
 ): DelegateT
-    where DelegateT : ViewTypeDelegate<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where DelegateT : ViewTypeDelegate<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     return doOnItemClick { _, item -> block(item) }
 }
 
@@ -247,7 +247,7 @@ inline fun <DelegateT, ITEM, VH> DelegateT.doOnSimpleItemClick(
 inline fun <DelegateT, ITEM, VH> DelegateT.doOnLongItemClick(
     crossinline block: (holder: VH, item: ITEM) -> Boolean
 ): DelegateT
-    where DelegateT : ViewTypeDelegate<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where DelegateT : ViewTypeDelegate<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     doOnAttachAdapter { adapter ->
         adapter.doOnLongItemClick click@{ holder, item ->
             if (holder.itemViewType == viewType) {
@@ -277,7 +277,7 @@ inline fun <DelegateT, ITEM, VH> DelegateT.doOnLongItemClick(
 inline fun <DelegateT, ITEM, VH> DelegateT.doOnSimpleLongItemClick(
     crossinline block: (item: ITEM) -> Boolean
 ): DelegateT
-    where DelegateT : ViewTypeDelegate<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where DelegateT : ViewTypeDelegate<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     return doOnLongItemClick { _, item -> block(item) }
 }
 
