@@ -66,9 +66,8 @@ internal class LoadFooterAdapter(
         if (showType != currentType) {
             showType = currentType
             if (previousNotEmpty
-                && recyclerView?.supportsAddAnimations == true
-                && previous.appendToFully(current)
-            ) {
+                    && recyclerView?.supportsAddAnimations == true
+                    && previous.appendToFully(current)) {
                 // 末尾加载完全时，会在loadFooter前面插入item，
                 // 此时若有item动画，则loadFooter看起来像是被“挤下去”，体验并不好，
                 // 因此先移除loadFooter，再添加回loadFooter，将视图类型更新为加载完全。
@@ -77,7 +76,6 @@ internal class LoadFooterAdapter(
             } else {
                 updateLoadFooter()
             }
-            updateLoadFooter()
         }
         previousNotEmpty = adapter.hasDisplayItem
     }

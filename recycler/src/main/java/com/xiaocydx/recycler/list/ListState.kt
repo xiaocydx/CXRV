@@ -162,7 +162,7 @@ class ListCollector<T : Any> internal constructor(
     }
 
     private suspend fun handleUpdateOp(op: UpdateOp<T>) {
-        adapter.updateListAwait(op, dispatch = false)
+        adapter.awaitUpdateList(op, dispatch = false)
         updateVersion = mediator?.updateVersion ?: 0
     }
 }

@@ -208,8 +208,8 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
         listeners?.remove(listener)
     }
 
-    internal suspend fun updateListAwait(op: UpdateOp<ITEM>, dispatch: Boolean = true) {
-        differ.updateListAwait(op, dispatch)
+    internal suspend fun awaitUpdateList(op: UpdateOp<ITEM>, dispatch: Boolean = true) {
+        differ.awaitUpdateList(op, dispatch)
     }
 
     internal fun addListExecuteListener(listener: ListExecuteListener<ITEM>) {

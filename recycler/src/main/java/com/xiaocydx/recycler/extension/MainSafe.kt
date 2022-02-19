@@ -44,7 +44,7 @@ internal fun assertMainThread() {
 /**
  * 发送同步消息，并等待被执行
  */
-internal suspend fun View.postAwait() {
+internal suspend fun View.awaitPost() {
     suspendCancellableCoroutine<Unit> suspend@{
         val action = Runnable { it.resume(Unit) }
         if (!post(action)) {

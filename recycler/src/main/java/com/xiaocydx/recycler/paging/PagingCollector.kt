@@ -157,7 +157,7 @@ class PagingCollector<T : Any> internal constructor(
 
         val beforeIsEmpty = !adapter.hasDisplayItem
         if (event is PagingEvent.ListUpdate) {
-            adapter.updateListAwait(event.op, dispatch = false)
+            adapter.awaitUpdateList(event.op, dispatch = false)
             updateVersion = mediator?.updateVersion ?: 0
             if (event.loadType == LoadType.APPEND) {
                 // 确保ItemDecoration能正常显示
@@ -173,7 +173,7 @@ class PagingCollector<T : Any> internal constructor(
                 // 导致ItemDecoration计算出错误的间距，例如item分割线显示异常。
                 // 注意：协程主线程调度器发送的是异步消息，因此这里不能使用yield()，
                 // 而是通过View发送同步消息，确保在下一帧解除同步屏障后才分发加载状态。
-                rv.postAwait()
+                rv.awaitPost()
             }
             rv.isComputingLayout -> {
                 // 此时可能是onBindViewHolder()触发了末尾加载，
@@ -197,7 +197,7 @@ class PagingCollector<T : Any> internal constructor(
         }
         rv.scrollToPosition(0)
         // 在下一个同步消息中执行后续逻辑，确保滚动不受影响
-        rv.postAwait()
+        rv.awaitPost()
     }
 
     @MainThread
