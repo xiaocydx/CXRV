@@ -143,7 +143,7 @@ class LoadHeader internal constructor(
          * ```
          * failure<TextView> {
          *     onCreateView { parent -> TextView(parent.context) }
-         *     onBindView { view -> view.text = "failure" }
+         *     onBindView { view, exception -> view.text = "failure" }
          * }
          * ```
          */

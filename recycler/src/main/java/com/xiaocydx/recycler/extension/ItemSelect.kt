@@ -155,11 +155,11 @@ fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.singleSelection(
 /**
  * 列表多项选择功能
  *
- * 该函数结合[ListAdapter]的能力，简化[MultiSelectionImpl]的初始化代码：
+ * 该函数结合[ListAdapter]的能力，简化[MultiSelection]的初始化代码：
  * ```
  * val selection = multiSelection(itemKey = { item -> item.id })
  * ```
- * 多项选择功能的配置流程以及函数描述，请看[MultiSelectionImpl]的注释。
+ * 多项选择功能的配置流程以及函数描述，请看[MultiSelection]的注释。
  */
 fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.multiSelection(
     maxSelectSize: Int = Int.MAX_VALUE,

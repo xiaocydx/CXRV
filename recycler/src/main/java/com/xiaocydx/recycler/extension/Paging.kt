@@ -111,7 +111,7 @@ open class PagingScope {
      *     }
      *     failure<TextView> {
      *         onCreateView { parent -> TextView(parent.context) }
-     *         onBindView { view -> view.text = "failure" }
+     *         onBindView { view, exception -> view.text = "failure" }
      *     }
      * }
      * ```
@@ -154,7 +154,7 @@ open class PagingScope {
      *     }
      *     failure<TextView> {
      *         onCreateView { parent -> TextView(parent.context) }
-     *         onBindView { view -> view.text = "failure" }
+     *         onBindView { view, exception -> view.text = "failure" }
      *     }
      * }
      * ```
