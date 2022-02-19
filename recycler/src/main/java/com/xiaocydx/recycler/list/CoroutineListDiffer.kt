@@ -11,17 +11,16 @@ import java.util.*
 import kotlin.coroutines.*
 
 /**
- * 列表更新帮助类，可以计算两个列表的差异，并根据计算结果更新列表
+ * 列表更新帮助类，计算两个列表的差异，并根据计算结果更新列表
  *
  * ### 更新操作
- * 调用[updateList]或[updateListAwait]，传入更新操作更新列表，
- * [updateListAwait]会响应调用处协程的取消恢复，但不会把更新操作从队列中移除。
- * 正在执行的[UpdateOp.SubmitList]不会响应`cancel()`停止计算，但在计算完成后不会更新列表。
+ * 调用[updateList]或[awaitUpdateList]，传入更新操作更新列表，
+ * 若正在执行[UpdateOp.SubmitList]，则执行完之后才处理传入的更新操作，
+ * [awaitUpdateList]会响应调用处协程的取消进行恢复，但不会取消更新操作。
  *
- * ### 更新队列
- * 调用[updateList]时，若[CoroutineListDiffer]正在执行[UpdateOp.SubmitList]，
- * 则会将此次更新操作加入队列，在执行完[UpdateOp.SubmitList]后按队列顺序更新列表。
- * 通过[CoroutineListDiffer.cancel]或者[CoroutineListDiffer.cancelChildren]可以清除队列。
+ * ### 更新取消
+ * 调用[CoroutineListDiffer.cancel]或者[CoroutineListDiffer.cancelChildren]，
+ * 会取消挂起中的更新操作，不会停止正在执行的[UpdateOp.SubmitList]，但在执行完之后不会更新列表。
  *
  * @author xcc
  * @date 2021/12/9
@@ -47,8 +46,12 @@ class CoroutineListDiffer<T : Any>(
      * ```
      * val differ: CoroutineListDiffer<Any> = ...
      * val op = UpdateOp.SubmitList(newList)
-     * differ.updateList(op) {
-     *    // 此时列表数据已修改、列表更新操作已执行
+     * differ.updateList(op) { exception ->
+     *    if(exception == null) {
+     *         // 此时列表已更新、数据已修改
+     *    } else {
+     *         // 更新操作可能被取消
+     *    }
      * }
      * ```
      * @param dispatch 是否将更新操作分发给[ListExecuteListener]
@@ -77,28 +80,33 @@ class CoroutineListDiffer<T : Any>(
     /**
      * 更新列表并等待完成
      *
-     * **注意**：该函数会响应调用处协程的取消恢复，但不会把更新操作从队列中移除，
-     * 只能通过[CoroutineListDiffer.cancel]或者[CoroutineListDiffer.cancelChildren]清除队列。
+     * **注意**：该函数会响应调用处协程的取消恢进行复，但不会取消更新操作，
+     * 调用[CoroutineListDiffer.cancel]或者[CoroutineListDiffer.cancelChildren]，
+     * 会取消挂起中的更新操作，不会停止正在执行的[UpdateOp.SubmitList]，但在执行完之后不会更新列表。
      *
      * ```
      * val differ: CoroutineListDiffer<Any> = ...
      * val op = UpdateOp.SubmitList(newList)
      * scope.launch {
-     *    differ.updateListAwait(op)
-     *    // 此时列表数据已修改、列表更新操作已执行
+     *    differ.awaitUpdateList(op)
+     *    // 此时列表已更新、数据已修改
      * }
      * ```
      * @param dispatch 是否将更新操作分发给[ListExecuteListener]
      */
-    suspend fun updateListAwait(op: UpdateOp<T>, dispatch: Boolean = true) {
-        suspendCancellableCoroutine<Unit> { continuation ->
-            updateList(op, dispatch) { exception ->
-                if (exception == null) {
-                    continuation.resume(Unit)
-                } else {
-                    continuation.resumeWithException(exception)
-                }
-            }
+    suspend fun awaitUpdateList(
+        op: UpdateOp<T>,
+        dispatch: Boolean = true
+    ) = withMainDispatcher {
+        if (isLockNeeded(op)) {
+            val scope: CoroutineScope = this
+            scope.launch {
+                mutex.withLock { execute(op, dispatch) }
+            }.join()
+        } else {
+            // 该分支下调用execute()不会产生挂起，
+            // 因此直接执行execute()的状态机逻辑。
+            execute(op, dispatch)
         }
     }
 
@@ -292,6 +300,15 @@ class CoroutineListDiffer<T : Any>(
         val dispatcher = mainDispatcher.immediate
         if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
             dispatcher.dispatch(EmptyCoroutineContext) { block() }
+        } else {
+            block()
+        }
+    }
+
+    private suspend inline fun withMainDispatcher(crossinline block: suspend () -> Unit) {
+        val dispatcher = mainDispatcher.immediate
+        if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
+            withContext(dispatcher) { block() }
         } else {
             block()
         }

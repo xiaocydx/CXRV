@@ -95,9 +95,9 @@ class MultiTypeAdapterTest {
 
         val typeAItem = TypeTestItem(TestType.TYPE_A)
         val typeBItem = TypeTestItem(TestType.TYPE_B)
-        adapter.updateListAwait(UpdateOp.SubmitList(listOf(typeBItem)))
+        adapter.awaitUpdateList(UpdateOp.SubmitList(listOf(typeBItem)))
         // 首位插入typeAItem
-        adapter.updateListAwait(UpdateOp.SubmitList(listOf(typeAItem, typeBItem)))
+        adapter.awaitUpdateList(UpdateOp.SubmitList(listOf(typeAItem, typeBItem)))
 
         // 验证oldItem和newItem的ViewType类型不相等的情况不会出现
         verify(exactly = 0) { typeADelegate.areItemsTheSame(typeAItem, typeBItem) }
