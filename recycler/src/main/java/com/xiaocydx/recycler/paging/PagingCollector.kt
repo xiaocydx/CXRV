@@ -106,8 +106,9 @@ class PagingCollector<T : Any> internal constructor(
         value: PagingData<T>
     ) = withContext(mainDispatcher.immediate) {
         mediator = value.mediator
-        // 此处resumeJob不使用局部变量，
-        // 避免收集事件流期间，一直持有resumeJob对象。
+        // 此处resumeJob若使用var局部变量，则编译后resumeJob会是ObjectRef对象，
+        // 收集事件流期间，value.flow传入的FlowCollector会一直持有ObjectRef对象引用，
+        // resumeJob执行完之后置空，ObjectRef对象内的Job可以被GC，但ObjectRef对象本身无法被GC。
         resumeJob = launchResumeJob(value.mediator)
         resumeJob?.invokeOnCompletion { resumeJob = null }
         value.flow.collect {
