@@ -14,9 +14,9 @@ fun RecyclerView.tryRecycleAllChild() {
         if (!tryIncreaseMaxScrap(childCount, holder)) {
             continue
         }
-        // 若直接结束item动画，则ItemAnimator的回调可能会回收holder，
-        // 移除child时dispatchDetachedFromWindow()可能包含结束动画的操作，
-        // 为了避免holder被重复回收，在结束动画之前先将holder设为不可回收状态。
+        // 若直接结束item动画，则ItemAnimator的结束回调可能会回收holder，
+        // 移除child时dispatchDetachedFromWindow()也可能包含结束动画的操作，
+        // 为了避免重复回收holder，在结束动画之前先将holder设为不可回收状态。
         holder.setIsRecyclable(false)
         removeViewInLayout(child)
         itemAnimator?.endAnimation(holder)

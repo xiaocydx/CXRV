@@ -22,7 +22,10 @@ import com.xiaocydx.recycler.list.clear
 import com.xiaocydx.recycler.list.removeItemAt
 import com.xiaocydx.recycler.list.submitTransform
 import com.xiaocydx.sample.paging.MenuAction.*
+import com.xiaocydx.sample.viewLifecycleScope
 import com.xiaocydx.sample.viewmodel.activityViewModels
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 /**
  * @author xcc
@@ -61,22 +64,24 @@ abstract class PagingFragment : Fragment() {
 
     @CallSuper
     protected open fun initObserve() {
-        sharedViewModel.menuAction.observe(viewLifecycleOwner) { action ->
-            when (action) {
-                INCREASE_SPAN_COUNT -> increaseSpanCount()
-                DECREASE_SPAN_COUNT -> decreaseSpanCount()
-                REVERSE_LAYOUT -> reverseLayout()
-                REFRESH -> refresh()
-                ADAPTER_INSERT_ITEM -> adapterInsertItem()
-                ADAPTER_DELETE_ITEM -> adapterDeleteItem()
-                PAGER_INSERT_ITEM -> pagerInsertItem()
-                PAGER_DELETE_ITEM -> pagerDeleteItem()
-                CLEAR_ODD_ITEM -> clearOddItem()
-                CLEAR_EVEN_ITEM -> clearEvenItem()
-                CLEAR_ALL_ITEM -> clearAllItem()
-                else -> return@observe
-            }
-        }
+        sharedViewModel
+            .menuAction
+            .onEach { action ->
+                when (action) {
+                    INCREASE_SPAN_COUNT -> increaseSpanCount()
+                    DECREASE_SPAN_COUNT -> decreaseSpanCount()
+                    REVERSE_LAYOUT -> reverseLayout()
+                    REFRESH -> refresh()
+                    ADAPTER_INSERT_ITEM -> adapterInsertItem()
+                    ADAPTER_DELETE_ITEM -> adapterDeleteItem()
+                    PAGER_INSERT_ITEM -> pagerInsertItem()
+                    PAGER_DELETE_ITEM -> pagerDeleteItem()
+                    CLEAR_ODD_ITEM -> clearOddItem()
+                    CLEAR_EVEN_ITEM -> clearEvenItem()
+                    CLEAR_ALL_ITEM -> clearAllItem()
+                    else -> return@onEach
+                }
+            }.launchIn(viewLifecycleScope)
     }
 
     private fun increaseSpanCount() {
