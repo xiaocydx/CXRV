@@ -8,7 +8,6 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
-import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.recycler.binding.BindingAdapter
 import com.xiaocydx.recycler.binding.Inflate
@@ -23,7 +22,8 @@ import com.xiaocydx.sample.dp
 /**
  * [MultiSelection]示例代码
  *
- * 展示如何配置多项选择，以及页面配置发生变更时（例如旋转屏幕），通过[ViewModel]保存选择状态。
+ * * 配置多项选择功能。
+ * * 页面配置发生变更时（例如旋转屏幕），保留选择状态。
  *
  * @author xcc
  * @date 2022/2/18

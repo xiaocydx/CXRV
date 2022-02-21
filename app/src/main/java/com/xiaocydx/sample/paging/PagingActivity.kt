@@ -18,19 +18,24 @@ import com.xiaocydx.sample.paging.MenuAction.*
 import com.xiaocydx.sample.showToast
 
 /**
+ * 分页加载示例代码
+ *
+ * 页面配置发生变更时（例如旋转屏幕），保留分页加载数据、列表滚动位置。
+ *
  * @author xcc
  * @date 2022/2/17
  */
 class PagingActivity : AppCompatActivity() {
     private val viewModel: SharedViewModel by viewModels()
     private lateinit var binding: ActivityPagingBinding
+    private val fragmentTag = PagingFragment::class.java.simpleName
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPagingBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initMenuDrawer()
-        initLinearLayout()
+        initPagingFragment()
     }
 
     private fun initMenuDrawer() {
@@ -61,6 +66,12 @@ class PagingActivity : AppCompatActivity() {
         showToast(action.text)
     }
 
+    private fun initPagingFragment() {
+        if (supportFragmentManager.findFragmentByTag(fragmentTag) == null) {
+            initLinearLayout()
+        }
+    }
+
     private fun initLinearLayout() {
         replaceFragment(LinearLayoutFragment())
     }
@@ -79,7 +90,7 @@ class PagingActivity : AppCompatActivity() {
     private fun replaceFragment(fragment: Fragment) {
         supportFragmentManager
             .beginTransaction()
-            .replace(R.id.flContainer, fragment)
+            .replace(R.id.flContainer, fragment, fragmentTag)
             .commit()
         supportActionBar?.title = fragment.javaClass.simpleName
     }

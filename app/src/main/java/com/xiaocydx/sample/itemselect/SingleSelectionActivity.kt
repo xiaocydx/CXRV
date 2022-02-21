@@ -23,7 +23,8 @@ import com.xiaocydx.sample.dp
 /**
  * [SingleSelection]示例代码
  *
- * 展示如何配置单项选择，以及页面配置发生变更时（例如旋转屏幕），通过[ViewModel]保存选择状态。
+ * * 配置单项选择功能。
+ * * 页面配置发生变更时（例如旋转屏幕），保留选择状态。
  *
  * @author xcc
  * @date 2022/2/18

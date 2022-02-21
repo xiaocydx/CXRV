@@ -19,7 +19,7 @@ import com.xiaocydx.sample.*
 /**
  * ItemClick示例代码
  *
- * 展示Adapter组合场景、多类型场景下如何设置item点击、长按，设置方式从基础函数开始，逐渐进行简化。
+ * Adapter组合、多类型场景下设置item点击、长按，设置方式从基础函数开始，逐渐进行简化。
  *
  * @author xcc
  * @date 2022/2/18

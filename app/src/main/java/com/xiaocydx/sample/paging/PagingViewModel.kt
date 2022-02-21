@@ -1,5 +1,6 @@
 package com.xiaocydx.sample.paging
 
+import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -23,6 +24,7 @@ class PagingViewModel(
         repository.loadResult(params)
     }
     val flow = pager.flow.cacheIn(viewModelScope)
+    val rvId = ViewCompat.generateViewId()
 
     fun refresh() {
         pager.refresh()

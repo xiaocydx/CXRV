@@ -11,7 +11,6 @@ import android.widget.FrameLayout
 import androidx.annotation.CallSuper
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -23,6 +22,7 @@ import com.xiaocydx.recycler.list.clear
 import com.xiaocydx.recycler.list.removeItemAt
 import com.xiaocydx.recycler.list.submitTransform
 import com.xiaocydx.sample.paging.MenuAction.*
+import com.xiaocydx.sample.viewmodel.activityViewModels
 
 /**
  * @author xcc
@@ -30,7 +30,8 @@ import com.xiaocydx.sample.paging.MenuAction.*
  */
 abstract class PagingFragment : Fragment() {
     private val sharedViewModel: SharedViewModel by activityViewModels()
-    protected val viewModel: PagingViewModel by viewModels(
+    protected val viewModel: PagingViewModel by activityViewModels(
+        key = this::class.java.simpleName,
         factoryProducer = { PagingViewModel.Factory }
     )
     protected val adapter = FooAdapter()
@@ -43,6 +44,7 @@ abstract class PagingFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = FrameLayout(requireContext()).apply {
         rvPaging = RecyclerView(requireContext()).apply {
+            id = viewModel.rvId
             overScrollMode = OVER_SCROLL_NEVER
             layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
         }
