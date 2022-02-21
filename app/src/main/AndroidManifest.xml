@@ -33,6 +33,8 @@
         <activity
             android:name=".paging.PagingActivity"
             android:exported="false" />
+        <activity
+            android:name=".viewpager.ViewPagerActivity"
+            android:exported="false" />
     </application>
-
 </manifest>

@@ -5,11 +5,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import com.xiaocydx.sample.itemselect.SingleSelectionActivity
 import com.xiaocydx.sample.itemclick.ItemClickActivity
 import com.xiaocydx.sample.itemselect.MultiSelectionActivity
+import com.xiaocydx.sample.itemselect.SingleSelectionActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
 import com.xiaocydx.sample.paging.PagingActivity
+import com.xiaocydx.sample.viewpager.ViewPagerActivity
 
 /**
  * @author xcc
@@ -39,6 +40,10 @@ class MainActivity : AppCompatActivity() {
 
     fun startPagingActivity(view: View) {
         startActivity<PagingActivity>()
+    }
+
+    fun startViewPagerActivity(view: View) {
+        startActivity<ViewPagerActivity>()
     }
 
     private inline fun <reified T : Activity> startActivity() {

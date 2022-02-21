@@ -7,12 +7,11 @@ import androidx.lifecycle.ViewModelProvider
 
 @MainThread
 inline fun <reified VM : ViewModel> ComponentActivity.viewModels(
-    key: String,
+    noinline key: () -> String,
     noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
-): Lazy<VM> {
-    val factoryPromise = factoryProducer ?: {
-        defaultViewModelProviderFactory
-    }
-
-    return ViewModelLazy(key, VM::class.java, { viewModelStore }, factoryPromise)
-}
+): Lazy<VM> = ViewModelLazy(
+    viewModelClass = VM::class.java,
+    viewModelKey = key,
+    storeProducer = { viewModelStore },
+    factoryProducer = factoryProducer ?: { defaultViewModelProviderFactory }
+)

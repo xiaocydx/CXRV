@@ -45,4 +45,12 @@
         android:onClick="startPagingActivity"
         android:text="分页加载示例"
         android:textAllCaps="false" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:onClick="startViewPagerActivity"
+        android:text="ViewPager示例"
+        android:textAllCaps="false" />
 </LinearLayout>

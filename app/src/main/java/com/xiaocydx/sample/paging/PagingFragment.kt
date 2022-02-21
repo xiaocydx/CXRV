@@ -31,7 +31,7 @@ import com.xiaocydx.sample.viewmodel.activityViewModels
 abstract class PagingFragment : Fragment() {
     private val sharedViewModel: SharedViewModel by activityViewModels()
     protected val viewModel: PagingViewModel by activityViewModels(
-        key = this::class.java.simpleName,
+        key = { this::class.java.simpleName },
         factoryProducer = { PagingViewModel.Factory }
     )
     protected val adapter = FooAdapter()

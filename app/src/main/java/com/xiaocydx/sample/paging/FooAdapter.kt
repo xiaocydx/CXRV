@@ -1,6 +1,5 @@
 package com.xiaocydx.sample.paging
 
-import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -25,9 +24,7 @@ class FooAdapter : ListAdapter<Foo, FooAdapter.ViewHolder>() {
             FooType.TYPE2.ordinal -> R.layout.item_foo_type2
             else -> throw IllegalArgumentException()
         }
-        val view = LayoutInflater.from(parent.context)
-            .inflate(layout, parent, false)
-        return ViewHolder(view)
+        return ViewHolder(parent.inflate(layout))
     }
 
     override fun onBindViewHolder(holder: ViewHolder, item: Foo) {
