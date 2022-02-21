@@ -16,7 +16,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * [MultiSelectionImpl]的单元测试
+ * [MultiSelection]的单元测试
  *
  * @author xcc
  * @date 2022/1/23

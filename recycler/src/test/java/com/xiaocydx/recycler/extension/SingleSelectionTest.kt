@@ -17,7 +17,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * [SingleSelectionImpl]的单元测试
+ * [SingleSelection]的单元测试
  *
  * @author xcc
  * @date 2022/1/23
