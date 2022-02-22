@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.RecyclerView.getChildViewHolderInt
 
+@Deprecated("实现逻辑有问题，需要重新编写。")
 fun RecyclerView.tryRecycleAllChild() {
     val childCount = childCount
     for (index in childCount - 1 downTo 0) {
@@ -31,6 +32,7 @@ fun RecyclerView.tryRecycleAllChild() {
 
 private const val DEFAULT_MAX_SCRAP = 5
 
+@Deprecated("实现逻辑有问题，需要重新编写。")
 private fun RecyclerView.tryIncreaseMaxScrap(childCount: Int, holder: ViewHolder): Boolean {
     val viewType = holder.itemViewType
     // 容器还未创建，不需要增加上限
