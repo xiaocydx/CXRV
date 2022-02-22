@@ -11,13 +11,19 @@ import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import com.xiaocydx.recycler.widget.ViewAdapter
 
 /**
- * 添加[header]，并将当前adapter设为[ConcatAdapter]
+ * 添加[header]
  *
- * **注意**：在添加[header]前，先设置Adapter，否则抛出[IllegalArgumentException]。
+ * * 添加[header]之前，若未对RecyclerView设置Adapter，则抛出[IllegalArgumentException]异常。
+ * * 若在初始化RecyclerView时不添加[header]，而是之后根据情况动态添加[header]，
+ * 则可以将Adapter设置为[HeaderFooterConcatAdapter]，之后动态添加[header]的性能更高。
+ * ```
+ * val contentAdapter = RecyclerView.Adapter<*> = ...
+ * recyclerView.adapter = HeaderFooterConcatAdapter(contentAdapter)
+ * ```
  */
 fun <T : RecyclerView> T.addHeader(header: View): T {
     val adapter: Adapter<*> = requireNotNull(adapter) {
-        "请先对RecyclerView设置Adapter，然后再添加Header"
+        "请先对RecyclerView设置Adapter，然后再添加Header。"
     }
     if (adapter is ConcatAdapter) {
         adapter.adapters.firstOrNull {
@@ -28,19 +34,28 @@ fun <T : RecyclerView> T.addHeader(header: View): T {
             scrollToPosition(0)
         }
     } else {
-        setAdapter(ConcatAdapter(DEFAULT_CONFIG, header.toAdapter(), adapter))
+        swapAdapter(
+            HeaderFooterConcatAdapter(adapter, header = header.toAdapter()),
+            true
+        )
     }
     return this
 }
 
 /**
- * 添加[footer]，并将当前adapter设为[ConcatAdapter]
+ * 添加[footer]
  *
- * **注意**：在添加[footer]前，先设置Adapter，否则抛出[IllegalArgumentException]。
+ * * 添加[footer]之前，若未对RecyclerView设置Adapter，则抛出[IllegalArgumentException]异常。
+ * * 若在初始化RecyclerView时不添加[footer]，而是之后根据情况动态添加[footer]，
+ * 则可以将Adapter设置为[HeaderFooterConcatAdapter]，之后动态添加[footer]的性能更高。
+ * ```
+ * val contentAdapter = RecyclerView.Adapter<*> = ...
+ * recyclerView.adapter = HeaderFooterConcatAdapter(contentAdapter)
+ * ```
  */
 fun <T : RecyclerView> T.addFooter(footer: View): T {
     val adapter: Adapter<*> = requireNotNull(adapter) {
-        "请先对RecyclerView设置Adapter，然后再添加Footer"
+        "请先对RecyclerView设置Adapter，然后再添加Footer。"
     }
     if (adapter is ConcatAdapter) {
         adapter.adapters.lastOrNull {
@@ -48,7 +63,10 @@ fun <T : RecyclerView> T.addFooter(footer: View): T {
         }?.let { return this }
         adapter.addAdapter(footer.toAdapter())
     } else {
-        setAdapter(ConcatAdapter(DEFAULT_CONFIG, adapter, footer.toAdapter()))
+        swapAdapter(
+            HeaderFooterConcatAdapter(adapter, footer = footer.toAdapter()),
+            true
+        )
     }
     return this
 }
@@ -87,7 +105,7 @@ fun Adapter<*>.withHeader(
     header: ViewAdapter<*>
 ): ConcatAdapter = when (this) {
     is ConcatAdapter -> apply { addAdapter(0, header) }
-    else -> ConcatAdapter(DEFAULT_CONFIG, header, this)
+    else -> HeaderFooterConcatAdapter(this, header = header)
 }
 
 /**
@@ -98,12 +116,14 @@ fun Adapter<*>.withFooter(
     footer: ViewAdapter<*>
 ): ConcatAdapter = when (this) {
     is ConcatAdapter -> apply { addAdapter(footer) }
-    else -> ConcatAdapter(DEFAULT_CONFIG, this, footer)
+    else -> HeaderFooterConcatAdapter(this, footer = footer)
 }
 
 /**
- * 若配置隔离ViewType，则在共享[RecycledViewPool]的场景下，
- * Header和Footer的隔离ViewType会导致获取已回收的ViewHolder抛出异常。
+ * 不使用隔离ViewType配置、用于连接Header和Footer的[ConcatAdapter]
+ *
+ * 若使用隔离ViewType配置，则在共享[RecycledViewPool]的场景下，
+ * Header和Footer的隔离ViewType可能会导致获取已回收的ViewHolder抛出异常。
  *
  * ### 场景描述
  * FragmentA和FragmentB共享[RecycledViewPool]，并且内容区Adapter相同。
@@ -118,12 +138,23 @@ fun Adapter<*>.withFooter(
  * Header的ViewHolder和内容区的ViewHolder类型不一致，导致抛出类型转换异常。
  *
  * ### 解决方案
- * Header和Footer默认不使用隔离ViewType配置，而是将[View.hashCode]作为ViewType。
+ * 默认不使用隔离ViewType配置，而是将[View.hashCode]作为Header和Footer的ViewType。
  */
-private val DEFAULT_CONFIG: ConcatAdapter.Config =
-        ConcatAdapter.Config.Builder()
-            .setIsolateViewTypes(false)
-            .build()
+@Suppress("FunctionName")
+fun HeaderFooterConcatAdapter(
+    adapter: Adapter<*>,
+    header: ViewAdapter<*>? = null,
+    footer: ViewAdapter<*>? = null
+): ConcatAdapter {
+    val config = ConcatAdapter.Config
+        .Builder().setIsolateViewTypes(false).build()
+    return when {
+        header == null && footer == null -> ConcatAdapter(config, adapter)
+        header == null -> ConcatAdapter(config, adapter, footer)
+        footer == null -> ConcatAdapter(config, header, adapter)
+        else -> ConcatAdapter(header, adapter, footer)
+    }
+}
 
 /**
  * 将[View]转换为适配器，用于[ConcatAdapter]的连接场景
