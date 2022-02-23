@@ -63,7 +63,7 @@ class LoadHeader internal constructor(
         var headerWidth: Int
             get() = _headerWidth
             set(value) {
-                _headerHeight = value
+                _headerWidth = value
             }
 
         /**
