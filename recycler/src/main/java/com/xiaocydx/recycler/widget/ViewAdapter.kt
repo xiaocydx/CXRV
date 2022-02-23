@@ -51,7 +51,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
     }
 
     /**
-     * 返回唯一的ViewType值，可以是[View.hashCode]或者[Class.hashCode]
+     * 返回唯一的ViewType值，例如[View.hashCode]
      */
     protected abstract fun getItemViewType(): Int
 

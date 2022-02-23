@@ -30,7 +30,7 @@ internal class LoadHeaderAdapter(
         collector.addLoadStatesListener(this)
     }
 
-    override fun getItemViewType(): Int = this::class.java.hashCode()
+    override fun getItemViewType(): Int = hashCode()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val loadHeader = LoadHeader(parent.context, config)
