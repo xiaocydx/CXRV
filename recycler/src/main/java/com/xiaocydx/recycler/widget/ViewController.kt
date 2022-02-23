@@ -9,16 +9,16 @@ import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
 
 /**
- * 从[RecycledViewPool]中清除ViewHolder的控制器
+ * 从[Recycler]中清除ViewHolder的控制器
  *
  * ### [onDetachedFromRecyclerView]
- * 当Adapter从RecyclerView上分离时，尝试清除已被回收的ViewHolder，
- * 若Adapter是被[ConcatAdapter]移除，则需要拦截要被回收的ViewHolder，
- * 拦截流程为[tryMakeViewHolderRecycleFailed]和[onFailedToRecycleView]。
+ * 当Adapter从RecyclerView上分离时，清除已分离的[viewHolder]，
+ * 若Adapter是被[ConcatAdapter]移除，则需要拦截要被回收的[viewHolder]，
+ * 拦截流程为[makeViewHolderRecycleFailed]和[onFailedToRecycleView]。
  *
  * ### [onViewDetachedFromWindow]
- * 当RecyclerView从Window上分离时，尝试清除已被回收的ViewHolder，
- * 避免共享[RecycledViewPool]的场景回收无用的ViewHolder。
+ * 当RecyclerView从Window上分离时，清除已分离的[viewHolder]，
+ * 避免共享[RecycledViewPool]的场景回收无用的[viewHolder]。
  *
  * @author xcc
  * @date 2021/10/15
@@ -29,7 +29,7 @@ internal class ViewController : View.OnAttachStateChangeListener {
     private var View.hasTransientState: Boolean
         get() = ViewCompat.hasTransientState(this)
         set(value) = ViewCompat.setHasTransientState(this, value)
-    private val isAttached: Boolean
+    private val isAdapterAttached: Boolean
         get() = recyclerView != null
     var recyclerView: RecyclerView? = null
         private set
@@ -52,18 +52,16 @@ internal class ViewController : View.OnAttachStateChangeListener {
 
     fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         this.recyclerView = null
-        recyclerView.also {
-            it.removeOnAttachStateChangeListener(this)
-            it.tryClearRecycledViewHolder()
-            it.tryMakeViewHolderRecycleFailed()
-        }
+        recyclerView.removeOnAttachStateChangeListener(this)
+        recyclerView.clearDetachedViewHolder()
+        makeViewHolderRecycleFailed()
     }
 
     override fun onViewAttachedToWindow(view: View) {
     }
 
     override fun onViewDetachedFromWindow(view: View) {
-        (view as? RecyclerView)?.tryClearRecycledViewHolder()
+        (view as? RecyclerView)?.clearDetachedViewHolder()
     }
 
     /**
@@ -82,36 +80,41 @@ internal class ViewController : View.OnAttachStateChangeListener {
     }
 
     /**
-     * 尝试清除已被回收的ViewHolder
-     *
-     * 因为调用[RecycledViewPool.setMaxRecycledViews]，将max设为0无法清除[ScrapData]，
-     * 所以直接访问[RecycledViewPool.mScrap]，清除[viewType]对应的[ScrapData]。
+     * 清除已分离的[viewHolder]
      */
-    private fun RecyclerView.tryClearRecycledViewHolder() {
+    private fun RecyclerView.clearDetachedViewHolder() {
+        // 调用setMaxRecycledViews()，将max设为0无法清除ScrapData，
+        // 因此直接访问mScrap，清除viewType对应的ScrapData。
         recycledViewPool.mScrap.remove(viewType)
+        val holder = viewHolder
+        if (holder == null || holder.itemView.isAttachedToWindow) {
+            return
+        }
+        val views: ArrayList<ViewHolder> = when {
+            !holder.isScrap -> mRecycler.mCachedViews
+            !holder.mInChangeScrap -> mRecycler.mAttachedScrap
+            else -> mRecycler.mChangedScrap
+        } ?: return
+        if (views.remove(holder)) {
+            viewHolder = null
+        }
     }
 
     /**
-     * 尝试让ViewHolder回收失败
+     * 让[viewHolder]回收失败
      *
-     * 若尝试成功，则会在[onFailedToRecycleView]中对ViewHolder的状态做进一步处理。
+     * 在[onFailedToRecycleView]中对[viewHolder]的状态做进一步处理。
      *
      * **注意**：在[Recycler.addViewHolderToRecycledViewPool]的流程中，
-     * 虽然可以通过[RecyclerListener]或者[onViewRecycled]，将ViewHolder回收上限设为0，
-     * 防止ViewHolder被回收，但是这种处理方式仍然会创建[ScrapData]，导致清除的不够干净。
+     * 虽然可以通过[RecyclerListener]或者[onViewRecycled]，将回收上限设为0，
+     * 防止[viewHolder]被回收，但这种处理方式仍然会创建[ScrapData]，导致清除的不够彻底。
      */
-    private fun RecyclerView.tryMakeViewHolderRecycleFailed() {
+    private fun makeViewHolderRecycleFailed() {
         val holder = viewHolder
-        if (isAttached || holder == null) {
-            // holder为空表示已被回收，不需要进行拦截
+        if (isAdapterAttached || holder == null) {
             return
         }
-        if (mRecycler.mCachedViews.remove(holder)) {
-            // 尝试从mCachedViews中移除holder，防止被回收
-            viewHolder = null
-            return
-        }
-        // 注意：holder.setIsRecyclable()不是纯粹的状态设置，而是包含计数逻辑，
+        // 注意：holder.setIsRecyclable()不是单纯的设置状态，还包含计数逻辑，
         // 若此处调用holder.setIsRecyclable(false)，则移除动画结束时，将不会移除itemView。
         holder.itemView.apply {
             if (hasTransientState) {
@@ -128,13 +131,13 @@ internal class ViewController : View.OnAttachStateChangeListener {
     }
 
     /**
-     * 若是[tryMakeViewHolderRecycleFailed]导致的回收失败，
+     * 若是[makeViewHolderRecycleFailed]导致的回收失败，
      * 则对[holder]的状态做进一步处理，防止[holder]被回收。
      *
      * 回收失败的详细流程[Recycler.recycleViewHolderInternal]。
      */
     fun onFailedToRecycleView(holder: ViewHolder): Boolean {
-        if (isAttached) {
+        if (isAdapterAttached) {
             return false
         }
         holder.itemView.apply {
