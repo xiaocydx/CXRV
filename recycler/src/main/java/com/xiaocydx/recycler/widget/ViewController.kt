@@ -111,8 +111,8 @@ internal class ViewController : View.OnAttachStateChangeListener {
             viewHolder = null
             return
         }
-        // 若此处调用holder.setIsRecyclable(false)，
-        // 将holder设为不可回收，则RecyclerView将不会移除itemView。
+        // 注意：holder.setIsRecyclable()不是纯粹的状态设置，而是包含计数逻辑，
+        // 若此处调用holder.setIsRecyclable(false)，则移除动画结束时，将不会移除itemView。
         holder.itemView.apply {
             if (hasTransientState) {
                 // 可能正在执行属性动画，先取消动画
