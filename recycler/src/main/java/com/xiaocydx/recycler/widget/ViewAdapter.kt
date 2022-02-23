@@ -8,11 +8,11 @@ import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.ViewController
 
 /**
- * View适配器，用于构建Header、Footer
+ * View适配器，用于构建HeaderFooter
  *
- * 当Header、Footer被移除或者RecyclerView从Window上分离时，
- * [ViewController]会清除已回收的ViewHolder，或者防止ViewHolder被回收，
- * 子类不用关注Header、Footer在共享[RecycledViewPool]的场景下，可能引起内存泄漏的问题。
+ * 当移除HeaderFooter或者RecyclerView从Window上分离时，
+ * [ViewController]会清除已分离的ViewHolder，拦截要被回收的ViewHolder，
+ * 子类不用关注移除HeaderFooter和共享[RecycledViewPool]的场景下，可能引起内存泄漏的问题。
  *
  * @author xcc
  * @date 2021/10/15
