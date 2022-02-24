@@ -11,6 +11,7 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.TextView
 import androidx.annotation.Px
 import androidx.core.view.*
+import kotlin.math.max
 
 /**
  * 提供测量、布局相关扩展的自定义ViewGroup
@@ -21,6 +22,21 @@ import androidx.core.view.*
 abstract class CustomLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : ViewGroup(context, attrs, defStyleAttr) {
+
+    /**
+     * 若[CustomLayout]的`parent`是RecyclerView、ScrollView等滑动控件，
+     * 则传入的测量规格的模式可能为[UNSPECIFIED]，这取决于`layoutParams`的宽高值。
+     *
+     * [onMeasure]的默认实现，若测量规格的模式为[UNSPECIFIED]，则保存`suggestedMinimum`值，
+     * 这不符合[CustomLayout]的意图，[CustomLayout]在测量阶段希望给到子View最大可用空间，
+     * 因此若`layoutParams`的宽高值为[WRAP_CONTENT]时，则调整为[MATCH_PARENT]。
+     */
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        val lp = layoutParams ?: return
+        lp.width = max(lp.width, MATCH_PARENT)
+        lp.height = max(lp.height, MATCH_PARENT)
+    }
 
     //region 间距相关扩展，后续考虑迁出
     @get:Px
@@ -73,14 +89,6 @@ abstract class CustomLayout @JvmOverloads constructor(
         return makeMeasureSpec(this, AT_MOST)
     }
 
-    private fun Int.toExactlyOrUnspecifiedSpec(): Int {
-        return if (this > 0) toExactlySpec() else toUnspecifiedSpec()
-    }
-
-    private fun Int.toAtMostOrUnspecifiedSpec(): Int {
-        return if (this > 0) toAtMostSpec() else toUnspecifiedSpec()
-    }
-
     /**
      * **注意**：调用[defaultWidthSpec]时，需要parent先完成自我测量，例如：
      * ```
@@ -106,8 +114,8 @@ abstract class CustomLayout @JvmOverloads constructor(
                 lazyMessage = { "parent不能为空。" }
             )
             return when (layoutParams.width) {
-                MATCH_PARENT -> parent.measuredWidth.toExactlyOrUnspecifiedSpec()
-                WRAP_CONTENT -> parent.measuredWidth.toAtMostOrUnspecifiedSpec()
+                MATCH_PARENT -> parent.measuredWidth.toExactlySpec()
+                WRAP_CONTENT -> parent.measuredWidth.toAtMostSpec()
                 else -> layoutParams.width.toExactlySpec()
             }
         }
@@ -137,8 +145,8 @@ abstract class CustomLayout @JvmOverloads constructor(
                 lazyMessage = { "parent不能为空。" }
             )
             return when (layoutParams.height) {
-                MATCH_PARENT -> parent.measuredHeight.toExactlyOrUnspecifiedSpec()
-                WRAP_CONTENT -> parent.measuredHeight.toAtMostOrUnspecifiedSpec()
+                MATCH_PARENT -> parent.measuredHeight.toExactlySpec()
+                WRAP_CONTENT -> parent.measuredHeight.toAtMostSpec()
                 else -> layoutParams.height.toExactlySpec()
             }
         }
