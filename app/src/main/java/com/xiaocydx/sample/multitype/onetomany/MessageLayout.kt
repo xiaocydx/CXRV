@@ -51,7 +51,7 @@ abstract class MessageLayout @JvmOverloads constructor(
         ivAvatar.autoMeasure()
         tvUsername.autoMeasure()
         container.also {
-            it.measure(254.dp.toAtMostMeasureSpec(), it.defaultHeightMeasureSpec)
+            it.measure(254.dp.toAtMostSpec(), it.defaultHeightSpec)
         }
         val maxHeight = max(
             ivAvatar.measuredHeight,

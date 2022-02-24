@@ -11,8 +11,6 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.TextView
 import androidx.annotation.Px
 import androidx.core.view.*
-import androidx.recyclerview.widget.RecyclerView
-import kotlin.math.max
 
 /**
  * 提供测量、布局相关扩展的自定义ViewGroup
@@ -23,58 +21,6 @@ import kotlin.math.max
 abstract class CustomLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : ViewGroup(context, attrs, defStyleAttr) {
-
-    /**
-     * 若[CustomLayout]的`parent`是RecyclerView、ScrollView等滑动控件，
-     * 则传入的测量规格的模式可能为[UNSPECIFIED]，这取决于`layoutParams`的宽高值。
-     *
-     * [onMeasure]的默认实现，若测量规格的模式为[UNSPECIFIED]，则保存`suggestedMinimum`值，
-     * 这不符合[CustomLayout]的意图，[CustomLayout]在测量阶段希望给到子View最大可用空间，
-     * 因此修改[onMeasure]的默认实现，当`parent`是滑动控件时，保存调整后的默认值。
-     */
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val measuredWidth = getDefaultSize(
-            measureSpec = widthMeasureSpec,
-            layoutParamsSize = { layoutParams?.width ?: 0 },
-            suggestedMinimumSize = { suggestedMinimumWidth }
-        )
-        val measuredHeight = getDefaultSize(
-            measureSpec = heightMeasureSpec,
-            layoutParamsSize = { layoutParams?.height ?: 0 },
-            suggestedMinimumSize = { suggestedMinimumHeight }
-        )
-        setMeasuredDimension(measuredWidth, measuredHeight)
-    }
-
-    private inline fun getDefaultSize(
-        measureSpec: Int,
-        layoutParamsSize: () -> Int,
-        suggestedMinimumSize: () -> Int
-    ): Int {
-        val specMode = measureSpec.specMode
-        val specSize = measureSpec.specSize
-        return when (specMode) {
-            UNSPECIFIED -> {
-                if ((parent as? View)?.isScrollContainer == true) {
-                    val size = layoutParamsSize()
-                    if (size >= 0) size else specSize
-                } else suggestedMinimumSize()
-            }
-            AT_MOST, EXACTLY -> specSize
-            else -> throw IllegalArgumentException("无效的measureSpec。")
-        }
-    }
-
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        if (parent is RecyclerView) {
-            // 若宽高值为WRAP_CONTENT，则调整为MATCH_PARENT，
-            // 确保onMeasure()测量规格的specSize不为0。
-            val lp = layoutParams ?: return
-            lp.width = max(lp.width, MATCH_PARENT)
-            lp.height = max(lp.height, MATCH_PARENT)
-        }
-    }
 
     //region 间距相关扩展，后续考虑迁出
     @get:Px
@@ -115,46 +61,108 @@ abstract class CustomLayout @JvmOverloads constructor(
     protected inline val Int.specMode: Int
         get() = getMode(this)
 
-    protected fun Int.toUnspecifiedMeasureSpec(): Int {
+    protected fun Int.toUnspecifiedSpec(): Int {
         return makeMeasureSpec(this, UNSPECIFIED)
     }
 
-    protected fun Int.toExactlyMeasureSpec(): Int {
+    protected fun Int.toExactlySpec(): Int {
         return makeMeasureSpec(this, EXACTLY)
     }
 
-    protected fun Int.toAtMostMeasureSpec(): Int {
+    protected fun Int.toAtMostSpec(): Int {
         return makeMeasureSpec(this, AT_MOST)
     }
 
-    protected val View.defaultWidthMeasureSpec: Int
+    private fun Int.toExactlyOrUnspecifiedSpec(): Int {
+        return if (this > 0) toExactlySpec() else toUnspecifiedSpec()
+    }
+
+    private fun Int.toAtMostOrUnspecifiedSpec(): Int {
+        return if (this > 0) toAtMostSpec() else toUnspecifiedSpec()
+    }
+
+    /**
+     * **注意**：调用[defaultWidthSpec]时，需要parent先完成自我测量，例如：
+     * ```
+     * class MessageLayout(context: Context) : CustomLayout(context) {
+     *     val ivAvatar: ImageView = AppCompatImageView(context).apply {
+     *         layoutParams = LayoutParams(48.dp, 48.dp)
+     *         scaleType = ImageView.ScaleType.CENTER_CROP
+     *     }.also(::addView)
+     *
+     *     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+     *         // 先完成自我测量
+     *         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+     *         // 再调用扩展属性
+     *         ivAvatar.defaultWidthSpec
+     *     }
+     * }
+     * ```
+     */
+    protected val View.defaultWidthSpec: Int
         get() {
             val parent = requireNotNull(
                 value = parent as? ViewGroup,
                 lazyMessage = { "parent不能为空。" }
             )
             return when (layoutParams.width) {
-                MATCH_PARENT -> parent.measuredWidth.toExactlyMeasureSpec()
-                WRAP_CONTENT -> parent.measuredWidth.toAtMostMeasureSpec()
-                else -> layoutParams.width.toExactlyMeasureSpec()
+                MATCH_PARENT -> parent.measuredWidth.toExactlyOrUnspecifiedSpec()
+                WRAP_CONTENT -> parent.measuredWidth.toAtMostOrUnspecifiedSpec()
+                else -> layoutParams.width.toExactlySpec()
             }
         }
 
-    protected val View.defaultHeightMeasureSpec: Int
+    /**
+     * **注意**：调用[defaultHeightSpec]时，需要parent先完成自我测量，例如：
+     * ```
+     * class MessageLayout(context: Context) : CustomLayout(context) {
+     *     val ivAvatar: ImageView = AppCompatImageView(context).apply {
+     *         layoutParams = LayoutParams(48.dp, 48.dp)
+     *         scaleType = ImageView.ScaleType.CENTER_CROP
+     *     }.also(::addView)
+     *
+     *     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+     *         // 先完成自我测量
+     *         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+     *         // 再调用扩展属性
+     *         ivAvatar.defaultHeightSpec
+     *     }
+     * }
+     * ```
+     */
+    protected val View.defaultHeightSpec: Int
         get() {
             val parent = requireNotNull(
                 value = parent as? ViewGroup,
                 lazyMessage = { "parent不能为空。" }
             )
             return when (layoutParams.height) {
-                MATCH_PARENT -> parent.measuredHeight.toExactlyMeasureSpec()
-                WRAP_CONTENT -> parent.measuredHeight.toAtMostMeasureSpec()
-                else -> layoutParams.height.toExactlyMeasureSpec()
+                MATCH_PARENT -> parent.measuredHeight.toExactlyOrUnspecifiedSpec()
+                WRAP_CONTENT -> parent.measuredHeight.toAtMostOrUnspecifiedSpec()
+                else -> layoutParams.height.toExactlySpec()
             }
         }
 
+    /**
+     * **注意**：调用[autoMeasure]时，需要parent先完成自我测量，例如：
+     * ```
+     * class MessageLayout(context: Context) : CustomLayout(context) {
+     *     val ivAvatar: ImageView = AppCompatImageView(context).apply {
+     *         layoutParams = LayoutParams(48.dp, 48.dp)
+     *         scaleType = ImageView.ScaleType.CENTER_CROP
+     *     }.also(::addView)
+     *
+     *     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+     *         // 先完成自我测量
+     *         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+     *         // 再调用扩展函数
+     *         ivAvatar.autoMeasure()
+     *     }
+     * }
+     * ```
+     */
     protected fun View.autoMeasure() {
-        measure(defaultWidthMeasureSpec, defaultHeightMeasureSpec)
+        measure(defaultWidthSpec, defaultHeightSpec)
     }
     //endregion
 
