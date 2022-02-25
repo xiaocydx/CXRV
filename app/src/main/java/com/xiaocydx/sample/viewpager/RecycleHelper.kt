@@ -12,9 +12,9 @@ fun RecyclerView.tryRecycleAllChild() {
     addRecyclerListener { holder ->
         tryIncreaseMaxScrap(maxScrap, holder)
     }
-    // 该函数在视图销毁阶段才被调用，因此通过suppressLayout(true)抑制布局，
+    // 该函数在视图销毁阶段才被调用，因此通过startInterceptRequestLayout()，
     // 避免removeAndRecycleViews()移除View时，触发不必要的requestLayout()。
-    suppressLayout(true)
+    startInterceptRequestLayout()
     removeAndRecycleViews()
     // FIXME: 2022/2/22 回收完之后，恢复原本的maxScrap
 }

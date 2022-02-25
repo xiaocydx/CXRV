@@ -17,6 +17,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
+ * TODO: 2022/2/22 调整为可创建任意类型Fragment，仅指定类型Fragment可共享回收池
+ *
  * @author xcc
  * @date 2022/2/21
  */
