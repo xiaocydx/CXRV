@@ -11,6 +11,7 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.TextView
 import androidx.annotation.Px
 import androidx.core.view.*
+import androidx.recyclerview.widget.RecyclerView
 import kotlin.math.max
 
 /**
@@ -29,13 +30,49 @@ abstract class CustomLayout @JvmOverloads constructor(
      *
      * [onMeasure]的默认实现，若测量规格的模式为[UNSPECIFIED]，则保存`suggestedMinimum`值，
      * 这不符合[CustomLayout]的意图，[CustomLayout]在测量阶段希望给到子View最大可用空间，
-     * 因此若`layoutParams`的宽高值为[WRAP_CONTENT]时，则调整为[MATCH_PARENT]。
+     * 因此修改[onMeasure]的默认实现，当`parent`是滑动控件时，保存调整后的默认值。
      */
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val measuredWidth = getDefaultSize(
+            measureSpec = widthMeasureSpec,
+            layoutParamsSize = { layoutParams?.width ?: 0 },
+            suggestedMinimumSize = { suggestedMinimumWidth }
+        )
+        val measuredHeight = getDefaultSize(
+            measureSpec = heightMeasureSpec,
+            layoutParamsSize = { layoutParams?.height ?: 0 },
+            suggestedMinimumSize = { suggestedMinimumHeight }
+        )
+        setMeasuredDimension(measuredWidth, measuredHeight)
+    }
+
+    private inline fun getDefaultSize(
+        measureSpec: Int,
+        layoutParamsSize: () -> Int,
+        suggestedMinimumSize: () -> Int
+    ): Int {
+        val specMode = measureSpec.specMode
+        val specSize = measureSpec.specSize
+        return when (specMode) {
+            UNSPECIFIED -> {
+                if ((parent as? View)?.isScrollContainer == true) {
+                    val size = layoutParamsSize()
+                    if (size >= 0) size else specSize
+                } else suggestedMinimumSize()
+            }
+            AT_MOST, EXACTLY -> specSize
+            else -> throw IllegalArgumentException("无效的measureSpec。")
+        }
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        val lp = layoutParams ?: return
-        lp.width = max(lp.width, MATCH_PARENT)
-        lp.height = max(lp.height, MATCH_PARENT)
+        if (parent is RecyclerView) {
+            // 若宽高值为WRAP_CONTENT，则调整为MATCH_PARENT
+            val lp = layoutParams ?: return
+            lp.width = max(lp.width, MATCH_PARENT)
+            lp.height = max(lp.height, MATCH_PARENT)
+        }
     }
 
     //region 间距相关扩展，后续考虑迁出
@@ -50,16 +87,12 @@ abstract class CustomLayout @JvmOverloads constructor(
     @get:Px
     protected inline var View.horizontalPadding: Int
         get() = paddingLeft + paddingRight
-        set(value) {
-            updatePadding(left = value, right = value)
-        }
+        set(value) = updatePadding(left = value, right = value)
 
     @get:Px
     protected inline var View.verticalPadding: Int
         get() = paddingTop + paddingBottom
-        set(value) {
-            updatePadding(top = value, bottom = value)
-        }
+        set(value) = updatePadding(top = value, bottom = value)
 
     @get:Px
     protected inline val View.measureHeightWithMargins: Int
@@ -77,17 +110,17 @@ abstract class CustomLayout @JvmOverloads constructor(
     protected inline val Int.specMode: Int
         get() = getMode(this)
 
-    protected fun Int.toUnspecifiedSpec(): Int {
-        return makeMeasureSpec(this, UNSPECIFIED)
-    }
+    protected fun Int.toUnspecifiedSpec(): Int = makeMeasureSpec(this, UNSPECIFIED)
 
-    protected fun Int.toExactlySpec(): Int {
-        return makeMeasureSpec(this, EXACTLY)
-    }
+    protected fun Int.toExactlySpec(): Int = makeMeasureSpec(this, EXACTLY)
 
-    protected fun Int.toAtMostSpec(): Int {
-        return makeMeasureSpec(this, AT_MOST)
-    }
+    protected fun Int.toAtMostSpec(): Int = makeMeasureSpec(this, AT_MOST)
+
+    private val View.parentView: ViewGroup
+        get() {
+            requireNotNull(parent) { "parent为空。" }
+            return requireNotNull(parent as? ViewGroup) { "parent的类型不是ViewGroup。" }
+        }
 
     /**
      * **注意**：调用[defaultWidthSpec]时，需要parent先完成自我测量，例如：
@@ -108,16 +141,10 @@ abstract class CustomLayout @JvmOverloads constructor(
      * ```
      */
     protected val View.defaultWidthSpec: Int
-        get() {
-            val parent = requireNotNull(
-                value = parent as? ViewGroup,
-                lazyMessage = { "parent不能为空。" }
-            )
-            return when (layoutParams.width) {
-                MATCH_PARENT -> parent.measuredWidth.toExactlySpec()
-                WRAP_CONTENT -> parent.measuredWidth.toAtMostSpec()
-                else -> layoutParams.width.toExactlySpec()
-            }
+        get() = when (layoutParams.width) {
+            MATCH_PARENT -> parentView.measuredWidth.toExactlySpec()
+            WRAP_CONTENT -> parentView.measuredWidth.toAtMostSpec()
+            else -> layoutParams.width.toExactlySpec()
         }
 
     /**
@@ -139,16 +166,10 @@ abstract class CustomLayout @JvmOverloads constructor(
      * ```
      */
     protected val View.defaultHeightSpec: Int
-        get() {
-            val parent = requireNotNull(
-                value = parent as? ViewGroup,
-                lazyMessage = { "parent不能为空。" }
-            )
-            return when (layoutParams.height) {
-                MATCH_PARENT -> parent.measuredHeight.toExactlySpec()
-                WRAP_CONTENT -> parent.measuredHeight.toAtMostSpec()
-                else -> layoutParams.height.toExactlySpec()
-            }
+        get() = when (layoutParams.height) {
+            MATCH_PARENT -> parentView.measuredHeight.toExactlySpec()
+            WRAP_CONTENT -> parentView.measuredHeight.toAtMostSpec()
+            else -> layoutParams.height.toExactlySpec()
         }
 
     /**
@@ -197,17 +218,13 @@ abstract class CustomLayout @JvmOverloads constructor(
     @setparam:Px
     protected inline var MarginLayoutParams.horizontalMargin: Int
         get() = leftMargin + rightMargin
-        set(value) {
-            updateMargin(left = value, right = value)
-        }
+        set(value) = updateMargin(left = value, right = value)
 
     @get:Px
     @setparam:Px
     protected inline var MarginLayoutParams.verticalMargin: Int
         get() = topMargin + bottomMargin
-        set(value) {
-            updateMargin(top = value, bottom = value)
-        }
+        set(value) = updateMargin(top = value, bottom = value)
 
     protected fun View.withLayoutParams(
         @Px width: Int = WRAP_CONTENT,
