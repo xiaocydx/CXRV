@@ -234,4 +234,6 @@ abstract class CustomLayout @JvmOverloads constructor(
 
     protected class LayoutParams(width: Int, height: Int) : MarginLayoutParams(width, height)
     //endregion
+
+    override fun shouldDelayChildPressedState(): Boolean = false
 }
