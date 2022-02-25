@@ -3,6 +3,7 @@
 package androidx.recyclerview.widget
 
 import android.view.View
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView.LayoutParams
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.recycler.widget.ViewAdapter
@@ -29,12 +30,15 @@ internal fun RecyclerView.isViewHolderRemoved(child: View): Boolean {
 }
 
 internal fun View.isTouched(rawX: Float, rawY: Float): Boolean {
+    if (!isVisible) {
+        return false
+    }
     val location = IntArray(2)
     this.getLocationOnScreen(location)
     val left = location[0]
     val top = location[1]
-    val right = left + this.measuredWidth
-    val bottom = top + this.measuredHeight
+    val right = left + this.width
+    val bottom = top + this.height
     val isContainX = rawX in left.toFloat()..right.toFloat()
     val isContainY = rawY in top.toFloat()..bottom.toFloat()
     return isContainX && isContainY
