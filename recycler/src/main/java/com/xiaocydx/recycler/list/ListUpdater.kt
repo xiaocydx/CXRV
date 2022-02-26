@@ -34,16 +34,17 @@ class ListUpdater<T : Any>(private val sourceList: MutableList<T>) {
     }
 
     /**
-     * 当提交新列表，并将更新操作分发给[listener]时:
+     * 若[ListUpdater]和[CoroutineListDiffer]构建了双向通信，
+     * 则提交新列表，并将更新操作分发给[listener]时:
      * ### [newList]是[MutableList]类型
      * [ListUpdater]中的sourceList通过[addAll]更新为[newList]，
      * [CoroutineListDiffer]中的sourceList直接赋值替换为[newList]，
-     * 整个过程仅[ListUpdater]的[addAll]copy了一次数组。
+     * 整个过程仅[ListUpdater]的[addAll]copy一次数组。
      *
      * ### [newList]不是[MutableList]
      * [ListUpdater]中的sourceList通过[addAll]更新为[newList]，
      * [CoroutineListDiffer]中的sourceList通过创建[MutableList]更新为[newList]，
-     * 整个过程[ListUpdater]的[addAll]和[CoroutineListDiffer]创建[MutableList]copy了两次数组。
+     * 整个过程[ListUpdater]的[addAll]和[CoroutineListDiffer]创建[MutableList]copy两次数组。
      */
     @MainThread
     private fun submitList(newList: List<T>): Boolean {

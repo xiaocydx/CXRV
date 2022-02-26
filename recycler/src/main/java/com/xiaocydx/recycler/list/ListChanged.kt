@@ -11,7 +11,7 @@ import com.xiaocydx.recycler.extension.runOnMainThread
 fun interface ListChangedListener<in T : Any> {
 
     /**
-     * 列表已更改，此时列表数据已修改、列表更新操作已执行
+     * 列表已更改，此时列表数据修改完成、列表更新操作执行完成
      *
      * @param current 当前的列表
      */
@@ -19,10 +19,10 @@ fun interface ListChangedListener<in T : Any> {
 }
 
 /**
- * 添加列表已更改的处理程序，可用于视图状态更新场景
+ * 添加列表已更改的处理程序
  *
  * @param once    为true表示调用一次[handler]后就移除。
- * @param handler 被调用时，表示数据修改、差异计算已完成，并且已触发列表更新操作。
+ * @param handler 被调用时，表示列表数据修改完成、列表更新操作执行完成。
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
 @MainThread

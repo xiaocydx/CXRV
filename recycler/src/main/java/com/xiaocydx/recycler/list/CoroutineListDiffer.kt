@@ -22,6 +22,12 @@ import kotlin.coroutines.*
  * 调用[CoroutineListDiffer.cancel]或者[CoroutineListDiffer.cancelChildren]，
  * 会取消挂起中的更新操作，不会停止正在执行的[UpdateOp.SubmitList]，但在执行完之后不会更新列表。
  *
+ * ### 更新回调
+ * 1.调用[addListChangedListener]，可以添加列表已更改的[ListChangedListener]，
+ * 当[ListChangedListener.onListChanged]被调用时，表示列表数据修改完成、列表更新操作执行完成。
+ * 2.调用[addListExecuteListener]，可以添加执行列表更新操作的[ListExecuteListener]，
+ * 当[ListExecuteListener.onExecute]被调用时，表示开始执行列表更新操作，该监听用于构建双向通信。
+ *
  * @author xcc
  * @date 2021/12/9
  */
@@ -151,16 +157,17 @@ class CoroutineListDiffer<T : Any>(
     }
 
     /**
-     * 当提交新列表，并将更新操作分发给[ListExecuteListener]时:
+     * 若[CoroutineListDiffer]和[ListUpdater]构建了双向通信，
+     * 则提交新列表，并将更新操作分发给[ListExecuteListener]时:
      * ### [newList]是[MutableList]类型
      * [CoroutineListDiffer]中的sourceList直接赋值替换为[newList]，
      * [ListUpdater]中的sourceList通过[addAll]更新为[newList]，
-     * 整个过程仅[ListUpdater]的[addAll]copy了一次数组。
+     * 整个过程仅[ListUpdater]的[addAll]copy一次数组。
      *
      * ### [newList]不是[MutableList]
      * [CoroutineListDiffer]中的sourceList通过创建[MutableList]更新为[newList]，
      * [ListUpdater]中的sourceList通过[addAll]更新为[newList]，
-     * 整个过程[CoroutineListDiffer]创建[MutableList]和[ListUpdater]的[addAll]copy了两次数组。
+     * 整个过程[CoroutineListDiffer]创建[MutableList]和[ListUpdater]的[addAll]copy两次数组。
      */
     @MainThread
     private suspend fun submitList(newList: List<T>) {
