@@ -7,4 +7,14 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="text_type1_pressed">#DDDDDD</color>
+    <color name="text_type1_unpressed">#E7E7E7</color>
+    <color name="text_type2_pressed">#6F97A0</color>
+    <color name="text_type2_unpressed">#7AA1AA</color>
+
+    <color name="text_type1_target_pressed">#87A088</color>
+    <color name="text_type1_target_unpressed">#91AA92</color>
+    <color name="text_type2_target_pressed">#A09F61</color>
+    <color name="text_type2_target_unpressed">#AAA96B</color>
 </resources>

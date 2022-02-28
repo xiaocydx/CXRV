@@ -9,10 +9,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.xiaocydx.recycler.binding.BindingDelegate
 import com.xiaocydx.recycler.binding.bindingDelegate
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.submitList
-import com.xiaocydx.recycler.multitype.ViewTypeDelegate
 import com.xiaocydx.sample.databinding.ItemTextType1Binding
 import com.xiaocydx.sample.databinding.ItemTextType2Binding
 import kotlinx.coroutines.CoroutineScope
@@ -70,25 +70,23 @@ fun Fragment.launchRepeatOnViewLifecycle(
 
 data class TextItem(val text: String, val type: String)
 
-fun getTextType1Delegate(): ViewTypeDelegate<TextItem, *> {
+fun getTextType1Delegate(): BindingDelegate<TextItem, ItemTextType1Binding> {
     return bindingDelegate(
         uniqueId = TextItem::text,
         inflate = ItemTextType1Binding::inflate
     ) {
-        onBindView { root.text = it.text }
-    }.typeLinker {
-        it.type == "type1"
+        typeLinker { it.type == "type1" }
+        onBindView { textView.text = it.text }
     }
 }
 
-fun getTextType2Delegate(): ViewTypeDelegate<TextItem, *> {
+fun getTextType2Delegate(): BindingDelegate<TextItem, ItemTextType2Binding> {
     return bindingDelegate(
         uniqueId = TextItem::text,
         inflate = ItemTextType2Binding::inflate
     ) {
-        onBindView { root.text = it.text }
-    }.typeLinker {
-        it.type == "type2"
+        typeLinker { it.type == "type2" }
+        onBindView { textView.text = it.text }
     }
 }
 
