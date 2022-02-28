@@ -36,7 +36,7 @@ class ItemVisibleTest {
     private val testItems = (0..99).map { it.toString() }
 
     @Before
-    fun setUp() {
+    fun setup() {
         scenario = ActivityScenario
             .launch(TestActivity::class.java)
             .moveToState(Lifecycle.State.CREATED)

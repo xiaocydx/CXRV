@@ -36,7 +36,7 @@ class SingleSelectionTest {
     )
 
     @Before
-    fun setUp() {
+    fun setup() {
         launch(TestActivity::class.java)
             .moveToState(Lifecycle.State.CREATED)
             .onActivity { activity ->

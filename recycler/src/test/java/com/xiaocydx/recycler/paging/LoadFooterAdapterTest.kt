@@ -37,7 +37,7 @@ class LoadFooterAdapterTest {
     private lateinit var scenario: ActivityScenario<TestActivity>
 
     @Before
-    fun setUp() {
+    fun setup() {
         scenario = ActivityScenario
             .launch(TestActivity::class.java)
             .moveToState(Lifecycle.State.CREATED)

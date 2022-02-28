@@ -38,7 +38,7 @@ class HeaderFooterTest {
     private val testItems = (0..19).map { it.toString() }
 
     @Before
-    fun setUp() {
+    fun setup() {
         scenario = launch(TestActivity::class.java)
             .moveToState(State.CREATED)
             .onActivity { activity ->
