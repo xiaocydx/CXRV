@@ -37,8 +37,8 @@ class ItemClickActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(contentView())
-        setUpItemClick()
-        setUpLongItemClick()
+        setupItemClick()
+        setupLongItemClick()
     }
 
     private fun contentView(): View {
@@ -67,27 +67,27 @@ class ItemClickActivity : AppCompatActivity() {
         }.also { recyclerView = it }
     }
 
-    private fun setUpItemClick() {
-        setUpItemClickByRecyclerView()
-        // setUpItemClickByListAdapter()
-        // setUpSimpleItemClickByListAdapter()
-        // setUpItemClickByViewTypeDelegate()
-        // setUpSimpleItemClickByViewTypeDelegate()
+    private fun setupItemClick() {
+        setupItemClickByRecyclerView()
+        // setupItemClickByListAdapter()
+        // setupSimpleItemClickByListAdapter()
+        // setupItemClickByViewTypeDelegate()
+        // setupSimpleItemClickByViewTypeDelegate()
     }
 
-    private fun setUpLongItemClick() {
-        setUpLongItemClickByRecyclerView()
-        // setUpLongItemClickByListAdapter()
-        // setUpSimpleLongItemClickByListAdapter()
-        // setUpLongItemClickByViewTypeDelegate()
-        // setUpSimpleLongItemClickByViewTypeDelegate()
+    private fun setupLongItemClick() {
+        setupLongItemClickByRecyclerView()
+        // setupLongItemClickByListAdapter()
+        // setupSimpleLongItemClickByListAdapter()
+        // setupLongItemClickByViewTypeDelegate()
+        // setupSimpleLongItemClickByViewTypeDelegate()
     }
 
     //region 设置item点击
     /**
      * 1.通过RecyclerView设置item点击，根据Adapter自身特性获取item
      */
-    private fun setUpItemClickByRecyclerView() {
+    private fun setupItemClickByRecyclerView() {
         recyclerView.doOnItemClick(adapter1) { holder, position ->
             showItemViewClickToast(prefix = "Adapter1", getItem(position))
         }
@@ -99,7 +99,7 @@ class ItemClickActivity : AppCompatActivity() {
     /**
      * 2.通过[ListAdapter]设置item点击
      */
-    private fun setUpItemClickByListAdapter() {
+    private fun setupItemClickByListAdapter() {
         adapter1.doOnItemClick { holder, item ->
             showItemViewClickToast(prefix = "Adapter1", item)
         }
@@ -109,9 +109,9 @@ class ItemClickActivity : AppCompatActivity() {
     }
 
     /**
-     * 3.通过[ListAdapter]设置item点击，是[setUpItemClickByListAdapter]的简化版本
+     * 3.通过[ListAdapter]设置item点击，是[setupItemClickByListAdapter]的简化版本
      */
-    private fun setUpSimpleItemClickByListAdapter() {
+    private fun setupSimpleItemClickByListAdapter() {
         adapter1.doOnSimpleItemClick { item ->
             showItemViewClickToast(prefix = "Adapter1", item)
         }
@@ -123,7 +123,7 @@ class ItemClickActivity : AppCompatActivity() {
     /**
      * 4.通过[ViewTypeDelegate]设置item点击
      */
-    private fun setUpItemClickByViewTypeDelegate() {
+    private fun setupItemClickByViewTypeDelegate() {
         type1Delegate.doOnItemClick { holder, item ->
             showItemViewClickToast(prefix = "Type1Delegate", item)
         }
@@ -144,9 +144,9 @@ class ItemClickActivity : AppCompatActivity() {
     }
 
     /**
-     * 5.通过[ViewTypeDelegate]设置item点击，是[setUpItemClickByViewTypeDelegate]的简化版本
+     * 5.通过[ViewTypeDelegate]设置item点击，是[setupItemClickByViewTypeDelegate]的简化版本
      */
-    private fun setUpSimpleItemClickByViewTypeDelegate() {
+    private fun setupSimpleItemClickByViewTypeDelegate() {
         type1Delegate.doOnSimpleItemClick { item ->
             showItemViewClickToast(prefix = "Type1Delegate", item)
         }
@@ -160,7 +160,7 @@ class ItemClickActivity : AppCompatActivity() {
     /**
      * 1.通过RecyclerView设置item长按，根据Adapter自身特性获取item
      */
-    private fun setUpLongItemClickByRecyclerView() {
+    private fun setupLongItemClickByRecyclerView() {
         recyclerView.doOnLongItemClick(adapter1) { holder, position ->
             showItemViewLongClickToast(prefix = "Adapter1", getItem(position))
             true
@@ -174,7 +174,7 @@ class ItemClickActivity : AppCompatActivity() {
     /**
      * 2.通过[ListAdapter]设置item长按
      */
-    private fun setUpLongItemClickByListAdapter() {
+    private fun setupLongItemClickByListAdapter() {
         adapter1.doOnLongItemClick { holder, item ->
             showItemViewLongClickToast(prefix = "Adapter1", item)
             true
@@ -186,9 +186,9 @@ class ItemClickActivity : AppCompatActivity() {
     }
 
     /**
-     * 3.通过[ListAdapter]设置item长按，是[setUpLongItemClickByListAdapter]的简化版本
+     * 3.通过[ListAdapter]设置item长按，是[setupLongItemClickByListAdapter]的简化版本
      */
-    private fun setUpSimpleLongItemClickByListAdapter() {
+    private fun setupSimpleLongItemClickByListAdapter() {
         adapter1.doOnSimpleLongItemClick { item ->
             showItemViewLongClickToast(prefix = "Adapter1", item)
             true
@@ -202,7 +202,7 @@ class ItemClickActivity : AppCompatActivity() {
     /**
      * 4.通过[ViewTypeDelegate]设置item长按
      */
-    private fun setUpLongItemClickByViewTypeDelegate() {
+    private fun setupLongItemClickByViewTypeDelegate() {
         type1Delegate.doOnLongItemClick { holder, item ->
             showItemViewLongClickToast(prefix = "Type1Delegate", item)
             true
@@ -227,9 +227,9 @@ class ItemClickActivity : AppCompatActivity() {
     }
 
     /**
-     * 5.通过[ViewTypeDelegate]设置item长按，是[setUpLongItemClickByViewTypeDelegate]的简化版本
+     * 5.通过[ViewTypeDelegate]设置item长按，是[setupLongItemClickByViewTypeDelegate]的简化版本
      */
-    private fun setUpSimpleLongItemClickByViewTypeDelegate() {
+    private fun setupSimpleLongItemClickByViewTypeDelegate() {
         type1Delegate.doOnSimpleLongItemClick { item ->
             showItemViewLongClickToast(prefix = "Type1Delegate", item)
             true
