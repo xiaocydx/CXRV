@@ -23,7 +23,7 @@ import com.xiaocydx.recycler.marker.RvDslMarker
  * 则自行创建[ItemTouchHelper]，完成[ItemTouchHelper.Callback]的配置。
  */
 fun <T : RecyclerView> T.addItemTouchCallback(callback: ItemTouchCallback): T {
-    dispatcher.addItemTouchCallback(callback)
+    this.itemTouchDispatcher.addItemTouchCallback(callback)
     return this
 }
 
@@ -31,7 +31,7 @@ fun <T : RecyclerView> T.addItemTouchCallback(callback: ItemTouchCallback): T {
  * 移除item触摸回调
  */
 fun <T : RecyclerView> T.removeItemTouchCallback(callback: ItemTouchCallback): T {
-    dispatcher.removeItemTouchCallback(callback)
+    this.itemTouchDispatcher.removeItemTouchCallback(callback)
     return this
 }
 
@@ -128,7 +128,7 @@ fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onSwipeRemoveItem()
     onSwipe { position, _ -> removeItemAt(position) }
 }
 
-private val RecyclerView.dispatcher: ItemTouchDispatcher
+private val RecyclerView.itemTouchDispatcher: ItemTouchDispatcher
     get() {
         var dispatcher: ItemTouchDispatcher? =
                 getTag(R.id.tag_item_touch_dispatcher) as? ItemTouchDispatcher
