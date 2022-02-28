@@ -5,7 +5,6 @@ import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewbinding.ViewBinding
-import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.marker.RvDslMarker
 
 /**
@@ -33,7 +32,7 @@ inline fun <T : Any, VB : ViewBinding> bindingAdapter(
     noinline inflate: Inflate<VB>,
     noinline areItemsTheSame: (oldItem: T, newItem: T) -> Boolean,
     block: BindingAdapterScope<T, VB>.() -> Unit
-): ListAdapter<T, *> = BindingAdapterScope(inflate, areItemsTheSame).apply(block)
+): BindingAdapter<T, VB> = BindingAdapterScope(inflate, areItemsTheSame).apply(block)
 
 /**
  * [BindingAdapter]的构建函数，适用于简单列表场景
@@ -58,7 +57,7 @@ inline fun <T : Any, VB : ViewBinding> bindingAdapter(
     noinline inflate: Inflate<VB>,
     crossinline uniqueId: (item: T) -> Any?,
     block: BindingAdapterScope<T, VB>.() -> Unit
-): ListAdapter<T, *> = bindingAdapter(
+): BindingAdapter<T, VB> = bindingAdapter(
     inflate = inflate,
     areItemsTheSame = { oldItem: T, newItem: T ->
         uniqueId(oldItem) == uniqueId(newItem)

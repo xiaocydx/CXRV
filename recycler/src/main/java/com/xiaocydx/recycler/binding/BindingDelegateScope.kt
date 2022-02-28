@@ -6,7 +6,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewbinding.ViewBinding
 import com.xiaocydx.recycler.marker.RvDslMarker
-import com.xiaocydx.recycler.multitype.ViewTypeDelegate
 import com.xiaocydx.recycler.widget.SpanSizeProvider
 
 /**
@@ -34,7 +33,7 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingDelegate(
     noinline inflate: Inflate<VB>,
     noinline areItemsTheSame: (oldItem: ITEM, newItem: ITEM) -> Boolean,
     block: BindingDelegateScope<ITEM, VB>.() -> Unit
-): ViewTypeDelegate<ITEM, *> {
+): BindingDelegate<ITEM, VB> {
     // viewType的值是类的JavaClass的hashCode，
     // 因此需要内联到调用处，在调用处生成匿名内部类。
     return object : BindingDelegateScope<ITEM, VB>(inflate, areItemsTheSame) {}.apply(block)
@@ -63,7 +62,7 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingDelegate(
     noinline inflate: Inflate<VB>,
     crossinline uniqueId: (item: ITEM) -> Any?,
     block: BindingDelegateScope<ITEM, VB>.() -> Unit
-): ViewTypeDelegate<ITEM, *> = bindingDelegate(
+): BindingDelegate<ITEM, VB> = bindingDelegate(
     inflate = inflate,
     areItemsTheSame = { oldItem: ITEM, newItem: ITEM ->
         uniqueId(oldItem) == uniqueId(newItem)
