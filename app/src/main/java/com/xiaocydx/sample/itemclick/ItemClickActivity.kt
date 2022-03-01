@@ -242,18 +242,18 @@ class ItemClickActivity : AppCompatActivity() {
     //endregion
 
     private fun showItemViewClickToast(prefix: String, item: TextItem) {
-        showToast("$prefix 点击itemView \nitem.text = ${item.text}")
+        showToast("$prefix 点击[itemView] ${item.text}")
     }
 
     private fun showTargetViewClickToast(prefix: String, item: TextItem) {
-        showToast("$prefix 点击targetView \nitem.text = ${item.text}")
+        showToast("$prefix 点击[targetView] ${item.text}")
     }
 
     private fun showItemViewLongClickToast(prefix: String, item: TextItem) {
-        showToast("$prefix 长按itemView \nitem.text = ${item.text}")
+        showToast("$prefix 长按[itemView] ${item.text}")
     }
 
     private fun showTargetViewLongClickToast(prefix: String, item: TextItem) {
-        showToast("$prefix 长按targetView \nitem.text = ${item.text}")
+        showToast("$prefix 长按[targetView] ${item.text}")
     }
 }
