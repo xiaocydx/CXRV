@@ -3,13 +3,12 @@ package com.xiaocydx.recycler.extension
 import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_DOWN
 import android.view.View
-import android.view.View.OnClickListener
-import android.view.View.OnAttachStateChangeListener
-import android.view.View.OnLongClickListener
+import android.view.View.*
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.isTouched
 import com.xiaocydx.recycler.R
+import com.xiaocydx.recycler.extension.ItemClickDispatcher.DispatchTarget
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.doOnAttach
 import com.xiaocydx.recycler.list.getItem

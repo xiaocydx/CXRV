@@ -29,7 +29,6 @@ internal fun RecyclerView.isViewHolderRemoved(child: View): Boolean {
     return getChildViewHolder(child)?.isRemoved ?: return false
 }
 
-@PublishedApi
 internal fun View.isTouched(rawX: Float, rawY: Float): Boolean {
     if (!isVisible) {
         return false

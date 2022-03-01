@@ -23,7 +23,7 @@ import com.xiaocydx.recycler.marker.RvDslMarker
  * 则自行创建[ItemTouchHelper]，完成[ItemTouchHelper.Callback]的配置。
  */
 fun <T : RecyclerView> T.addItemTouchCallback(callback: ItemTouchCallback): T {
-    this.itemTouchDispatcher.addItemTouchCallback(callback)
+    itemTouchDispatcher.addItemTouchCallback(callback)
     return this
 }
 
@@ -31,7 +31,7 @@ fun <T : RecyclerView> T.addItemTouchCallback(callback: ItemTouchCallback): T {
  * 移除item触摸回调
  */
 fun <T : RecyclerView> T.removeItemTouchCallback(callback: ItemTouchCallback): T {
-    this.itemTouchDispatcher.removeItemTouchCallback(callback)
+    itemTouchDispatcher.removeItemTouchCallback(callback)
     return this
 }
 
