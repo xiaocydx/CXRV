@@ -17,12 +17,62 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 /**
+ * 若`itemView`触发点击，则调用[block]
+ *
+ * ```
+ * recyclerView.doOnItemClick { holder, position ->
+ *     ...
+ * }
+ * ```
+ * **注意**：[block]的逻辑会覆盖`itemView`已经设置的[OnClickListener]。
+ * 函数的实现会在合适的时机清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ */
+inline fun <RV : RecyclerView> RV.doOnItemClick(
+    crossinline block: (holder: ViewHolder, position: Int) -> Unit
+): RV {
+    itemClickDispatcher.addItemClick(
+        targetView = { itemView, _ -> itemView },
+        clickHandler = handler@{ itemView ->
+            val holder = getChildViewHolder(itemView) ?: return@handler
+            block(holder, holder.absoluteAdapterPosition)
+        }
+    )
+    return this
+}
+
+/**
+ * 若`itemView`触发长按，则调用[block]
+ *
+ * [block]返回`true`表示消费了长按，松手时不会触发点击
+ * ```
+ * recyclerView.doOnLongItemClick { holder, position ->
+ *     ...
+ *     true
+ * }
+ * ```
+ * **注意**：[block]的逻辑会覆盖`itemView`已经设置的[OnLongClickListener]。
+ * 函数的实现会在合适的时机清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ */
+inline fun <RV : RecyclerView> RV.doOnLongItemClick(
+    crossinline block: (holder: ViewHolder, position: Int) -> Boolean
+): RV {
+    itemClickDispatcher.addLongItemClick(
+        targetView = { itemView, _ -> itemView },
+        longClickHandler = handler@{ itemView ->
+            val holder = getChildViewHolder(itemView) ?: return@handler false
+            block(holder, holder.absoluteAdapterPosition)
+        }
+    )
+    return this
+}
+
+/**
  * 若触发点击的[target]的[ViewHolder.mBindingAdapter]跟[adapter]相同，则调用[block]
  *
- * [block]的Receiver为[adapter]，当[block]被调用时，可以根据[adapter]自身特性获取item：
+ * [block]的Receiver为[adapter]，当[block]被调用时，可以根据[adapter]自身特性获取`item`：
  * ```
  * recyclerView.doOnItemClick(
- *     adapter = adapter,
+ *     adapter = listAdapter,
  *     target = { targetView }
  * ) { holder, position ->
  *     val item = getItem(position)
@@ -61,10 +111,10 @@ inline fun <AdapterT, VH, RV> RV.doOnItemClick(
  * 若触发长按的[target]的[ViewHolder.mBindingAdapter]跟[adapter]相同，则调用[block]
  *
  * * [block]返回`true`表示消费了长按，松手时不会触发点击。
- * * [block]的Receiver为[adapter]，当[block]被调用时，可以根据[adapter]自身特性获取item：
+ * * [block]的Receiver为[adapter]，当[block]被调用时，可以根据[adapter]自身特性获取`item`：
  * ```
  * recyclerView.doOnLongItemClick(
- *     adapter = adapter,
+ *     adapter = listAdapter,
  *     target = { targetView }
  * ) { holder, position ->
  *     val item = getItem(position)
