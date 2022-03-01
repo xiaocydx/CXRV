@@ -37,6 +37,7 @@ import kotlin.collections.ArrayList
  * }
  * ```
  * **注意**：[block]的逻辑会覆盖[target]已经设置的[OnClickListener]。
+ * 函数的实现会在合适的时机清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
  */
 inline fun <AdapterT, VH, RV> RV.doOnItemClick(
     adapter: AdapterT,
@@ -80,6 +81,7 @@ inline fun <AdapterT, VH, RV> RV.doOnItemClick(
  * }
  * ```
  * **注意**：[block]的逻辑会覆盖[target]已经设置的[OnLongClickListener]。
+ * 函数的实现会在合适的时机清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
  */
 inline fun <AdapterT, VH, RV> RV.doOnLongItemClick(
     adapter: AdapterT,
@@ -92,7 +94,7 @@ inline fun <AdapterT, VH, RV> RV.doOnLongItemClick(
             val holder = adapter.getValidViewHolder(itemView) ?: return@view null
             holder.optimizeTargetView(holder.target(), event)
         },
-        clickHandler = handler@{ itemView ->
+        longClickHandler = handler@{ itemView ->
             val holder = adapter.getValidViewHolder(itemView) ?: return@handler false
             adapter.block(holder, holder.bindingAdapterPosition)
         }
@@ -120,6 +122,7 @@ inline fun <AdapterT, VH, RV> RV.doOnLongItemClick(
  * }
  * ```
  * **注意**：[block]的逻辑会覆盖[target]已经设置的[OnClickListener]。
+ * 函数的实现会在合适的时机清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
  */
 inline fun <AdapterT, ITEM, VH> AdapterT.doOnItemClick(
     crossinline target: VH.() -> View? = { itemView },
@@ -147,6 +150,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.doOnItemClick(
  * }
  * ```
  * **注意**：[block]的逻辑会覆盖`itemView`已经设置的[OnClickListener]。
+ * 函数的实现会在合适的时机清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
  */
 inline fun <AdapterT, ITEM, VH> AdapterT.doOnSimpleItemClick(
     crossinline block: (item: ITEM) -> Unit
@@ -178,6 +182,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.doOnSimpleItemClick(
  * }
  * ```
  * **注意**：[block]的逻辑会覆盖[target]已经设置的[OnLongClickListener]。
+ * 函数的实现会在合适的时机清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
  */
 inline fun <AdapterT, ITEM, VH> AdapterT.doOnLongItemClick(
     crossinline target: VH.() -> View? = { itemView },
@@ -206,6 +211,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.doOnLongItemClick(
  * }
  * ```
  * **注意**：[block]的逻辑会覆盖`itemView`已经设置的[OnLongClickListener]。
+ * 函数的实现会在合适的时机清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
  */
 inline fun <AdapterT, ITEM, VH> AdapterT.doOnSimpleLongItemClick(
     crossinline block: (item: ITEM) -> Boolean
@@ -234,6 +240,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.doOnSimpleLongItemClick(
  * }
  * ```
  * **注意**：[block]的逻辑会覆盖[target]已经设置的[OnClickListener]。
+ * 函数的实现会在合适的时机清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
  */
 @Suppress("UNCHECKED_CAST")
 inline fun <DelegateT, ITEM, VH> DelegateT.doOnItemClick(
@@ -271,6 +278,7 @@ inline fun <DelegateT, ITEM, VH> DelegateT.doOnItemClick(
  * }
  * ```
  * **注意**：[block]的逻辑会覆盖`itemView`已经设置的[OnClickListener]。
+ * 函数的实现会在合适的时机清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
  */
 inline fun <DelegateT, ITEM, VH> DelegateT.doOnSimpleItemClick(
     crossinline block: (item: ITEM) -> Unit
@@ -302,6 +310,7 @@ inline fun <DelegateT, ITEM, VH> DelegateT.doOnSimpleItemClick(
  * }
  * ```
  * **注意**：[block]的逻辑会覆盖[target]已经设置的[OnLongClickListener]。
+ * 函数的实现会在合适的时机清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
  */
 @Suppress("UNCHECKED_CAST")
 inline fun <DelegateT, ITEM, VH> DelegateT.doOnLongItemClick(
@@ -341,6 +350,7 @@ inline fun <DelegateT, ITEM, VH> DelegateT.doOnLongItemClick(
  * }
  * ```
  * **注意**：[block]的逻辑会覆盖`itemView`已经设置的[OnLongClickListener]。
+ * 函数的实现会在合适的时机清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
  */
 inline fun <DelegateT, ITEM, VH> DelegateT.doOnSimpleLongItemClick(
     crossinline block: (item: ITEM) -> Boolean
@@ -382,15 +392,15 @@ internal val RecyclerView.itemClickDispatcher: ItemClickDispatcher
  * 1.当RecyclerView的[onInterceptTouchEvent]的触摸事件为[ACTION_DOWN]时，
  * 找到可能触发点击或者长按的[DispatchTarget]，对其设置点击、长按监听，并添加到待处理集合中。
  * 2.若[onClick]或者[onLongClick]被调用，则说明第1步的待处理集合中有符合条件的[DispatchTarget]，
- * 因此遍历待处理集合，调用[DispatchTarget.tryPerformClick]或者[DispatchTarget.tryPerformLongClick]。
+ * 因此遍历待处理集合，尝试执行点击或者长按的处理程序。
  */
 @PublishedApi
 internal class ItemClickDispatcher(
     private val rv: RecyclerView
 ) : SimpleOnItemTouchListener(), OnClickListener, OnLongClickListener {
     private var dispatchTargets: ArrayList<DispatchTarget>? = null
-    private var pendingClickTargets: ArrayList<DispatchTarget>? = null
-    private var pendingLongClickTargets: ArrayList<DispatchTarget>? = null
+    private var pendingClickTargets: ArrayList<ClickDispatchTarget>? = null
+    private var pendingLongClickTargets: ArrayList<LongClickDispatchTarget>? = null
 
     init {
         rv.addOnItemTouchListener(this)
@@ -408,22 +418,22 @@ internal class ItemClickDispatcher(
         clickHandler: (itemView: View) -> Unit
     ): Disposable = DispatchTargetObserver(
         dispatcher = this,
-        target = DispatchTarget.Click(targetView, clickHandler)
+        target = ClickDispatchTarget(targetView, clickHandler)
     )
 
     /**
      * 添加长按分发目标
      *
-     * @param targetView   返回需要触发长按的目标视图
-     * @param clickHandler 触发目标视图长按时的执行程序，返回`true`表示消费了长按，松手时不会触发点击
+     * @param targetView       返回需要触发长按的目标视图
+     * @param longClickHandler 触发目标视图长按时的执行程序，返回`true`表示消费了长按，松手时不会触发点击
      * @return 调用[Disposable.dispose]移除添加的长按分发目标
      */
     fun addLongItemClick(
         targetView: (itemView: View, event: MotionEvent) -> View?,
-        clickHandler: (itemView: View) -> Boolean
+        longClickHandler: (itemView: View) -> Boolean
     ): Disposable = DispatchTargetObserver(
         dispatcher = this,
-        target = DispatchTarget.LongClick(targetView, clickHandler)
+        target = LongClickDispatchTarget(targetView, longClickHandler)
     )
 
     /**
@@ -442,35 +452,35 @@ internal class ItemClickDispatcher(
                 // continue
                 return@accessEach
             }
-            if (it.setOnClickListener(this)) {
-                addPendingClickTarget(it)
-                // continue
-                return@accessEach
-            }
-            if (it.setOnLongClickListener(this)) {
-                addPendingLongClickTarget(it)
+            when {
+                it is ClickDispatchTarget && it.setOnClickListener(this) -> {
+                    addPendingClickTarget(it)
+                }
+                it is LongClickDispatchTarget && it.setOnLongClickListener(this) -> {
+                    addPendingLongClickTarget(it)
+                }
             }
         }
         return false
     }
 
     /**
-     * 触发了点击，说明[pendingClickTargets]中有符合条件的[DispatchTarget]
+     * 触发了点击，说明[pendingClickTargets]中有符合条件的[ClickDispatchTarget]
      */
     override fun onClick(view: View) {
         val itemView = rv.findContainingItemView(view) ?: return
-        pendingClickTargets?.accessEach { it.tryPerformClick(view, itemView) }
+        pendingClickTargets?.accessEach { it.tryPerformClickHandler(view, itemView) }
         clearPendingClickTargets()
     }
 
     /**
-     * 触发了长按，说明[pendingLongClickTargets]中有符合条件的[DispatchTarget]
+     * 触发了长按，说明[pendingLongClickTargets]中有符合条件的[LongClickDispatchTarget]
      */
     override fun onLongClick(view: View): Boolean {
         val itemView = rv.findContainingItemView(view) ?: return false
         var consumed = false
         pendingLongClickTargets?.accessEach {
-            if (it.tryPerformLongClick(view, itemView)) {
+            if (it.tryPerformLongClickHandler(view, itemView)) {
                 consumed = true
             }
         }
@@ -491,14 +501,14 @@ internal class ItemClickDispatcher(
         dispatchTargets?.remove(target)
     }
 
-    private fun addPendingClickTarget(target: DispatchTarget) {
+    private fun addPendingClickTarget(target: ClickDispatchTarget) {
         if (pendingClickTargets == null) {
             pendingClickTargets = ArrayList(2)
         }
         pendingClickTargets!!.add(target)
     }
 
-    private fun addPendingLongClickTarget(target: DispatchTarget) {
+    private fun addPendingLongClickTarget(target: LongClickDispatchTarget) {
         if (pendingLongClickTargets == null) {
             pendingLongClickTargets = ArrayList(2)
         }
@@ -535,23 +545,11 @@ internal class ItemClickDispatcher(
         }
     }
 
-    /**
-     * 分发目标
-     *
-     * ### 分发目标类型
-     * [DispatchTarget]只包含[clickHandler]和[longClickHandler]的其中一个，
-     * [DispatchTarget.Click]创建点击分发目标，[DispatchTarget.LongClick]创建长按分发目标。
-     *
-     * ### 分发目标设置
-     * 1.触摸事件为[ACTION_DOWN]时，调用[setCurrentTargetView]设置[currentTargetView]。
-     * 2.调用[setOnClickListener]和[setOnLongClickListener]对[currentTargetView]设置点击、长按监听。
-     */
-    private class DispatchTarget private constructor(
-        private val targetView: (itemView: View, event: MotionEvent) -> View?,
-        private val clickHandler: ((itemView: View) -> Unit)? = null,
-        private val longClickHandler: ((itemView: View) -> Boolean)? = null
+    private sealed class DispatchTarget(
+        private val targetView: (itemView: View, event: MotionEvent) -> View?
     ) : OnAttachStateChangeListener {
-        private var currentTargetView: View? = null
+        protected var currentTargetView: View? = null
+            private set
 
         /**
          * 设置[currentTargetView]
@@ -567,53 +565,7 @@ internal class ItemClickDispatcher(
             return targetView != null
         }
 
-        /**
-         * 将[listener]设置给[currentTargetView]，成功则返回`true`，失败则返回`false`
-         */
-        fun setOnClickListener(listener: OnClickListener): Boolean {
-            if (clickHandler == null || currentTargetView == null) {
-                return false
-            }
-            currentTargetView!!.setOnClickListener(listener)
-            return true
-        }
-
-        /**
-         * 将[listener]设置给[currentTargetView]，成功则返回`true`，失败则返回`false`
-         */
-        fun setOnLongClickListener(listener: OnLongClickListener): Boolean {
-            if (longClickHandler == null || currentTargetView == null) {
-                return false
-            }
-            currentTargetView!!.setOnLongClickListener(listener)
-            return true
-        }
-
-        /**
-         * 若[view]等于[currentTargetView]，则执行[clickHandler]
-         */
-        fun tryPerformClick(view: View, itemView: View) {
-            if (view == currentTargetView) {
-                clickHandler?.invoke(itemView)
-            }
-        }
-
-        /**
-         * 若[view]等于[currentTargetView]，则执行[longClickHandler]，
-         * 返回`true`表示执行了[longClickHandler]，并消费了长按，不触发点击，
-         * 返回`false`表示未执行[longClickHandler]，或者执行了但不消费长按。
-         */
-        fun tryPerformLongClick(view: View, itemView: View): Boolean {
-            var consumed = false
-            if (view == currentTargetView && longClickHandler != null) {
-                consumed = longClickHandler.invoke(itemView)
-            }
-            return consumed
-        }
-
-        override fun onViewAttachedToWindow(v: View?) {
-
-        }
+        override fun onViewAttachedToWindow(v: View?): Unit = Unit
 
         /**
          * [currentTargetView]从Window上分离时，清除全部监听，
@@ -625,26 +577,61 @@ internal class ItemClickDispatcher(
 
         private fun clearCurrentTargetViewListeners() {
             val current = currentTargetView ?: return
-            if (clickHandler != null) {
-                current.setOnClickListener(null)
-            } else if (longClickHandler != null) {
-                current.setOnLongClickListener(null)
+            when (this) {
+                is ClickDispatchTarget -> current.setOnClickListener(null)
+                is LongClickDispatchTarget -> current.setOnLongClickListener(null)
             }
             current.removeOnAttachStateChangeListener(this)
             currentTargetView = null
         }
+    }
 
-        @Suppress("FunctionName")
-        companion object {
-            fun Click(
-                targetView: (itemView: View, event: MotionEvent) -> View?,
-                clickHandler: (itemView: View) -> Unit
-            ): DispatchTarget = DispatchTarget(targetView, clickHandler = clickHandler)
+    private class ClickDispatchTarget(
+        targetView: (itemView: View, event: MotionEvent) -> View?,
+        private val clickHandler: (itemView: View) -> Unit,
+    ) : DispatchTarget(targetView) {
 
-            fun LongClick(
-                targetView: (itemView: View, event: MotionEvent) -> View?,
-                clickHandler: (itemView: View) -> Boolean
-            ): DispatchTarget = DispatchTarget(targetView, longClickHandler = clickHandler)
+        /**
+         * 将[listener]设置给[currentTargetView]，成功则返回`true`，失败则返回`false`
+         */
+        fun setOnClickListener(listener: OnClickListener): Boolean {
+            currentTargetView?.setOnClickListener(listener) ?: return false
+            return true
+        }
+
+        /**
+         * 若[view]等于[currentTargetView]，则执行[clickHandler]
+         */
+        fun tryPerformClickHandler(view: View, itemView: View) {
+            if (view == currentTargetView) {
+                clickHandler.invoke(itemView)
+            }
+        }
+    }
+
+    private class LongClickDispatchTarget(
+        targetView: (itemView: View, event: MotionEvent) -> View?,
+        private val longClickHandler: (itemView: View) -> Boolean,
+    ) : DispatchTarget(targetView) {
+
+        /**
+         * 将[listener]设置给[currentTargetView]，成功则返回`true`，失败则返回`false`
+         */
+        fun setOnLongClickListener(listener: OnLongClickListener): Boolean {
+            currentTargetView?.setOnLongClickListener(listener) ?: return false
+            return true
+        }
+
+        /**
+         * 若[view]等于[currentTargetView]，则执行[longClickHandler]，
+         * 返回`true`表示执行了[longClickHandler]，并消费了长按，不触发点击，
+         * 返回`false`表示未执行[longClickHandler]，或者执行了但不消费长按。
+         */
+        fun tryPerformLongClickHandler(view: View, itemView: View): Boolean {
+            if (view == currentTargetView) {
+                return longClickHandler.invoke(itemView)
+            }
+            return false
         }
     }
 }
