@@ -63,7 +63,7 @@ inline fun <AdapterT, VH, RV> RV.itemTouch(
     adapter: AdapterT,
     block: ItemTouchScope<AdapterT, VH>.() -> Unit
 ): RV
-    where AdapterT : Adapter<VH>, VH : ViewHolder, RV : RecyclerView {
+    where AdapterT : Adapter<out VH>, VH : ViewHolder, RV : RecyclerView {
     return addItemTouchCallback(ItemTouchScope(adapter, this).apply(block))
 }
 
@@ -90,7 +90,7 @@ inline fun <AdapterT, VH, RV> RV.itemTouch(
 inline fun <AdapterT, ITEM, VH> AdapterT.itemTouch(
     crossinline block: ItemTouchScope<AdapterT, VH>.() -> Unit
 ): AdapterT
-    where AdapterT : ListAdapter<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     doOnAttach { rv -> rv.itemTouch(this, block) }
     return this
 }
@@ -106,7 +106,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.itemTouch(
  * ```
  */
 fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onDragSwapItem()
-    where AdapterT : ListAdapter<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     onDrag { from, to ->
         swapItem(from, to)
         true
@@ -124,7 +124,7 @@ fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onDragSwapItem()
  * ```
  */
 fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onSwipeRemoveItem()
-    where AdapterT : ListAdapter<ITEM, VH>, ITEM : Any, VH : ViewHolder {
+    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     onSwipe { position, _ -> removeItemAt(position) }
 }
 
@@ -380,7 +380,7 @@ abstract class ItemTouchCallback {
  */
 @RvDslMarker
 @Suppress("UNCHECKED_CAST", "NEWER_VERSION_IN_SINCE_KOTLIN")
-class ItemTouchScope<AdapterT : Adapter<VH>, VH : ViewHolder>
+class ItemTouchScope<AdapterT : Adapter<out VH>, VH : ViewHolder>
 @PublishedApi internal constructor(
     private val adapter: AdapterT,
     private val rv: RecyclerView

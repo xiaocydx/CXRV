@@ -26,7 +26,7 @@ interface ListOwner<T : Any> {
 /**
  * item数量
  */
-val <T : Any> ListOwner<T>.size: Int
+val ListOwner<*>.size: Int
     get() = currentList.size
 
 /**
@@ -51,14 +51,14 @@ inline fun <T : Any> ListOwner<out T>.getItemOrNull(
 /**
  * [position]是否为第一个item
  */
-fun <T : Any> ListOwner<T>.isFirstItem(position: Int): Boolean {
+fun ListOwner<*>.isFirstItem(position: Int): Boolean {
     return currentList.isNotEmpty() && position == 0
 }
 
 /**
  * [position]是否为最后一个item
  */
-fun <T : Any> ListOwner<T>.isLastItem(position: Int): Boolean {
+fun ListOwner<*>.isLastItem(position: Int): Boolean {
     return position == currentList.lastIndex
 }
 
@@ -107,7 +107,7 @@ fun <T : Any> ListOwner<T>.addItems(position: Int, items: List<T>) {
  *
  * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  */
-fun <T : Any> ListOwner<T>.removeItemAt(position: Int) {
+fun ListOwner<*>.removeItemAt(position: Int) {
     updateList(UpdateOp.RemoveItemAt(position))
 }
 
@@ -117,7 +117,7 @@ fun <T : Any> ListOwner<T>.removeItemAt(position: Int) {
  * @param fromPosition 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  * @param toPosition   取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  */
-fun <T : Any> ListOwner<T>.swapItem(fromPosition: Int, toPosition: Int) {
+fun ListOwner<*>.swapItem(fromPosition: Int, toPosition: Int) {
     updateList(UpdateOp.SwapItem(fromPosition, toPosition))
 }
 
@@ -194,7 +194,7 @@ inline fun <T : Any> ListOwner<T>.setLastNotNull(block: (item: T) -> T?) {
 /**
  * 清空列表
  */
-fun <T : Any> ListOwner<T>.clear() {
+fun ListOwner<*>.clear() {
     submitList(emptyList())
 }
 
