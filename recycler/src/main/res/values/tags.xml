@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="tag_recycler_padding_rect" type="id" />
     <item name="tag_span_size_lookup" type="id" />
     <item name="tag_divider_offsets_rect" type="id" />
     <item name="tag_span_params" type="id" />
