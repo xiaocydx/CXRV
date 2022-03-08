@@ -1,49 +1,18 @@
 package com.xiaocydx.recycler.list
 
 import androidx.annotation.MainThread
-import com.xiaocydx.recycler.extension.flowOnMain
-import kotlinx.coroutines.*
+import com.xiaocydx.recycler.extension.reverseAccessEach
+import com.xiaocydx.recycler.extension.runOnMainThread
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.flow.*
-
-private const val LIST_COLLECTOR_KEY = "com.xiaocydx.recycler.list.LIST_COLLECTOR_KEY"
-
-/**
- * 列表数据收集器，负责收集指定流的[ListData]
- */
-val <T : Any> ListAdapter<T, *>.listCollector: ListCollector<T>
-    get() {
-        var collector =
-                getTag<ListCollector<T>>(LIST_COLLECTOR_KEY)
-        if (collector == null) {
-            collector = ListCollector(this)
-            setTag(LIST_COLLECTOR_KEY, collector)
-        }
-        return collector
-    }
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.job
+import java.util.*
 
 /**
- * 收集[flow]的所有值，并将它们发送给[listCollector]，是一种简化写法
- *
- * ```
- * val adapter: ListAdapter<Foo, *> = ...
- * flow.collect { value ->
- *     adapter.listCollector.emit(value)
- * }
- *
- * // 简化上面的写法
- * adapter.listCollector.emitAll(flow)
- *
- * // 再进行简化
- * adapter.emitAll(flow)
- * ```
- */
-suspend fun <T : Any> ListAdapter<T, *>.emitAll(
-    flow: Flow<ListData<T>>
-) = listCollector.emitAll(flow)
-
-/**
+ * // FIXME: 2022/3/8 修正注释
  * 列表状态，提供[ListData]数据流和[ListOwner]
  *
  * ```
@@ -73,128 +42,154 @@ suspend fun <T : Any> ListAdapter<T, *>.emitAll(
  * }
  * ```
  */
-class ListState<T : Any>(
-    scope: CoroutineScope,
-    initList: List<T>? = null
-) : ListOwner<T> {
-    private val mediator = ListMediatorImpl(initList)
-    override val currentList: List<T>
-        get() = mediator.currentList
-    val flow: Flow<ListData<T>> = ListDataStateFlow(scope, mediator.flow, mediator)
+class ListState<T : Any> : ListOwner<T> {
+    private var listeners: ArrayList<(UpdateOp<T>) -> Unit>? = null
+    private val sourceList: MutableList<T> = mutableListOf()
+    override val currentList: List<T> = sourceList.toReadOnlyList()
+    internal var updateVersion: Int = 0
+        private set
 
     override fun updateList(op: UpdateOp<T>) {
-        mediator.updateList(op, dispatch = true)
+        updateList(op, dispatch = true)
     }
 
-    private inner class ListMediatorImpl(
-        initList: List<T>?
-    ) : ListMediator<T> {
-        private val updater: ListUpdater<T> =
-                ListUpdater(sourceList = initList?.ensureMutable() ?: mutableListOf())
-        private val channel: Channel<UpdateOp<T>> = Channel(Channel.UNLIMITED)
-        override var updateVersion = 0
-            private set
-        override val currentList: List<T>
-            get() = updater.currentList
-
-        val flow: Flow<UpdateOp<T>> =
-                channel.receiveAsFlow()
-                    .onEach { updateVersion++ }
-                    .flowOnMain()
-
-        init {
-            updater.setUpdatedListener {
-                channel.trySend(it)
-            }
+    /**
+     * 更新列表
+     *
+     * @param dispatch 是否将更新操作分发给[listeners]
+     */
+    internal fun updateList(op: UpdateOp<T>, dispatch: Boolean) = runOnMainThread {
+        updateVersion++
+        val succeed = when (op) {
+            is UpdateOp.SubmitList -> submitList(op.newList)
+            is UpdateOp.SetItem -> setItem(op.position, op.item)
+            is UpdateOp.AddItem -> addItem(op.position, op.item)
+            is UpdateOp.AddItems -> addItems(op.position, op.items)
+            is UpdateOp.RemoveItemAt -> removeItemAt(op.position)
+            is UpdateOp.SwapItem -> swapItem(op.fromPosition, op.toPosition)
         }
-
-        override fun execute(op: UpdateOp<T>) {
-            updateList(op, dispatch = false)
-        }
-
-        fun updateList(op: UpdateOp<T>, dispatch: Boolean) {
-            updater.updateList(op, dispatch)
-        }
-    }
-}
-
-/**
- * 列表数据收集器，负责收集指定流的[ListData]
- */
-class ListCollector<T : Any> internal constructor(
-    private val adapter: ListAdapter<T, *>
-) : FlowCollector<ListData<T>> {
-    private var updateVersion = 0
-    private var resumeJob: Job? = null
-    private var mediator: ListMediator<T>? = null
-
-    init {
-        adapter.addListExecuteListener { op ->
-            mediator?.execute(op)
+        if (succeed && dispatch) {
+            listeners?.reverseAccessEach { it(op) }
         }
     }
 
-    override suspend fun emit(
-        value: ListData<T>
-    ): Unit = withContext(Dispatchers.Main.immediate) {
-        mediator = value.mediator
-        // 此处resumeJob若使用var局部变量，则编译后resumeJob会是ObjectRef对象，
-        // 收集操作流期间，value.flow传入的FlowCollector会一直持有ObjectRef对象引用，
-        // resumeJob执行完之后置空，ObjectRef对象内的Job可以被GC，但ObjectRef对象本身无法被GC。
-        resumeJob = launchResumeJob(value.mediator)
-        resumeJob?.invokeOnCompletion { resumeJob = null }
-        value.flow.collect { op ->
-            // 等待恢复任务执行完毕，才处理后续的更新操作
-            resumeJob?.join()
-            handleUpdateOp(op)
+    internal fun addUpdatedListener(
+        listener: (UpdateOp<T>) -> Unit
+    ) = runOnMainThread {
+        if (listeners == null) {
+            listeners = arrayListOf()
         }
+        if (!listeners!!.contains(listener)) {
+            listeners!!.add(listener)
+        }
+    }
+
+    internal fun removeUpdatedListener(
+        listener: (UpdateOp<T>) -> Unit
+    ) = runOnMainThread {
+        listeners?.remove(listener)
+    }
+
+    /**
+     * 若[ListState]和[CoroutineListDiffer]构建了双向通信，
+     * 则提交新列表，并将更新操作分发给[listeners]时:
+     * ### [newList]是[MutableList]类型
+     * [ListState]中的sourceList通过[addAll]更新为[newList]，
+     * [CoroutineListDiffer]中的sourceList直接赋值替换为[newList]，
+     * 整个过程仅[ListState]的[addAll]copy一次数组。
+     *
+     * ### [newList]不是[MutableList]
+     * [ListState]中的sourceList通过[addAll]更新为[newList]，
+     * [CoroutineListDiffer]中的sourceList通过创建[MutableList]更新为[newList]，
+     * 整个过程[ListState]的[addAll]和[CoroutineListDiffer]创建[MutableList]copy两次数组。
+     */
+    @MainThread
+    private fun submitList(newList: List<T>): Boolean {
+        if (newList.isEmpty()) {
+            sourceList.clear()
+        } else {
+            sourceList.clear()
+            sourceList.addAll(newList)
+        }
+        return true
     }
 
     @MainThread
-    private fun CoroutineScope.launchResumeJob(mediator: ListMediator<T>): Job? {
-        if (mediator.updateVersion == updateVersion) {
-            return null
+    private fun setItem(position: Int, item: T): Boolean {
+        if (position !in sourceList.indices) {
+            return false
         }
-        // 无需调度时，协程的启动恢复不是同步执行，而是通过事件循环进行恢复，
-        // 因此启动模式设为UNDISPATCHED，确保在收集事件流之前执行恢复任务。
-        return launch(start = CoroutineStart.UNDISPATCHED) {
-            handleUpdateOp(UpdateOp.SubmitList(mediator.currentList))
-        }
+        sourceList[position] = item
+        return true
     }
 
-    private suspend fun handleUpdateOp(op: UpdateOp<T>) {
-        adapter.awaitUpdateList(op, dispatch = false)
-        updateVersion = mediator?.updateVersion ?: 0
+    @MainThread
+    private fun addItem(position: Int, item: T): Boolean {
+        if (position !in 0..sourceList.size) {
+            return false
+        }
+        sourceList.add(position, item)
+        return true
+    }
+
+    @MainThread
+    private fun addItems(position: Int, items: List<T>): Boolean {
+        if (position !in 0..sourceList.size) {
+            return false
+        }
+        return sourceList.addAll(position, items)
+    }
+
+    @MainThread
+    private fun removeItemAt(position: Int): Boolean {
+        if (position !in sourceList.indices) {
+            return false
+        }
+        sourceList.removeAt(position)
+        return true
+    }
+
+    @MainThread
+    private fun swapItem(fromPosition: Int, toPosition: Int): Boolean {
+        if (fromPosition !in sourceList.indices
+                || toPosition !in sourceList.indices) {
+            return false
+        }
+        Collections.swap(sourceList, fromPosition, toPosition)
+        return true
     }
 }
 
-/**
- * 列表数据的容器
- */
-data class ListData<T : Any> internal constructor(
-    internal val flow: Flow<UpdateOp<T>>,
-    internal val mediator: ListMediator<T>
-)
+fun <T : Any> ListState<T>.asFlow(scope: CoroutineScope): Flow<ListData<T>> {
+    val mediator = ListMediatorImpl(scope, this)
+    return ListDataStateFlow(scope, mediator.flow, mediator)
+}
 
-/**
- * 提供列表相关的访问属性、执行函数
- */
-internal interface ListMediator<T : Any> {
+private class ListMediatorImpl<T : Any>(
+    scope: CoroutineScope,
+    private val listState: ListState<T>
+) : ListMediator<T> {
+    private val channel: Channel<UpdateOp<T>> = Channel(Channel.UNLIMITED)
+    override val updateVersion: Int
+        get() = listState.updateVersion
+    override val currentList: List<T>
+        get() = listState.currentList
 
-    /**
-     * 列表更新版本号
-     */
-    val updateVersion: Int
+    val flow: Flow<UpdateOp<T>> = channel.receiveAsFlow()
 
-    /**
-     * 当前列表
-     */
-    val currentList: List<T>
+    init {
+        val listener: (UpdateOp<T>) -> Unit = {
+            channel.trySend(it)
+        }
+        listState.addUpdatedListener(listener)
+        scope.coroutineContext.job.invokeOnCompletion {
+            listState.removeUpdatedListener(listener)
+        }
+    }
 
-    /**
-     * 执行列表更新操作
-     */
-    fun execute(op: UpdateOp<T>)
+    override fun updateList(op: UpdateOp<T>) {
+        listState.updateList(op, dispatch = false)
+    }
 }
 
 /**

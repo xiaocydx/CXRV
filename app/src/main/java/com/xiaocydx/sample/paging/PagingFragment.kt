@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.xiaocydx.recycler.extension.pagingCollector
+import com.xiaocydx.recycler.paging.pagingCollector
 import com.xiaocydx.recycler.list.addItem
 import com.xiaocydx.recycler.list.clear
 import com.xiaocydx.recycler.list.removeItemAt

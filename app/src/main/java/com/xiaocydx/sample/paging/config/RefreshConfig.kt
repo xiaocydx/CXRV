@@ -5,12 +5,8 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.xiaocydx.recycler.extension.pagingCollector
 import com.xiaocydx.recycler.list.ListAdapter
-import com.xiaocydx.recycler.paging.LoadStates
-import com.xiaocydx.recycler.paging.LoadStatesListener
-import com.xiaocydx.recycler.paging.PagingCollector
-import com.xiaocydx.recycler.paging.refreshToComplete
+import com.xiaocydx.recycler.paging.*
 
 /**
  * 将RecyclerView的添加到[SwipeRefreshLayout]

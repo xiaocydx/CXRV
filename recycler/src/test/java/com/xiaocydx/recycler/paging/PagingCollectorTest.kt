@@ -8,7 +8,6 @@ import androidx.test.core.app.ActivityScenario.launch
 import com.xiaocydx.recycler.TestActivity
 import com.xiaocydx.recycler.extension.Disposable
 import com.xiaocydx.recycler.extension.autoDispose
-import com.xiaocydx.recycler.extension.pagingCollector
 import com.xiaocydx.recycler.list.ListAdapter
 import com.google.common.truth.Truth.assertThat
 import io.mockk.mockk

@@ -10,8 +10,8 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
 import com.xiaocydx.recycler.extension.divider
-import com.xiaocydx.recycler.extension.emitAll
 import com.xiaocydx.recycler.extension.linear
+import com.xiaocydx.recycler.paging.emitAll
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.launchRepeatOnViewLifecycle
 import com.xiaocydx.sample.paging.FooAdapter

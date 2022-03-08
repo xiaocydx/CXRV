@@ -1,74 +1,19 @@
-package com.xiaocydx.recycler.extension
+package com.xiaocydx.recycler.paging
 
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
+import com.xiaocydx.recycler.extension.withFooter
+import com.xiaocydx.recycler.extension.withHeader
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.marker.RvDslMarker
-import com.xiaocydx.recycler.paging.*
 import com.xiaocydx.recycler.widget.ViewAdapter
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.map
-
-private const val PAGING_COLLECTOR_KEY = "com.xiaocydx.recycler.extension.PAGING_COLLECTOR_KEY"
-
-/**
- * 分页数据收集器
- *
- * ### `Flow<PagingData>`
- * [PagingCollector.emit]负责收集指定流的[PagingData]。
- *
- * ### 加载状态
- * * [PagingCollector.loadStates]返回当前加载状态集合。
- * * [PagingCollector.addLoadStatesListener]添加加载状态集合已更改的监听。
- * * [PagingCollector.doOnLoadStatesChanged]添加加载状态集合已更改的处理程序。
- *
- * ### 分页操作
- * * [PagingCollector.refresh]刷新加载，获取新的[PagingData]。
- * * [PagingCollector.retry]重新加载，会对加载状态做判断，避免冗余请求。
- */
-val <T : Any> ListAdapter<T, *>.pagingCollector: PagingCollector<T>
-    get() {
-        var collector: PagingCollector<T>? = getTag(PAGING_COLLECTOR_KEY)
-        if (collector == null) {
-            collector = PagingCollector(this)
-            setTag(PAGING_COLLECTOR_KEY, collector)
-        }
-        return collector
-    }
-
-/**
- * 收集[flow]的所有值，并将它们发送给[pagingCollector]，是一种简化写法
- *
- * ```
- * val adapter: ListAdapter<Foo, *> = ...
- * flow.collect { value ->
- *     adapter.pagingCollector.emit(value)
- * }
- *
- * // 简化上面的写法
- * adapter.pagingCollector.emitAll(flow)
- *
- * // 再进行简化
- * adapter.emitAll(flow)
- * ```
- */
-suspend fun <T : Any> ListAdapter<T, *>.emitAll(
-    flow: Flow<PagingData<T>>
-) = pagingCollector.emitAll(flow)
-
-fun <T : Any> Flow<PagingData<T>>.stateOn(
-    state: PagingListState<T>,
-    scope: CoroutineScope? = null
-): Flow<PagingData<T>> {
-    val flow = map(state::transform)
-    return if (scope != null) flow.cacheIn(scope) else flow
-}
 
 /**
  * 分页初始化作用域
+ *
+ * @author xcc
+ * @date 2022/3/8
  */
 @RvDslMarker
 open class PagingScope {

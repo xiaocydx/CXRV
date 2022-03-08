@@ -3,7 +3,6 @@ package com.xiaocydx.recycler.paging
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.recycler.extension.hasDisplayItem
-import com.xiaocydx.recycler.extension.pagingCollector
 import com.xiaocydx.recycler.extension.resolveLayoutParams
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.ListChangedListener

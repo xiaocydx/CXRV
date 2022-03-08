@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
 import com.xiaocydx.recycler.TestActivity
-import com.xiaocydx.recycler.extension.pagingCollector
 import com.xiaocydx.recycler.extension.withHeader
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.clear

@@ -157,17 +157,17 @@ class CoroutineListDiffer<T : Any>(
     }
 
     /**
-     * 若[CoroutineListDiffer]和[ListUpdater]构建了双向通信，
+     * 若[CoroutineListDiffer]和[ListState]构建了双向通信，
      * 则提交新列表，并将更新操作分发给[ListExecuteListener]时:
      * ### [newList]是[MutableList]类型
      * [CoroutineListDiffer]中的sourceList直接赋值替换为[newList]，
-     * [ListUpdater]中的sourceList通过[addAll]更新为[newList]，
-     * 整个过程仅[ListUpdater]的[addAll]copy一次数组。
+     * [ListState]中的sourceList通过[addAll]更新为[newList]，
+     * 整个过程仅[ListState]的[addAll]copy一次数组。
      *
      * ### [newList]不是[MutableList]
      * [CoroutineListDiffer]中的sourceList通过创建[MutableList]更新为[newList]，
-     * [ListUpdater]中的sourceList通过[addAll]更新为[newList]，
-     * 整个过程[CoroutineListDiffer]创建[MutableList]和[ListUpdater]的[addAll]copy两次数组。
+     * [ListState]中的sourceList通过[addAll]更新为[newList]，
+     * 整个过程[CoroutineListDiffer]创建[MutableList]和[ListState]的[addAll]copy两次数组。
      */
     @MainThread
     private suspend fun submitList(newList: List<T>) {

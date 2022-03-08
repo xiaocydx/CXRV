@@ -36,7 +36,7 @@ sealed class PagingEvent<T : Any>(
      * 列表状态更新事件
      */
     class ListStateUpdate<T : Any> internal constructor(
-        val op: UpdateOp<T>,
+        internal val op: UpdateOp<T>,
         override val loadStates: LoadStates
     ) : PagingEvent<T>(loadType = null, loadStates)
 }

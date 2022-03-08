@@ -9,13 +9,59 @@ import com.xiaocydx.recycler.extension.*
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.UpdateOp
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.emitAll
+
+private const val PAGING_COLLECTOR_KEY = "com.xiaocydx.recycler.paging.PAGING_COLLECTOR_KEY"
 
 /**
  * 分页数据收集器
  *
- * @author xcc
- * @date 2021/11/26
+ * ### `Flow<PagingData>`
+ * [PagingCollector.emit]负责收集指定流的[PagingData]。
+ *
+ * ### 加载状态
+ * * [PagingCollector.loadStates]返回当前加载状态集合。
+ * * [PagingCollector.addLoadStatesListener]添加加载状态集合已更改的监听。
+ * * [PagingCollector.doOnLoadStatesChanged]添加加载状态集合已更改的处理程序。
+ *
+ * ### 分页操作
+ * * [PagingCollector.refresh]刷新加载，获取新的[PagingData]。
+ * * [PagingCollector.retry]重新加载，会对加载状态做判断，避免冗余请求。
+ */
+val <T : Any> ListAdapter<T, *>.pagingCollector: PagingCollector<T>
+    get() {
+        var collector: PagingCollector<T>? = getTag(PAGING_COLLECTOR_KEY)
+        if (collector == null) {
+            collector = PagingCollector(this)
+            setTag(PAGING_COLLECTOR_KEY, collector)
+        }
+        return collector
+    }
+
+/**
+ * 收集[flow]的所有值，并将它们发送给[pagingCollector]，是一种简化写法
+ *
+ * ```
+ * val adapter: ListAdapter<Foo, *> = ...
+ * flow.collect { value ->
+ *     adapter.pagingCollector.emit(value)
+ * }
+ *
+ * // 简化上面的写法
+ * adapter.pagingCollector.emitAll(flow)
+ *
+ * // 再进行简化
+ * adapter.emitAll(flow)
+ * ```
+ */
+suspend fun <T : Any> ListAdapter<T, *>.emitAll(
+    flow: Flow<PagingData<T>>
+) = pagingCollector.emitAll(flow)
+
+/**
+ * 分页数据收集器，负责收集指定流的[PagingData]
  */
 class PagingCollector<T : Any> internal constructor(
     internal val adapter: ListAdapter<T, *>,
@@ -33,6 +79,7 @@ class PagingCollector<T : Any> internal constructor(
         private set
 
     init {
+        assertMainThread()
         AppendTrigger(this)
         adapter.addListExecuteListener { op ->
             mediator?.asListMediator<T>()?.updateList(op)
@@ -82,11 +129,39 @@ class PagingCollector<T : Any> internal constructor(
     }
 
     /**
+     * 添加加载状态集合已更改的监听
+     *
+     * * [LoadStatesListener.onLoadStatesChanged]中可以调用[removeLoadStatesListener]。
+     * * [LoadStatesListener.onLoadStatesChanged]在列表更改后才会被触发。
+     */
+    @MainThread
+    fun addLoadStatesListener(listener: LoadStatesListener) {
+        assertMainThread()
+        if (listeners == null) {
+            listeners = arrayListOf()
+        }
+        if (!listeners!!.contains(listener)) {
+            listeners!!.add(listener)
+        }
+    }
+
+    /**
+     * 移除加载状态集合已更改的监听
+     */
+    @MainThread
+    fun removeLoadStatesListener(listener: LoadStatesListener) {
+        assertMainThread()
+        listeners?.remove(listener)
+    }
+
+    /**
      * 末尾加载，该函数会对加载状态做判断，避免冗余请求
      *
      * **注意**：该函数由内部[AppendTrigger]调用，不对外开放
      */
+    @MainThread
     internal fun append() {
+        assertMainThread()
         mediator?.append()
     }
 
@@ -118,6 +193,7 @@ class PagingCollector<T : Any> internal constructor(
         }
     }
 
+    @MainThread
     private fun CoroutineScope.launchResumeJob(mediator: PagingMediator): Job? {
         val listMediator = mediator.asListMediator<T>()
         val resumeEvent: PagingEvent<T> = when {
@@ -134,6 +210,7 @@ class PagingCollector<T : Any> internal constructor(
         }
     }
 
+    @MainThread
     private suspend fun handleEvent(event: PagingEvent<T>) {
         val rv = ensureRecyclerView()
         val loadType = event.loadType
@@ -158,7 +235,7 @@ class PagingCollector<T : Any> internal constructor(
         val beforeIsEmpty = !adapter.hasDisplayItem
         if (op != null) {
             adapter.awaitUpdateList(op, dispatch = false)
-            // 更新列表完成后才保存更新版本号
+            // 更新列表完成后才保存版本号
             updateVersion = mediator?.asListMediator<T>()?.updateVersion ?: 0
             if (event.loadType == LoadType.APPEND) {
                 // 确保ItemDecoration能正常显示
@@ -187,15 +264,18 @@ class PagingCollector<T : Any> internal constructor(
         setLoadStates(event.loadStates)
     }
 
+    @MainThread
     private fun PagingListMediator<T>.resumeListStateEvent(): PagingEvent.ListStateUpdate<T> {
         val op = UpdateOp.SubmitList(currentList)
         return PagingEvent.ListStateUpdate(op, loadStates)
     }
 
+    @MainThread
     private fun PagingMediator.resumeLoadStateEvent(): PagingEvent.LoadStateUpdate<T> {
         return PagingEvent.LoadStateUpdate(loadType = null, loadStates)
     }
 
+    @MainThread
     private fun PagingEvent.LoadDataSuccess<T>.toUpdateOp(): UpdateOp<T> {
         return when (loadType) {
             LoadType.REFRESH -> UpdateOp.SubmitList(data)
@@ -203,11 +283,13 @@ class PagingCollector<T : Any> internal constructor(
         }
     }
 
+    @MainThread
     private fun ensureRecyclerView(): RecyclerView {
         return adapter.recyclerView
                 ?: throw CancellationException("ListAdapter已从RecyclerView上分离。")
     }
 
+    @MainThread
     private suspend fun checkRefreshScrollToFirst() {
         val rv = ensureRecyclerView()
         if (!refreshScrollEnabled
@@ -220,6 +302,7 @@ class PagingCollector<T : Any> internal constructor(
         rv.awaitPost()
     }
 
+    @MainThread
     private suspend fun checkRefreshCompleteDelay() {
         val timeMillis = refreshCompleteWhen - SystemClock.uptimeMillis()
         if (timeMillis > 0) {
@@ -227,6 +310,7 @@ class PagingCollector<T : Any> internal constructor(
         }
     }
 
+    @MainThread
     private fun setLoadStates(newStates: LoadStates) {
         if (loadStates == newStates) {
             return
@@ -251,34 +335,9 @@ class PagingCollector<T : Any> internal constructor(
         }
     }
 
+    @MainThread
     private fun getLoadState(loadType: LoadType): LoadState {
         return loadStates.getState(loadType)
-    }
-
-    /**
-     * 添加加载状态集合已更改的监听
-     *
-     * * [LoadStatesListener.onLoadStatesChanged]中可以调用[removeLoadStatesListener]。
-     * * [LoadStatesListener.onLoadStatesChanged]在列表更改后才会被触发。
-     */
-    @MainThread
-    fun addLoadStatesListener(listener: LoadStatesListener) {
-        assertMainThread()
-        if (listeners == null) {
-            listeners = arrayListOf()
-        }
-        if (!listeners!!.contains(listener)) {
-            listeners!!.add(listener)
-        }
-    }
-
-    /**
-     * 移除加载状态集合已更改的监听
-     */
-    @MainThread
-    fun removeLoadStatesListener(listener: LoadStatesListener) {
-        assertMainThread()
-        listeners?.remove(listener)
     }
 
     private companion object {

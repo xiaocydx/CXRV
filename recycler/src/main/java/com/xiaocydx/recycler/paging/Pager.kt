@@ -51,9 +51,9 @@ class Pager<K : Any, T : Any>(
     private val source: PagingSource<K, T>
 ) {
     private val refreshEvent = ConflatedEvent<Unit>()
-    private var mediator: PagingMediatorImpl<K, T>? = null
+    private var fetcher: PagingFetcher<K, T>? = null
     val loadStates: LoadStates
-        get() = mediator?.loadStates ?: LoadStates.Incomplete
+        get() = fetcher?.loadStates ?: LoadStates.Incomplete
 
     val flow: Flow<PagingData<T>> = flow {
         refreshEvent.flow
@@ -61,11 +61,12 @@ class Pager<K : Any, T : Any>(
                 // 触发初始化加载
                 emit(Unit)
             }.collect {
-                mediator?.close()
-                val fetcher: PagingFetcher<K, T> =
-                        PagingFetcher(initKey, config, source)
-                mediator = PagingMediatorImpl(fetcher, refreshEvent)
-                emit(PagingData(fetcher.flow, mediator!!))
+                fetcher?.close()
+                fetcher = PagingFetcher(initKey, config, source)
+                emit(PagingData(
+                    flow = fetcher!!.flow,
+                    mediator = PagingMediatorImpl(fetcher!!, refreshEvent)
+                ))
             }
     }.conflate().flowOnMain()
 
@@ -90,10 +91,6 @@ class Pager<K : Any, T : Any>(
 
         override fun retry() {
             fetcher.retry()
-        }
-
-        fun close() {
-            fetcher.close()
         }
     }
 }

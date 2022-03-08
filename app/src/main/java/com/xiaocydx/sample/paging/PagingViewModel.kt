@@ -4,14 +4,11 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.xiaocydx.recycler.extension.stateOn
+import com.xiaocydx.recycler.list.ListState
 import com.xiaocydx.recycler.list.addItem
 import com.xiaocydx.recycler.list.removeItemAt
-import com.xiaocydx.recycler.paging.PagingData
-import com.xiaocydx.recycler.paging.PagingEvent
-import com.xiaocydx.recycler.paging.PagingListState
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import com.xiaocydx.recycler.paging.storeIn
+import com.xiaocydx.recycler.paging.transformItem
 
 /**
  * @author xcc
@@ -20,11 +17,11 @@ import kotlinx.coroutines.flow.map
 class PagingViewModel(
     private val repository: FooRepository
 ) : ViewModel() {
-    private val listState = PagingListState<Foo>()
+    private val listState = ListState<Foo>()
     val flow = repository.flow
         .transformItem { item ->
             item.copy(name = "${item.name} transform")
-        }.stateOn(listState, viewModelScope)
+        }.storeIn(listState, viewModelScope)
 
     val rvId = ViewCompat.generateViewId()
 
@@ -48,20 +45,6 @@ class PagingViewModel(
 
     fun enableMultiTypeFoo() {
         repository.multiTypeFoo = true
-    }
-
-    private inline fun <T : Any> Flow<PagingData<T>>.transformItem(
-        crossinline transform: suspend (item: T) -> T
-    ): Flow<PagingData<T>> = transformEvent { event ->
-        if (event is PagingEvent.LoadDataSuccess) {
-            event.copy(data = event.data.map { transform(it) })
-        } else event
-    }
-
-    private inline fun <T : Any> Flow<PagingData<T>>.transformEvent(
-        crossinline transform: suspend (event: PagingEvent<T>) -> PagingEvent<T>
-    ): Flow<PagingData<T>> {
-        return map { it.copy(flow = it.flow.map(transform)) }
     }
 
     companion object Factory : ViewModelProvider.Factory {

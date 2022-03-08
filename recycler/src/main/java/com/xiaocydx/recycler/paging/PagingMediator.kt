@@ -6,7 +6,7 @@ package com.xiaocydx.recycler.paging
  * @author xcc
  * @date 2021/9/15
  */
-internal interface PagingMediator {
+interface PagingMediator {
     /**
      * 加载状态集合
      */
