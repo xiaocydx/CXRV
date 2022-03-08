@@ -59,7 +59,6 @@ class ListState<T : Any> : ListOwner<T> {
      * @param dispatch 是否将更新操作分发给[listeners]
      */
     internal fun updateList(op: UpdateOp<T>, dispatch: Boolean) = runOnMainThread {
-        updateVersion++
         val succeed = when (op) {
             is UpdateOp.SubmitList -> submitList(op.newList)
             is UpdateOp.SetItem -> setItem(op.position, op.item)
@@ -68,7 +67,11 @@ class ListState<T : Any> : ListOwner<T> {
             is UpdateOp.RemoveItemAt -> removeItemAt(op.position)
             is UpdateOp.SwapItem -> swapItem(op.fromPosition, op.toPosition)
         }
-        if (succeed && dispatch) {
+        if (!succeed) {
+            return@runOnMainThread
+        }
+        updateVersion++
+        if (dispatch) {
             listeners?.reverseAccessEach { it(op) }
         }
     }
