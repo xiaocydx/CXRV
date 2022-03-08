@@ -1,17 +1,10 @@
 package com.xiaocydx.recycler.paging
 
 import com.xiaocydx.recycler.extension.flowOnMain
-import com.xiaocydx.recycler.list.ListUpdater
-import com.xiaocydx.recycler.list.UpdateOp
-import com.xiaocydx.recycler.list.ensureMutable
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
@@ -25,18 +18,13 @@ import kotlinx.coroutines.launch
 internal class PagingFetcher<K : Any, T : Any>(
     private val initKey: K,
     private val config: PagingConfig,
-    private val source: PagingSource<K, T>,
-    initList: List<T>? = null,
+    private val source: PagingSource<K, T>
 ) {
     private var collected = false
     private var nextKey: K? = null
     private val appendEvent = ConflatedEvent<Unit>()
     private val retryEvent = ConflatedEvent<Unit>()
     private val channelFlowJob: Job = Job()
-    private val updater: ListUpdater<T> =
-            ListUpdater(sourceList = initList?.ensureMutable() ?: mutableListOf())
-    val currentList: List<T>
-        get() = updater.currentList
     var loadStates: LoadStates = LoadStates.Incomplete
         private set
 
@@ -47,21 +35,6 @@ internal class PagingFetcher<K : Any, T : Any>(
             // 注意：此处不要用channel::close简化代码，
             // 这会将invokeOnCompletion的异常恢复给下游。
             channel.close()
-        }
-
-        updater.setUpdatedListener { operate ->
-            val event: PagingEvent<T> = PagingEvent.ListUpdate(
-                loadType = null, loadStates, operate
-            )
-            channel.trySend(event)
-                .takeIf { result ->
-                    result.isFailure && !result.isClosed
-                }?.let {
-                    // 同步发送失败，原因可能是buffer满了，
-                    // 启动协程，调用send挂起等待buffer空位，
-                    // 确保更新操作事件不会丢失。
-                    launch { channel.send(event) }
-                }
         }
 
         launch(start = UNDISPATCHED) {
@@ -81,7 +54,7 @@ internal class PagingFetcher<K : Any, T : Any>(
 
     private suspend fun SendChannel<PagingEvent<T>>.doLoad(loadType: LoadType) {
         setSourceState(loadType, LoadState.Loading)
-        send(PagingEvent.LoadUpdate(loadType, loadStates))
+        send(PagingEvent.LoadStateUpdate(loadType, loadStates))
 
         val loadResult: LoadResult<K, T> = try {
             source.load(loadParams(loadType))
@@ -96,23 +69,17 @@ internal class PagingFetcher<K : Any, T : Any>(
                     dataSize = loadResult.data.size,
                     isFully = nextKey == null
                 ))
-                val operate = when (loadType) {
-                    LoadType.REFRESH -> UpdateOp.SubmitList(loadResult.data)
-                    LoadType.APPEND -> UpdateOp.AddItems(currentList.size, loadResult.data)
-                }
-                updateList(operate, dispatch = false)
-                send(PagingEvent.ListUpdate(loadType, loadStates, operate))
+                send(PagingEvent.LoadDataSuccess(loadResult.data, loadType, loadStates))
             }
             is LoadResult.Failure -> {
                 setSourceState(loadType, LoadState.Failure(loadResult.exception))
-                send(PagingEvent.LoadUpdate(loadType, loadStates))
+                send(PagingEvent.LoadStateUpdate(loadType, loadStates))
             }
         }
     }
 
-    private fun setSourceState(loadType: LoadType, newState: LoadState): LoadStates {
+    private fun setSourceState(loadType: LoadType, newState: LoadState) {
         loadStates = loadStates.modifyState(loadType, newState)
-        return loadStates
     }
 
     private fun loadParams(
@@ -122,7 +89,7 @@ internal class PagingFetcher<K : Any, T : Any>(
         key = when (loadType) {
             LoadType.REFRESH -> initKey
             LoadType.APPEND -> requireNotNull(nextKey) {
-                "nextKey == `null`表示加载完成，不能再进行末尾加载"
+                "nextKey == `null`表示加载完成，不能再进行末尾加载。"
             }
         },
         pageSize = when (loadType) {
@@ -139,30 +106,7 @@ internal class PagingFetcher<K : Any, T : Any>(
         retryEvent.send(Unit)
     }
 
-    fun updateList(op: UpdateOp<T>, dispatch: Boolean) {
-        updater.updateList(op, dispatch)
-    }
-
     fun close() {
         channelFlowJob.cancel()
-    }
-
-    private inline fun <E> safeChannelFlow(
-        crossinline block: suspend CoroutineScope.(SendChannel<E>) -> Unit
-    ): Flow<E> = channelFlow {
-        block(SafeSendChannel(this))
-    }
-
-    private class SafeSendChannel<E>(
-        private val channel: SendChannel<E>
-    ) : SendChannel<E> by channel {
-
-        override suspend fun send(element: E) {
-            try {
-                channel.send(element)
-            } catch (e: ClosedSendChannelException) {
-                throw CancellationException(e.message)
-            }
-        }
     }
 }

@@ -9,6 +9,6 @@ import kotlinx.coroutines.flow.Flow
  * @date 2021/9/14
  */
 data class PagingData<T : Any> internal constructor(
-    internal val flow: Flow<PagingEvent<T>>,
-    internal val mediator: PagingMediator<T>
+    val flow: Flow<PagingEvent<T>>,
+    internal val mediator: PagingMediator
 )

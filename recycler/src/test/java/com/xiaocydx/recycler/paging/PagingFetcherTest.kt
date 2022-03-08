@@ -1,7 +1,6 @@
 package com.xiaocydx.recycler.paging
 
 import android.os.Build
-import com.xiaocydx.recycler.list.UpdateOp
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
@@ -148,31 +147,6 @@ class PagingFetcherTest {
         assertThat(events.first().loadStates.append.isLoading).isTrue()
         assertThat(events.last().loadStates.append.isSuccess).isTrue()
         assertThat(events.last().loadStates.append.isFully).isTrue()
-    }
-
-    @Test
-    fun collect_AddItem_PagingEvent(): Unit = runBlocking {
-        val fetcher =
-                getTestFetcher(maxPage = 1, result = Result.NORMAL)
-        val events = mutableListOf<PagingEvent<String>>()
-        launch {
-            fetcher.flow.toList(events)
-        }
-
-        delay(100)
-        val position = fetcher.currentList.size
-        val addItem = (position + 1).toString()
-        val addItemOp = UpdateOp.AddItem(position, addItem)
-        fetcher.updateList(addItemOp, dispatch = true)
-        delay(100)
-        fetcher.close()
-
-        assertThat(events.size).isEqualTo(3)
-        val event = events.last() as PagingEvent.ListUpdate
-        assertThat(event.loadType).isNull()
-        assertThat(event.loadStates.isFully).isTrue()
-        assertThat(event.op).isEqualTo(addItemOp)
-        assertThat(fetcher.currentList.last()).isEqualTo(addItem)
     }
 
     @Test

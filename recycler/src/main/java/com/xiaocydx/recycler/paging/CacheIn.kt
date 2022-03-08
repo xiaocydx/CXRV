@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.map
  * 构建的状态流可以被重复收集，但同时只能被一个收集器收集，
  * 在被首次收集时，才会开始收集它的上游，直到[scope]被取消。
  */
-fun <T : Any> Flow<PagingData<T>>.cacheIn(
+internal fun <T : Any> Flow<PagingData<T>>.cacheIn(
     scope: CoroutineScope
 ): Flow<PagingData<T>> {
     var flow: CancellableFlow<PagingEvent<T>>? = null

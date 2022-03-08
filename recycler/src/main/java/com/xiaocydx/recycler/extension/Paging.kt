@@ -7,8 +7,10 @@ import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.marker.RvDslMarker
 import com.xiaocydx.recycler.paging.*
 import com.xiaocydx.recycler.widget.ViewAdapter
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.map
 
 private const val PAGING_COLLECTOR_KEY = "com.xiaocydx.recycler.extension.PAGING_COLLECTOR_KEY"
 
@@ -56,6 +58,14 @@ val <T : Any> ListAdapter<T, *>.pagingCollector: PagingCollector<T>
 suspend fun <T : Any> ListAdapter<T, *>.emitAll(
     flow: Flow<PagingData<T>>
 ) = pagingCollector.emitAll(flow)
+
+fun <T : Any> Flow<PagingData<T>>.stateOn(
+    state: PagingListState<T>,
+    scope: CoroutineScope? = null
+): Flow<PagingData<T>> {
+    val flow = map(state::transform)
+    return if (scope != null) flow.cacheIn(scope) else flow
+}
 
 /**
  * 分页初始化作用域

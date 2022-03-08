@@ -5,7 +5,7 @@ package com.xiaocydx.recycler.paging
  *
  * ### [LoadType]和[LoadState]
  * [PagingEvent]包含[LoadType]和与之对应的[LoadState]，
- * 视图层接收[PagingEvent]，根据[LoadType]和[LoadState]更新加载视图的显示状态。
+ * 视图控制器接收[PagingEvent]，根据[LoadType]和[LoadState]更新加载视图的显示状态。
  *
  * @author xcc
  * @date 2021/9/13

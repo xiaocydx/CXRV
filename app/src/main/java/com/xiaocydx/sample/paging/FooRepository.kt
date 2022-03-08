@@ -2,6 +2,8 @@ package com.xiaocydx.sample.paging
 
 import com.xiaocydx.recycler.paging.LoadParams
 import com.xiaocydx.recycler.paging.LoadResult
+import com.xiaocydx.recycler.paging.Pager
+import com.xiaocydx.recycler.paging.PagingConfig
 import kotlinx.coroutines.delay
 
 /**
@@ -9,24 +11,33 @@ import kotlinx.coroutines.delay
  * @date 2022/2/17
  */
 class FooRepository(
+    pageSize: Int,
+    initKey: Int,
     private val maxKey: Int,
-    private val resultType: ResultType
+    private val resultType: ResultType,
 ) {
     private var retryCount: Int = when (resultType) {
         is ResultType.RefreshFailure -> resultType.retryCount
         is ResultType.AppendFailure -> resultType.retryCount
         else -> 0
     }
-    var multiTypeFoo = false
-
-    suspend fun loadResult(params: LoadParams<Int>): LoadResult<Int, Foo> {
-        return when (resultType) {
+    private val pager = Pager(
+        initKey = initKey,
+        config = PagingConfig(pageSize)
+    ) { params ->
+        when (resultType) {
             ResultType.Normal -> normalResult(params)
             ResultType.Empty -> emptyResult()
             ResultType.RefreshEmpty -> refreshEmptyResult(params)
             is ResultType.RefreshFailure -> failureResult(params)
             is ResultType.AppendFailure -> failureResult(params)
         }
+    }
+    var multiTypeFoo = false
+    val flow = pager.flow
+
+    fun refresh() {
+        pager.refresh()
     }
 
     private suspend fun normalResult(params: LoadParams<Int>): LoadResult<Int, Foo> {

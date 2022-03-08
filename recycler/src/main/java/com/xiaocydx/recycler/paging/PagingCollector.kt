@@ -23,7 +23,7 @@ class PagingCollector<T : Any> internal constructor(
 ) : FlowCollector<PagingData<T>> {
     private var updateVersion = 0
     private var resumeJob: Job? = null
-    private var mediator: PagingMediator<T>? = null
+    private var mediator: PagingMediator? = null
     private var listeners: ArrayList<LoadStatesListener>? = null
     private var refreshCompleteWhen = IMMEDIATE_COMPLETE
     private var refreshScrollEnabled = true
@@ -35,7 +35,7 @@ class PagingCollector<T : Any> internal constructor(
     init {
         AppendTrigger(this)
         adapter.addListExecuteListener { op ->
-            mediator?.updateList(op)
+            mediator?.asListMediator<T>()?.updateList(op)
         }
     }
 
@@ -118,18 +118,13 @@ class PagingCollector<T : Any> internal constructor(
         }
     }
 
-    @MainThread
-    private fun CoroutineScope.launchResumeJob(mediator: PagingMediator<T>): Job? {
+    private fun CoroutineScope.launchResumeJob(mediator: PagingMediator): Job? {
+        val listMediator = mediator.asListMediator<T>()
         val resumeEvent: PagingEvent<T> = when {
-            mediator.updateVersion > updateVersion -> PagingEvent.ListUpdate(
-                loadType = null,
-                loadStates = mediator.loadStates,
-                op = UpdateOp.SubmitList(mediator.currentList)
-            )
-            mediator.loadStates != loadStates -> PagingEvent.LoadUpdate(
-                loadType = null,
-                loadStates = mediator.loadStates
-            )
+            listMediator != null && listMediator.updateVersion > updateVersion -> {
+                listMediator.resumeListStateEvent()
+            }
+            mediator.loadStates != loadStates -> mediator.resumeLoadStateEvent()
             else -> return null
         }
         // 无需调度时，协程的启动恢复不是同步执行，而是通过事件循环进行恢复，
@@ -139,10 +134,8 @@ class PagingCollector<T : Any> internal constructor(
         }
     }
 
-    @MainThread
     private suspend fun handleEvent(event: PagingEvent<T>) {
-        val rv = adapter.recyclerView
-                ?: throw CancellationException("ListAdapter已从RecyclerView上分离。")
+        val rv = ensureRecyclerView()
         val loadType = event.loadType
         val refresh = event.loadStates.refresh
         when {
@@ -156,10 +149,17 @@ class PagingCollector<T : Any> internal constructor(
             }
         }
 
+        val op = when (event) {
+            is PagingEvent.ListStateUpdate -> event.op
+            is PagingEvent.LoadDataSuccess -> event.toUpdateOp()
+            is PagingEvent.LoadStateUpdate -> null
+        }
+
         val beforeIsEmpty = !adapter.hasDisplayItem
-        if (event is PagingEvent.ListUpdate) {
-            adapter.awaitUpdateList(event.op, dispatch = false)
-            updateVersion = mediator?.updateVersion ?: 0
+        if (op != null) {
+            adapter.awaitUpdateList(op, dispatch = false)
+            // 更新列表完成后才保存更新版本号
+            updateVersion = mediator?.asListMediator<T>()?.updateVersion ?: 0
             if (event.loadType == LoadType.APPEND) {
                 // 确保ItemDecoration能正常显示
                 adapter.invalidateItemDecorations()
@@ -168,7 +168,7 @@ class PagingCollector<T : Any> internal constructor(
 
         when {
             loadStates == event.loadStates -> return
-            event is PagingEvent.ListUpdate && beforeIsEmpty && rv.isStaggered -> {
+            event is PagingEvent.LoadDataSuccess && beforeIsEmpty && rv.isStaggered -> {
                 // 若此时将加载状态同步分发给listener，则listener可能会调用notifyItemRemoved()，
                 // 那么在下一帧的绘制流程中，因为瀑布流布局的spanIndex变得不准确，
                 // 导致ItemDecoration计算出错误的间距，例如item分割线显示异常。
@@ -187,10 +187,29 @@ class PagingCollector<T : Any> internal constructor(
         setLoadStates(event.loadStates)
     }
 
-    @MainThread
-    private suspend fun checkRefreshScrollToFirst() {
-        val rv = adapter.recyclerView
+    private fun PagingListMediator<T>.resumeListStateEvent(): PagingEvent.ListStateUpdate<T> {
+        val op = UpdateOp.SubmitList(currentList)
+        return PagingEvent.ListStateUpdate(op, loadStates)
+    }
+
+    private fun PagingMediator.resumeLoadStateEvent(): PagingEvent.LoadStateUpdate<T> {
+        return PagingEvent.LoadStateUpdate(loadType = null, loadStates)
+    }
+
+    private fun PagingEvent.LoadDataSuccess<T>.toUpdateOp(): UpdateOp<T> {
+        return when (loadType) {
+            LoadType.REFRESH -> UpdateOp.SubmitList(data)
+            LoadType.APPEND -> UpdateOp.AddItems(adapter.currentList.size, data)
+        }
+    }
+
+    private fun ensureRecyclerView(): RecyclerView {
+        return adapter.recyclerView
                 ?: throw CancellationException("ListAdapter已从RecyclerView上分离。")
+    }
+
+    private suspend fun checkRefreshScrollToFirst() {
+        val rv = ensureRecyclerView()
         if (!refreshScrollEnabled
                 || rv.childCount == 0
                 || rv.isFirstItemCompletelyVisible) {
@@ -201,7 +220,6 @@ class PagingCollector<T : Any> internal constructor(
         rv.awaitPost()
     }
 
-    @MainThread
     private suspend fun checkRefreshCompleteDelay() {
         val timeMillis = refreshCompleteWhen - SystemClock.uptimeMillis()
         if (timeMillis > 0) {
@@ -209,7 +227,6 @@ class PagingCollector<T : Any> internal constructor(
         }
     }
 
-    @MainThread
     private fun setLoadStates(newStates: LoadStates) {
         if (loadStates == newStates) {
             return
@@ -234,7 +251,6 @@ class PagingCollector<T : Any> internal constructor(
         }
     }
 
-    @MainThread
     private fun getLoadState(loadType: LoadType): LoadState {
         return loadStates.getState(loadType)
     }

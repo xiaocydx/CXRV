@@ -4,11 +4,14 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.xiaocydx.recycler.extension.stateOn
 import com.xiaocydx.recycler.list.addItem
 import com.xiaocydx.recycler.list.removeItemAt
-import com.xiaocydx.recycler.paging.Pager
-import com.xiaocydx.recycler.paging.PagingConfig
-import com.xiaocydx.recycler.paging.cacheIn
+import com.xiaocydx.recycler.paging.PagingData
+import com.xiaocydx.recycler.paging.PagingEvent
+import com.xiaocydx.recycler.paging.PagingListState
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * @author xcc
@@ -17,27 +20,26 @@ import com.xiaocydx.recycler.paging.cacheIn
 class PagingViewModel(
     private val repository: FooRepository
 ) : ViewModel() {
-    private val pager = Pager(
-        initKey = 1,
-        config = PagingConfig(pageSize = 10)
-    ) { params ->
-        repository.loadResult(params)
-    }
-    val flow = pager.flow.cacheIn(viewModelScope)
+    private val listState = PagingListState<Foo>()
+    val flow = repository.flow
+        .transformItem { item ->
+            item.copy(name = "${item.name} transform")
+        }.stateOn(listState, viewModelScope)
+
     val rvId = ViewCompat.generateViewId()
 
     fun refresh() {
-        pager.refresh()
+        repository.refresh()
     }
 
     fun insertItem() {
-        var lastNum = pager.currentList.lastOrNull()?.num ?: 0
+        var lastNum = listState.currentList.lastOrNull()?.num ?: 0
         val item = createFoo(num = ++lastNum, tag = "Pager")
-        pager.addItem(0, item)
+        listState.addItem(0, item)
     }
 
     fun deleteItem() {
-        pager.removeItemAt(0)
+        listState.removeItemAt(0)
     }
 
     fun createFoo(num: Int, tag: String): Foo {
@@ -48,11 +50,25 @@ class PagingViewModel(
         repository.multiTypeFoo = true
     }
 
+    private inline fun <T : Any> Flow<PagingData<T>>.transformItem(
+        crossinline transform: suspend (item: T) -> T
+    ): Flow<PagingData<T>> = transformEvent { event ->
+        if (event is PagingEvent.LoadDataSuccess) {
+            event.copy(data = event.data.map { transform(it) })
+        } else event
+    }
+
+    private inline fun <T : Any> Flow<PagingData<T>>.transformEvent(
+        crossinline transform: suspend (event: PagingEvent<T>) -> PagingEvent<T>
+    ): Flow<PagingData<T>> {
+        return map { it.copy(flow = it.flow.map(transform)) }
+    }
+
     companion object Factory : ViewModelProvider.Factory {
         override fun <T : ViewModel?> create(modelClass: Class<T>): T {
             if (modelClass === PagingViewModel::class.java) {
                 val repository = FooRepository(
-                    maxKey = 5,
+                    pageSize = 10, initKey = 1, maxKey = 5,
                     resultType = ResultType.Normal
                 )
                 return PagingViewModel(repository) as T
