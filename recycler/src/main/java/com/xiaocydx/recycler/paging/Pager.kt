@@ -20,16 +20,20 @@ import kotlinx.coroutines.flow.onStart
  *         pager.refresh()
  *     }
  * }
+ * ```
  *
  * 2.对ViewModel注入Repository
+ * ```
  * class FooViewModel(
  *     private val repository: FooRepository
  * ) : ViewModel() {
  *     // 可以对分页事件流做数据变换
  *     val flow = repository.flow
  * }
+ * ```
  *
  * 3.在视图控制器下收集`viewModel.flow`
+ * ```
  * class FooActivity : AppCompatActivity() {
  *     private val viewModel: FooViewModel by viewModels()
  *     private val adapter: ListAdapter<Foo, *> = ...
@@ -38,6 +42,12 @@ import kotlinx.coroutines.flow.onStart
  *          super.onCreate(savedInstanceState)
  *          lifecycleScope.launch {
  *              adapter.emitAll(viewModel.flow)
+ *          }
+ *          // 或者仅在视图控制器活跃期间内收集viewModel.flow
+ *          lifecycleScope.launch {
+ *              repeatOnLifecycle(Lifecycle.State.STARTED) {
+ *                  adapter.emitAll(viewModel.flow)
+ *              }
  *          }
  *     }
  * }

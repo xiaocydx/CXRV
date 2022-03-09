@@ -29,7 +29,7 @@ internal open class CancellableFlow<T>(
 
     /**
      * [CancellableFlow]不继承[AbstractFlow]，而是通过构建器创建委托对象，
-     * 避免后续[AbstractFlow]被改动，导致需要修改[CancellableFlow]。
+     * 目的是避免后续[AbstractFlow]被改动，导致需要修改[CancellableFlow]。
      */
     private val flow = flow {
         require(!isCompleted) {

@@ -1,5 +1,6 @@
 package com.xiaocydx.recycler.paging
 
+import androidx.annotation.MainThread
 import com.xiaocydx.recycler.extension.flowOnMain
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job
@@ -52,8 +53,9 @@ internal class PagingFetcher<K : Any, T : Any>(
         channel.doLoad(LoadType.REFRESH)
     }.flowOnMain()
 
+    @MainThread
     private suspend fun SendChannel<PagingEvent<T>>.doLoad(loadType: LoadType) {
-        setSourceState(loadType, LoadState.Loading)
+        setLoadState(loadType, LoadState.Loading)
         send(PagingEvent.LoadStateUpdate(loadType, loadStates))
 
         val loadResult: LoadResult<K, T> = try {
@@ -65,23 +67,25 @@ internal class PagingFetcher<K : Any, T : Any>(
         when (loadResult) {
             is LoadResult.Success -> {
                 nextKey = loadResult.nextKey
-                setSourceState(loadType, LoadState.Success(
+                setLoadState(loadType, LoadState.Success(
                     dataSize = loadResult.data.size,
                     isFully = nextKey == null
                 ))
                 send(PagingEvent.LoadDataSuccess(loadResult.data, loadType, loadStates))
             }
             is LoadResult.Failure -> {
-                setSourceState(loadType, LoadState.Failure(loadResult.exception))
+                setLoadState(loadType, LoadState.Failure(loadResult.exception))
                 send(PagingEvent.LoadStateUpdate(loadType, loadStates))
             }
         }
     }
 
-    private fun setSourceState(loadType: LoadType, newState: LoadState) {
+    @MainThread
+    private fun setLoadState(loadType: LoadType, newState: LoadState) {
         loadStates = loadStates.modifyState(loadType, newState)
     }
 
+    @MainThread
     private fun loadParams(
         loadType: LoadType
     ): LoadParams<K> = LoadParams.create(

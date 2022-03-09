@@ -3,7 +3,7 @@ package com.xiaocydx.recycler.list
 import kotlinx.coroutines.flow.Flow
 
 /**
- * 列表数据的容器
+ * 列表更新数据的容器
  *
  * @author xcc
  * @date 2022/3/8

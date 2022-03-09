@@ -157,7 +157,7 @@ class CoroutineListDiffer<T : Any>(
     }
 
     /**
-     * 若[CoroutineListDiffer]和[ListState]构建了双向通信，
+     * 若[CoroutineListDiffer]和[ListState]建立了双向通信，
      * 则提交新列表，并将更新操作分发给[ListExecuteListener]时:
      * ### [newList]是[MutableList]类型
      * [CoroutineListDiffer]中的sourceList直接赋值替换为[newList]，

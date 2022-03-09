@@ -12,17 +12,18 @@ import kotlinx.coroutines.job
 import java.util.*
 
 /**
- * // FIXME: 2022/3/8 修正注释
- * 列表状态，提供[ListData]数据流和[ListOwner]
+ * 列表状态，和视图控制器建立基于[ListOwner]的双向通信
  *
+ * 1.在ViewModel下创建`listState`，对外提供`flow`
  * ```
- * // 在ViewModel下创建`listState`，对外提供`flow`
  * class FooViewModel : ViewModel() {
- *     private val listState = ListState(viewModelScope)
- *     val flow = listState.flow
+ *     private val listState = ListState()
+ *     val flow = listState.asFlow(viewModelScope)
  * }
+ * ```
  *
- * // 在视图控制器下收集`viewModel.flow`
+ * 2.在视图控制器下收集`viewModel.flow`
+ * ```
  * class FooActivity : AppCompatActivity() {
  *     private val viewModel: FooViewModel by viewModels()
  *     private val adapter: ListAdapter<Foo, *> = ...
@@ -32,7 +33,7 @@ import java.util.*
  *          lifecycleScope.launch {
  *              adapter.emitAll(viewModel.flow)
  *          }
- *          // 或者仅在视图控制器活跃期间内收集`viewModel.flow`
+ *          // 或者仅在视图控制器活跃期间内收集viewModel.flow
  *          lifecycleScope.launch {
  *              repeatOnLifecycle(Lifecycle.State.STARTED) {
  *                  adapter.emitAll(viewModel.flow)
@@ -94,7 +95,7 @@ class ListState<T : Any> : ListOwner<T> {
     }
 
     /**
-     * 若[ListState]和[CoroutineListDiffer]构建了双向通信，
+     * 若[ListState]和[CoroutineListDiffer]建立了双向通信，
      * 则提交新列表，并将更新操作分发给[listeners]时:
      * ### [newList]是[MutableList]类型
      * [ListState]中的sourceList通过[addAll]更新为[newList]，
@@ -163,6 +164,9 @@ class ListState<T : Any> : ListOwner<T> {
     }
 }
 
+/**
+ * 将[ListState]转换为列表更新数据流
+ */
 fun <T : Any> ListState<T>.asFlow(scope: CoroutineScope): Flow<ListData<T>> {
     val mediator = ListMediatorImpl(scope, this)
     return ListDataStateFlow(scope, mediator.flow, mediator)
@@ -196,7 +200,7 @@ private class ListMediatorImpl<T : Any>(
 }
 
 /**
- * 列表数据状态流
+ * 列表更新数据状态流
  */
 private class ListDataStateFlow<T : Any>(
     scope: CoroutineScope,
