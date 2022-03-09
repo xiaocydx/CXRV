@@ -4,6 +4,7 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.xiaocydx.recycler.list.ListOwner
 import com.xiaocydx.recycler.list.ListState
 import com.xiaocydx.recycler.list.addItem
 import com.xiaocydx.recycler.list.removeItemAt
@@ -13,13 +14,37 @@ import com.xiaocydx.recycler.paging.transformEventFlow
 import com.xiaocydx.recycler.paging.transformItem
 
 /**
+ * 视图控制器 + [PagingViewModel]作为UI层
+ *
+ * 视图控制器可以在非活跃状态/重建期间取消收集[flow]，
+ * 在恢复活跃状态/重建后，重新收集分页[flow]，更新/恢复视图。
+ *
  * @author xcc
  * @date 2022/2/17
  */
 class PagingViewModel(
+    /**
+     * [FooRepository]作为Data层
+     */
     private val repository: FooRepository
 ) : ViewModel() {
+
+    /**
+     * 列表状态
+     *
+     * 保存列表数据，跟视图控制器建立基于[ListOwner]的双向通信。
+     */
     private val listState = ListState<Foo>()
+
+    /**
+     * 分页数据流
+     *
+     * 1.[transformEventFlow]的转换逻辑可以抽取到业务层中。
+     * 2.[storeIn]将转换后的分页数据流和[listState]结合，得到新的分页数据流。
+     * 3.[storeIn]传入[viewModelScope]，表示要将分页数据流转换为热流，
+     * 在视图控制器处于非活跃状态/重建期间，上游冷流仍然可以发射数据，
+     * 在视图控制器恢复活跃状态/重建后，重新收集转换后的热流，完成更新/恢复视图。
+     */
     val flow = repository.flow
         .transformEventFlow { flow ->
             flow.transformItem { loadType, item ->
@@ -39,8 +64,10 @@ class PagingViewModel(
     }
 
     fun insertItem() {
-        var lastNum = listState.currentList.lastOrNull()?.num ?: 0
-        val item = createFoo(num = ++lastNum, tag = "Pager")
+        val item = createFoo(
+            tag = "Pager",
+            num = listState.currentList.size
+        )
         listState.addItem(0, item)
     }
 

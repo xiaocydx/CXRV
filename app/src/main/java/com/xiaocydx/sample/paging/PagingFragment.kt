@@ -117,8 +117,10 @@ abstract class PagingFragment : Fragment() {
     }
 
     private fun adapterInsertItem() {
-        var lastNum = adapter.currentList.lastOrNull()?.num ?: 0
-        val item = viewModel.createFoo(tag = "Adapter", num = ++lastNum)
+        val item = viewModel.createFoo(
+            tag = "Adapter",
+            num = adapter.currentList.size
+        )
         adapter.addItem(0, item)
     }
 
