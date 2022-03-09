@@ -7,7 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.xiaocydx.recycler.list.ListState
 import com.xiaocydx.recycler.list.addItem
 import com.xiaocydx.recycler.list.removeItemAt
+import com.xiaocydx.recycler.paging.LoadType
 import com.xiaocydx.recycler.paging.storeIn
+import com.xiaocydx.recycler.paging.transformEventFlow
 import com.xiaocydx.recycler.paging.transformItem
 
 /**
@@ -19,9 +21,16 @@ class PagingViewModel(
 ) : ViewModel() {
     private val listState = ListState<Foo>()
     val flow = repository.flow
-        .transformItem { item ->
-            item.copy(name = "${item.name} transform")
-        }.storeIn(listState, viewModelScope)
+        .transformEventFlow { flow ->
+            flow.transformItem { loadType, item ->
+                val suffix = when (loadType) {
+                    LoadType.REFRESH -> "Refresh"
+                    LoadType.APPEND -> "Append"
+                }
+                item.copy(name = "${item.name} $suffix")
+            }
+        }
+        .storeIn(listState, viewModelScope)
 
     val rvId = ViewCompat.generateViewId()
 
