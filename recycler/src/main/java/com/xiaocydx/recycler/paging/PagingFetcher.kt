@@ -39,9 +39,12 @@ internal class PagingFetcher<K : Any, T : Any>(
         }
 
         launch(start = UNDISPATCHED) {
-            appendEvent.flow
-                .filter { loadStates.isAllowAppend }
-                .collect { channel.doLoad(LoadType.APPEND) }
+            appendEvent.flow.filter {
+                when {
+                    loadStates.append.isFailure -> config.appendFailureAutToRetry
+                    else -> loadStates.isAllowAppend
+                }
+            }.collect { channel.doLoad(LoadType.APPEND) }
         }
 
         launch(start = UNDISPATCHED) {
