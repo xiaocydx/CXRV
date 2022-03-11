@@ -1,12 +1,13 @@
 package com.xiaocydx.recycler.paging
 
+import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.OnScrollListener
+import androidx.recyclerview.widget.RecyclerView.OnChildAttachStateChangeListener
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.isPreLayout
 import com.xiaocydx.recycler.extension.hasDisplayItem
 import com.xiaocydx.recycler.extension.isLastDisplayItem
-import com.xiaocydx.recycler.helper.ItemVisibleHelper
+import com.xiaocydx.recycler.extension.isLastItemVisible
 import com.xiaocydx.recycler.list.AdapterAttachCallback
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.ListChangedListener
@@ -18,16 +19,16 @@ import com.xiaocydx.recycler.list.ViewHolderListener
  * ### [postAppend]
  * 刷新加载结果可能和之前第一页结果一致，
  * 此时[onBindViewHolder]不会被调用，也就不会尝试触发末尾加载，
- * 因此调用[postAppend]延迟执行[appendIfLastItemVisible]，触发末尾加载。
+ * 因此调用[postAppend]发送消息执行[appendIfLastItemVisible]，触发末尾加载。
  *
  * ### [append]
- * 若在[postAppend]的延迟任务执行之前，[append]被调用了，
- * 则会通过[removeAppend]移除[postAppend]的延迟任务，
+ * 若在[postAppend]发送的消息被执行之前，已调用[append]，
+ * 则会通过[removeAppend]移除[postAppend]发送的消息，
  * 表示末尾加载已触发，不用靠[postAppend]触发末尾加载。
  *
  * ### 执行时序
  * ```
- *  +----------------+        +------------+  delay  +---------------+
+ *  +----------------+        +------------+         +---------------+
  *  | RefreshSuccess | -----> | postAppend | ------> | AppendLoading |
  *  +----------------+        +------------+         +---------------+
  *          |                       ∧
@@ -47,9 +48,7 @@ internal class AppendTrigger(
     private var isPostAppend = false
     private val adapter: ListAdapter<*, *> = collector.adapter
     private var previousNotEmpty = adapter.hasDisplayItem
-    private val helper = ItemVisibleHelper()
-    private val recyclerView: RecyclerView?
-        get() = helper.recyclerView
+    private var recyclerView: RecyclerView? = null
     private val isAllowAppend: Boolean
         get() = collector.loadStates.isAllowAppend
 
@@ -70,6 +69,7 @@ internal class AppendTrigger(
             // 刷新加载结果可能和之前第一页结果一致，
             // 此时onBindViewHolder()不会被调用，需要主动触发末尾加载
             postAppend()
+            appendIfLastItemAttached.keepEnabled()
             return
         }
         current.refresh.onSuccess {
@@ -85,8 +85,8 @@ internal class AppendTrigger(
         if (isAllowAppend && adapter.isLastDisplayItem(position)) {
             if (recyclerView?.isPreLayout == true) {
                 // 此时可能是调用了notifyItemRangeChanged()，额外触发了onBindViewHolder()，
-                // 这种情况不符合滑动触发末尾加载的条件，因此替换为postAppend()触发末尾加载。
-                postAppend()
+                // 这种情况不符合滑动绑定触发末尾加载的条件，因此替换为LastItemAttached触发方案。
+                appendIfLastItemAttached.keepEnabled()
                 return
             }
             append()
@@ -104,64 +104,78 @@ internal class AppendTrigger(
         previousNotEmpty = currentNotEmpty
     }
 
-    /**
-     * 发送消息、添加滚动监听执行[run]
-     *
-     * 第一页数据可能超过一屏，此时仅靠消息执行[appendIfLastItemVisible]，
-     * 并不会触发末尾加载，因此添加滚动监听，滚动过程执行[appendIfLastItemVisible]。
-     */
     private fun postAppend() {
+        removeAppend()
         if (!isPostAppend) {
             isPostAppend = true
             recyclerView?.post(appendIfLastItemVisible)
-            recyclerView?.addOnScrollListener(appendIfLastItemVisible)
         }
     }
 
-    /**
-     * 移除[postAppend]发送的消息、添加的滚动监听
-     */
     private fun removeAppend() {
         if (isPostAppend) {
             isPostAppend = false
             recyclerView?.removeCallbacks(appendIfLastItemVisible)
-            recyclerView?.removeOnScrollListener(appendIfLastItemVisible)
         }
     }
 
-    /**
-     * 若在[postAppend]发送的消息被执行之前，该函数被调用，
-     * 则会通过[removeAppend]移除[postAppend]发送的消息，
-     * 表示末尾加载已触发，不需要靠[postAppend]进行触发。
-     */
     private fun append() {
         removeAppend()
         collector.append()
+        appendIfLastItemAttached.failureEnabled()
     }
 
     /**
-     * 分页场景下Footer一般只有一个，即加载Footer，
-     * 因此判断最后一个item是否可视，若可视则触发末尾加载，
-     * 该item可能是加载Footer或者[adapter]的最后一个item。
+     * 若最后一个item可视，则触发末尾加载，
+     * 最后一个item可能是加载Footer或者[adapter]的最后一个item。
      */
-    private val appendIfLastItemVisible = object : OnScrollListener(), Runnable {
-        override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
-            run()
+    private val appendIfLastItemVisible = Runnable {
+        if (isAllowAppend && recyclerView?.isLastItemVisible == true) {
+            append()
+        }
+    }
+
+    /**
+     * 若最后一个item添加为子View，则触发末尾加载，
+     * 最后一个item可能是加载Footer或者[adapter]的最后一个item。
+     */
+    private val appendIfLastItemAttached = object : OnChildAttachStateChangeListener {
+        private var enabled = false
+        private val isAppendFailure: Boolean
+            get() = collector.loadStates.append.isFailure
+
+        fun keepEnabled() {
+            enabled = true
         }
 
-        override fun run() {
-            if (isAllowAppend && helper.isLastItemVisible) {
-                append()
+        fun failureEnabled() {
+            enabled = false
+        }
+
+        override fun onChildViewAttachedToWindow(view: View) {
+            if (recyclerView?.isPreLayout == true) {
+                return
+            }
+            if (enabled || isAppendFailure) {
+                val lm = recyclerView?.layoutManager ?: return
+                val holder = recyclerView?.getChildViewHolder(view) ?: return
+                if (holder.layoutPosition == lm.itemCount - 1) {
+                    append()
+                }
             }
         }
+
+        override fun onChildViewDetachedFromWindow(view: View): Unit = Unit
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        helper.recyclerView = recyclerView
+        recyclerView.addOnChildAttachStateChangeListener(appendIfLastItemAttached)
+        this.recyclerView = recyclerView
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        recyclerView.removeOnChildAttachStateChangeListener(appendIfLastItemAttached)
         removeAppend()
-        helper.recyclerView = null
+        this.recyclerView = null
     }
 }

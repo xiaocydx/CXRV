@@ -55,7 +55,7 @@ val LoadStates.isFully: Boolean
 val LoadStates.isAllowAppend: Boolean
     get() = when {
         !refresh.isSuccess || refresh.isFully -> false
-        append.isLoading || append.isFailure || append.isFully -> false
+        append.isLoading || append.isFully -> false
         else -> true
     }
 
