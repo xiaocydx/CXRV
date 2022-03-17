@@ -9,6 +9,7 @@ import com.xiaocydx.sample.itemclick.ItemClickActivity
 import com.xiaocydx.sample.itemselect.MultiSelectionActivity
 import com.xiaocydx.sample.itemselect.SingleSelectionActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
+import com.xiaocydx.sample.paging.article.ArticleActivity
 import com.xiaocydx.sample.paging.PagingActivity
 import com.xiaocydx.sample.viewpager.ViewPagerActivity
 
@@ -40,6 +41,10 @@ class MainActivity : AppCompatActivity() {
 
     fun startPagingActivity(view: View) {
         startActivity<PagingActivity>()
+    }
+
+    fun startArticleActivity(view: View) {
+        startActivity<ArticleActivity>()
     }
 
     fun startViewPagerActivity(view: View) {

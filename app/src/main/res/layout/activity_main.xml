@@ -43,7 +43,15 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:onClick="startPagingActivity"
-        android:text="分页加载示例"
+        android:text="分页加载示例（本地测试）"
+        android:textAllCaps="false" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:onClick="startArticleActivity"
+        android:text="分页加载示例（网络请求）"
         android:textAllCaps="false" />
 
     <Button

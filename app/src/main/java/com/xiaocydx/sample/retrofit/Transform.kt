@@ -1,0 +1,196 @@
+package com.xiaocydx.sample.retrofit
+
+import androidx.annotation.CheckResult
+import retrofit2.*
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import kotlin.reflect.KClass
+
+/**
+ * 实现[ContractResponse]的类，是跟服务端约定的响应Body，例如：
+ * ```
+ * data class BaseResponse<T>(
+ *     val data: T? = null,
+ *     val errorCode: Int = -1,
+ *     val errorMsg: String? = null
+ * ) : ContractResponse {
+ *
+ *     override fun getOrNull(): Any? = data
+ *
+ *     override fun exceptionOrNull(): Throwable? = when (errorCode) {
+ *         SUCCEED_CODE -> null
+ *         else -> IllegalArgumentException("errorCode = $errorCode, errorMsg = $errorMsg")
+ *     }
+ * }
+ * ```
+ */
+interface ContractResponse {
+    /**
+     * 返回数据，若没有则返回`null`
+     */
+    fun getOrNull(): Any?
+
+    /**
+     * 返回异常，若没有则返回`null`
+     *
+     * 返回的异常会通过[TransformCallAdapterFactory.exceptionTransform]进行转换
+     */
+    fun exceptionOrNull(): Throwable?
+}
+
+/**
+ * 将`Call<T>`或者挂起函数的返回值，按[responseClass]进行转换、解析，例如：
+ * ```
+ * interface ApiService {
+ *
+ *     @GET("foo/list")
+ *     @Transform(BaseResponse::class)
+ *     fun getFooList(): Call<List<Foo>>
+ *
+ *     @GET("foo/list")
+ *     @Transform(BaseResponse::class)
+ *     suspend fun getFooListSuspend(): List<Foo>
+ * }
+ * ```
+ */
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Transform(val responseClass: KClass<out ContractResponse>)
+
+/**
+ * 实现[Transform]注解功能的[CallAdapter]工厂类
+ *
+ * * 若函数没有[Transform]注解，则按[defaultResponseClass]进行转换、解析。
+ * * [Callback.onFailure]的异常和[ContractResponse.exceptionOrNull]的异常，
+ * 会通过[exceptionTransform]进行转换，转换结果可以是自定义HttpException。
+ */
+class TransformCallAdapterFactory(
+    private val defaultResponseClass: KClass<out ContractResponse>? = null,
+    private val exceptionTransform: ((exception: Throwable) -> Throwable)? = null
+) : CallAdapter.Factory() {
+
+    override fun get(
+        returnType: Type,
+        annotations: Array<out Annotation>,
+        retrofit: Retrofit
+    ): CallAdapter<*, *>? {
+        if (getRawType(returnType) != Call::class.java) {
+            return null
+        }
+        require(returnType is ParameterizedType) {
+            "Call<T>的T不是ParameterizedType"
+        }
+
+        val transform = annotations
+            .firstNotNullOfOrNull { it as? Transform }
+        val rawType: Class<out ContractResponse> = when {
+            transform != null -> transform.responseClass.java
+            else -> defaultResponseClass?.java
+        } ?: return null
+
+        return TransformCallAdapter(
+            rawType = rawType,
+            dataType = getParameterUpperBound(0, returnType),
+            next = retrofit.nextCallAdapter(this, returnType, annotations),
+            exceptionTransform = exceptionTransform
+        )
+    }
+}
+
+/**
+ * 实现[Transform]注解功能的[CallAdapter]
+ *
+ * [Callback.onFailure]的异常和[ContractResponse.exceptionOrNull]的异常，
+ * 会通过[exceptionTransform]进行转换，转换结果可以是自定义HttpException。
+ */
+class TransformCallAdapter(
+    rawType: Class<out ContractResponse>,
+    private val dataType: Type,
+    private val next: CallAdapter<*, *>,
+    private val exceptionTransform: ((exception: Throwable) -> Throwable)? = null
+) : CallAdapter<Any, Call<*>> {
+    private val responseType = ParameterizedTypeImpl(rawType, dataType)
+
+    override fun responseType(): Type = responseType
+
+    @Suppress("UNCHECKED_CAST")
+    override fun adapt(call: Call<Any>): Call<*> {
+        val adapted = (next as CallAdapter<Any, Any>).adapt(call)
+        require(adapted is Call<*>) {
+            "${next.javaClass.simpleName}.adapt()的返回值类型不是Call，无法做转换处理"
+        }
+        require(next.responseType() == dataType) {
+            "${next.javaClass.simpleName}.responseType()和Call<T>的T不一致，无法做转换处理"
+        }
+        return CallImpl(adapted, exceptionTransform)
+    }
+
+    private data class ParameterizedTypeImpl(
+        private val rawType: Type,
+        private val responseType: Type
+    ) : ParameterizedType {
+        private val typeArguments = arrayOf(responseType)
+
+        override fun getOwnerType(): Type? = null
+
+        override fun getRawType(): Type = rawType
+
+        override fun getActualTypeArguments(): Array<Type> = typeArguments.clone()
+    }
+
+    private class CallImpl<T>(
+        private val delegate: Call<T>,
+        private val exceptionTransform: ((exception: Throwable) -> Throwable)? = null
+    ) : Call<T> by delegate {
+        private val receiver: Call<T> = this
+
+        override fun enqueue(callback: Callback<T>) {
+            delegate.enqueue(object : Callback<T> {
+                override fun onResponse(call: Call<T>, response: Response<T>) {
+                    val exception = response.exceptionOrNull()
+                    if (exception != null) {
+                        callback.onFailure(receiver, exception.transform())
+                    } else {
+                        callback.onResponse(receiver, response.transform())
+                    }
+                }
+
+                override fun onFailure(call: Call<T>, exception: Throwable) {
+                    callback.onFailure(receiver, exception.transform())
+                }
+            })
+        }
+
+        @CheckResult
+        private fun Throwable.transform(): Throwable {
+            return exceptionTransform?.invoke(this) ?: this
+        }
+
+        @CheckResult
+        @Suppress("UNCHECKED_CAST")
+        private fun Response<T>.transform(): Response<T> {
+            val body = body() as ContractResponse
+            return Response.success(body.getOrNull(), raw()) as Response<T>
+        }
+
+        private fun Response<T>.exceptionOrNull(): Throwable? {
+            if (!isSuccessful) {
+                return HttpException(this)
+            }
+            return when (val body = body()) {
+                null -> {
+                    // 该分支代码copy自Call.await()
+                    val invocation = delegate.request().tag(Invocation::class.java)!!
+                    val method = invocation.method()
+                    NullPointerException("Response from " +
+                            method.declaringClass.name +
+                            '.' +
+                            method.name +
+                            " was null but response body type was declared as non-null")
+                }
+                !is ContractResponse -> AssertionError("转换过程出现断言异常")
+                else -> body.exceptionOrNull()
+            }
+        }
+    }
+}

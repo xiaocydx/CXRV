@@ -18,7 +18,7 @@ import com.xiaocydx.sample.paging.MenuAction.*
 import com.xiaocydx.sample.showToast
 
 /**
- * 分页加载示例代码
+ * 分页加载示例代码（本地测试）
  *
  * 页面配置发生变更时（例如旋转屏幕），保留分页加载数据、列表滚动位置。
  *
