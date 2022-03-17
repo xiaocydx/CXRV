@@ -144,6 +144,10 @@ class TransformCallAdapter(
     ) : Call<T> by delegate {
         private val receiver: Call<T> = this
 
+        override fun execute(): Response<T> {
+            return delegate.execute().transform()
+        }
+
         override fun enqueue(callback: Callback<T>) {
             delegate.enqueue(object : Callback<T> {
                 override fun onResponse(call: Call<T>, response: Response<T>) {
@@ -161,6 +165,10 @@ class TransformCallAdapter(
             })
         }
 
+        override fun clone(): Call<T> {
+            return CallImpl(delegate, exceptionTransform)
+        }
+
         @CheckResult
         private fun Throwable.transform(): Throwable {
             return exceptionTransform?.invoke(this) ?: this
@@ -168,9 +176,13 @@ class TransformCallAdapter(
 
         @CheckResult
         @Suppress("UNCHECKED_CAST")
-        private fun Response<T>.transform(): Response<T> {
-            val body = body() as ContractResponse
-            return Response.success(body.getOrNull(), raw()) as Response<T>
+        private fun Response<T>.transform(): Response<T> = when {
+            isSuccessful -> {
+                val body = body() as? ContractResponse
+                        ?: throw AssertionError("转换过程出现断言异常")
+                Response.success(body.getOrNull(), raw()) as Response<T>
+            }
+            else -> this
         }
 
         private fun Response<T>.exceptionOrNull(): Throwable? {
