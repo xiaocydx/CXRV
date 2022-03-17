@@ -64,7 +64,7 @@ suspend fun <T : Any> ListAdapter<T, *>.emitAll(
  * 分页数据收集器，负责收集指定流的[PagingData]
  */
 class PagingCollector<T : Any> internal constructor(
-    internal val adapter: ListAdapter<T, *>,
+    private val adapter: ListAdapter<T, *>,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) : FlowCollector<PagingData<T>> {
     private var updateVersion = 0
@@ -80,7 +80,7 @@ class PagingCollector<T : Any> internal constructor(
 
     init {
         assertMainThread()
-        AppendTrigger(this)
+        AppendTrigger(adapter, this)
         adapter.addListExecuteListener { op ->
             mediator?.asListMediator<T>()?.updateList(op)
         }

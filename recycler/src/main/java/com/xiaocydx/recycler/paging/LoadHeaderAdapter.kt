@@ -21,9 +21,9 @@ internal class LoadHeaderAdapter(
     LoadStatesListener, ListChangedListener<Any> {
     private var showType: ShowType = ShowType.NONE
     private var loadStates: LoadStates = LoadStates.Incomplete
-    private val collector: PagingCollector<*> = adapter.pagingCollector
 
     init {
+        val collector = adapter.pagingCollector
         config.setCollector(collector)
         adapter.addListChangedListener(this)
         collector.addLoadStatesListener(this)

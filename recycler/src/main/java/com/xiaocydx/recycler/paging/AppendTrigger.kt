@@ -42,13 +42,13 @@ import com.xiaocydx.recycler.list.ViewHolderListener
  * @date 2021/9/19
  */
 internal class AppendTrigger(
+    private val adapter: ListAdapter<*, *>,
     private val collector: PagingCollector<*>
 ) : LoadStatesListener, ViewHolderListener<ViewHolder>,
     ListChangedListener<Any>, AdapterAttachCallback {
     private var isPostAppend = false
-    private val adapter: ListAdapter<*, *> = collector.adapter
-    private var previousNotEmpty = adapter.hasDisplayItem
     private var recyclerView: RecyclerView? = null
+    private var previousNotEmpty = adapter.hasDisplayItem
     private val isAllowAppend: Boolean
         get() = collector.loadStates.isAllowAppend
 
@@ -59,6 +59,18 @@ internal class AppendTrigger(
             it.addAdapterAttachCallback(this)
         }
         collector.addLoadStatesListener(this)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>) {
+        if (isAllowAppend && adapter.isLastDisplayItem(position)) {
+            if (recyclerView?.isPreLayout == true) {
+                // 此时可能是调用了notifyItemRangeChanged()，额外触发了onBindViewHolder()，
+                // 这种情况不符合滑动绑定触发末尾加载的条件，因此替换为LastItemAttached触发方案。
+                appendIfLastItemAttached.keepEnabled()
+                return
+            }
+            append()
+        }
     }
 
     override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
@@ -78,18 +90,6 @@ internal class AppendTrigger(
                 // 注意：列表在加载之前可能预设了item，因此当前列表不为空不代表加载的第一页不为空。
                 append()
             }
-        }
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>) {
-        if (isAllowAppend && adapter.isLastDisplayItem(position)) {
-            if (recyclerView?.isPreLayout == true) {
-                // 此时可能是调用了notifyItemRangeChanged()，额外触发了onBindViewHolder()，
-                // 这种情况不符合滑动绑定触发末尾加载的条件，因此替换为LastItemAttached触发方案。
-                appendIfLastItemAttached.keepEnabled()
-                return
-            }
-            append()
         }
     }
 
