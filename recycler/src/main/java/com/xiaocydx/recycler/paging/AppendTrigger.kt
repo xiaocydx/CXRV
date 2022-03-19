@@ -5,9 +5,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnChildAttachStateChangeListener
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.isPreLayout
-import com.xiaocydx.recycler.extension.hasDisplayItem
-import com.xiaocydx.recycler.extension.isLastDisplayItem
-import com.xiaocydx.recycler.extension.isLastItemVisible
+import com.xiaocydx.recycler.extension.*
 import com.xiaocydx.recycler.list.AdapterAttachCallback
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.ListChangedListener
@@ -45,10 +43,12 @@ internal class AppendTrigger(
     private val adapter: ListAdapter<*, *>,
     private val collector: PagingCollector<*>
 ) : LoadStatesListener, ViewHolderListener<ViewHolder>,
-    ListChangedListener<Any>, AdapterAttachCallback {
-    private var isPostAppend = false
+        ListChangedListener<Any>, AdapterAttachCallback {
     private var recyclerView: RecyclerView? = null
     private var previousNotEmpty = adapter.hasDisplayItem
+    private var postAppendDisposable: Disposable? = null
+    private val appendIfLastItemVisible = AppendIfLastItemVisible()
+    private val appendIfLastItemAttached = AppendIfLastItemAttached()
     private val isAllowAppend: Boolean
         get() = collector.loadStates.isAllowAppend
 
@@ -106,17 +106,13 @@ internal class AppendTrigger(
 
     private fun postAppend() {
         removeAppend()
-        if (!isPostAppend) {
-            isPostAppend = true
-            recyclerView?.post(appendIfLastItemVisible)
-        }
+        postAppendDisposable = recyclerView
+            ?.doOnFrameComplete(appendIfLastItemVisible)
     }
 
     private fun removeAppend() {
-        if (isPostAppend) {
-            isPostAppend = false
-            recyclerView?.removeCallbacks(appendIfLastItemVisible)
-        }
+        postAppendDisposable?.dispose()
+        postAppendDisposable = null
     }
 
     private fun append() {
@@ -125,13 +121,26 @@ internal class AppendTrigger(
         appendIfLastItemAttached.failureEnabled()
     }
 
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        recyclerView.addOnChildAttachStateChangeListener(appendIfLastItemAttached)
+        this.recyclerView = recyclerView
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        recyclerView.removeOnChildAttachStateChangeListener(appendIfLastItemAttached)
+        removeAppend()
+        this.recyclerView = null
+    }
+
     /**
      * 若最后一个item可视，则触发末尾加载，
      * 最后一个item可能是加载Footer或者[adapter]的最后一个item。
      */
-    private val appendIfLastItemVisible = Runnable {
-        if (isAllowAppend && recyclerView?.isLastItemVisible == true) {
-            append()
+    private inner class AppendIfLastItemVisible : () -> Unit {
+        override fun invoke() {
+            if (isAllowAppend && recyclerView?.isLastItemVisible == true) {
+                append()
+            }
         }
     }
 
@@ -139,7 +148,7 @@ internal class AppendTrigger(
      * 若最后一个item添加为子View，则触发末尾加载，
      * 最后一个item可能是加载Footer或者[adapter]的最后一个item。
      */
-    private val appendIfLastItemAttached = object : OnChildAttachStateChangeListener {
+    private inner class AppendIfLastItemAttached : OnChildAttachStateChangeListener {
         private var enabled = false
         private val isAppendFailure: Boolean
             get() = collector.loadStates.append.isFailure
@@ -166,16 +175,5 @@ internal class AppendTrigger(
         }
 
         override fun onChildViewDetachedFromWindow(view: View): Unit = Unit
-    }
-
-    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        recyclerView.addOnChildAttachStateChangeListener(appendIfLastItemAttached)
-        this.recyclerView = recyclerView
-    }
-
-    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        recyclerView.removeOnChildAttachStateChangeListener(appendIfLastItemAttached)
-        removeAppend()
-        this.recyclerView = null
     }
 }

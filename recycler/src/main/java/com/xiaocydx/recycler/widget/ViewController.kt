@@ -7,6 +7,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
+import com.xiaocydx.recycler.extension.doOnFrameComplete
 
 /**
  * 从[Recycler]中清除ViewHolder的控制器
@@ -154,7 +155,9 @@ internal class ViewController : View.OnAttachStateChangeListener {
     inline fun withoutAnim(block: () -> Unit) {
         block()
         val itemAnimator = recyclerView?.itemAnimator ?: return
-        recyclerView?.post { viewHolder?.let(itemAnimator::endAnimation) }
+        recyclerView?.doOnFrameComplete {
+            viewHolder?.let(itemAnimator::endAnimation)
+        }
     }
 
     @VisibleForTesting

@@ -3,6 +3,7 @@ package com.xiaocydx.recycler.helper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.xiaocydx.recycler.extension.doOnFrameComplete
 import com.xiaocydx.recycler.extension.hasDisplayItem
 import com.xiaocydx.recycler.list.AdapterAttachCallback
 import com.xiaocydx.recycler.list.ListAdapter
@@ -49,13 +50,15 @@ internal class ListAdapterHelper(
     }
 
     /**
-     * 发送同步消息，确保瀑布流布局添加/移除/交换item后，ItemDecoration能正常显示
+     * 确保瀑布流布局添加/移除/交换item后，ItemDecoration能正常显示
      */
     private fun postInvalidateItemDecorations() {
         if (!isStaggeredGrid) {
             return
         }
-        recyclerView?.post { invalidateItemDecorationsInternal() }
+        recyclerView?.doOnFrameComplete {
+            invalidateItemDecorationsInternal()
+        }
     }
 
     /**
