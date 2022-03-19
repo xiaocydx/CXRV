@@ -44,14 +44,15 @@ internal fun assertMainThread() {
 /**
  * 在下一帧绘制完成后执行[action]
  */
-internal fun View.doOnFrameComplete(action: () -> Unit): Disposable {
-    if (!isAttachedToWindow) {
-        return emptyDisposable()
-    }
-    return if (isLayoutRequested) {
+internal fun View.doOnFrameComplete(
+    action: () -> Unit
+): Disposable = when {
+    !isAttachedToWindow -> emptyDisposable()
+    isLayoutRequested -> {
         // 已经申请重绘，发送同步消息，等待下一帧同步屏障解除后被执行
         FrameCompleteObserver(postFrame = false, handler, action)
-    } else {
+    }
+    else -> {
         // 下一帧doFrame()的执行过程可能会申请重绘，添加同步屏障，
         // 因此发送异步消息，避免被同步屏障影响，无法在当前帧被执行。
         FrameCompleteObserver(postFrame = true, asyncHandler, action)
