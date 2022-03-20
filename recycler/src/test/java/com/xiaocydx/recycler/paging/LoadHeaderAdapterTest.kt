@@ -82,7 +82,7 @@ class LoadHeaderAdapterTest {
             activity.recyclerView.adapter = concatAdapter
             collector.setLoadState(
                 LoadType.REFRESH,
-                LoadState.Success(dataSize = 0, isFully = true)
+                LoadState.Success(isFully = true)
             )
             verify(exactly = 1) { onCreate(collector, ofType()) }
             verify(exactly = 1) { onBind(collector, ofType()) }
@@ -127,7 +127,7 @@ class LoadHeaderAdapterTest {
             adapter.insertItem("A")
             collector.setLoadState(
                 LoadType.REFRESH,
-                LoadState.Success(dataSize = 1, isFully = true)
+                LoadState.Success(isFully = true)
             )
             verify(exactly = 0) { onCreate(collector, ofType()) }
             verify(exactly = 0) { onBind(collector, ofType()) }

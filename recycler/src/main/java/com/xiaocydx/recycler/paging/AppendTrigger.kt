@@ -62,35 +62,26 @@ internal class AppendTrigger(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>) {
-        if (isAllowAppend && adapter.isLastDisplayItem(position)) {
-            if (recyclerView?.isPreLayout == true) {
-                // 此时可能是调用了notifyItemRangeChanged()，额外触发了onBindViewHolder()，
-                // 这种情况不符合滑动绑定触发末尾加载的条件，因此替换为LastItemAttached触发方案。
-                appendIfLastItemAttached.keepEnabled()
-                return
-            }
-            append()
-        }
-    }
-
-    override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
-        if (!previous.refreshToSuccess(current)) {
+        if (!isAllowAppend || !adapter.isLastDisplayItem(position)) {
             return
         }
-        if (adapter.hasDisplayItem) {
-            // 刷新加载结果可能和之前第一页结果一致，
-            // 此时onBindViewHolder()不会被调用，需要主动触发末尾加载
-            postAppend()
+        if (recyclerView?.isPreLayout == true) {
+            // 此时可能是调用了notifyItemRangeChanged()，额外触发了onBindViewHolder()，
+            // 这种情况不符合滑动绑定触发末尾加载的条件，因此替换为LastItemAttached触发方案。
             appendIfLastItemAttached.keepEnabled()
             return
         }
-        current.refresh.onSuccess {
-            if (dataSize == 0 && !isFully) {
-                // 若刷新加载的结果为空，且没有加载完全，则主动触发末尾加载
-                // 注意：列表在加载之前可能预设了item，因此当前列表不为空不代表加载的第一页不为空。
-                append()
-            }
+        append()
+    }
+
+    override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
+        if (!adapter.hasDisplayItem || !previous.refreshToSuccess(current)) {
+            return
         }
+        // 刷新加载结果可能和之前第一页结果一致，
+        // 此时onBindViewHolder()不会被调用，需要主动触发末尾加载
+        postAppend()
+        appendIfLastItemAttached.keepEnabled()
     }
 
     override fun onListChanged(current: List<Any>) {

@@ -20,7 +20,14 @@ data class PagingConfig(
     val initPageSize: Int = pageSize,
 
     /**
-     * 在[APPEND]加载失败后，若该属性为`true`，则会自动重试，
+     * 当[LoadResult.Success]的`data`为空且`nextKey`不为空时，
+     * 若该属性为`true`，则保持加载状态和加载类型，按`nextKey`获取下一页，
+     * 若该属性为`false`，则认为这是一种异常情况，按[LoadResult.Failure]处理。
+     */
+    val loadResultEmptyFetchNext: Boolean = true,
+
+    /**
+     * 当[APPEND]加载失败时，若该属性为`true`，则会自动重试，
      * 自动重试的含义是不需要点击重试，时机是再次满足[APPEND]加载的条件，
      * 例如滑动列表，若最后一个item再次可视，则自动重试。
      */

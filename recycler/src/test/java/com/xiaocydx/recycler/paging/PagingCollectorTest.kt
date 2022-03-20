@@ -79,7 +79,7 @@ class PagingCollectorTest {
 
         collector.setLoadState(
             loadType = LoadType.REFRESH,
-            newState = LoadState.Success(1, true)
+            newState = LoadState.Success(isFully = true)
         )
         verify(exactly = 1) { handler.onLoadStatesChanged(any(), any()) }
     }

@@ -81,7 +81,7 @@ class LoadFooterAdapterTest {
         scenario.onActivity { activity ->
             activity.recyclerView.adapter = concatAdapter
             adapter.insertItem("A")
-            collector.setLoadState(LoadType.APPEND, LoadState.Success(dataSize = 1, isFully = true))
+            collector.setLoadState(LoadType.APPEND, LoadState.Success(isFully = true))
             verify(exactly = 1) { onCreate(collector, ofType()) }
             verify(exactly = 1) { onBind(collector, ofType()) }
         }
@@ -123,7 +123,7 @@ class LoadFooterAdapterTest {
         }
         scenario.onActivity { activity ->
             activity.recyclerView.adapter = concatAdapter
-            collector.setLoadState(LoadType.APPEND, LoadState.Success(dataSize = 0, isFully = true))
+            collector.setLoadState(LoadType.APPEND, LoadState.Success(isFully = true))
             verify(exactly = 0) { onCreate(collector, ofType()) }
             verify(exactly = 0) { onBind(collector, ofType()) }
 

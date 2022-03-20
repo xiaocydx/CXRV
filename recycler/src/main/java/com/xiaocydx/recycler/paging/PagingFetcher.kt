@@ -40,9 +40,10 @@ internal class PagingFetcher<K : Any, T : Any>(
 
         launch(start = UNDISPATCHED) {
             appendEvent.flow.filter {
-                when {
-                    loadStates.append.isFailure -> config.appendFailureAutToRetry
-                    else -> loadStates.isAllowAppend
+                if (loadStates.append.isFailure) {
+                    config.appendFailureAutToRetry
+                } else {
+                    loadStates.isAllowAppend
                 }
             }.collect { channel.doLoad(LoadType.APPEND) }
         }
@@ -61,19 +62,34 @@ internal class PagingFetcher<K : Any, T : Any>(
         setLoadState(loadType, LoadState.Loading)
         send(PagingEvent.LoadStateUpdate(loadType, loadStates))
 
-        val loadResult: LoadResult<K, T> = try {
-            source.load(loadParams(loadType))
-        } catch (e: Throwable) {
-            LoadResult.Failure(e)
+        var loadResult: LoadResult<K, T>? = null
+        while (loadResult == null) {
+            loadResult = try {
+                source.load(loadParams(loadType))
+            } catch (e: Throwable) {
+                LoadResult.Failure(e)
+            }
+
+            if (loadResult !is LoadResult.Success
+                    || loadResult.data.isNotEmpty()
+                    || loadResult.nextKey == null) {
+                continue
+            }
+
+            loadResult = if (config.loadResultEmptyFetchNext) {
+                nextKey = loadResult.nextKey
+                null
+            } else {
+                LoadResult.Failure(IllegalArgumentException(
+                    "不合理的加载结果，data为空但nextKey不为空"
+                ))
+            }
         }
 
         when (loadResult) {
             is LoadResult.Success -> {
                 nextKey = loadResult.nextKey
-                setLoadState(loadType, LoadState.Success(
-                    dataSize = loadResult.data.size,
-                    isFully = nextKey == null
-                ))
+                setLoadState(loadType, LoadState.Success(isFully = nextKey == null))
                 send(PagingEvent.LoadDataSuccess(loadResult.data, loadType, loadStates))
             }
             is LoadResult.Failure -> {
@@ -94,7 +110,7 @@ internal class PagingFetcher<K : Any, T : Any>(
     ): LoadParams<K> = LoadParams.create(
         loadType = loadType,
         key = when (loadType) {
-            LoadType.REFRESH -> initKey
+            LoadType.REFRESH -> nextKey ?: initKey
             LoadType.APPEND -> requireNotNull(nextKey) {
                 "nextKey == `null`表示加载完成，不能再进行末尾加载。"
             }

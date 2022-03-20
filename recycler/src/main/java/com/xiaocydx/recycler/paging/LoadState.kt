@@ -23,11 +23,8 @@ sealed class LoadState {
 
     /**
      * 加载成功状态，对应[PagingSource.load]返回[LoadResult.Success]结果
-     *
-     * [dataSize]为加载结果的数量，[dataSize] == `0`不代表加载完全，
-     * 仅当[isFully] == `true`时，才表示加载完全，没有更多数据。
      */
-    data class Success(val dataSize: Int, val isFully: Boolean) : LoadState()
+    data class Success(val isFully: Boolean) : LoadState()
 
     /**
      * 加载失败状态，对应[PagingSource.load]返回[LoadResult.Failure]结果
