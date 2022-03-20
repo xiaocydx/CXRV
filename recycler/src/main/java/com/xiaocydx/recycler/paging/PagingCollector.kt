@@ -73,8 +73,6 @@ class PagingCollector<T : Any> internal constructor(
     private var listeners: ArrayList<LoadStatesListener>? = null
     private var refreshCompleteWhen = IMMEDIATE_COMPLETE
     private var refreshScrollEnabled = true
-    private val RecyclerView.isStaggered: Boolean
-        get() = layoutManager is StaggeredGridLayoutManager
     var loadStates: LoadStates = LoadStates.Incomplete
         private set
 
