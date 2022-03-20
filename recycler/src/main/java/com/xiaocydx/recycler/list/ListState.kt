@@ -3,13 +3,13 @@ package com.xiaocydx.recycler.list
 import androidx.annotation.MainThread
 import com.xiaocydx.recycler.extension.reverseAccessEach
 import com.xiaocydx.recycler.extension.runOnMainThread
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.job
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * 列表状态，和视图控制器建立基于[ListOwner]的双向通信
@@ -167,52 +167,35 @@ class ListState<T : Any> : ListOwner<T> {
 /**
  * 将[ListState]转换为列表更新数据流
  */
-fun <T : Any> ListState<T>.asFlow(scope: CoroutineScope): Flow<ListData<T>> {
-    val mediator = ListMediatorImpl(scope, this)
-    return ListDataStateFlow(scope, mediator.flow, mediator)
+fun <T : Any> ListState<T>.asFlow(): Flow<ListData<T>> = flow {
+    val mediator = ListMediatorImpl(this@asFlow)
+    emit(ListData(mediator.flow, mediator))
 }
 
 private class ListMediatorImpl<T : Any>(
-    scope: CoroutineScope,
     private val listState: ListState<T>
 ) : ListMediator<T> {
-    private val channel: Channel<UpdateOp<T>> = Channel(Channel.UNLIMITED)
+    private val collected = AtomicBoolean()
     override val updateVersion: Int
         get() = listState.updateVersion
     override val currentList: List<T>
         get() = listState.currentList
 
-    val flow: Flow<UpdateOp<T>> = channel.receiveAsFlow()
-
-    init {
-        val listener: (UpdateOp<T>) -> Unit = {
-            channel.trySend(it)
+    val flow: Flow<UpdateOp<T>> = flow {
+        check(collected.compareAndSet(false, true)) {
+            "列表更新数据流Flow<UpdateOp<*>>只能被收集一次"
         }
+        val channel = Channel<UpdateOp<T>>(UNLIMITED)
+        val listener: (UpdateOp<T>) -> Unit = { channel.trySend(it) }
         listState.addUpdatedListener(listener)
-        scope.coroutineContext.job.invokeOnCompletion {
+        try {
+            emitAll(channel)
+        } finally {
             listState.removeUpdatedListener(listener)
         }
     }
 
     override fun updateList(op: UpdateOp<T>) {
         listState.updateList(op, dispatch = false)
-    }
-}
-
-/**
- * 列表更新数据状态流
- */
-private class ListDataStateFlow<T : Any>(
-    scope: CoroutineScope,
-    flow: Flow<UpdateOp<T>>,
-    mediator: ListMediator<T>
-) : CancellableFlow<ListData<T>>(scope) {
-    private val state: ListData<T> = ListData(
-        flow = CancellableFlow(scope, flow),
-        mediator = mediator
-    )
-
-    override suspend fun onActive(channel: SendChannel<ListData<T>>) {
-        channel.send(state)
     }
 }

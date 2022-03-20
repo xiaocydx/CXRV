@@ -30,7 +30,7 @@ internal class PagingFetcher<K : Any, T : Any>(
         private set
 
     val flow: Flow<PagingEvent<T>> = safeChannelFlow<PagingEvent<T>> { channel ->
-        check(!collected) { "分页事件流Flow<PagingEvent<*>>只能被收集一次。" }
+        check(!collected) { "分页事件流Flow<PagingEvent<*>>只能被收集一次" }
         collected = true
         channelFlowJob.invokeOnCompletion {
             // 注意：此处不要用channel::close简化代码，
@@ -112,7 +112,7 @@ internal class PagingFetcher<K : Any, T : Any>(
         key = when (loadType) {
             LoadType.REFRESH -> nextKey ?: initKey
             LoadType.APPEND -> requireNotNull(nextKey) {
-                "nextKey == `null`表示加载完成，不能再进行末尾加载。"
+                "nextKey == `null`表示加载完成，不能再进行末尾加载"
             }
         },
         pageSize = when (loadType) {
