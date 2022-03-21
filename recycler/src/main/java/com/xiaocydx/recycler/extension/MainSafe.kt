@@ -88,11 +88,11 @@ internal fun <T> Flow<T>.flowOnMain(
 /**
  * 不检测执行上下文的Flow，用于内部构建操作符
  */
-internal inline fun <T> unsafeFlow(crossinline block: suspend FlowCollector<T>.() -> Unit): Flow<T> {
-    return object : Flow<T> {
-        override suspend fun collect(collector: FlowCollector<T>) {
-            collector.block()
-        }
+internal inline fun <T> unsafeFlow(
+    crossinline block: suspend FlowCollector<T>.() -> Unit
+): Flow<T> = object : Flow<T> {
+    override suspend fun collect(collector: FlowCollector<T>) {
+        collector.block()
     }
 }
 

@@ -2,6 +2,7 @@ package com.xiaocydx.recycler.paging
 
 import androidx.annotation.MainThread
 import com.xiaocydx.recycler.extension.flowOnMain
+import com.xiaocydx.recycler.extension.unsafeFlow
 import com.xiaocydx.recycler.list.ListMediator
 import com.xiaocydx.recycler.list.ListState
 import com.xiaocydx.recycler.list.UpdateOp
@@ -10,7 +11,6 @@ import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 
 /**
@@ -28,7 +28,7 @@ internal class PagingListMediator<T : Any>(
     override val currentList: List<T>
         get() = listState.currentList
 
-    val flow: Flow<PagingEvent<T>> = flow {
+    val flow: Flow<PagingEvent<T>> = unsafeFlow<PagingEvent<T>> {
         coroutineScope {
             val channel = Channel<PagingEvent<T>>(UNLIMITED)
             launch {
