@@ -6,9 +6,7 @@ import android.view.Choreographer
 import android.view.View
 import androidx.core.os.HandlerCompat
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.resume
 
@@ -79,12 +77,23 @@ internal suspend fun View.awaitFrameComplete() {
  */
 internal fun <T> Flow<T>.flowOnMain(
     mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
-): Flow<T> = flow {
+): Flow<T> = unsafeFlow {
     val flow = when (currentCoroutineContext()[ContinuationInterceptor]) {
         is MainCoroutineDispatcher -> this@flowOnMain
         else -> this@flowOnMain.flowOn(mainDispatcher)
     }
     flow.collect { emit(it) }
+}
+
+/**
+ * 不检测执行上下文的Flow，用于内部构建操作符
+ */
+internal inline fun <T> unsafeFlow(crossinline block: suspend FlowCollector<T>.() -> Unit): Flow<T> {
+    return object : Flow<T> {
+        override suspend fun collect(collector: FlowCollector<T>) {
+            collector.block()
+        }
+    }
 }
 
 private class FrameCompleteObserver(
