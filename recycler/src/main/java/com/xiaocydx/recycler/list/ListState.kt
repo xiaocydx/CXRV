@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * ```
  * class FooViewModel : ViewModel() {
  *     private val listState = ListState()
- *     val flow = listState.asFlow(viewModelScope)
+ *     val flow = listState.asFlow()
  * }
  * ```
  *
