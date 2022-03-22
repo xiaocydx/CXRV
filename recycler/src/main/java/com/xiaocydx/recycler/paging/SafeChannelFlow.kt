@@ -10,8 +10,7 @@ import kotlinx.coroutines.flow.channelFlow
 /**
  * 安全的[channelFlow]
  *
- * 对[SendChannel.send]捕获[ClosedSendChannelException]异常，
- * 包装为[CancellationException]重新抛出，目的是只取消当前所处协程。
+ * 对[SendChannel.send]捕获[ClosedSendChannelException]，包装为[CancellationException]重新抛出。
  */
 internal inline fun <E> safeChannelFlow(
     crossinline block: suspend CoroutineScope.(SendChannel<E>) -> Unit

@@ -86,7 +86,7 @@ internal fun <T> Flow<T>.flowOnMain(
 }
 
 /**
- * 不检测执行上下文的Flow，用于内部构建操作符
+ * 不检测执行上下文、异常透明性的Flow
  */
 internal inline fun <T> unsafeFlow(
     crossinline block: suspend FlowCollector<T>.() -> Unit
