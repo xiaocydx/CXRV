@@ -11,7 +11,7 @@ import com.xiaocydx.recycler.list.UpdateOp
  * @author xcc
  * @date 2021/9/13
  */
-sealed class PagingEvent<T : Any>(
+sealed class PagingEvent<out T : Any>(
     open val loadType: LoadType?,
     open val loadStates: LoadStates
 ) {
@@ -37,6 +37,6 @@ sealed class PagingEvent<T : Any>(
      */
     class ListStateUpdate<T : Any> internal constructor(
         internal val op: UpdateOp<T>,
-        override val loadStates: LoadStates
+        loadStates: LoadStates
     ) : PagingEvent<T>(loadType = null, loadStates)
 }

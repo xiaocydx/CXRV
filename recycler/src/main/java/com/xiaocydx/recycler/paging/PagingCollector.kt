@@ -1,6 +1,5 @@
 package com.xiaocydx.recycler.paging
 
-import android.os.SystemClock
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
@@ -61,6 +60,20 @@ suspend fun <T : Any> ListAdapter<T, *>.emitAll(
 ) = pagingCollector.emitAll(flow)
 
 /**
+ * 开始处理分页事件的监听
+ */
+fun interface HandleEventListener<T : Any> {
+    /**
+     * [PagingCollector]接收到[event]后，[handleEvent]最先被调用，
+     * 若`event.loadType == null`，则表示是列表状态更新事件或者视图控制器恢复事件。
+     *
+     * 对于刷新流程，可以在刷新开始时将列表滚动到首个item，并在滚动完成后才继续处理事件，
+     * 此时下游在等待列表滚动完成，上游在获取分页数据，这是一种高效的处理方式。
+     */
+    suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<T>)
+}
+
+/**
  * 分页数据收集器，负责收集指定流的[PagingData]
  */
 class PagingCollector<T : Any> internal constructor(
@@ -70,15 +83,15 @@ class PagingCollector<T : Any> internal constructor(
     private var updateVersion = 0
     private var resumeJob: Job? = null
     private var mediator: PagingMediator? = null
-    private var listeners: ArrayList<LoadStatesListener>? = null
-    private var refreshCompleteWhen = IMMEDIATE_COMPLETE
-    private var refreshScrollEnabled = true
+    private var loadStatesListeners: ArrayList<LoadStatesListener>? = null
+    private var handleEventListeners: ArrayList<HandleEventListener<in T>>? = null
     var loadStates: LoadStates = LoadStates.Incomplete
         private set
 
     init {
         assertMainThread()
         AppendTrigger(adapter, this)
+        addHandleEventListener(RefreshStartScrollToFirst())
         adapter.addListExecuteListener { op ->
             mediator?.asListMediator<T>()?.updateList(op)
         }
@@ -87,43 +100,49 @@ class PagingCollector<T : Any> internal constructor(
     /**
      * 刷新加载，获取新的[PagingData]
      */
-    @MainThread
     fun refresh() {
-        refreshAtLeast(IMMEDIATE_COMPLETE)
-    }
-
-    /**
-     * 刷新加载，获取新的[PagingData]
-     *
-     * [duration]表示加载开始到加载完成这个过程的至少持续时间，单位ms，
-     * 例如[duration]为200ms，加载完成耗时为150ms，则挂起50ms，50ms后才更新列表和加载状态。
-     *
-     * 下拉刷新场景可以调用该函数，对[duration]传入下拉刷新动画的至少持续时间，
-     * 可以避免刷新加载太快完成，导致下拉刷新动画很快结束的问题，提升用户体验。
-     */
-    @MainThread
-    fun refreshAtLeast(duration: Long) {
-        assertMainThread()
-        refreshCompleteWhen = SystemClock.uptimeMillis() + duration
         mediator?.refresh()
     }
 
     /**
      * 重新加载，该函数会对加载状态做判断，避免冗余请求
      */
-    @MainThread
     fun retry() {
-        assertMainThread()
         mediator?.retry()
     }
 
     /**
-     * 是否启用刷新加载时滚动到第一个item
+     * 末尾加载，该函数会对加载状态做判断，避免冗余请求
+     *
+     * 该函数由[AppendTrigger]调用，暂时不对外开放
+     */
+    internal fun append() {
+        mediator?.append()
+    }
+
+    /**
+     * 添加开始处理分页事件的监听
+     *
+     * [HandleEventListener.handleEvent]中可以调用[removeHandleEventListener]
      */
     @MainThread
-    fun setRefreshScrollEnabled(enabled: Boolean) {
+    fun addHandleEventListener(listener: HandleEventListener<in T>) {
         assertMainThread()
-        refreshScrollEnabled = enabled
+        if (handleEventListeners == null) {
+            handleEventListeners = arrayListOf()
+        }
+        if (!handleEventListeners!!.contains(listener)) {
+            handleEventListeners!!.add(listener)
+        }
+    }
+
+    /**
+     * 移除开始处理分页事件的监听
+     */
+    @MainThread
+    fun removeHandleEventListener(listener: HandleEventListener<in T>) {
+        assertMainThread()
+        handleEventListeners?.remove(listener)
     }
 
     /**
@@ -135,11 +154,11 @@ class PagingCollector<T : Any> internal constructor(
     @MainThread
     fun addLoadStatesListener(listener: LoadStatesListener) {
         assertMainThread()
-        if (listeners == null) {
-            listeners = arrayListOf()
+        if (loadStatesListeners == null) {
+            loadStatesListeners = arrayListOf()
         }
-        if (!listeners!!.contains(listener)) {
-            listeners!!.add(listener)
+        if (!loadStatesListeners!!.contains(listener)) {
+            loadStatesListeners!!.add(listener)
         }
     }
 
@@ -149,31 +168,14 @@ class PagingCollector<T : Any> internal constructor(
     @MainThread
     fun removeLoadStatesListener(listener: LoadStatesListener) {
         assertMainThread()
-        listeners?.remove(listener)
+        loadStatesListeners?.remove(listener)
     }
 
     /**
-     * 末尾加载，该函数会对加载状态做判断，避免冗余请求
+     * 处理[PagingData]
      *
-     * **注意**：该函数由内部[AppendTrigger]调用，不对外开放
-     */
-    @MainThread
-    internal fun append() {
-        assertMainThread()
-        mediator?.append()
-    }
-
-    /**
-     * 收集[PagingData.flow]
-     *
-     * 使用[mainDispatcher]确保在主线程中设置[mediator]和收集事件流。
-     *
-     * ### 初始化或者刷新流程
-     * 先调用[launchResumeJob]执行恢复任务，再收集[PagingData.flow]，
-     * 此时下游正在执行恢复任务，上游正在获取分页数据，这是一种高效的处理方式。
-     *
-     * ### 重新收集[PagingData.flow]流程
-     * 先调用[launchResumeJob]执行恢复任务，再重新收集[PagingData.flow]。
+     * * 确保在主线程中设置[mediator]和收集[PagingData.flow]。
+     * * 恢复流程先执行恢复任务，再重新收集[PagingData.flow]。
      */
     override suspend fun emit(
         value: PagingData<T>
@@ -182,7 +184,7 @@ class PagingCollector<T : Any> internal constructor(
         // 此处resumeJob若使用var局部变量，则编译后resumeJob会是ObjectRef对象，
         // 收集事件流期间，value.flow传入的FlowCollector会一直持有ObjectRef对象引用，
         // resumeJob执行完之后置空，ObjectRef对象内的Job可以被GC，但ObjectRef对象本身无法被GC。
-        resumeJob = launchResumeJob(value.mediator)
+        resumeJob = launchResumeJobOrNull(value.mediator)
         resumeJob?.invokeOnCompletion { resumeJob = null }
         value.flow.collect {
             // 等待恢复任务执行完毕，才处理后续的分页事件
@@ -192,16 +194,20 @@ class PagingCollector<T : Any> internal constructor(
     }
 
     @MainThread
-    private fun CoroutineScope.launchResumeJob(mediator: PagingMediator): Job? {
+    private fun CoroutineScope.launchResumeJobOrNull(mediator: PagingMediator): Job? {
         val listMediator = mediator.asListMediator<T>()
+        val currentStates = mediator.loadStates
         val resumeEvent: PagingEvent<T> = when {
             listMediator != null && listMediator.updateVersion > updateVersion -> {
-                listMediator.resumeListStateEvent()
+                val op = UpdateOp.SubmitList(listMediator.currentList)
+                PagingEvent.ListStateUpdate(op, currentStates)
             }
-            mediator.loadStates != loadStates -> mediator.resumeLoadStateEvent()
+            currentStates != LoadStates.Incomplete && currentStates != loadStates -> {
+                PagingEvent.LoadStateUpdate(loadType = null, currentStates)
+            }
             else -> return null
         }
-        // 无需调度时，协程的启动恢复不是同步执行，而是通过事件循环进行恢复，
+        // 无需调度时，协程的启动恢复不是按代码顺序执行，而是通过事件循环执行，
         // 因此启动模式设为UNDISPATCHED，确保在收集事件流之前执行恢复任务。
         return launch(start = CoroutineStart.UNDISPATCHED) {
             handleEvent(resumeEvent)
@@ -210,19 +216,10 @@ class PagingCollector<T : Any> internal constructor(
 
     @MainThread
     private suspend fun handleEvent(event: PagingEvent<T>) {
-        val rv = ensureRecyclerView()
-        val loadType = event.loadType
-        val refresh = event.loadStates.refresh
-        when {
-            loadType == null && refresh.isIncomplete -> {
-                // 刷新加载开始之前，检查是否需要滚动到首个item
-                checkRefreshScrollToFirst()
-            }
-            loadType == LoadType.REFRESH && refresh.isComplete -> {
-                // 刷新加载完成之后，检查是否需要延迟执行后续逻辑
-                checkRefreshCompleteDelay()
-            }
+        val rv = requireNotNull(adapter.recyclerView) {
+            "ListAdapter已从RecyclerView上分离"
         }
+        handleEventListeners?.reverseAccessEach { it.handleEvent(rv, event) }
 
         val op = when (event) {
             is PagingEvent.ListStateUpdate -> event.op
@@ -266,48 +263,10 @@ class PagingCollector<T : Any> internal constructor(
     }
 
     @MainThread
-    private fun PagingListMediator<T>.resumeListStateEvent(): PagingEvent.ListStateUpdate<T> {
-        val op = UpdateOp.SubmitList(currentList)
-        return PagingEvent.ListStateUpdate(op, loadStates)
-    }
-
-    @MainThread
-    private fun PagingMediator.resumeLoadStateEvent(): PagingEvent.LoadStateUpdate<T> {
-        return PagingEvent.LoadStateUpdate(loadType = null, loadStates)
-    }
-
-    @MainThread
     private fun PagingEvent.LoadDataSuccess<T>.toUpdateOp(): UpdateOp<T> {
         return when (loadType) {
             LoadType.REFRESH -> UpdateOp.SubmitList(data)
             LoadType.APPEND -> UpdateOp.AddItems(adapter.currentList.size, data)
-        }
-    }
-
-    @MainThread
-    private fun ensureRecyclerView(): RecyclerView {
-        return adapter.recyclerView
-                ?: throw CancellationException("ListAdapter已从RecyclerView上分离。")
-    }
-
-    @MainThread
-    private suspend fun checkRefreshScrollToFirst() {
-        val rv = ensureRecyclerView()
-        if (!refreshScrollEnabled
-                || rv.childCount == 0
-                || rv.isFirstItemCompletelyVisible) {
-            return
-        }
-        rv.scrollToPosition(0)
-        // 等待下一帧绘制完成，确保滚动不受影响
-        rv.awaitFrameComplete()
-    }
-
-    @MainThread
-    private suspend fun checkRefreshCompleteDelay() {
-        val timeMillis = refreshCompleteWhen - SystemClock.uptimeMillis()
-        if (timeMillis > 0) {
-            delay(timeMillis)
         }
     }
 
@@ -318,7 +277,7 @@ class PagingCollector<T : Any> internal constructor(
         }
         val previous = loadStates
         loadStates = newStates
-        listeners?.reverseAccessEach {
+        loadStatesListeners?.reverseAccessEach {
             it.onLoadStatesChanged(previous, loadStates)
         }
     }
@@ -331,7 +290,7 @@ class PagingCollector<T : Any> internal constructor(
         }
         val previous = loadStates
         loadStates = loadStates.modifyState(loadType, newState)
-        listeners?.reverseAccessEach {
+        loadStatesListeners?.reverseAccessEach {
             it.onLoadStatesChanged(previous, loadStates)
         }
     }
@@ -341,7 +300,20 @@ class PagingCollector<T : Any> internal constructor(
         return loadStates.getState(loadType)
     }
 
-    private companion object {
-        const val IMMEDIATE_COMPLETE = 0L
+    private class RefreshStartScrollToFirst : HandleEventListener<Any> {
+
+        override suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<Any>) {
+            val loadType = event.loadType
+            val loadState = event.loadStates.refresh
+            if (loadType != LoadType.REFRESH || !loadState.isLoading) {
+                return
+            }
+            if (rv.childCount == 0 || rv.isFirstItemCompletelyVisible) {
+                return
+            }
+            rv.scrollToPosition(0)
+            // 等待下一帧绘制完成，确保滚动不受影响
+            rv.awaitFrameComplete()
+        }
     }
 }

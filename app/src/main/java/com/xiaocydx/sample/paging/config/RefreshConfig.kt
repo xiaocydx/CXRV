@@ -1,12 +1,14 @@
 package com.xiaocydx.sample.paging.config
 
 import android.content.Context
+import android.os.SystemClock
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.paging.*
+import kotlinx.coroutines.delay
 
 /**
  * 将RecyclerView的添加到[SwipeRefreshLayout]
@@ -83,14 +85,13 @@ private fun RecyclerView.findSwipeRefresh(): DefaultSwipeRefreshLayout? {
     return null
 }
 
-internal class DefaultSwipeRefreshLayout(
-    context: Context
-) : SwipeRefreshLayout(context), LoadStatesListener {
+internal class DefaultSwipeRefreshLayout(context: Context) : SwipeRefreshLayout(context) {
     private var collector: PagingCollector<*>? = null
+    private val controller = RefreshCompleteController()
 
     init {
         setOnRefreshListener {
-            collector?.refreshAtLeast(duration = 300)
+            controller.refreshAtLast(duration = 300)
         }
     }
 
@@ -99,14 +100,42 @@ internal class DefaultSwipeRefreshLayout(
         if (this.collector == collector) {
             return
         }
-        this.collector?.removeLoadStatesListener(this)
+        val previous = this.collector
+        previous?.removeLoadStatesListener(controller)
+        previous?.removeHandleEventListener(controller)
         this.collector = collector
-        collector?.addLoadStatesListener(this)
+        collector?.addLoadStatesListener(controller)
+        collector?.addHandleEventListener(controller)
     }
 
-    override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
-        if (previous.refreshToComplete(current)) {
-            isRefreshing = false
+    private inner class RefreshCompleteController : HandleEventListener<Any>, LoadStatesListener {
+        private var refreshCompleteWhen = 0L
+
+        /**
+         * 下拉刷新动画至少持续[duration]时间，避免刷新加载太快完成，导致动画很快结束
+         */
+        fun refreshAtLast(duration: Long) {
+            refreshCompleteWhen = SystemClock.uptimeMillis() + duration
+            collector?.refresh()
+        }
+
+        override suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<Any>) {
+            val loadType = event.loadType
+            val loadState = event.loadStates.refresh
+            if (loadType != LoadType.REFRESH || !loadState.isComplete) {
+                return
+            }
+            val timeMillis = refreshCompleteWhen - SystemClock.uptimeMillis()
+            if (timeMillis <= 0) {
+                return
+            }
+            delay(timeMillis)
+        }
+
+        override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
+            if (previous.refreshToComplete(current)) {
+                isRefreshing = false
+            }
         }
     }
 }
