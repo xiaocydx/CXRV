@@ -57,11 +57,12 @@ fun <T : Any> Flow<PagingData<T>>.storeIn(
 private fun <T : Any> Flow<PagingData<T>>.stateIn(
     scope: CoroutineScope
 ): Flow<PagingData<T>> {
-    var flow: CancellableFlow<PagingEvent<T>>? = null
+    var previous: CancellableFlow<PagingEvent<T>>? = null
     val upstream: Flow<PagingData<T>> = map { data ->
-        flow?.cancel()
-        flow = CancellableFlow(scope, data.flow)
-        data.modifyFlow(flow!!)
+        previous?.cancel()
+        val flow = CancellableFlow(scope, data.flow)
+        previous = flow
+        data.modifyFlow(flow)
     }
     return PagingDataStateFlow(scope, upstream)
 }
@@ -96,6 +97,7 @@ private open class CancellableFlow<T>(
     private var isCompleted = false
     private var isCollected = false
     private var collectJob: Job? = null
+    private val completableJob: CompletableJob = Job()
     private val channel: Channel<T> = Channel(RENDEZVOUS)
 
     override suspend fun collect(collector: FlowCollector<T>) {
@@ -132,6 +134,12 @@ private open class CancellableFlow<T>(
             return
         }
         collectJob = scope.launch(mainDispatcher.immediate) {
+            val job = coroutineContext.job
+            completableJob.invokeOnCompletion {
+                // AnyThread
+                job.cancel()
+            }
+
             upstream.collect {
                 onReceive(it)
                 if (!isCollected) {
@@ -145,6 +153,7 @@ private open class CancellableFlow<T>(
             }
         }
         collectJob!!.invokeOnCompletion {
+            // MainThread
             isCompleted = true
             collectJob = null
             channel.close()
@@ -160,7 +169,7 @@ private open class CancellableFlow<T>(
     @MainThread
     protected open fun onInactive(): Unit = Unit
 
-    suspend fun cancel() {
-        collectJob?.cancelAndJoin()
+    fun cancel() {
+        completableJob.complete()
     }
 }
