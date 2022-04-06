@@ -59,7 +59,6 @@ class PagingActivity : AppCompatActivity() {
             LINEAR_LAYOUT -> initLinearLayout()
             GIRD_LAYOUT -> initGridLayout()
             STAGGERED_LAYOUT -> initStaggeredLayout()
-            FORWARD_ITEM_EVENT -> forwardItemEvent()
             else -> viewModel.submitMenuAction(action)
         }
         binding.root.closeDrawer(binding.rvMenu)
@@ -82,9 +81,6 @@ class PagingActivity : AppCompatActivity() {
 
     private fun initStaggeredLayout() {
         replaceFragment(StaggeredLayoutFragment())
-    }
-
-    private fun forwardItemEvent() {
     }
 
     private fun replaceFragment(fragment: Fragment) {

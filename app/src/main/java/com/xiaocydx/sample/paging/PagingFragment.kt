@@ -16,11 +16,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.xiaocydx.recycler.paging.pagingCollector
 import com.xiaocydx.recycler.list.addItem
 import com.xiaocydx.recycler.list.clear
 import com.xiaocydx.recycler.list.removeItemAt
 import com.xiaocydx.recycler.list.submitTransform
+import com.xiaocydx.recycler.paging.pagingCollector
 import com.xiaocydx.sample.paging.MenuAction.*
 import com.xiaocydx.sample.viewLifecycleScope
 import com.xiaocydx.sample.viewmodel.activityViewModels
@@ -74,8 +74,8 @@ abstract class PagingFragment : Fragment() {
                     REFRESH -> refresh()
                     ADAPTER_INSERT_ITEM -> adapterInsertItem()
                     ADAPTER_DELETE_ITEM -> adapterDeleteItem()
-                    PAGER_INSERT_ITEM -> pagerInsertItem()
-                    PAGER_DELETE_ITEM -> pagerDeleteItem()
+                    LIST_STATE_INSERT_ITEM -> listStateInsertItem()
+                    LIST_STATE_DELETE_ITEM -> listStateDeleteItem()
                     CLEAR_ODD_ITEM -> clearOddItem()
                     CLEAR_EVEN_ITEM -> clearEvenItem()
                     CLEAR_ALL_ITEM -> clearAllItem()
@@ -128,11 +128,11 @@ abstract class PagingFragment : Fragment() {
         adapter.removeItemAt(0)
     }
 
-    private fun pagerInsertItem() {
+    private fun listStateInsertItem() {
         viewModel.insertItem()
     }
 
-    private fun pagerDeleteItem() {
+    private fun listStateDeleteItem() {
         viewModel.deleteItem()
     }
 

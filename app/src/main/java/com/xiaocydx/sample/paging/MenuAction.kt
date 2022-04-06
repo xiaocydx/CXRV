@@ -14,10 +14,9 @@ enum class MenuAction(val text: String) {
     REFRESH("刷新"),
     ADAPTER_INSERT_ITEM("Adapter插入Item"),
     ADAPTER_DELETE_ITEM("Adapter删除Item"),
-    PAGER_INSERT_ITEM("Pager插入Item"),
-    PAGER_DELETE_ITEM("Pager删除Item"),
+    LIST_STATE_INSERT_ITEM("ListState插入Item"),
+    LIST_STATE_DELETE_ITEM("ListState删除Item"),
     CLEAR_ODD_ITEM("清除奇数项"),
     CLEAR_EVEN_ITEM("清除偶数项"),
-    CLEAR_ALL_ITEM("清除全部Item"),
-    FORWARD_ITEM_EVENT("跳转ItemEvent页面")
+    CLEAR_ALL_ITEM("清除全部Item")
 }

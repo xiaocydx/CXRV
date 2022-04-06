@@ -71,7 +71,7 @@ class PagingViewModel(
 
     fun insertItem() {
         val item = createFoo(
-            tag = "Pager",
+            tag = "ListState",
             num = listState.currentList.size
         )
         listState.addItem(0, item)
