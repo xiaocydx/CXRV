@@ -100,14 +100,18 @@ class PagingCollector<T : Any> internal constructor(
     /**
      * 刷新加载，获取新的[PagingData]
      */
+    @MainThread
     fun refresh() {
+        assertMainThread()
         mediator?.refresh()
     }
 
     /**
      * 重新加载，该函数会对加载状态做判断，避免冗余请求
      */
+    @MainThread
     fun retry() {
+        assertMainThread()
         mediator?.retry()
     }
 
@@ -116,7 +120,9 @@ class PagingCollector<T : Any> internal constructor(
      *
      * 该函数由[AppendTrigger]调用，暂时不对外开放
      */
+    @MainThread
     internal fun append() {
+        assertMainThread()
         mediator?.append()
     }
 

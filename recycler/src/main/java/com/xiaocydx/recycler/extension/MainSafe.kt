@@ -37,7 +37,7 @@ internal inline fun runOnMainThread(crossinline action: () -> Unit) {
  * 断言当前为主线程
  */
 internal fun assertMainThread() {
-    check(isMainThread) { "只能在主线程中调用当前函数。" }
+    assert(isMainThread) { "只能在主线程中调用当前函数。" }
 }
 
 /**
