@@ -1,9 +1,9 @@
 package com.xiaocydx.recycler.paging
 
 import com.xiaocydx.recycler.extension.flowOnMain
-import com.xiaocydx.recycler.extension.unsafeFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 
 /**
@@ -65,7 +65,7 @@ class Pager<K : Any, T : Any>(
     val loadStates: LoadStates
         get() = fetcher?.loadStates ?: LoadStates.Incomplete
 
-    val flow: Flow<PagingData<T>> = unsafeFlow<PagingData<T>> {
+    val flow: Flow<PagingData<T>> = flow {
         refreshEvent.flow
             .onStart {
                 // 触发初始化加载

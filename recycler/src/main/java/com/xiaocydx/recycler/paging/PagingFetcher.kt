@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
@@ -30,13 +31,13 @@ internal class PagingFetcher<K : Any, T : Any>(
     var loadStates: LoadStates = LoadStates.Incomplete
         private set
 
-    val flow: Flow<PagingEvent<T>> = safeChannelFlow<PagingEvent<T>> { channel ->
+    val flow: Flow<PagingEvent<T>> = channelFlow {
         check(!isCollected) { "分页事件流Flow<PagingEvent<*>>只能被收集一次" }
         isCollected = true
         completableJob.invokeOnCompletion {
-            // 注意：此处不要用channel::close简化代码，
+            // 注意：此处不要用函数引用::close简化代码，
             // 这会将invokeOnCompletion的异常恢复给下游。
-            channel.close()
+            close()
         }
 
         launch(start = UNDISPATCHED) {
@@ -46,16 +47,20 @@ internal class PagingFetcher<K : Any, T : Any>(
                 } else {
                     loadStates.isAllowAppend
                 }
-            }.collect { channel.doLoad(LoadType.APPEND) }
+            }.collect {
+                doLoad(LoadType.APPEND)
+            }
         }
 
         launch(start = UNDISPATCHED) {
-            retryEvent.flow
-                .mapNotNull { loadStates.failureLoadType }
-                .collect { channel.doLoad(it) }
+            retryEvent.flow.mapNotNull {
+                loadStates.failureLoadType
+            }.collect { loadType ->
+                doLoad(loadType)
+            }
         }
 
-        channel.doLoad(LoadType.REFRESH)
+        doLoad(LoadType.REFRESH)
     }.flowOnMain()
 
     @MainThread

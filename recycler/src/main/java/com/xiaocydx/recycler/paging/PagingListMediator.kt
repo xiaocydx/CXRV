@@ -2,15 +2,14 @@ package com.xiaocydx.recycler.paging
 
 import androidx.annotation.MainThread
 import com.xiaocydx.recycler.extension.flowOnMain
-import com.xiaocydx.recycler.extension.unsafeFlow
 import com.xiaocydx.recycler.list.ListMediator
 import com.xiaocydx.recycler.list.ListState
 import com.xiaocydx.recycler.list.UpdateOp
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -28,29 +27,24 @@ internal class PagingListMediator<T : Any>(
     override val currentList: List<T>
         get() = listState.currentList
 
-    val flow: Flow<PagingEvent<T>> = unsafeFlow<PagingEvent<T>> {
-        coroutineScope {
-            val channel = Channel<PagingEvent<T>>(UNLIMITED)
-            launch {
-                data.flow.collect { event ->
-                    if (event is PagingEvent.LoadDataSuccess) {
-                        updateList(event.toUpdateOp())
-                    }
-                    channel.send(event)
+    val flow: Flow<PagingEvent<T>> = callbackFlow {
+        launch {
+            data.flow.collect { event ->
+                if (event is PagingEvent.LoadDataSuccess) {
+                    updateList(event.toUpdateOp())
                 }
-            }
-
-            val listener: (UpdateOp<T>) -> Unit = {
-                channel.trySend(PagingEvent.ListStateUpdate(it, loadStates))
-            }
-            listState.addUpdatedListener(listener)
-            try {
-                emitAll(channel)
-            } finally {
-                listState.removeUpdatedListener(listener)
+                send(event)
             }
         }
-    }.flowOnMain()
+
+        val listener: (UpdateOp<T>) -> Unit = {
+            trySend(PagingEvent.ListStateUpdate(it, loadStates))
+        }
+        listState.addUpdatedListener(listener)
+        awaitClose {
+            listState.removeUpdatedListener(listener)
+        }
+    }.buffer(UNLIMITED).flowOnMain()
 
     override fun updateList(op: UpdateOp<T>) {
         listState.updateList(op, dispatch = false)
