@@ -13,16 +13,11 @@ import com.xiaocydx.sample.retrofit.WanAndroidApi
  * @author xcc
  * @date 2022/3/17
  */
-class ArticleViewModel(
-    private val repository: ArticleRepository
-) : ViewModel() {
+class ArticleViewModel(repository: ArticleRepository) : ViewModel() {
     val rvId = ViewCompat.generateViewId()
     val flow = repository
-        .flow.storeIn(ListState(), viewModelScope)
-
-    fun refresh() {
-        repository.refresh()
-    }
+        .getArticleFlow(initKey = 0, pageSize = 15)
+        .storeIn(ListState(), viewModelScope)
 
     companion object Factory : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")

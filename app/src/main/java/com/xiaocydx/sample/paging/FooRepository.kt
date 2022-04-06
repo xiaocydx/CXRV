@@ -1,21 +1,37 @@
 package com.xiaocydx.sample.paging
 
-import com.xiaocydx.recycler.paging.LoadParams
-import com.xiaocydx.recycler.paging.LoadResult
-import com.xiaocydx.recycler.paging.Pager
-import com.xiaocydx.recycler.paging.PagingConfig
+import com.xiaocydx.recycler.paging.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 
 /**
  * @author xcc
  * @date 2022/2/17
  */
-class FooRepository(
-    pageSize: Int,
-    initKey: Int,
+class FooRepository(private val source: FooSource) {
+
+    fun getFooFlow(initKey: Int, config: PagingConfig): Flow<PagingData<Foo>> {
+        return getFooPager(initKey, config).flow
+    }
+
+    fun getFooPager(initKey: Int, config: PagingConfig): Pager<Int, Foo> {
+        return Pager(initKey, config, source)
+    }
+
+    fun enableMultiTypeFoo() {
+        source.multiTypeFoo = true
+    }
+
+    fun createFoo(num: Int, tag: String): Foo {
+        return source.createFoo(num, tag)
+    }
+}
+
+class FooSource(
     private val maxKey: Int,
     private val resultType: ResultType,
-) {
+    var multiTypeFoo: Boolean = false
+) : PagingSource<Int, Foo> {
     private var retryCount: Int = when (resultType) {
         is ResultType.RefreshEmpty -> resultType.retryCount
         is ResultType.AppendEmpty -> resultType.retryCount
@@ -24,25 +40,27 @@ class FooRepository(
         else -> 0
     }
 
-    private val pager = Pager(
-        initKey = initKey,
-        config = PagingConfig(pageSize)
-    ) { params ->
-        when (resultType) {
-            ResultType.Normal -> normalResult(params)
-            ResultType.Empty,
-            is ResultType.RefreshEmpty,
-            is ResultType.AppendEmpty -> emptyResult(params)
-            is ResultType.RefreshFailure,
-            is ResultType.AppendFailure -> failureResult(params)
-        }
+    override suspend fun load(
+        params: LoadParams<Int>
+    ): LoadResult<Int, Foo> = when (resultType) {
+        ResultType.Normal -> normalResult(params)
+        ResultType.Empty,
+        is ResultType.RefreshEmpty,
+        is ResultType.AppendEmpty -> emptyResult(params)
+        is ResultType.RefreshFailure,
+        is ResultType.AppendFailure -> failureResult(params)
     }
 
-    var multiTypeFoo = false
-    val flow = pager.flow
-
-    fun refresh() {
-        pager.refresh()
+    fun createFoo(
+        num: Int,
+        tag: String = this::class.java.simpleName
+    ): Foo {
+        val type = when {
+            !multiTypeFoo -> FooType.TYPE1
+            num % 2 != 0 -> FooType.TYPE1
+            else -> FooType.TYPE2
+        }
+        return Foo(id = "$tag-$num", name = "Foo-$num", num, type)
     }
 
     private suspend fun normalResult(params: LoadParams<Int>): LoadResult<Int, Foo> {
@@ -104,18 +122,6 @@ class FooRepository(
         val data = range.map { createFoo(num = it) }
         val nextKey = if (params.key >= maxKey) null else params.key + 1
         return LoadResult.Success(data, nextKey)
-    }
-
-    fun createFoo(
-        num: Int,
-        tag: String = this::class.java.simpleName
-    ): Foo {
-        val type = when {
-            !multiTypeFoo -> FooType.TYPE1
-            num % 2 != 0 -> FooType.TYPE1
-            else -> FooType.TYPE2
-        }
-        return Foo(id = "$tag-$num", name = "Foo-$num", num, type)
     }
 }
 

@@ -8,10 +8,7 @@ import com.xiaocydx.recycler.list.ListOwner
 import com.xiaocydx.recycler.list.ListState
 import com.xiaocydx.recycler.list.addItem
 import com.xiaocydx.recycler.list.removeItemAt
-import com.xiaocydx.recycler.paging.LoadType
-import com.xiaocydx.recycler.paging.storeIn
-import com.xiaocydx.recycler.paging.transformEventFlow
-import com.xiaocydx.recycler.paging.transformItem
+import com.xiaocydx.recycler.paging.*
 
 /**
  * 视图控制器 + [PagingViewModel]作为UI层
@@ -28,6 +25,12 @@ class PagingViewModel(
      */
     private val repository: FooRepository
 ) : ViewModel() {
+    /**
+     * 分页的主要入口，提供[PagingData]数据流，当调用了[Pager.refresh]，
+     * 会发射新的[PagingData]并取消旧的[PagingData]的事件流。
+     */
+    private val pager = repository
+        .getFooPager(initKey = 1, config = PagingConfig(pageSize = 10))
 
     /**
      * 列表状态
@@ -45,7 +48,7 @@ class PagingViewModel(
      * 在视图控制器处于非活跃状态/重建期间，上游冷流仍然可以发射数据，
      * 在视图控制器恢复活跃状态/重建后，重新收集转换后的热流，完成更新/恢复视图。
      */
-    val flow = repository.flow
+    val flow = pager.flow
         .transformEventFlow { flow ->
             flow.transformItem { loadType, item ->
                 val suffix = when (loadType) {
@@ -57,10 +60,13 @@ class PagingViewModel(
         }
         .storeIn(listState, viewModelScope)
 
+    /**
+     * 保存视图id，视图控制器重建后恢复滚动位置
+     */
     val rvId = ViewCompat.generateViewId()
 
     fun refresh() {
-        repository.refresh()
+        pager.refresh()
     }
 
     fun insertItem() {
@@ -80,16 +86,16 @@ class PagingViewModel(
     }
 
     fun enableMultiTypeFoo() {
-        repository.multiTypeFoo = true
+        repository.enableMultiTypeFoo()
     }
 
     companion object Factory : ViewModelProvider.Factory {
         override fun <T : ViewModel?> create(modelClass: Class<T>): T {
             if (modelClass === PagingViewModel::class.java) {
-                val repository = FooRepository(
-                    pageSize = 10, initKey = 1, maxKey = 5,
+                val repository = FooRepository(FooSource(
+                    maxKey = 5,
                     resultType = ResultType.Normal
-                )
+                ))
                 return PagingViewModel(repository) as T
             }
             throw IllegalArgumentException()
