@@ -91,7 +91,7 @@ internal class DefaultSwipeRefreshLayout(context: Context) : SwipeRefreshLayout(
 
     init {
         setOnRefreshListener {
-            controller.refreshAtLast(duration = 300)
+            controller.refreshAtLeast(duration = 300)
         }
     }
 
@@ -114,7 +114,7 @@ internal class DefaultSwipeRefreshLayout(context: Context) : SwipeRefreshLayout(
         /**
          * 下拉刷新动画至少持续[duration]时间，避免刷新加载太快完成，导致动画很快结束
          */
-        fun refreshAtLast(duration: Long) {
+        fun refreshAtLeast(duration: Long) {
             refreshCompleteWhen = SystemClock.uptimeMillis() + duration
             collector?.refresh()
         }
