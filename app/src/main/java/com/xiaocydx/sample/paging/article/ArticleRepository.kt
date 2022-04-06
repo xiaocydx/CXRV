@@ -12,7 +12,7 @@ import com.xiaocydx.sample.retrofit.WanAndroidApi
 class ArticleRepository(private val api: WanAndroidApi) {
     private val pager = Pager(
         initKey = 0,
-        config = PagingConfig(pageSize = 15, initPageSize = 30)
+        config = PagingConfig(pageSize = 15)
     ) { params ->
         val list = api.getArticleList(params.key, params.pageSize)
         val nextKey = if (list.over) null else params.key + 1
