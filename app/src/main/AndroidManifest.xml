@@ -41,5 +41,8 @@
         <activity
             android:name=".viewpager.ViewPagerActivity"
             android:exported="false" />
+        <activity
+            android:name=".nestedlist.NestedListActivity"
+            android:exported="false" />
     </application>
 </manifest>

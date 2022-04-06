@@ -8,7 +8,6 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
-import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.recycler.binding.BindingAdapter
 import com.xiaocydx.recycler.binding.Inflate
@@ -37,19 +36,17 @@ class SingleSelectionActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
-    private fun contentView(): View {
-        return RecyclerView(this).apply {
-            id = viewModel.rvId
-            linear()
-            divider {
-                height = 0.5.dp
-                color = 0xFF7E7AAA.toInt()
-            }
-            adapter = SingleSelectionBindingAdapter()
-            // adapter = SingleSelectionAdapter()
-            layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
-            overScrollMode = OVER_SCROLL_NEVER
+    private fun contentView(): View = RecyclerView(this).apply {
+        id = viewModel.rvId
+        linear()
+        divider {
+            height = 0.5.dp
+            color = 0xFF7E7AAA.toInt()
         }
+        adapter = SingleSelectionBindingAdapter()
+        // adapter = SingleSelectionAdapter()
+        layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
+        overScrollMode = OVER_SCROLL_NEVER
     }
 
     @Suppress("FunctionName")

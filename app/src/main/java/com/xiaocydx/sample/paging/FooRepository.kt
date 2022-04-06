@@ -53,7 +53,7 @@ class FooSource(
 
     fun createFoo(
         num: Int,
-        tag: String = this::class.java.simpleName
+        tag: String = javaClass.simpleName
     ): Foo {
         val type = when {
             !multiTypeFoo -> FooType.TYPE1

@@ -36,19 +36,17 @@ class MultiSelectionActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
-    private fun contentView(): View {
-        return RecyclerView(this).apply {
-            id = viewModel.rvId
-            linear()
-            divider {
-                height = 0.5.dp
-                color = 0xFF7E7AAA.toInt()
-            }
-            adapter = MultiSelectionBindingAdapter()
-            // adapter = MultiSelectionAdapter()
-            layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
-            overScrollMode = OVER_SCROLL_NEVER
+    private fun contentView(): View = RecyclerView(this).apply {
+        id = viewModel.rvId
+        linear()
+        divider {
+            height = 0.5.dp
+            color = 0xFF7E7AAA.toInt()
         }
+        adapter = MultiSelectionBindingAdapter()
+        // adapter = MultiSelectionAdapter()
+        layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
+        overScrollMode = OVER_SCROLL_NEVER
     }
 
     @Suppress("FunctionName")

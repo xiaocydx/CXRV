@@ -42,11 +42,11 @@ class PagingViewModel(
     /**
      * 分页数据流
      *
-     * 1.[transformEventFlow]的转换逻辑可以抽取到业务层中。
-     * 2.[storeIn]将转换后的分页数据流和[listState]结合，得到新的分页数据流。
-     * 3.[storeIn]传入[viewModelScope]，表示要将分页数据流转换为热流，
-     * 在视图控制器处于非活跃状态/重建期间，上游冷流仍然可以发射数据，
-     * 在视图控制器恢复活跃状态/重建后，重新收集转换后的热流，完成更新/恢复视图。
+     * 1. [transformEventFlow]的转换逻辑可以抽取到业务层中。
+     * 2. [storeIn]将转换后的分页数据流和[listState]结合，得到新的分页数据流。
+     * 3. [storeIn]传入[viewModelScope]，表示要将分页数据流转换为热流，
+     * 在视图控制器处于非活跃/重建期间，上游冷流仍然可以发射数据，
+     * 在视图控制器恢复活跃/重建后，重新收集转换后的热流，完成更新/恢复视图。
      */
     val flow = pager.flow
         .transformEventFlow { flow ->
