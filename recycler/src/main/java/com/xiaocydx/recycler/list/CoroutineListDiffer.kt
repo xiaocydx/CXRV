@@ -16,7 +16,7 @@ import kotlin.coroutines.*
  * ### 更新操作
  * 调用[updateList]或[awaitUpdateList]，传入更新操作更新列表，
  * 若正在执行[UpdateOp.SubmitList]，则执行完之后才处理传入的更新操作，
- * [awaitUpdateList]会响应调用处协程的取消进行恢复，但不会取消更新操作。
+ * [awaitUpdateList]会响应调用处协程的取消，抛出[CancellationException]，但不会取消更新操作。
  *
  * ### 更新取消
  * 调用[CoroutineListDiffer.cancel]或者[CoroutineListDiffer.cancelChildren]，
@@ -86,7 +86,7 @@ class CoroutineListDiffer<T : Any>(
     /**
      * 更新列表并等待完成
      *
-     * **注意**：该函数会响应调用处协程的取消恢进行复，但不会取消更新操作，
+     * **注意**：该函数会响应调用处协程的取消，抛出[CancellationException]，但不会取消更新操作，
      * 调用[CoroutineListDiffer.cancel]或者[CoroutineListDiffer.cancelChildren]，
      * 会取消挂起中的更新操作，不会停止正在执行的[UpdateOp.SubmitList]，但在执行完之后不会更新列表。
      *
