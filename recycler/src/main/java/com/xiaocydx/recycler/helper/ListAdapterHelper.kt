@@ -34,14 +34,17 @@ internal class ListAdapterHelper(
 
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
         // 即使Adapter是[ConcatAdapter]的元素，也不会影响该判断逻辑
-        if (positionStart == 0
-                && helper.firstCompletelyVisibleItemPosition == positionStart) {
+        if (positionStart == 0 && helper.isFirstItemCompletelyVisible) {
             recyclerView?.scrollToPosition(0)
         }
         postInvalidateItemDecorations()
     }
 
     override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
+        // 即使Adapter是[ConcatAdapter]的元素，也不会影响该判断逻辑
+        if ((fromPosition == 0 || toPosition == 0) && helper.isFirstItemCompletelyVisible) {
+            recyclerView?.scrollToPosition(0)
+        }
         postInvalidateItemDecorations()
     }
 
