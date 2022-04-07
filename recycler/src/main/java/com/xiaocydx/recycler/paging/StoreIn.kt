@@ -18,10 +18,10 @@ import kotlinx.coroutines.flow.*
  * 在被首次收集时，才会开始收集它的上游，直到[scope]被取消。
  *
  * ### 调用顺序
- * 不能在调用[stateIn]之后，再调用[transformEventFlow]转换事件流，
+ * 不能在调用[storeIn]之后，再调用[transformEventFlow]转换事件流，
  * 因为[state]和视图控制器会建立双向通信，所以需要确保[state]和视图控制器中的数据一致。
  *
- * 在ViewModel中使用[stateIn]的例子：
+ * 在ViewModel中使用[storeIn]的例子：
  * ```
  * class FooViewModel: ViewModel(
  *     private val repository: FooRepository

@@ -13,7 +13,7 @@ import com.xiaocydx.recycler.paging.*
 /**
  * 视图控制器 + [PagingViewModel]作为UI层
  *
- * 视图控制器可以在非活跃状态/重建期间取消收集[flow]，
+ * 视图控制器可以在非活跃/重建期间取消收集[flow]，
  * 在恢复活跃状态/重建后，重新收集分页[flow]，更新/恢复视图。
  *
  * @author xcc
