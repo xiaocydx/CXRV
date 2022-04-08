@@ -39,19 +39,17 @@ class PagingActivity : AppCompatActivity() {
     }
 
     private fun initMenuDrawer() {
-        binding.rvMenu
-            .linear()
-            .divider {
-                height = 0.5.dp
-                color = 0xFFD5D5D5.toInt()
-            }.adapter(bindingAdapter(
-                uniqueId = MenuAction::text,
-                inflate = ItemMenuBinding::inflate
-            ) {
-                onBindView { root.text = it.text }
-                doOnSimpleItemClick(::executeMenuAction)
-                submitList(values().toList())
-            })
+        binding.rvMenu.linear().divider {
+            height = 0.5.dp
+            color = 0xFFD5D5D5.toInt()
+        } adapter bindingAdapter(
+            uniqueId = MenuAction::text,
+            inflate = ItemMenuBinding::inflate
+        ) {
+            onBindView { root.text = it.text }
+            doOnSimpleItemClick(::executeMenuAction)
+            submitList(values().toList())
+        }
     }
 
     private fun executeMenuAction(action: MenuAction) {

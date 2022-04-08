@@ -40,14 +40,12 @@ class ArticleActivity : AppCompatActivity() {
     private fun initView() {
         val rv = RecyclerView(this).apply {
             id = viewModel.rvId
-            linear()
-            divider {
+            linear().divider {
                 width = 10.dp
                 height = 10.dp
                 horizontalEdge = true
                 verticalEdge = true
-            }
-            paging(bindingAdapter(
+            } paging bindingAdapter(
                 uniqueId = ArticleInfo::id,
                 inflate = ItemArticleBinding::inflate
             ) {
@@ -56,7 +54,7 @@ class ArticleActivity : AppCompatActivity() {
                     tvTitle.text = it.title ?: ""
                     tvAuthor.text = ("作者：${it.author ?: ""}")
                 }
-            })
+            }
             overScrollMode = OVER_SCROLL_NEVER
             layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
         }

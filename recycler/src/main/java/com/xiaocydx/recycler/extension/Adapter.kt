@@ -13,7 +13,7 @@ import com.xiaocydx.recycler.widget.ViewAdapter
  * recyclerView.adapter(adapter)
  * ```
  */
-fun<T: RecyclerView> T.adapter(adapter: Adapter<*>): T {
+infix fun <T : RecyclerView> T.adapter(adapter: Adapter<*>): T {
     this.adapter = adapter
     return this
 }

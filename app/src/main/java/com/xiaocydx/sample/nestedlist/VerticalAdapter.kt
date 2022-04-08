@@ -43,8 +43,7 @@ class VerticalHolder(
             .divider {
                 width = 8.dp
                 horizontalEdge = true
-            }
-            .adapter(adapter)
+            }.adapter(adapter)
     }
 
     fun setSharedPool(pool: RecyclerView.RecycledViewPool) {

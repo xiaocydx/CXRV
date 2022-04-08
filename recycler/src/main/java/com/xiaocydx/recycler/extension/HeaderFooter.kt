@@ -101,7 +101,7 @@ fun RecyclerView.removeFooter(footer: View): ViewAdapter<*>? {
  * 按[header]、当前适配器的顺序连接为[ConcatAdapter]
  */
 @CheckResult
-fun Adapter<*>.withHeader(
+infix fun Adapter<*>.withHeader(
     header: ViewAdapter<*>
 ): ConcatAdapter = when (this) {
     is ConcatAdapter -> apply { addAdapter(0, header) }
@@ -112,7 +112,7 @@ fun Adapter<*>.withHeader(
  * 按当前适配器、[footer]的顺序连接为[ConcatAdapter]
  */
 @CheckResult
-fun Adapter<*>.withFooter(
+infix fun Adapter<*>.withFooter(
     footer: ViewAdapter<*>
 ): ConcatAdapter = when (this) {
     is ConcatAdapter -> apply { addAdapter(footer) }

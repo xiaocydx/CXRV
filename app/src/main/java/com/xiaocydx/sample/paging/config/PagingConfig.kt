@@ -7,11 +7,11 @@ import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.xiaocydx.recycler.paging.PagingScope
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.paging.LoadFooter
 import com.xiaocydx.recycler.paging.LoadHeader
 import com.xiaocydx.recycler.paging.OnCreateLoadView
+import com.xiaocydx.recycler.paging.PagingScope
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.dp
 
@@ -60,14 +60,14 @@ inline fun <T : RecyclerView> T.pagingSwipeRefresh(
 /**
  * 分页场景的初始化函数，可用于链式调用场景
  */
-fun <T : RecyclerView> T.paging(
+infix fun <T : RecyclerView> T.paging(
     adapter: ListAdapter<*, *>
 ): T = paging { listAdapter = adapter }
 
 /**
  * 分页拖拽刷新场景的初始化函数，可用于链式调用场景
  */
-fun <T : RecyclerView> T.pagingSwipeRefresh(
+infix fun <T : RecyclerView> T.pagingSwipeRefresh(
     adapter: ListAdapter<*, *>
 ): T = pagingSwipeRefresh { listAdapter = adapter }
 
