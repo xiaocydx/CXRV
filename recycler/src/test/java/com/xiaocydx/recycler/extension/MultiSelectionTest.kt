@@ -137,7 +137,7 @@ class MultiSelectionTest {
     @Test
     fun select_Trigger_OnSelectMax() {
         val onSelectedMax: () -> Unit = mockk(relaxed = true)
-        val selection = MultiSelectionImpl(
+        val selection = MultiSelection(
             adapter = adapter,
             maxSelectSize = 2,
             itemKey = { it.key },

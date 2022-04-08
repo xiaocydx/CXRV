@@ -13,14 +13,11 @@ import com.xiaocydx.recycler.list.getItem
 import kotlin.math.max
 import kotlin.math.min
 
-typealias SingleSelection<ITEM, K> = SingleSelectionImpl<*, ITEM, K>
-typealias MultiSelection<ITEM, K> = MultiSelectionImpl<*, ITEM, K>
-
 /**
  * 列表单项选择功能，负责维护状态和更新列表
  *
  * * 当选择新的item时，会取消上一个item的选择。
- * * 调用[SingleSelectionImpl.toggleSelect]可以对同一个item切换选择/取消选择。
+ * * 调用[SingleSelection.toggleSelect]可以对同一个item切换选择/取消选择。
  * * 当[onChanged]、[onItemRangeRemoved]触发时，会清除无效的`itemKey`。
  *
  * 单项选择的基本配置流程：
@@ -71,13 +68,13 @@ fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> SingleSelection(
     itemKey: (item: ITEM) -> K?,
     itemAccess: AdapterT.(position: Int) -> ITEM
 ): SingleSelection<ITEM, K> {
-    return SingleSelectionImpl(adapter, initKey, itemKey, itemAccess)
+    return SingleSelection.create(adapter, initKey, itemKey, itemAccess)
 }
 
 /**
  * 列表多项选择功能的实现类，负责维护状态和更新列表
  *
- * * 调用[MultiSelectionImpl.toggleSelect]可以对同一个item切换选择/取消选择。
+ * * 调用[MultiSelection.toggleSelect]可以对同一个item切换选择/取消选择。
  * * 当[onChanged]、[onItemRangeRemoved]触发时，会清除无效的`itemKey`。
  * * 当[onChanged]、[onItemRangeRemoved]、[onItemRangeInserted]触发时，会检查全选状态，
  * 全选的描述请看[selectAll]和[updateSelectedAllState]。
@@ -130,7 +127,7 @@ fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> MultiSelection(
     itemAccess: AdapterT.(position: Int) -> ITEM,
     maxSelectSize: Int = Int.MAX_VALUE
 ): MultiSelection<ITEM, K> {
-    return MultiSelectionImpl(adapter, itemKey, itemAccess, maxSelectSize)
+    return MultiSelection.create(adapter, itemKey, itemAccess, maxSelectSize)
 }
 
 /**
@@ -172,12 +169,12 @@ fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.multiSelection(
 )
 
 /**
- * 列表选择功能，实现类有[SingleSelectionImpl]和[MultiSelectionImpl]
+ * 列表选择功能，实现类有[SingleSelection]和[MultiSelection]
  */
-sealed class Selection<AdapterT : Adapter<*>, ITEM : Any, K : Any>(
-    protected val adapter: AdapterT,
+sealed class Selection<ITEM : Any, K : Any>(
+    protected val adapter: Adapter<*>,
     protected val itemKey: (item: ITEM) -> K?,
-    protected val itemAccess: AdapterT.(position: Int) -> ITEM
+    protected val itemAccess: Adapter<*>.(position: Int) -> ITEM
 ) : AdapterDataObserver() {
     protected var onSelect: ((ITEM) -> Unit)? = null
     protected var onUnselect: ((ITEM) -> Unit)? = null
@@ -310,13 +307,12 @@ sealed class Selection<AdapterT : Adapter<*>, ITEM : Any, K : Any>(
 /**
  * 列表单项选择功能的实现类，负责维护状态和更新列表
  */
-class SingleSelectionImpl<AdapterT : Adapter<*>, ITEM : Any, K : Any>
-@PublishedApi internal constructor(
-    adapter: AdapterT,
+class SingleSelection<ITEM : Any, K : Any> private constructor(
+    adapter: Adapter<*>,
     initKey: K? = null,
     itemKey: (item: ITEM) -> K?,
-    itemAccess: AdapterT.(position: Int) -> ITEM
-) : Selection<AdapterT, ITEM, K>(adapter, itemKey, itemAccess) {
+    itemAccess: Adapter<*>.(position: Int) -> ITEM
+) : Selection<ITEM, K>(adapter, itemKey, itemAccess) {
     private var store: Store<K>? = null
     private var selectedKey: K? = initKey
         set(value) {
@@ -417,21 +413,30 @@ class SingleSelectionImpl<AdapterT : Adapter<*>, ITEM : Any, K : Any>
 
     private data class Store<K : Any>(var selectedKey: K?)
 
-    private companion object {
-        const val STORE_KEY = "com.xiaocydx.recycler.extension.SingleSelection.STORE_KEY"
+    internal companion object {
+        private const val STORE_KEY = "com.xiaocydx.recycler.extension.SingleSelection.STORE_KEY"
+
+        @Suppress("UNCHECKED_CAST")
+        fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> create(
+            adapter: AdapterT,
+            initKey: K? = null,
+            itemKey: (item: ITEM) -> K?,
+            itemAccess: AdapterT.(position: Int) -> ITEM
+        ): SingleSelection<ITEM, K> {
+            return SingleSelection(adapter, initKey, itemKey, itemAccess as Adapter<*>.(Int) -> ITEM)
+        }
     }
 }
 
 /**
  * 列表多项选择功能的实现类，负责维护状态和更新列表
  */
-class MultiSelectionImpl<AdapterT : Adapter<*>, ITEM : Any, K : Any>
-@PublishedApi internal constructor(
-    adapter: AdapterT,
+class MultiSelection<ITEM : Any, K : Any> private constructor(
+    adapter: Adapter<*>,
     itemKey: (item: ITEM) -> K?,
-    itemAccess: AdapterT.(position: Int) -> ITEM,
+    itemAccess: Adapter<*>.(position: Int) -> ITEM,
     val maxSelectSize: Int = Int.MAX_VALUE
-) : Selection<AdapterT, ITEM, K>(adapter, itemKey, itemAccess) {
+) : Selection<ITEM, K>(adapter, itemKey, itemAccess) {
     private var _selectedKeys: ArraySet<K>? = null
     private var isSelectedAllState: Boolean = false
     private var onSelectedMax: (() -> Unit)? = null
@@ -660,7 +665,7 @@ class MultiSelectionImpl<AdapterT : Adapter<*>, ITEM : Any, K : Any>
     private fun RecyclerView.findChangePositions(isSelect: Boolean): IntArray? {
         var startPosition = -1
         var endPosition = -1
-        val adapter = this@MultiSelectionImpl.adapter
+        val adapter = this@MultiSelection.adapter
 
         // 确定子View更新范围
         for (index in 0 until childCount) {
@@ -705,7 +710,17 @@ class MultiSelectionImpl<AdapterT : Adapter<*>, ITEM : Any, K : Any>
         return null
     }
 
-    private companion object {
-        const val STORE_KEY = "com.xiaocydx.recycler.extension.MultiSelection.STORE_KEY"
+    internal companion object {
+        private const val STORE_KEY = "com.xiaocydx.recycler.extension.MultiSelection.STORE_KEY"
+
+        @Suppress("UNCHECKED_CAST")
+        fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> create(
+            adapter: AdapterT,
+            itemKey: (item: ITEM) -> K?,
+            itemAccess: AdapterT.(position: Int) -> ITEM,
+            maxSelectSize: Int = Int.MAX_VALUE
+        ): MultiSelection<ITEM, K> {
+            return MultiSelection(adapter, itemKey, itemAccess as Adapter<*>.(Int) -> ITEM, maxSelectSize)
+        }
     }
 }
