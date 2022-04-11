@@ -1,9 +1,10 @@
-package com.xiaocydx.recycler.extension
+package com.xiaocydx.recycler.selection
 
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
+import com.xiaocydx.recycler.extension.resolveLayoutParams
 
 data class TestItem(val key: String)
 

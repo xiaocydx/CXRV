@@ -1,4 +1,4 @@
-package com.xiaocydx.recycler.extension
+package com.xiaocydx.recycler.selection
 
 import android.os.Build
 import androidx.lifecycle.Lifecycle
@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario.launch
 import com.google.common.truth.Truth.assertThat
 import com.xiaocydx.recycler.TestActivity
+import com.xiaocydx.recycler.extension.singleSelection
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Before
@@ -29,8 +30,7 @@ class SingleSelectionTest {
     private val adapter = TestAdapter(
         data = (1..10).map { TestItem(it.toString()) }.toMutableList()
     )
-    private val selection = SingleSelection(
-        adapter = adapter,
+    private val selection = adapter.singleSelection(
         itemKey = { it.key },
         itemAccess = { getItem(it) }
     )

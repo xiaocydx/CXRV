@@ -1,4 +1,4 @@
-package com.xiaocydx.recycler.extension
+package com.xiaocydx.recycler.selection
 
 import android.os.Build
 import androidx.lifecycle.Lifecycle
@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario.launch
 import com.google.common.truth.Truth.assertThat
 import com.xiaocydx.recycler.TestActivity
+import com.xiaocydx.recycler.extension.multiSelection
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Before
@@ -28,8 +29,7 @@ class MultiSelectionTest {
     private val adapter = TestAdapter(
         data = (1..10).map { TestItem(it.toString()) }.toMutableList()
     )
-    private val selection = MultiSelection(
-        adapter = adapter,
+    private val selection = adapter.multiSelection(
         itemKey = { it.key },
         itemAccess = { getItem(it) }
     )
@@ -137,8 +137,7 @@ class MultiSelectionTest {
     @Test
     fun select_Trigger_OnSelectMax() {
         val onSelectedMax: () -> Unit = mockk(relaxed = true)
-        val selection = MultiSelection(
-            adapter = adapter,
+        val selection = adapter.multiSelection(
             maxSelectSize = 2,
             itemKey = { it.key },
             itemAccess = { getItem(it) }

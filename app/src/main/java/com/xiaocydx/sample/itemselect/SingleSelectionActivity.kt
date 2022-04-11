@@ -16,11 +16,14 @@ import com.xiaocydx.recycler.extension.*
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.getItem
 import com.xiaocydx.recycler.list.submitList
+import com.xiaocydx.recycler.selection.hasPayload
+import com.xiaocydx.recycler.selection.isSelected
+import com.xiaocydx.recycler.selection.toggleSelect
 import com.xiaocydx.sample.databinding.ItemSelectionBinding
 import com.xiaocydx.sample.dp
 
 /**
- * [SingleSelection]示例代码
+ * [singleSelection]示例代码
  *
  * * 配置单项选择功能。
  * * 页面配置发生变更时（例如旋转屏幕），保留选择状态。
@@ -55,8 +58,7 @@ class SingleSelectionActivity : AppCompatActivity() {
             uniqueId = { item: String -> item },
             inflate = ItemSelectionBinding::inflate
         ) {
-            val selection = SingleSelection(
-                adapter = this,
+            val selection = singleSelection(
                 itemKey = { item: String -> item },
                 itemAccess = { getItem(it) }
             ).apply { saveToViewModel(viewModel) }
@@ -79,8 +81,7 @@ class SingleSelectionActivity : AppCompatActivity() {
     }
 
     private inner class SingleSelectionAdapter : BindingAdapter<String, ItemSelectionBinding>() {
-        private val selection = SingleSelection(
-            adapter = this,
+        private val selection = singleSelection(
             itemKey = { item: String -> item },
             itemAccess = { getItem(it) }
         ).apply { saveToViewModel(viewModel) }
