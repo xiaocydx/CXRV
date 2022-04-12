@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.getTag
 import androidx.lifecycle.setTagIfAbsent
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import androidx.recyclerview.widget.cacheViews
 import kotlin.math.max
 import kotlin.math.min
@@ -21,6 +22,7 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
     itemAccess: RecyclerView.Adapter<*>.(position: Int) -> ITEM,
     private val maxSelectSize: Int = Int.MAX_VALUE
 ) : Selection<ITEM, K>(adapter, itemKey, itemAccess) {
+    private val observer = InvalidSelectedObserver()
     private var _selectedKeys: ArraySet<K>? = null
     private var isSelectedAllState: Boolean = false
     private var onSelectedMax: (() -> Unit)? = null
@@ -62,6 +64,7 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
 
     init {
         require(maxSelectSize > 0) { "maxSelectSize的值必须大于0" }
+        adapter.registerAdapterDataObserver(observer)
     }
 
     override fun isSelected(item: ITEM): Boolean {
@@ -165,6 +168,10 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
         viewModel.setTagIfAbsent<ArraySet<K>?>(STORE_KEY, null)
     }
 
+    fun removeInvalidSelectedObserver() {
+        adapter.unregisterAdapterDataObserver(observer)
+    }
+
     /**
      * 调用[select]时，若[isSelectedMax]为`true`，则执行[block]
      */
@@ -184,37 +191,8 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
         onSelectAllStateChange = block
     }
 
-    override fun onChanged() {
-        // 数据整体改变，可能有item被移除
-        clearInvalidSelected()
-        updateSelectedAllState()
-    }
-
-    override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-        clearInvalidSelected()
-        updateSelectedAllState()
-    }
-
-    override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-        updateSelectedAllState()
-    }
-
     /**
-     * 当[onChanged]或[onItemRangeRemoved]触发时，
-     * 清除[findItemByKey]无法查到item的选择结果。
-     */
-    private fun clearInvalidSelected() {
-        for (index in (selectedSize - 1) downTo 0) {
-            val itemKey = selectedKeys.valueAt(index) ?: continue
-            if (findItemByKey(itemKey) == null) {
-                selectedKeys.removeAt(index)
-            }
-        }
-    }
-
-    /**
-     * 当[onChanged]、[onItemRangeRemoved]、[onItemRangeInserted]触发时，
-     * 在[clearInvalidSelected]执行之后，更新全选状态。
+     * 更新全选状态
      */
     private fun updateSelectedAllState() {
         val isSelectedAll = isSelectedAll
@@ -273,6 +251,33 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
             return positions
         }
         return null
+    }
+
+    private inner class InvalidSelectedObserver : AdapterDataObserver() {
+
+        override fun onChanged() {
+            // 数据整体改变，可能有item被移除
+            clearInvalidSelected()
+            updateSelectedAllState()
+        }
+
+        override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+            clearInvalidSelected()
+            updateSelectedAllState()
+        }
+
+        override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+            updateSelectedAllState()
+        }
+
+        private fun clearInvalidSelected() {
+            for (index in (selectedSize - 1) downTo 0) {
+                val itemKey = selectedKeys.valueAt(index) ?: continue
+                if (findItemByKey(itemKey) == null) {
+                    selectedKeys.removeAt(index)
+                }
+            }
+        }
     }
 
     private companion object {

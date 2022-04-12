@@ -1,7 +1,6 @@
 package com.xiaocydx.recycler.selection
 
 import androidx.lifecycle.ViewModel
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.payloads
@@ -17,7 +16,7 @@ sealed class Selection<ITEM : Any, K : Any>(
     protected val adapter: Adapter<*>,
     protected val itemKey: (item: ITEM) -> K?,
     protected val itemAccess: Adapter<*>.(position: Int) -> ITEM
-) : RecyclerView.AdapterDataObserver() {
+) {
     protected var onSelect: ((ITEM) -> Unit)? = null
     protected var onUnselect: ((ITEM) -> Unit)? = null
 
@@ -43,11 +42,6 @@ sealed class Selection<ITEM : Any, K : Any>(
             }
             return adapter.itemAccess(bindingAdapterPosition)
         }
-
-    init {
-        @Suppress("LeakingThis")
-        adapter.registerAdapterDataObserver(this)
-    }
 
     /**
      * 是否已选择

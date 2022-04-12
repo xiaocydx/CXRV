@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.getTag
 import androidx.lifecycle.setTagIfAbsent
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 
 /**
  * 列表单项选择功能的实现类，负责维护状态和更新列表
@@ -17,6 +18,7 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
     itemKey: (item: ITEM) -> K?,
     itemAccess: RecyclerView.Adapter<*>.(position: Int) -> ITEM
 ) : Selection<ITEM, K>(adapter, itemKey, itemAccess) {
+    private val observer = InvalidSelectedObserver()
     private var store: Store<K>? = null
     private var selectedKey: K? = initKey
         set(value) {
@@ -29,6 +31,10 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
      */
     val selectedItem: ITEM?
         get() = selectedKey?.let(::findItemByKey)
+
+    init {
+        adapter.registerAdapterDataObserver(observer)
+    }
 
     override fun isSelected(item: ITEM): Boolean {
         val itemKey = item.key ?: return false
@@ -78,6 +84,10 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
         viewModel.setTagIfAbsent<Store<K>?>(STORE_KEY, null)
     }
 
+    fun removeInvalidSelectedObserver() {
+        adapter.unregisterAdapterDataObserver(observer)
+    }
+
     private fun unselectPrevious() {
         val itemKey = selectedKey ?: return
         selectedKey = null
@@ -88,27 +98,26 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
         }
     }
 
-    override fun onChanged() {
-        // 数据整体改变，可能有item被移除
-        clearInvalidSelected()
-    }
+    private data class Store<K : Any>(var selectedKey: K?)
 
-    override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-        clearInvalidSelected()
-    }
+    private inner class InvalidSelectedObserver : AdapterDataObserver() {
 
-    /**
-     * 当[onChanged]或[onItemRangeRemoved]触发时，
-     * 清除[findItemByKey]无法查到item的选择结果。
-     */
-    private fun clearInvalidSelected() {
-        val itemKey = selectedKey ?: return
-        if (findItemByKey(itemKey) == null) {
-            selectedKey = null
+        override fun onChanged() {
+            // 数据整体改变，可能有item被移除
+            clearInvalidSelected()
+        }
+
+        override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
+            clearInvalidSelected()
+        }
+
+        private fun clearInvalidSelected() {
+            val itemKey = selectedKey ?: return
+            if (findItemByKey(itemKey) == null) {
+                selectedKey = null
+            }
         }
     }
-
-    private data class Store<K : Any>(var selectedKey: K?)
 
     private companion object {
         const val STORE_KEY = "com.xiaocydx.recycler.selection.SingleSelection.STORE_KEY"
