@@ -11,25 +11,23 @@ import kotlinx.coroutines.flow.*
 
 /**
  * ### 函数作用
- * 1. 将[PagingData.flow]事件流发射的列表数据保存到[state]中。
+ * 1. 将[PagingData.flow]发射的事件的列表数据保存到[state]中。
  * 2. [state]和视图控制器建立基于[ListOwner]的双向通信。
  * 3. 若[scope]不为`null`，则会构建[PagingData]的状态流作为返回结果，
  * 构建的状态流可以被重复收集，但同时只能被一个收集器收集，
  * 在被首次收集时，才会开始收集它的上游，直到[scope]被取消。
  *
  * ### 调用顺序
- * 不能在调用[storeIn]之后，再调用[transformEventFlow]转换事件流，
+ * 不能在调用[storeIn]之后，再调用[flowMap]转换[PagingData.flow]，
  * 因为[state]和视图控制器会建立双向通信，所以需要确保[state]和视图控制器中的数据一致。
  *
  * 在ViewModel中使用[storeIn]的例子：
  * ```
- * class FooViewModel: ViewModel(
- *     private val repository: FooRepository
- * ) {
+ * class FooViewModel : ViewModel(private val repository: FooRepository) {
  *     private val listState = ListState<Foo>()
  *     val flow = repository.flow
- *         .transformEventFlow { eventFlow ->
- *             eventFlow.transformItem { loadType, item ->
+ *         .flowMap { eventFlow ->
+ *             eventFlow.itemMap { loadType, item ->
  *                 ...
  *             }
  *         }
@@ -103,10 +101,10 @@ private open class CancellableFlow<T>(
     override suspend fun collect(collector: FlowCollector<T>) {
         val active = withContext(mainDispatcher.immediate) {
             require(!isCompleted) {
-                "CancellableFlow已完成，不能再被收集。"
+                "CancellableFlow已完成，不能再被收集"
             }
             require(!isCollected) {
-                "CancellableFlow只能被一个收集器收集。"
+                "CancellableFlow只能被一个收集器收集"
             }
             isCollected = true
             launchCollectJob()
