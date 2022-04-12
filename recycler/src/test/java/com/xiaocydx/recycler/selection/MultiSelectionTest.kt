@@ -47,35 +47,34 @@ class MultiSelectionTest {
 
     @Test
     fun select_Success() {
-        val holder1 = findViewHolder(1)
-        val holder2 = findViewHolder(2)
-        var success = selection.select(holder1)
+        val item1 = adapter.data.first()
+        val item2 = adapter.data.last()
+        var success = selection.select(item1)
         assertThat(success).isTrue()
-        assertThat(selection.isSelected(holder1)).isTrue()
+        assertThat(selection.isSelected(item1)).isTrue()
 
-        success = selection.select(holder2)
+        success = selection.select(item2)
         assertThat(success).isTrue()
-        assertThat(selection.isSelected(holder2)).isTrue()
+        assertThat(selection.isSelected(item2)).isTrue()
 
         val selectedItems = selection.selectedItems()
-        assertThat(selectedItems.contains(adapter.data[1])).isTrue()
-        assertThat(selectedItems.contains(adapter.data[2])).isTrue()
+        assertThat(selectedItems).isEqualTo(listOf(item1, item2))
     }
 
     @Test
     fun unselect_Success() {
-        val holder1 = findViewHolder(1)
-        val holder2 = findViewHolder(2)
-        selection.select(holder1)
-        selection.select(holder2)
+        val item1 = adapter.data.first()
+        val item2 = adapter.data.last()
+        selection.select(item1)
+        selection.select(item2)
 
-        var success = selection.unselect(holder1)
+        var success = selection.unselect(item1)
         assertThat(success).isTrue()
-        assertThat(selection.isSelected(holder1)).isFalse()
+        assertThat(selection.isSelected(item1)).isFalse()
 
-        success = selection.unselect(holder2)
+        success = selection.unselect(item2)
         assertThat(success).isTrue()
-        assertThat(selection.isSelected(holder2)).isFalse()
+        assertThat(selection.isSelected(item2)).isFalse()
 
         assertThat(selection.selectedItems()).isEmpty()
     }
@@ -98,9 +97,9 @@ class MultiSelectionTest {
     @Test
     fun repeat_Select_Failure() {
         var success = true
-        val holder = findViewHolder(0)
+        val item = adapter.data.first()
         repeat(2) {
-            success = selection.select(holder)
+            success = selection.select(item)
         }
         assertThat(success).isFalse()
     }
@@ -108,10 +107,10 @@ class MultiSelectionTest {
     @Test
     fun repeat_Unselect_Failure() {
         var success = true
-        val holder = findViewHolder(0)
-        selection.select(holder)
+        val item = adapter.data.first()
+        selection.select(item)
         repeat(2) {
-            success = selection.unselect(holder)
+            success = selection.unselect(item)
         }
         assertThat(success).isFalse()
     }
@@ -143,9 +142,9 @@ class MultiSelectionTest {
             itemAccess = { getItem(it) }
         )
         selection.onSelectedMax(onSelectedMax)
-        selection.select(findViewHolder(0))
-        selection.select(findViewHolder(1))
-        selection.select(findViewHolder(2))
+        selection.select(adapter.data[0])
+        selection.select(adapter.data[1])
+        selection.select(adapter.data[2])
         verify(exactly = 1) { onSelectedMax() }
     }
 
@@ -153,19 +152,19 @@ class MultiSelectionTest {
     fun select_Trigger_OnSelect() {
         val onSelect: (TestItem) -> Unit = mockk(relaxed = true)
         selection.onSelect(onSelect)
-        val holder = findViewHolder(0)
-        selection.select(holder)
-        verify(exactly = 1) { onSelect(adapter.data[0]) }
+        val item = adapter.data.first()
+        selection.select(item)
+        verify(exactly = 1) { onSelect(item) }
     }
 
     @Test
     fun unselect_Trigger_OnUnselect() {
         val onUnselect: (TestItem) -> Unit = mockk(relaxed = true)
         selection.onUnselect(onUnselect)
-        val holder = findViewHolder(0)
-        selection.select(holder)
-        selection.unselect(holder)
-        verify(exactly = 1) { onUnselect(adapter.data[0]) }
+        val item = adapter.data.first()
+        selection.select(item)
+        selection.unselect(item)
+        verify(exactly = 1) { onUnselect(item) }
     }
 
     @Test
@@ -181,7 +180,7 @@ class MultiSelectionTest {
         val onStateChange: (Boolean) -> Unit = mockk(relaxed = true)
         selection.onSelectAllStateChange(onStateChange)
         selection.selectAll(recyclerView)
-        selection.unselect(findViewHolder(0))
+        selection.unselect(adapter.data.first())
         verify(exactly = 1) { onStateChange(false) }
     }
 
@@ -220,23 +219,19 @@ class MultiSelectionTest {
 
     @Test
     fun changed_Trigger_ClearInvalidSelected() {
-        val holder = findViewHolder(0)
-        selection.select(holder)
+        val item = adapter.data.first()
+        selection.select(item)
         adapter.data.removeAt(0)
         adapter.notifyDataSetChanged()
-        assertThat(selection.isSelected(holder)).isFalse()
+        assertThat(selection.isSelected(item)).isFalse()
     }
 
     @Test
     fun removeItem_Trigger_ClearInvalidSelected() {
-        val holder = findViewHolder(0)
-        selection.select(holder)
+        val item = adapter.data.first()
+        selection.select(item)
         adapter.data.removeAt(0)
         adapter.notifyItemRemoved(0)
-        assertThat(selection.isSelected(holder)).isFalse()
-    }
-
-    private fun findViewHolder(position: Int): RecyclerView.ViewHolder {
-        return recyclerView.findViewHolderForAdapterPosition(position)!!
+        assertThat(selection.isSelected(item)).isFalse()
     }
 }

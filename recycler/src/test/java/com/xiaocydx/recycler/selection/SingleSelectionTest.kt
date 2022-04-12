@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario.launch
 import com.google.common.truth.Truth.assertThat
 import com.xiaocydx.recycler.TestActivity
@@ -48,29 +47,29 @@ class SingleSelectionTest {
 
     @Test
     fun select_Success() {
-        val holder = findViewHolder(0)
-        val success = selection.select(holder)
+        val item = adapter.data.first()
+        val success = selection.select(item)
         assertThat(success).isTrue()
-        assertThat(selection.isSelected(holder)).isTrue()
-        assertThat(selection.selectedItem()).isEqualTo(adapter.data[0])
+        assertThat(selection.isSelected(item)).isTrue()
+        assertThat(selection.selectedItem()).isEqualTo(item)
     }
 
     @Test
     fun unselect_Success() {
-        val holder = findViewHolder(0)
-        selection.select(holder)
-        val success = selection.unselect(holder)
+        val item = adapter.data.first()
+        selection.select(item)
+        val success = selection.unselect(item)
         assertThat(success).isTrue()
-        assertThat(selection.isSelected(holder)).isFalse()
+        assertThat(selection.isSelected(item)).isFalse()
         assertThat(selection.selectedItem()).isNull()
     }
 
     @Test
     fun repeat_Select_Failure() {
         var success = true
-        val holder = findViewHolder(0)
+        val item = adapter.data.first()
         repeat(2) {
-            success = selection.select(holder)
+            success = selection.select(item)
         }
         assertThat(success).isFalse()
     }
@@ -78,61 +77,57 @@ class SingleSelectionTest {
     @Test
     fun repeat_Unselect_Failure() {
         var success = true
-        val holder = findViewHolder(0)
-        selection.select(holder)
+        val item = adapter.data.first()
+        selection.select(item)
         repeat(2) {
-            success = selection.unselect(holder)
+            success = selection.unselect(item)
         }
         assertThat(success).isFalse()
     }
 
     @Test
     fun selectCurrent_UnselectPrevious() {
-        val holder1 = findViewHolder(1)
-        selection.select(holder1)
-        val holder2 = findViewHolder(2)
-        selection.select(holder2)
-        assertThat(selection.isSelected(holder2)).isTrue()
+        val item1 = adapter.data.first()
+        selection.select(item1)
+        val item2 = adapter.data.last()
+        selection.select(item2)
+        assertThat(selection.isSelected(item2)).isTrue()
     }
 
     @Test
     fun select_Trigger_OnSelect() {
         val onSelect: (TestItem) -> Unit = mockk(relaxed = true)
         selection.onSelect(onSelect)
-        val holder = findViewHolder(0)
-        selection.select(holder)
-        verify(exactly = 1) { onSelect(adapter.data[0]) }
+        val item = adapter.data.first()
+        selection.select(item)
+        verify(exactly = 1) { onSelect(item) }
     }
 
     @Test
     fun unselect_Trigger_OnUnselect() {
         val onUnselect: (TestItem) -> Unit = mockk(relaxed = true)
         selection.onUnselect(onUnselect)
-        val holder = findViewHolder(0)
-        selection.select(holder)
-        selection.unselect(holder)
-        verify(exactly = 1) { onUnselect(adapter.data[0]) }
+        val item = adapter.data.first()
+        selection.select(item)
+        selection.unselect(item)
+        verify(exactly = 1) { onUnselect(item) }
     }
 
     @Test
     fun changed_Trigger_ClearInvalidSelected() {
-        val holder = findViewHolder(0)
-        selection.select(holder)
-        adapter.data.removeAt(0)
+        val item = adapter.data.first()
+        selection.select(item)
+        adapter.data.remove(item)
         adapter.notifyDataSetChanged()
-        assertThat(selection.isSelected(holder)).isFalse()
+        assertThat(selection.isSelected(item)).isFalse()
     }
 
     @Test
     fun removeItem_Trigger_ClearInvalidSelected() {
-        val holder = findViewHolder(0)
-        selection.select(holder)
-        adapter.data.removeAt(0)
+        val item = adapter.data.first()
+        selection.select(item)
+        adapter.data.remove(item)
         adapter.notifyItemRemoved(0)
-        assertThat(selection.isSelected(holder)).isFalse()
-    }
-
-    private fun findViewHolder(position: Int): ViewHolder {
-        return recyclerView.findViewHolderForAdapterPosition(position)!!
+        assertThat(selection.isSelected(item)).isFalse()
     }
 }
