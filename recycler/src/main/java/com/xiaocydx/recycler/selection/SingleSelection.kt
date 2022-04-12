@@ -111,7 +111,7 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
             clearInvalidSelected()
         }
 
-        override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
+        override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
             clearInvalidSelected()
         }
 
