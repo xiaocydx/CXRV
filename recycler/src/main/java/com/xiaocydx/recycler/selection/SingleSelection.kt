@@ -26,15 +26,19 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
             store?.selectedKey = value
         }
 
-    /**
-     * 已选择的item，返回`null`表示未选择过
-     */
-    val selectedItem: ITEM?
-        get() = selectedKey?.let(::findItemByKey)
-
     init {
         adapter.registerAdapterDataObserver(observer)
     }
+
+    /**
+     * 已选择的itemKey，若返回`null`，则表示未选择过
+     */
+    fun selectedKey(): K? = selectedKey
+
+    /**
+     * 已选择的item，若返回`null`，则表示未选择过
+     */
+    fun selectedItem(): ITEM? = selectedKey?.let(::findItemByKey)
 
     override fun isSelected(item: ITEM): Boolean {
         val itemKey = item.key ?: return false

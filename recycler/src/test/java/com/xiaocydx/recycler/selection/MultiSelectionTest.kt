@@ -57,9 +57,9 @@ class MultiSelectionTest {
         assertThat(success).isTrue()
         assertThat(selection.isSelected(holder2)).isTrue()
 
-        val selectedList = selection.selectedList
-        assertThat(selectedList.contains(adapter.data[1])).isTrue()
-        assertThat(selectedList.contains(adapter.data[2])).isTrue()
+        val selectedItems = selection.selectedItems()
+        assertThat(selectedItems.contains(adapter.data[1])).isTrue()
+        assertThat(selectedItems.contains(adapter.data[2])).isTrue()
     }
 
     @Test
@@ -77,14 +77,14 @@ class MultiSelectionTest {
         assertThat(success).isTrue()
         assertThat(selection.isSelected(holder2)).isFalse()
 
-        assertThat(selection.selectedList).isEmpty()
+        assertThat(selection.selectedItems()).isEmpty()
     }
 
     @Test
     fun selectAll_Success() {
         val success = selection.selectAll(recyclerView)
         assertThat(success).isTrue()
-        assertThat(selection.selectedList).isEqualTo(adapter.data)
+        assertThat(selection.selectedItems()).isEqualTo(adapter.data)
     }
 
     @Test
@@ -92,7 +92,7 @@ class MultiSelectionTest {
         selection.selectAll(recyclerView)
         val success = selection.clearSelected(recyclerView)
         assertThat(success).isTrue()
-        assertThat(selection.selectedList).isEmpty()
+        assertThat(selection.selectedItems()).isEmpty()
     }
 
     @Test

@@ -36,14 +36,19 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
             return _selectedKeys!!
         }
 
+    init {
+        require(maxSelectSize > 0) { "maxSelectSize的值必须大于0" }
+        adapter.registerAdapterDataObserver(observer)
+    }
+
     /**
-     * 是否已到[maxSelectSize]上限
+     * 是否已到选择上限
      */
     val isSelectedMax: Boolean
         get() = selectedSize == maxSelectSize
 
     /**
-     * 是否选择了全部item
+     * 是否已选择全部
      */
     val isSelectedAll: Boolean
         get() = selectedSize == adapter.itemCount
@@ -55,17 +60,16 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
         get() = selectedKeys.size
 
     /**
+     * 已选择的itemKey集合
+     */
+    fun selectedKeys(): List<K> = selectedKeys.toList()
+
+    /**
      * 已选择的item集合
      */
-    val selectedList: List<ITEM>
-        get() = when {
-            selectedKeys.isEmpty() -> emptyList()
-            else -> selectedKeys.mapNotNull { findItemByKey(it) }
-        }
-
-    init {
-        require(maxSelectSize > 0) { "maxSelectSize的值必须大于0" }
-        adapter.registerAdapterDataObserver(observer)
+    fun selectedItems(): List<ITEM> = when {
+        selectedKeys.isEmpty() -> emptyList()
+        else -> selectedKeys.mapNotNull { findItemByKey(it) }
     }
 
     override fun isSelected(item: ITEM): Boolean {

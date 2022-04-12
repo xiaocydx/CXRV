@@ -52,7 +52,7 @@ class SingleSelectionTest {
         val success = selection.select(holder)
         assertThat(success).isTrue()
         assertThat(selection.isSelected(holder)).isTrue()
-        assertThat(selection.selectedItem).isEqualTo(adapter.data[0])
+        assertThat(selection.selectedItem()).isEqualTo(adapter.data[0])
     }
 
     @Test
@@ -62,7 +62,7 @@ class SingleSelectionTest {
         val success = selection.unselect(holder)
         assertThat(success).isTrue()
         assertThat(selection.isSelected(holder)).isFalse()
-        assertThat(selection.selectedItem).isNull()
+        assertThat(selection.selectedItem()).isNull()
     }
 
     @Test

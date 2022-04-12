@@ -86,11 +86,21 @@ sealed class Selection<ITEM : Any, K : Any>(
         onUnselect = block
     }
 
+    private fun checkPosition(position: Int): Boolean {
+        return position in 0 until adapter.itemCount
+    }
+
     protected fun notifySelectChanged(position: Int) {
+        if (!checkPosition(position)) {
+            return
+        }
         adapter.notifyItemChanged(position, Payload)
     }
 
     protected fun notifySelectRangeChanged(startPosition: Int, endPosition: Int) {
+        if (!checkPosition(startPosition) || !checkPosition(endPosition)) {
+            return
+        }
         val itemCount = endPosition - startPosition + 1
         adapter.notifyItemRangeChanged(startPosition, itemCount, Payload)
     }
