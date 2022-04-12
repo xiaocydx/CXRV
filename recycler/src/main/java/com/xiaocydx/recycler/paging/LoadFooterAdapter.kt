@@ -6,7 +6,7 @@ import com.xiaocydx.recycler.extension.hasDisplayItem
 import com.xiaocydx.recycler.extension.resolveLayoutParams
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.ListChangedListener
-import com.xiaocydx.recycler.widget.ViewAdapter
+import com.xiaocydx.recycler.concat.ViewAdapter
 
 /**
  * 加载尾部适配器

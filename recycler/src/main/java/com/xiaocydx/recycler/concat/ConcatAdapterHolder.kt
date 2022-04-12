@@ -1,11 +1,11 @@
-@file:Suppress("PackageDirectoryMismatch", "UNCHECKED_CAST")
+@file:Suppress("PackageDirectoryMismatch")
 
 package androidx.recyclerview.widget
 
 import androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
-import com.xiaocydx.recycler.widget.SpanSizeProvider
+import com.xiaocydx.recycler.concat.SpanSizeProvider
 import java.lang.reflect.Field
 
 /**
@@ -27,6 +27,7 @@ import java.lang.reflect.Field
  * @author xcc
  * @date 2021/10/1
  */
+@Suppress("KDocUnresolvedReference")
 internal interface ConcatAdapterHolder {
 
     val concatAdapter: ConcatAdapter
@@ -88,6 +89,7 @@ private class ReflectConcatAdapterHolder(
      * 反射获取[ConcatAdapter.mController.mWrappers]，仅用于遍历访问adapter元素，不做修改操作。
      * 当[ConcatAdapter.addAdapter]或[ConcatAdapter.removeAdapter]被调用时，`mWrappers`会被同步更新。
      */
+    @Suppress("KDocUnresolvedReference")
     private val wrappers: List<NestedAdapterWrapper>
     val reflectSucceed: Boolean
 
@@ -101,8 +103,7 @@ private class ReflectConcatAdapterHolder(
 
     override fun getAdapter(index: Int): Adapter<*> = wrappers[index].adapter
 
-    override fun dispose() {
-    }
+    override fun dispose(): Unit = Unit
 
     private companion object {
         /**
@@ -128,6 +129,7 @@ private class ReflectConcatAdapterHolder(
         /**
          * [ConcatAdapter.mController.mWrappers]
          */
+        @Suppress("UNCHECKED_CAST", "KDocUnresolvedReference")
         fun ConcatAdapter.getWrappers(): List<NestedAdapterWrapper>? {
             val controller =
                     mControllerField?.get(this) as? ConcatAdapterController ?: return null

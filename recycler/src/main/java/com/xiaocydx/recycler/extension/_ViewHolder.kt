@@ -6,7 +6,7 @@ import android.view.View
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView.LayoutParams
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.xiaocydx.recycler.widget.ViewAdapter
+import com.xiaocydx.recycler.concat.ViewAdapter
 
 internal val View.holder: ViewHolder?
     get() = (layoutParams as? LayoutParams)?.mViewHolder

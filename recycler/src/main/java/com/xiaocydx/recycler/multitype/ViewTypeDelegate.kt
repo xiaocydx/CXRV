@@ -17,7 +17,7 @@ import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.getItem
 import com.xiaocydx.recycler.list.removeItemAt
 import com.xiaocydx.recycler.list.setItem
-import com.xiaocydx.recycler.widget.SpanSizeProvider
+import com.xiaocydx.recycler.concat.SpanSizeProvider
 
 /**
  * ViewType委托类

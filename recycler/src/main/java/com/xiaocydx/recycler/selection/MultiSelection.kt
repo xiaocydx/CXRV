@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.getTag
 import androidx.lifecycle.setTagIfAbsent
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import androidx.recyclerview.widget.cacheViews
 import kotlin.math.max
@@ -17,9 +18,9 @@ import kotlin.math.min
  * @date 2022/4/11
  */
 class MultiSelection<ITEM : Any, K : Any> internal constructor(
-    adapter: RecyclerView.Adapter<*>,
+    adapter: Adapter<*>,
     itemKey: (item: ITEM) -> K?,
-    itemAccess: RecyclerView.Adapter<*>.(position: Int) -> ITEM,
+    itemAccess: Adapter<*>.(position: Int) -> ITEM,
     private val maxSelectSize: Int = Int.MAX_VALUE
 ) : Selection<ITEM, K>(adapter, itemKey, itemAccess) {
     private val observer = InvalidSelectedObserver()

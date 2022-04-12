@@ -3,7 +3,7 @@ package com.xiaocydx.recycler.selection
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.getTag
 import androidx.lifecycle.setTagIfAbsent
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 
 /**
@@ -13,10 +13,10 @@ import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
  * @date 2022/4/11
  */
 class SingleSelection<ITEM : Any, K : Any> internal constructor(
-    adapter: RecyclerView.Adapter<*>,
+    adapter: Adapter<*>,
     initKey: K? = null,
     itemKey: (item: ITEM) -> K?,
-    itemAccess: RecyclerView.Adapter<*>.(position: Int) -> ITEM
+    itemAccess: Adapter<*>.(position: Int) -> ITEM
 ) : Selection<ITEM, K>(adapter, itemKey, itemAccess) {
     private val observer = InvalidSelectedObserver()
     private var store: Store<K>? = null

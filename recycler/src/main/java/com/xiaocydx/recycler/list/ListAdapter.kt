@@ -17,10 +17,10 @@ import com.xiaocydx.recycler.extension.accessEach
 import com.xiaocydx.recycler.extension.assertMainThread
 import com.xiaocydx.recycler.extension.reverseAccessEach
 import com.xiaocydx.recycler.helper.ListAdapterHelper
-import com.xiaocydx.recycler.widget.SpanSizeProvider
-import com.xiaocydx.recycler.widget.onAttachedToRecyclerView
-import com.xiaocydx.recycler.widget.onViewAttachedToWindow
-import com.xiaocydx.recycler.widget.spanSizeProvider
+import com.xiaocydx.recycler.concat.SpanSizeProvider
+import com.xiaocydx.recycler.concat.onAttachedToRecyclerView
+import com.xiaocydx.recycler.concat.onViewAttachedToWindow
+import com.xiaocydx.recycler.concat.spanSizeProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 

@@ -1,4 +1,4 @@
-package com.xiaocydx.recycler.widget
+package com.xiaocydx.recycler.concat
 
 import android.view.View
 import androidx.annotation.CallSuper

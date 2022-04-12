@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
-import com.xiaocydx.recycler.widget.ViewAdapter
+import com.xiaocydx.recycler.concat.ViewAdapter
 
 /**
  * 添加[header]

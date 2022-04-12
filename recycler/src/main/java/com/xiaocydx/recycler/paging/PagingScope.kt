@@ -7,7 +7,7 @@ import com.xiaocydx.recycler.extension.withFooter
 import com.xiaocydx.recycler.extension.withHeader
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.marker.RvDslMarker
-import com.xiaocydx.recycler.widget.ViewAdapter
+import com.xiaocydx.recycler.concat.ViewAdapter
 
 /**
  * 分页初始化作用域

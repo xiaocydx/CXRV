@@ -1,4 +1,4 @@
-package com.xiaocydx.recycler.widget
+package com.xiaocydx.recycler.concat
 
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.ConcatAdapterHolder

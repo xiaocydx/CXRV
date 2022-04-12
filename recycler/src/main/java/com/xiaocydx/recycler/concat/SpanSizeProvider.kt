@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package com.xiaocydx.recycler.widget
+package com.xiaocydx.recycler.concat
 
 import androidx.core.view.doOnAttach
 import androidx.recyclerview.widget.GridLayoutManager

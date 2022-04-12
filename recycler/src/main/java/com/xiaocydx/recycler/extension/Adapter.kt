@@ -3,7 +3,7 @@ package com.xiaocydx.recycler.extension
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
-import com.xiaocydx.recycler.widget.ViewAdapter
+import com.xiaocydx.recycler.concat.ViewAdapter
 
 /**
  * 设置[Adapter]，可用于链式调用场景

@@ -10,7 +10,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ActivityScenario.launch
 import com.xiaocydx.recycler.TestActivity
 import com.xiaocydx.recycler.TestAdapter
-import com.xiaocydx.recycler.widget.ViewAdapter
+import com.xiaocydx.recycler.concat.ViewAdapter
 import com.google.common.truth.Truth.assertThat
 import io.mockk.spyk
 import io.mockk.verifyOrder
