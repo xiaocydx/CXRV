@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentManager
 import com.xiaocydx.sample.databinding.ActivityViewPagerBinding
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.viewpager.shared.SharedRecycledFragment
+import com.xiaocydx.sample.viewpager.shared.SharedRecycledPagerAdapter
 
 /**
  * @author xcc
@@ -27,7 +29,7 @@ class ViewPagerActivity : AppCompatActivity() {
 
     private class FooListFragmentAdapter(
         fm: FragmentManager
-    ) : SharedRecycledFragmentAdapter(fm) {
+    ) : SharedRecycledPagerAdapter(fm) {
         override fun getCount(): Int = 6
 
         override fun getItem(position: Int): SharedRecycledFragment {

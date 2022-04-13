@@ -19,6 +19,7 @@ import com.xiaocydx.sample.paging.PagingViewModel
 import com.xiaocydx.sample.paging.config.paging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.viewmodel.activityViewModels
+import com.xiaocydx.sample.viewpager.shared.SharedRecycledFragment
 
 /**
  * @author xcc
@@ -37,7 +38,7 @@ class FooListFragment : SharedRecycledFragment() {
     private val fooAdapter = FooAdapter().apply {
         stateRestorationPolicy = PREVENT_WHEN_EMPTY
     }
-    override lateinit var recyclerView: RecyclerView
+    override lateinit var rv: RecyclerView
         private set
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,11 +61,11 @@ class FooListFragment : SharedRecycledFragment() {
         overScrollMode = View.OVER_SCROLL_NEVER
         layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
     }.let {
-        recyclerView = it
+        rv = it
         it.withSwipeRefresh(fooAdapter)
     }
 
-    override fun initObserve() {
+    override fun onLazyInitialize() {
         launchRepeatOnViewLifecycle {
             fooAdapter.emitAll(viewModel.flow)
         }

@@ -1,24 +1,25 @@
-package com.xiaocydx.sample.viewpager
+package com.xiaocydx.sample.viewpager.shared
 
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
-import androidx.recyclerview.widget.tryRecycleAllChild
+import androidx.recyclerview.widget.destroyRecycleViews
 
 /**
  * @author xcc
  * @date 2022/2/21
  */
 abstract class SharedRecycledFragment : Fragment() {
-    protected abstract val recyclerView: RecyclerView
+    protected abstract val rv: RecyclerView
 
     open fun onAttachSharedPool(sharedPool: RecycledViewPool) {
-        recyclerView.setRecycledViewPool(sharedPool)
+        rv.setRecycledViewPool(sharedPool)
     }
 
-    abstract fun initObserve()
+    abstract fun onLazyInitialize()
 
     open fun onRecycleToSharedPool(sharedPool: RecycledViewPool) {
-        recyclerView.tryRecycleAllChild()
+        val maxScrap = rv.childCount * 2
+        rv.destroyRecycleViews { maxScrap }
     }
 }
