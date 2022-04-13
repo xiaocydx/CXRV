@@ -42,9 +42,7 @@ private class MaxScrapController(
     private val scrap: SparseArray<ScrapData>,
     private val maxScrap: (viewType: Int) -> Int
 ) : RecyclerListener {
-    @Suppress("PrivatePropertyName")
-    private val DEFAULT_MAX_SCRAP = 5
-    private var original: SparseIntArray? = null
+    private var state: Any? = null
 
     override fun onViewRecycled(holder: ViewHolder) {
         val viewType = holder.itemViewType
@@ -73,15 +71,36 @@ private class MaxScrapController(
     }
 
     private fun saveMaxScrap(viewType: Int, maxScrap: Int) {
-        if (original == null) {
-            original = SparseIntArray()
+        when (val state = state) {
+            null -> this.state = Pair(viewType, maxScrap)
+            is Pair -> SparseIntArray().also {
+                this.state = it
+                it.put(state.viewType, state.maxScrap)
+                it.put(viewType, maxScrap)
+            }
+            is SparseIntArray -> state.put(viewType, maxScrap)
         }
-        original!!.put(viewType, maxScrap)
     }
 
     fun restoreMaxScrap() {
-        original?.forEach { viewType, maxScrap ->
-            scrap[viewType]?.mMaxScrap = maxScrap
+        when (val state = state) {
+            is Pair -> restoreMaxScrap(state.viewType, state.maxScrap)
+            is SparseIntArray -> state.forEach { viewType, maxScrap ->
+                restoreMaxScrap(viewType, maxScrap)
+            }
         }
+    }
+
+    private fun restoreMaxScrap(viewType: Int, maxScrap: Int) {
+        scrap[viewType]?.mMaxScrap = maxScrap
+    }
+
+    private class Pair(val viewType: Int, val maxScrap: Int)
+
+    private companion object {
+        /**
+         * [RecycledViewPool.DEFAULT_MAX_SCRAP]
+         */
+        const val DEFAULT_MAX_SCRAP = 5
     }
 }
