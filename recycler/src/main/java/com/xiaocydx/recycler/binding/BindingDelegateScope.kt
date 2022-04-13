@@ -5,8 +5,8 @@ import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewbinding.ViewBinding
-import com.xiaocydx.recycler.marker.RvDslMarker
 import com.xiaocydx.recycler.concat.SpanSizeProvider
+import com.xiaocydx.recycler.marker.RvDslMarker
 
 /**
  * [BindingDelegate]的构建函数，适用于简单列表场景

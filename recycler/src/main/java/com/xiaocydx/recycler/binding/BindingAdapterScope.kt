@@ -28,11 +28,11 @@ import com.xiaocydx.recycler.marker.RvDslMarker
  * @param inflate         函数引用`VB::inflate`
  * @param areItemsTheSame 对应[ItemCallback.areItemsTheSame]
  */
-inline fun <T : Any, VB : ViewBinding> bindingAdapter(
+inline fun <ITEM : Any, VB : ViewBinding> bindingAdapter(
     noinline inflate: Inflate<VB>,
-    noinline areItemsTheSame: (oldItem: T, newItem: T) -> Boolean,
-    block: BindingAdapterScope<T, VB>.() -> Unit
-): BindingAdapter<T, VB> = BindingAdapterScope(inflate, areItemsTheSame).apply(block)
+    noinline areItemsTheSame: (oldItem: ITEM, newItem: ITEM) -> Boolean,
+    block: BindingAdapterScope<ITEM, VB>.() -> Unit
+): BindingAdapter<ITEM, VB> = BindingAdapterScope(inflate, areItemsTheSame).apply(block)
 
 /**
  * [BindingAdapter]的构建函数，适用于简单列表场景
@@ -53,13 +53,13 @@ inline fun <T : Any, VB : ViewBinding> bindingAdapter(
  * @param inflate  函数引用`VB::inflate`
  * @param uniqueId item唯一id，是[ItemCallback.areItemsTheSame]的简化函数
  */
-inline fun <T : Any, VB : ViewBinding> bindingAdapter(
+inline fun <ITEM : Any, VB : ViewBinding> bindingAdapter(
     noinline inflate: Inflate<VB>,
-    crossinline uniqueId: (item: T) -> Any?,
-    block: BindingAdapterScope<T, VB>.() -> Unit
-): BindingAdapter<T, VB> = bindingAdapter(
+    crossinline uniqueId: (item: ITEM) -> Any?,
+    block: BindingAdapterScope<ITEM, VB>.() -> Unit
+): BindingAdapter<ITEM, VB> = bindingAdapter(
     inflate = inflate,
-    areItemsTheSame = { oldItem: T, newItem: T ->
+    areItemsTheSame = { oldItem: ITEM, newItem: ITEM ->
         uniqueId(oldItem) == uniqueId(newItem)
     },
     block = block
