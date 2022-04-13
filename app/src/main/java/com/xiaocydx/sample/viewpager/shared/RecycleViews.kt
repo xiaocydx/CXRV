@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
  * [maxScrap]表示回收过程中，每个`viewType`的回收上限，
  * 在回收完成后，会将`viewType`的回收上限恢复为原本的大小。
  *
- * 该函数的实现确保会执行正常回收流程相关的回调，回调包括不限于：
+ * 该函数确保执行正常回收流程相关的回调，回调包括不限于：
  * 1. [Adapter.onViewRecycled]
  * 2. [Adapter.onViewDetachedFromWindow]
  * 3. [RecyclerListener.onViewRecycled]
@@ -64,7 +64,7 @@ private class MaxScrapController(
             .coerceAtLeast(scrapData.mMaxScrap)
         if (scrapData.mMaxScrap < maxScrap) {
             // 回收过程中，同一个viewType只会进入该分支逻辑一次，
-            // 记录viewType原本的回收上限，并将上限调整为maxScrap。
+            // 保存viewType原本的回收上限，并将上限调整为maxScrap。
             saveMaxScrap(viewType, scrapData.mMaxScrap)
             scrapData.mMaxScrap = maxScrap
         }
