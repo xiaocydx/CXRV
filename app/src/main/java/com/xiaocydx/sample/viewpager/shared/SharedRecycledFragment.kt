@@ -20,6 +20,6 @@ abstract class SharedRecycledFragment : Fragment() {
 
     open fun onRecycleToSharedPool(sharedPool: RecycledViewPool) {
         val maxScrap = rv.childCount * 2
-        rv.destroyRecycleViews { maxScrap }
+        rv.destroyRecycleViews { _, _ -> maxScrap }
     }
 }
