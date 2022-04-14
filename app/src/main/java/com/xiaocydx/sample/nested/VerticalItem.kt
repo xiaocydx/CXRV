@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.nestedlist
+package com.xiaocydx.sample.nested
 
 /**
  * @author xcc

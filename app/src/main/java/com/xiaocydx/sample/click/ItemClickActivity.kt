@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.itemclick
+package com.xiaocydx.sample.click
 
 import android.os.Bundle
 import android.view.View

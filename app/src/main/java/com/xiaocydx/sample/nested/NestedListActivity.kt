@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.nestedlist
+package com.xiaocydx.sample.nested
 
 import android.os.Bundle
 import android.view.View

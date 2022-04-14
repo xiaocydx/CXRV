@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.itemselect
+package com.xiaocydx.sample.selection
 
 import android.os.Bundle
 import android.view.View

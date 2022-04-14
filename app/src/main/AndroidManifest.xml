@@ -21,13 +21,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".itemclick.ItemClickActivity"
+            android:name=".click.ItemClickActivity"
             android:exported="false" />
         <activity
-            android:name=".itemselect.SingleSelectionActivity"
+            android:name=".selection.SingleSelectionActivity"
             android:exported="false" />
         <activity
-            android:name=".itemselect.MultiSelectionActivity"
+            android:name=".selection.MultiSelectionActivity"
             android:exported="false" />
         <activity
             android:name=".multitype.MultiTypeActivity"
@@ -42,7 +42,7 @@
             android:name=".viewpager.ViewPagerActivity"
             android:exported="false" />
         <activity
-            android:name=".nestedlist.NestedListActivity"
+            android:name=".nested.NestedListActivity"
             android:exported="false" />
     </application>
 </manifest>
