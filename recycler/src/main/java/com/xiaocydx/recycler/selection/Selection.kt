@@ -63,27 +63,29 @@ sealed class Selection<ITEM : Any, K : Any>(
     internal abstract fun unselect(item: ITEM, position: Int): Boolean
 
     /**
-     * 将选择状态保存至[viewModel]
+     * 获取[viewModel]的选择状态作为初始状态，并将后续的选择状态保存至[viewModel]
      */
-    abstract fun saveToViewModel(viewModel: ViewModel)
+    abstract fun initSelected(viewModel: ViewModel): Selection<ITEM, K>
 
     /**
-     * 将选择状态从[viewModel]中清除
+     * 清除[viewModel]的选择状态
      */
-    abstract fun clearFromViewModel(viewModel: ViewModel)
+    abstract fun clearSelected(viewModel: ViewModel): Selection<ITEM, K>
 
     /**
      * 调用[select]返回`true`时，执行[block]
      */
-    fun onSelect(block: (item: ITEM) -> Unit) {
+    open fun onSelect(block: (item: ITEM) -> Unit): Selection<ITEM, K> {
         onSelect = block
+        return this
     }
 
     /**
      * 调用[unselect]返回`true`时，执行[block]
      */
-    fun onUnselect(block: (item: ITEM) -> Unit) {
+    open fun onUnselect(block: (item: ITEM) -> Unit): Selection<ITEM, K> {
         onUnselect = block
+        return this
     }
 
     private fun checkPosition(position: Int): Boolean {

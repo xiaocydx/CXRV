@@ -61,7 +61,7 @@ class MultiSelectionActivity : AppCompatActivity() {
             val selection = multiSelection(
                 itemKey = { item: String -> item },
                 itemAccess = { getItem(it) }
-            ).apply { saveToViewModel(viewModel) }
+            ).initSelected(viewModel)
 
             onBindViewPayloads { item, _ ->
                 viewSelect.isVisible = selection.isSelected(holder)
@@ -84,7 +84,7 @@ class MultiSelectionActivity : AppCompatActivity() {
         private val selection = multiSelection(
             itemKey = { item: String -> item },
             itemAccess = { getItem(it) }
-        ).apply { saveToViewModel(viewModel) }
+        ).initSelected(viewModel)
 
         init {
             doOnItemClick { holder, item ->

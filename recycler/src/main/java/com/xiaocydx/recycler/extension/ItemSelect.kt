@@ -20,11 +20,10 @@ import com.xiaocydx.recycler.selection.SingleSelection
  *     private val selection = singleSelection(
  *         itemKey = { item -> item.id },
  *         itemAccess = { position -> getItem(position) }
- *     ).apply {
- *         // 选择时执行代码块
- *         onSelect { ... }
- *         // 取消选择时执行代码块
- *         onUnselect { ... }
+ *     ).onSelect {
+ *         ...
+ *     }.onUnselect {
+ *         ...
  *     }
  *
  *     // 第二步：点击itemView时调用单项选择
@@ -53,7 +52,7 @@ import com.xiaocydx.recycler.selection.SingleSelection
  * }
  * ```
  */
-@Suppress("FunctionName", "UNCHECKED_CAST", "KDocUnresolvedReference")
+@Suppress("UNCHECKED_CAST", "KDocUnresolvedReference")
 fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> AdapterT.singleSelection(
     initKey: K? = null,
     itemKey: (item: ITEM) -> K?,
@@ -76,11 +75,10 @@ fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> AdapterT.singleSelection(
  *     private val selection = multiSelection(
  *         itemKey = { item -> item.id },
  *         itemAccess = { position -> getItem(position) }
- *     ).apply {
- *         // 选择时执行代码块
- *         onSelect { ... }
- *         // 取消选择时执行代码块
- *         onUnselect { ... }
+ *     ).onSelect {
+ *         ...
+ *     }.onUnselect {
+ *         ...
  *     }
  *
  *     // 第二步：点击itemView时调用多项选择
@@ -109,13 +107,20 @@ fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> AdapterT.singleSelection(
  * }
  * ```
  */
-@Suppress("FunctionName", "UNCHECKED_CAST", "KDocUnresolvedReference")
+@Suppress("UNCHECKED_CAST", "KDocUnresolvedReference")
 fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> AdapterT.multiSelection(
+    maxSelectSize: Int = Int.MAX_VALUE,
+    initKeys: List<K>? = null,
     itemKey: (item: ITEM) -> K?,
-    itemAccess: AdapterT.(position: Int) -> ITEM,
-    maxSelectSize: Int = Int.MAX_VALUE
+    itemAccess: AdapterT.(position: Int) -> ITEM
 ): MultiSelection<ITEM, K> {
-    return MultiSelection(this, itemKey, itemAccess as Adapter<*>.(Int) -> ITEM, maxSelectSize)
+    require(maxSelectSize > 0) {
+        "maxSelectSize = $maxSelectSize，值需要大于0"
+    }
+    require(initKeys == null || initKeys.size <= maxSelectSize) {
+        "initKeys.size = ${initKeys!!.size}，size需要小于或等于maxSelectSize"
+    }
+    return MultiSelection(this, initKeys, itemKey, itemAccess as Adapter<*>.(Int) -> ITEM, maxSelectSize)
 }
 
 /**
@@ -147,9 +152,11 @@ fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.singleSelection(
  */
 fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.multiSelection(
     maxSelectSize: Int = Int.MAX_VALUE,
+    initKeys: List<K>? = null,
     itemKey: (item: ITEM) -> K?
 ): MultiSelection<ITEM, K> = multiSelection(
     maxSelectSize = maxSelectSize,
+    initKeys = initKeys,
     itemKey = itemKey,
     itemAccess = { getItem(it) }
 )

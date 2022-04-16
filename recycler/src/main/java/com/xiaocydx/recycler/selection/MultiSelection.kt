@@ -19,12 +19,13 @@ import kotlin.math.min
  */
 class MultiSelection<ITEM : Any, K : Any> internal constructor(
     adapter: Adapter<*>,
+    initKeys: List<K>? = null,
     itemKey: (item: ITEM) -> K?,
     itemAccess: Adapter<*>.(position: Int) -> ITEM,
     private val maxSelectSize: Int = Int.MAX_VALUE
 ) : Selection<ITEM, K>(adapter, itemKey, itemAccess) {
     private val observer = InvalidSelectedObserver()
-    private var _selectedKeys: ArraySet<K>? = null
+    private var _selectedKeys: ArraySet<K>? = initKeys?.let(::ArraySet)
     private var isSelectedAllState: Boolean = false
     private var onSelectedMax: (() -> Unit)? = null
     private var onSelectAllStateChange: ((Boolean) -> Unit)? = null
@@ -37,7 +38,6 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
         }
 
     init {
-        require(maxSelectSize > 0) { "maxSelectSize的值必须大于0" }
         adapter.registerAdapterDataObserver(observer)
     }
 
@@ -115,9 +115,9 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
     /**
      * 选择全部item
      *
-     * **注意**：若设置了[maxSelectSize]，则调用此函数会抛出[IllegalArgumentException]异常。
+     * **注意**：若设置了[maxSelectSize]，则调用该函数会抛出[IllegalArgumentException]异常。
      *
-     * @return 返回`true`表示选择成功，`false`表示已全选
+     * @return `true`表示选择成功，`false`表示已全选
      */
     fun selectAll(parent: RecyclerView): Boolean {
         require(maxSelectSize == Int.MAX_VALUE) {
@@ -143,7 +143,7 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
     /**
      * 清除全部已选
      *
-     * @return 返回`true`表示清除成功，`false`表示未选择过
+     * @return `true`表示清除成功，`false`表示未选择过
      */
     fun clearSelected(parent: RecyclerView): Boolean {
         if (selectedKeys.isEmpty()) {
@@ -159,7 +159,10 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
         return true
     }
 
-    override fun saveToViewModel(viewModel: ViewModel) {
+    /**
+     * 获取[viewModel]的选择状态作为初始状态，并将后续的选择状态保存至[viewModel]
+     */
+    override fun initSelected(viewModel: ViewModel): MultiSelection<ITEM, K> {
         var keys = viewModel.getTag<ArraySet<K>>(STORE_KEY)
         if (keys == null) {
             keys = selectedKeys
@@ -167,21 +170,39 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
         } else {
             _selectedKeys = keys
         }
+        return this
     }
 
-    override fun clearFromViewModel(viewModel: ViewModel) {
+    /**
+     * 清除[viewModel]的选择状态
+     */
+    override fun clearSelected(viewModel: ViewModel): MultiSelection<ITEM, K> {
         viewModel.setTagIfAbsent<ArraySet<K>?>(STORE_KEY, null)
+        return this
     }
 
-    fun removeInvalidSelectedObserver() {
-        adapter.unregisterAdapterDataObserver(observer)
+    /**
+     * 调用[select]返回`true`时，执行[block]
+     */
+    override fun onSelect(block: (item: ITEM) -> Unit): MultiSelection<ITEM, K> {
+        super.onSelect(block)
+        return this
+    }
+
+    /**
+     * 调用[unselect]返回`true`时，执行[block]
+     */
+    override fun onUnselect(block: (item: ITEM) -> Unit): MultiSelection<ITEM, K> {
+        super.onUnselect(block)
+        return this
     }
 
     /**
      * 调用[select]时，若[isSelectedMax]为`true`，则执行[block]
      */
-    fun onSelectedMax(block: () -> Unit) {
+    fun onSelectedMax(block: () -> Unit): MultiSelection<ITEM, K> {
         onSelectedMax = block
+        return this
     }
 
     /**
@@ -192,13 +213,15 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
      * * 若列表由全选状态改为未全选状态，则执行[block]，此时[isSelectedAll]为false。
      * * 若列表处于全选状态，则插入item时，会改为未全选状态，执行[block]，此时[isSelectedAll]为false。
      */
-    fun onSelectAllStateChange(block: (isSelectedAll: Boolean) -> Unit) {
+    fun onSelectAllStateChange(block: (isSelectedAll: Boolean) -> Unit): MultiSelection<ITEM, K> {
         onSelectAllStateChange = block
+        return this
     }
 
-    /**
-     * 更新全选状态
-     */
+    fun removeInvalidSelectedObserver() {
+        adapter.unregisterAdapterDataObserver(observer)
+    }
+
     private fun updateSelectedAllState() {
         val isSelectedAll = isSelectedAll
         if (isSelectedAllState != isSelectedAll) {

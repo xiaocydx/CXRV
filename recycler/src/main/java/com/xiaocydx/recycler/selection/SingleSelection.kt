@@ -50,18 +50,13 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
         if (selectedKey == itemKey) {
             return false
         }
-        unselectPrevious()
+        clearSelected()
         selectedKey = itemKey
         onSelect?.invoke(item)
         notifySelectChanged(position)
         return true
     }
 
-    /**
-     * 取消选择
-     *
-     * @return 返回`true`表示取消成功，`false`表示未选择过
-     */
     override fun unselect(item: ITEM, position: Int): Boolean {
         val itemKey = item.key ?: return false
         if (selectedKey != itemKey) {
@@ -73,7 +68,26 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
         return true
     }
 
-    override fun saveToViewModel(viewModel: ViewModel) {
+    /**
+     * 清除已选
+     *
+     * @return `true`表示清除成功，`false`表示未选择过
+     */
+    fun clearSelected(): Boolean {
+        val itemKey = selectedKey ?: return false
+        selectedKey = null
+        val position = findPositionByKey(itemKey)
+        if (position != -1) {
+            onUnselect?.invoke(adapter.itemAccess(position))
+            notifySelectChanged(position)
+        }
+        return true
+    }
+
+    /**
+     * 获取[viewModel]的选择状态作为初始状态，并将后续的选择状态保存至[viewModel]
+     */
+    override fun initSelected(viewModel: ViewModel): SingleSelection<ITEM, K> {
         var store = viewModel.getTag<Store<K>>(STORE_KEY)
         if (store == null) {
             store = Store(selectedKey)
@@ -82,24 +96,35 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
             selectedKey = store.selectedKey
         }
         this.store = store
+        return this
     }
 
-    override fun clearFromViewModel(viewModel: ViewModel) {
+    /**
+     * 清除[viewModel]的选择状态
+     */
+    override fun clearSelected(viewModel: ViewModel): SingleSelection<ITEM, K> {
         viewModel.setTagIfAbsent<Store<K>?>(STORE_KEY, null)
+        return this
+    }
+
+    /**
+     * 调用[select]返回`true`时，执行[block]
+     */
+    override fun onSelect(block: (item: ITEM) -> Unit): SingleSelection<ITEM, K> {
+        super.onSelect(block)
+        return this
+    }
+
+    /**
+     * 调用[unselect]返回`true`时，执行[block]
+     */
+    override fun onUnselect(block: (item: ITEM) -> Unit): SingleSelection<ITEM, K> {
+        super.onUnselect(block)
+        return this
     }
 
     fun removeInvalidSelectedObserver() {
         adapter.unregisterAdapterDataObserver(observer)
-    }
-
-    private fun unselectPrevious() {
-        val itemKey = selectedKey ?: return
-        selectedKey = null
-        val position = findPositionByKey(itemKey)
-        if (position != -1) {
-            onUnselect?.invoke(adapter.itemAccess(position))
-            notifySelectChanged(position)
-        }
     }
 
     private data class Store<K : Any>(var selectedKey: K?)

@@ -61,7 +61,7 @@ class SingleSelectionActivity : AppCompatActivity() {
             val selection = singleSelection(
                 itemKey = { item: String -> item },
                 itemAccess = { getItem(it) }
-            ).apply { saveToViewModel(viewModel) }
+            ).initSelected(viewModel)
 
             onBindViewPayloads { item, _ ->
                 viewSelect.isVisible = selection.isSelected(holder)
@@ -84,7 +84,7 @@ class SingleSelectionActivity : AppCompatActivity() {
         private val selection = singleSelection(
             itemKey = { item: String -> item },
             itemAccess = { getItem(it) }
-        ).apply { saveToViewModel(viewModel) }
+        ).initSelected(viewModel)
 
         init {
             doOnItemClick { holder, item ->
