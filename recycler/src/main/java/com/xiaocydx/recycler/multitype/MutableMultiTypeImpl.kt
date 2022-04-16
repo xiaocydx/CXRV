@@ -11,18 +11,14 @@ import com.xiaocydx.recycler.extension.accessEach
  */
 @PublishedApi
 internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
+    private var isComplete = false
     private val types = SparseArray<Type<out T>>()
     private val typeGroups: MutableMap<Class<out T>, Any> = mutableMapOf()
     override val size: Int
         get() = types.size()
 
-    inline fun init(block: MutableMultiType<T>.() -> Unit): MultiType<T> {
-        this.block()
-        checkTypeGroups()
-        return this
-    }
-
     override fun register(type: Type<out T>) {
+        check(!isComplete) { "已完成多类型注册" }
         val viewType = type.delegate.viewType
         if (types.indexOfKey(viewType) < 0) {
             types.put(viewType, type)
@@ -53,10 +49,11 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
         val clazz = type.clazz
         when (val group = typeGroups[clazz]) {
             null -> typeGroups[clazz] = type
-            is Type<*> -> arrayListOf<Type<out T>>().apply {
-                add(group as Type<out T>)
-                add(type)
-            }.also { typeGroups[clazz] = it }
+            is Type<*> -> arrayListOf<Type<out T>>().also {
+                typeGroups[clazz] = it
+                it.add(group as Type<out T>)
+                it.add(type)
+            }
             is ArrayList<*> -> (group as ArrayList<Type<out T>>).add(type)
         }
     }
@@ -66,7 +63,7 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
      * 若有[ViewTypeDelegate]未设置typeLinker，则抛出[IllegalArgumentException]异常。
      */
     @Suppress("UNCHECKED_CAST")
-    fun checkTypeGroups() {
+    private fun checkTypeGroups() {
         typeGroups.values.forEach { group ->
             (group as? ArrayList<Type<out T>>)
                 ?.accessEach { checkTypeLinker(it, group) }
@@ -87,5 +84,13 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
     ): Type<out T>? {
         accessEach { if (predicate(it as Type<T>)) return it }
         return null
+    }
+
+    fun complete(): MultiType<T> {
+        if (!isComplete) {
+            isComplete = true
+            checkTypeGroups()
+        }
+        return this
     }
 }

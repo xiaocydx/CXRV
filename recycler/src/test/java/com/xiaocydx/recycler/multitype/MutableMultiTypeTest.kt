@@ -76,4 +76,11 @@ class MutableMultiTypeTest {
     private fun <T : Any> MultiType<T>.assertRegistered(delegate: ViewTypeDelegate<*, *>) {
         assertThat(keyAt(delegate.viewType)?.delegate).isEqualTo(delegate)
     }
+
+    private inline fun <T : Any> MutableMultiTypeImpl<T>.init(
+        block: MutableMultiType<T>.() -> Unit
+    ) {
+        block()
+        complete()
+    }
 }

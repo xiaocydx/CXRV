@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package com.xiaocydx.recycler.multitype
 
 /**
@@ -14,6 +12,7 @@ internal class SingletonMultiType<T : Any>(
     delegate: ViewTypeDelegate<T, *>
 ) : MultiType<T> {
     private val type: Type<out T> = Type(clazz, delegate)
+
     override val size: Int = 1
 
     override fun keyAt(viewType: Int): Type<out T> = type

@@ -19,11 +19,19 @@ import kotlinx.coroutines.Dispatchers
  */
 @PublishedApi
 internal class MultiTypeAdapter<T : Any>(
-    private val multiType: MultiType<T>,
+    private var multiType: MultiType<T> = unregistered(),
     workDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ListAdapter<T, ViewHolder>(workDispatcher) {
 
     init {
+        setMultiType(multiType)
+    }
+
+    fun setMultiType(multiType: MultiType<T>) {
+        if (multiType == unregistered<T>()) {
+            return
+        }
+        this.multiType = multiType
         multiType.forEach { it.delegate.attachAdapter(this) }
     }
 

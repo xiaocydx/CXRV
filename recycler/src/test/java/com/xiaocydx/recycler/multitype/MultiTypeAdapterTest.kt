@@ -114,7 +114,7 @@ class MultiTypeAdapterTest {
         workDispatcher: CoroutineDispatcher = Dispatchers.Default,
         block: MutableMultiType<T>.() -> Unit
     ): MultiTypeAdapter<T> = MultiTypeAdapter(
-        multiType = mutableMultiTypeOf<T>().init(block),
+        multiType = mutableMultiTypeOf<T>().apply(block).complete(),
         workDispatcher = workDispatcher
     )
 }

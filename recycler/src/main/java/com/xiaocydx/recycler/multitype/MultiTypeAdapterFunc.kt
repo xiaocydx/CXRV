@@ -3,6 +3,17 @@ package com.xiaocydx.recycler.multitype
 import com.xiaocydx.recycler.list.ListAdapter
 
 /**
+ * 多类型作用域
+ */
+abstract class MultiTypeScope<T : Any> : MutableMultiType<T>() {
+
+    /**
+     * 列表适配器，仅用于在作用域下构建初始化逻辑
+     */
+    abstract val listAdapter: ListAdapter<T, *>
+}
+
+/**
  * 构建item类型为[Any]的多类型[ListAdapter]
  *
  * ```
@@ -14,7 +25,7 @@ import com.xiaocydx.recycler.list.ListAdapter
  * 详细描述可以看[MutableMultiType]。
  */
 inline fun listAdapter(
-    block: MutableMultiType<Any>.() -> Unit
+    block: MultiTypeScope<Any>.() -> Unit
 ): ListAdapter<Any, *> = listAdapter<Any>(block)
 
 /**
@@ -30,11 +41,11 @@ inline fun listAdapter(
  */
 @JvmName("listAdapterTyped")
 inline fun <T : Any> listAdapter(
-    block: MutableMultiType<T>.() -> Unit
-): ListAdapter<T, *> = MultiTypeAdapter(multiType = MutableMultiTypeImpl<T>().init(block))
+    block: MultiTypeScope<T>.() -> Unit
+): ListAdapter<T, *> = MultiTypeScopeImpl<T>().apply(block).complete()
 
 /**
  * 转换成item类型为[T]的[ListAdapter]
  */
 inline fun <reified T : Any> ViewTypeDelegate<T, *>.toListAdapter(): ListAdapter<T, *> =
-        MultiTypeAdapter(multiType = SingletonMultiType(T::class.java, this))
+        MultiTypeAdapter(SingletonMultiType(T::class.java, this))
