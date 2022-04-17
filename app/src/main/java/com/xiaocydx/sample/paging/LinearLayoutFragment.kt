@@ -1,11 +1,14 @@
 package com.xiaocydx.sample.paging
 
+import androidx.lifecycle.flowWithLifecycle
 import com.xiaocydx.recycler.extension.divider
 import com.xiaocydx.recycler.extension.linear
-import com.xiaocydx.recycler.paging.emitAll
+import com.xiaocydx.recycler.extension.onEach
 import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.launchRepeatOnViewLifecycle
 import com.xiaocydx.sample.paging.config.pagingSwipeRefresh
+import com.xiaocydx.sample.viewLifecycle
+import com.xiaocydx.sample.viewLifecycleScope
+import kotlinx.coroutines.flow.launchIn
 
 /**
  * @author xcc
@@ -27,10 +30,11 @@ class LinearLayoutFragment : PagingFragment() {
             .pagingSwipeRefresh(adapter)
     }
 
-    override fun initObserve() {
-        super.initObserve()
-        launchRepeatOnViewLifecycle {
-            adapter.emitAll(viewModel.flow)
-        }
+    override fun initCollect() {
+        super.initCollect()
+        viewModel.flow
+            .onEach(adapter)
+            .flowWithLifecycle(viewLifecycle)
+            .launchIn(viewLifecycleScope)
     }
 }

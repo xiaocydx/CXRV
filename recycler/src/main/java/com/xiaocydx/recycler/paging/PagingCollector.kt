@@ -21,13 +21,13 @@ private const val PAGING_COLLECTOR_KEY = "com.xiaocydx.recycler.paging.PAGING_CO
  * [PagingCollector.emit]负责收集指定流的[PagingData]。
  *
  * ### 加载状态
- * * [PagingCollector.loadStates]返回当前加载状态集合。
- * * [PagingCollector.addLoadStatesListener]添加加载状态集合已更改的监听。
- * * [PagingCollector.doOnLoadStatesChanged]添加加载状态集合已更改的处理程序。
+ * 1. [PagingCollector.loadStates]返回当前加载状态集合。
+ * 2. [PagingCollector.addLoadStatesListener]添加加载状态集合已更改的监听。
+ * 3. [PagingCollector.doOnLoadStatesChanged]添加加载状态集合已更改的处理程序。
  *
  * ### 分页操作
- * * [PagingCollector.refresh]刷新加载，获取新的[PagingData]。
- * * [PagingCollector.retry]重新加载，会对加载状态做判断，避免冗余请求。
+ * 1. [PagingCollector.refresh]刷新加载，获取新的[PagingData]。
+ * 2. [PagingCollector.retry]重新加载，会对加载状态做判断，避免冗余请求。
  */
 val <T : Any> ListAdapter<T, *>.pagingCollector: PagingCollector<T>
     get() {
@@ -55,6 +55,13 @@ val <T : Any> ListAdapter<T, *>.pagingCollector: PagingCollector<T>
  * adapter.emitAll(flow)
  * ```
  */
+@Deprecated(
+    message = "其它相同形式的扩展函数，导致该函数调用体验不好，因此废弃",
+    replaceWith = ReplaceWith(
+        expression = "flow.collect(adapter)",
+        imports = ["com.xiaocydx.recycler.extension.collect"]
+    )
+)
 suspend fun <T : Any> ListAdapter<T, *>.emitAll(
     flow: Flow<PagingData<T>>
 ) = pagingCollector.emitAll(flow)

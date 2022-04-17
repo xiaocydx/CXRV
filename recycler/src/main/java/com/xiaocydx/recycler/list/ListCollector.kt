@@ -38,6 +38,13 @@ val <T : Any> ListAdapter<T, *>.listCollector: ListCollector<T>
  * adapter.emitAll(flow)
  * ```
  */
+@Deprecated(
+    message = "其它相同形式的扩展函数，导致该函数调用体验不好，因此废弃",
+    replaceWith = ReplaceWith(
+        expression = "flow.collect(adapter)",
+        imports = ["com.xiaocydx.recycler.extension.collect"]
+    )
+)
 suspend fun <T : Any> ListAdapter<T, *>.emitAll(
     flow: Flow<ListData<T>>
 ) = listCollector.emitAll(flow)

@@ -7,19 +7,22 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import androidx.lifecycle.flowWithLifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
 import com.xiaocydx.recycler.extension.divider
 import com.xiaocydx.recycler.extension.linear
-import com.xiaocydx.recycler.paging.emitAll
+import com.xiaocydx.recycler.extension.onEach
 import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.launchRepeatOnViewLifecycle
 import com.xiaocydx.sample.paging.FooAdapter
 import com.xiaocydx.sample.paging.PagingViewModel
 import com.xiaocydx.sample.paging.config.paging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
+import com.xiaocydx.sample.viewLifecycle
+import com.xiaocydx.sample.viewLifecycleScope
 import com.xiaocydx.sample.viewmodel.activityViewModels
 import com.xiaocydx.sample.viewpager.shared.SharedRecycledFragment
+import kotlinx.coroutines.flow.launchIn
 
 /**
  * @author xcc
@@ -66,9 +69,10 @@ class FooListFragment : SharedRecycledFragment() {
     }
 
     override fun onLazyInitialize() {
-        launchRepeatOnViewLifecycle {
-            fooAdapter.emitAll(viewModel.flow)
-        }
+        viewModel.flow
+            .onEach(fooAdapter)
+            .flowWithLifecycle(viewLifecycle)
+            .launchIn(viewLifecycleScope)
     }
 
     override fun onDestroy() {

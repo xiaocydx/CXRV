@@ -6,18 +6,20 @@ import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.recycler.binding.bindingAdapter
 import com.xiaocydx.recycler.extension.divider
 import com.xiaocydx.recycler.extension.linear
+import com.xiaocydx.recycler.extension.onEach
 import com.xiaocydx.recycler.list.ListAdapter
-import com.xiaocydx.recycler.paging.emitAll
 import com.xiaocydx.sample.databinding.ItemArticleBinding
 import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.launchRepeatOnLifecycle
 import com.xiaocydx.sample.paging.config.paging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.retrofit.ArticleInfo
+import kotlinx.coroutines.flow.launchIn
 
 /**
  * 分页加载示例代码（网络请求）
@@ -62,8 +64,9 @@ class ArticleActivity : AppCompatActivity() {
     }
 
     private fun initObserve() {
-        launchRepeatOnLifecycle {
-            adapter.emitAll(viewModel.flow)
-        }
+        viewModel.flow
+            .onEach(adapter)
+            .flowWithLifecycle(lifecycle)
+            .launchIn(lifecycleScope)
     }
 }

@@ -164,15 +164,8 @@ class ListState<T : Any> : ListOwner<T> {
     }
 }
 
-/**
- * 将[ListState]转换为列表更新数据流
- */
-fun <T : Any> ListState<T>.asFlow(): Flow<ListData<T>> = flow {
-    val mediator = ListMediatorImpl(this@asFlow)
-    emit(ListData(mediator.flow, mediator))
-}
-
-private class ListMediatorImpl<T : Any>(
+@PublishedApi
+internal class ListMediatorImpl<T : Any>(
     private val listState: ListState<T>
 ) : ListMediator<T> {
     private val collected = AtomicBoolean()

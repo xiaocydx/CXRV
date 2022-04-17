@@ -57,13 +57,13 @@ abstract class PagingFragment : Fragment() {
     final override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initView()
-        initObserve()
+        initCollect()
     }
 
     protected abstract fun initView()
 
     @CallSuper
-    protected open fun initObserve() {
+    protected open fun initCollect() {
         sharedViewModel
             .menuAction
             .onEach { action ->
