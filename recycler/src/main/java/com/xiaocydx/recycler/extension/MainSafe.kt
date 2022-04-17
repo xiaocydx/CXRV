@@ -5,10 +5,13 @@ import android.os.Looper
 import android.view.Choreographer
 import android.view.View
 import androidx.core.os.HandlerCompat
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.flow.internal.FusibleFlow
-import kotlin.coroutines.ContinuationInterceptor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainCoroutineDispatcher
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 /**
@@ -73,22 +76,11 @@ internal suspend fun View.awaitFrameComplete() {
 }
 
 /**
- * 将Flow的执行上下文的调度器更改为主线程调度器，
- * 若执行上下文已经包含主线程调度器，则不调用[flowOn]。
+ * 将Flow的执行上下文的调度器更改为主线程调度器
  */
-@OptIn(InternalCoroutinesApi::class)
 internal fun <T> Flow<T>.flowOnMain(
     mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
-): Flow<T> = when (this) {
-    is FusibleFlow<T> -> flowOn(mainDispatcher)
-    else -> unsafeFlow {
-        val flow = when (currentCoroutineContext()[ContinuationInterceptor]) {
-            is MainCoroutineDispatcher -> this@flowOnMain
-            else -> this@flowOnMain.flowOn(mainDispatcher)
-        }
-        flow.collect { emit(it) }
-    }
-}
+): Flow<T> = flowOn(mainDispatcher)
 
 /**
  * 不检测执行上下文、异常透明性的Flow
