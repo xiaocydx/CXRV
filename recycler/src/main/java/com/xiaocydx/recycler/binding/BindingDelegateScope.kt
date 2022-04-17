@@ -4,6 +4,7 @@ import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewbinding.ViewBinding
 import com.xiaocydx.recycler.concat.SpanSizeProvider
 import com.xiaocydx.recycler.marker.RvDslMarker
@@ -89,7 +90,7 @@ abstract class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
     private var onViewDetachedFromWindow: (VB.() -> Unit)? = null
     private var onAttachedToRecyclerView: ((rv: RecyclerView) -> Unit)? = null
     private var onDetachedFromRecyclerView: ((rv: RecyclerView) -> Unit)? = null
-    private var fullSpan: ((position: Int, BindingHolder<VB>) -> Boolean)? = null
+    private var fullSpan: ((position: Int, ViewHolder) -> Boolean)? = null
     private var getSpanSize: ((position: Int, spanCount: Int) -> Int)? = null
 
     /**
@@ -179,7 +180,7 @@ abstract class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
     /**
      * 对应[SpanSizeProvider.fullSpan]
      */
-    fun fullSpan(block: (position: Int, BindingHolder<VB>) -> Boolean) {
+    fun fullSpan(block: (position: Int, ViewHolder) -> Boolean) {
         fullSpan = block
     }
 
@@ -242,7 +243,7 @@ abstract class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
         onDetachedFromRecyclerView?.invoke(recyclerView)
     }
 
-    override fun fullSpan(position: Int, holder: BindingHolder<VB>): Boolean {
+    override fun fullSpan(position: Int, holder: ViewHolder): Boolean {
         return fullSpan?.invoke(position, holder) ?: false
     }
 

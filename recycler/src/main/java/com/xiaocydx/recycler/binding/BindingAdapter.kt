@@ -13,7 +13,7 @@ import com.xiaocydx.recycler.list.ListAdapter
  * @date 2021/12/5
  */
 abstract class BindingAdapter<ITEM : Any, VB : ViewBinding> :
-    ListAdapter<ITEM, BindingHolder<VB>>() {
+        ListAdapter<ITEM, BindingHolder<VB>>() {
     /**
      * Kotlin中类的函数引用，若不是直接作为内联函数的实参，则会编译为单例，
      * 但此处仍然用属性保存函数引用，不重复获取，即使编译规则改了也不受影响。

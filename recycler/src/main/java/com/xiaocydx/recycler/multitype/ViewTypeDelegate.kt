@@ -1,5 +1,3 @@
-@file:Suppress("PropertyName")
-
 package com.xiaocydx.recycler.multitype
 
 import android.view.LayoutInflater
@@ -13,11 +11,11 @@ import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.xiaocydx.recycler.concat.SpanSizeProvider
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.getItem
 import com.xiaocydx.recycler.list.removeItemAt
 import com.xiaocydx.recycler.list.setItem
-import com.xiaocydx.recycler.concat.SpanSizeProvider
 
 /**
  * ViewType委托类
@@ -27,10 +25,11 @@ import com.xiaocydx.recycler.concat.SpanSizeProvider
  * @author xcc
  * @date 2021/10/8
  */
-abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> {
+abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider {
     private var attachActions: MutableList<(ListAdapter<*, *>) -> Unit>? = null
 
     @VisibleForTesting
+    @Suppress("PropertyName")
     internal var _adapter: ListAdapter<Any, *>? = null
         private set
     internal var typeLinker: ((item: ITEM) -> Boolean)? = null
@@ -205,14 +204,4 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> {
      * 对应[Adapter.onDetachedFromRecyclerView]
      */
     open fun onDetachedFromRecyclerView(recyclerView: RecyclerView): Unit = Unit
-
-    /**
-     * 对应[SpanSizeProvider.fullSpan]
-     */
-    open fun fullSpan(position: Int, holder: VH): Boolean = false
-
-    /**
-     * 对应[SpanSizeProvider.getSpanSize]
-     */
-    open fun getSpanSize(position: Int, spanCount: Int): Int = 1
 }

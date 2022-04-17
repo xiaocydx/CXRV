@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package com.xiaocydx.recycler.concat
 
 import androidx.core.view.doOnAttach
@@ -65,6 +63,7 @@ fun SpanSizeProvider.onViewAttachedToWindow(holder: ViewHolder) {
 /**
  * 在[Adapter.onAttachedToRecyclerView]下调用
  */
+@Suppress("unused")
 fun SpanSizeProvider.onAttachedToRecyclerView(
     recyclerView: RecyclerView
 ) = with(recyclerView) {
