@@ -148,7 +148,7 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      * 消费并返回[maxScrap]，该函数用于避免多次设置回收上限
      */
     internal fun consumeMaxScrap(): Int {
-        return maxScrap.also { maxScrap = -1 }
+        return maxScrap.also { maxScrap = 0 }
     }
 
     /**
