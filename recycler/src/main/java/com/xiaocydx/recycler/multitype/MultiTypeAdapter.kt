@@ -52,8 +52,12 @@ internal class MultiTypeAdapter<T : Any>(
     }
 
     override fun onViewRecycled(holder: ViewHolder) {
-        super.onViewRecycled(holder)
-        multiType.getViewTypeDelegate(holder).onViewRecycled(holder)
+        val delegate = multiType.getViewTypeDelegate(holder)
+        val maxScrap = delegate.consumeMaxScrap()
+        if (maxScrap > 0) {
+            recyclerView?.recycledViewPool?.setMaxRecycledViews(delegate.viewType, maxScrap)
+        }
+        delegate.onViewRecycled(holder)
     }
 
     override fun onFailedToRecycleView(holder: ViewHolder): Boolean {

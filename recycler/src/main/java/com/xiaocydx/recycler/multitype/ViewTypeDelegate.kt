@@ -3,14 +3,11 @@ package com.xiaocydx.recycler.multitype
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.CallSuper
-import androidx.annotation.LayoutRes
-import androidx.annotation.VisibleForTesting
-import androidx.annotation.WorkerThread
+import androidx.annotation.*
+import androidx.annotation.IntRange
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.recycler.concat.SpanSizeProvider
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.getItem
@@ -26,6 +23,7 @@ import com.xiaocydx.recycler.list.setItem
  * @date 2021/10/8
  */
 abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider {
+    private var maxScrap: Int = 0
     private var attachActions: MutableList<(ListAdapter<*, *>) -> Unit>? = null
 
     @VisibleForTesting
@@ -129,11 +127,28 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
     }
 
     /**
+     * 设置[viewType]类型在[RecycledViewPool]中的回收上限，
+     * 当[onViewRecycled]被调用时，[maxScrap]就会被消费掉。
+     */
+    fun setMaxScrap(@IntRange(from = 1) maxScrap: Int): ViewTypeDelegate<ITEM, VH> {
+        require(maxScrap > 0) { "maxScrap = ${maxScrap}，需要大于0" }
+        this.maxScrap = maxScrap
+        return this
+    }
+
+    /**
      * 设置类型链接器，用于一对多映射类型场景
      */
     fun typeLinker(linker: (item: ITEM) -> Boolean): ViewTypeDelegate<ITEM, VH> {
         typeLinker = linker
         return this
+    }
+
+    /**
+     * 消费并返回[maxScrap]，该函数用于避免多次设置回收上限
+     */
+    internal fun consumeMaxScrap(): Int {
+        return maxScrap.also { maxScrap = -1 }
     }
 
     /**

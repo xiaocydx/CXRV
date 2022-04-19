@@ -38,12 +38,12 @@ internal class ViewController : View.OnAttachStateChangeListener {
     fun onBindViewHolder(holder: ViewHolder) {
         viewHolder = holder
         saveItemViewType(holder)
-        recyclerView?.setMaxRecycledViews()
     }
 
     fun onViewRecycled(holder: ViewHolder) {
         viewHolder = null
         saveItemViewType(holder)
+        recyclerView?.setMaxRecycledViews()
     }
 
     fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
