@@ -7,10 +7,13 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.xiaocydx.recycler.extension.*
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.UpdateOp
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 
 private const val PAGING_COLLECTOR_KEY = "com.xiaocydx.recycler.paging.PAGING_COLLECTOR_KEY"
 
@@ -88,7 +91,6 @@ class PagingCollector<T : Any> internal constructor(
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) : FlowCollector<PagingData<T>> {
     private var updateVersion = 0
-    private var resumeJob: Job? = null
     private var mediator: PagingMediator? = null
     private var loadStatesListeners: ArrayList<LoadStatesListener>? = null
     private var handleEventListeners: ArrayList<HandleEventListener<in T>>? = null
@@ -194,37 +196,7 @@ class PagingCollector<T : Any> internal constructor(
         value: PagingData<T>
     ) = withContext(mainDispatcher.immediate) {
         mediator = value.mediator
-        // 此处resumeJob若使用var局部变量，则编译后resumeJob会是ObjectRef对象，
-        // 收集事件流期间，value.flow传入的FlowCollector会一直持有ObjectRef对象引用，
-        // resumeJob执行完之后置空，ObjectRef对象内的Job可以被GC，但ObjectRef对象本身无法被GC。
-        resumeJob = launchResumeJobOrNull(value.mediator)
-        resumeJob?.invokeOnCompletion { resumeJob = null }
-        value.flow.collect {
-            // 等待恢复任务执行完毕，才处理后续的分页事件
-            resumeJob?.join()
-            handleEvent(it)
-        }
-    }
-
-    @MainThread
-    private fun CoroutineScope.launchResumeJobOrNull(mediator: PagingMediator): Job? {
-        val listMediator = mediator.asListMediator<T>()
-        val currentStates = mediator.loadStates
-        val resumeEvent: PagingEvent<T> = when {
-            listMediator != null && listMediator.updateVersion > updateVersion -> {
-                val op = UpdateOp.SubmitList(listMediator.currentList)
-                PagingEvent.ListStateUpdate(op, currentStates)
-            }
-            currentStates != LoadStates.Incomplete && currentStates != loadStates -> {
-                PagingEvent.LoadStateUpdate(loadType = null, currentStates)
-            }
-            else -> return null
-        }
-        // 无需调度时，协程的启动恢复不是按代码顺序执行，而是通过事件循环执行，
-        // 因此启动模式设为UNDISPATCHED，确保在收集事件流之前执行恢复任务。
-        return launch(start = CoroutineStart.UNDISPATCHED) {
-            handleEvent(resumeEvent)
-        }
+        value.flow.collect(::handleEvent)
     }
 
     @MainThread
@@ -241,10 +213,11 @@ class PagingCollector<T : Any> internal constructor(
         }
 
         val beforeIsEmpty = !adapter.hasDisplayItem
-        if (op != null) {
+        val newUpdateVersion = mediator?.asListMediator<T>()?.updateVersion ?: 0
+        if (op != null && updateVersion < newUpdateVersion) {
             adapter.awaitUpdateList(op, dispatch = false)
             // 更新列表完成后才保存版本号
-            updateVersion = mediator?.asListMediator<T>()?.updateVersion ?: 0
+            updateVersion = newUpdateVersion
             if (event.loadType == LoadType.APPEND) {
                 // 确保ItemDecoration能正常显示
                 adapter.invalidateItemDecorations()

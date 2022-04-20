@@ -3,6 +3,7 @@ package com.xiaocydx.recycler.paging
 import androidx.annotation.MainThread
 import com.xiaocydx.recycler.list.ListOwner
 import com.xiaocydx.recycler.list.ListState
+import com.xiaocydx.recycler.list.UpdateOp
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
@@ -58,7 +59,7 @@ private fun <T : Any> Flow<PagingData<T>>.stateIn(
     var previous: CancellableFlow<PagingEvent<T>>? = null
     val upstream: Flow<PagingData<T>> = map { data ->
         previous?.cancel()
-        val flow = CancellableFlow(scope, data.flow)
+        val flow = PagingEventStateFlow(scope, data.flow, data.mediator)
         previous = flow
         data.modifyFlow(flow)
     }
@@ -78,6 +79,35 @@ private class PagingDataStateFlow<T : Any>(
 
     override fun onReceive(value: PagingData<T>) {
         state = value
+    }
+}
+
+/**
+ * [PagingEvent]状态流
+ */
+private class PagingEventStateFlow<T : Any>(
+    scope: CoroutineScope,
+    upstream: Flow<PagingEvent<T>>,
+    private val mediator: PagingMediator
+) : CancellableFlow<PagingEvent<T>>(scope, upstream) {
+    private var isNeedState = false
+
+    override fun onActive(): PagingEvent<T>? {
+        if (!isNeedState) {
+            return null
+        }
+        val listMediator = mediator.asListMediator<T>()
+        val currentStates = mediator.loadStates
+        return if (listMediator != null) {
+            val op = UpdateOp.SubmitList(listMediator.currentList)
+            PagingEvent.ListStateUpdate(op, currentStates)
+        } else {
+            PagingEvent.LoadStateUpdate(loadType = null, currentStates)
+        }
+    }
+
+    override fun onReceive(value: PagingEvent<T>) {
+        isNeedState = true
     }
 }
 
