@@ -213,11 +213,14 @@ class PagingCollector<T : Any> internal constructor(
         }
 
         val beforeIsEmpty = !adapter.hasDisplayItem
-        val newUpdateVersion = mediator?.asListMediator<T>()?.updateVersion ?: 0
-        if (op != null && updateVersion < newUpdateVersion) {
+        val mediator = mediator?.asListMediator<T>()
+        val newVersion = mediator?.updateVersion ?: 0
+        // 若mediator的类型是ListMediator，
+        // 则updateVersion < newVersion时才更新列表
+        if (op != null && (mediator == null || updateVersion < newVersion)) {
             adapter.awaitUpdateList(op, dispatch = false)
             // 更新列表完成后才保存版本号
-            updateVersion = newUpdateVersion
+            updateVersion = newVersion
             if (event.loadType == LoadType.APPEND) {
                 // 确保ItemDecoration能正常显示
                 adapter.invalidateItemDecorations()
