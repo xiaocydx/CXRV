@@ -6,7 +6,6 @@ import android.view.Choreographer
 import android.view.View
 import androidx.core.os.HandlerCompat
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
@@ -78,9 +77,7 @@ internal suspend fun View.awaitFrameComplete() {
 /**
  * 将Flow的执行上下文的调度器更改为主线程调度器
  */
-internal fun <T> Flow<T>.flowOnMain(
-    mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
-): Flow<T> = flowOn(mainDispatcher)
+internal fun <T> Flow<T>.flowOnMain(): Flow<T> = flowOn(Dispatchers.Main.immediate)
 
 /**
  * 不检测执行上下文、异常透明性的Flow

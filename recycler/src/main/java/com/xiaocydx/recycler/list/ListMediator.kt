@@ -8,9 +8,11 @@ package com.xiaocydx.recycler.list
  */
 internal interface ListMediator<T : Any> {
     /**
-     * 列表更新版本号
+     * 列表版本号
+     *
+     * 若[updateList]更新成功，则增加版本号
      */
-    val updateVersion: Int
+    val version: Int
 
     /**
      * 当前列表

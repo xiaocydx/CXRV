@@ -90,7 +90,7 @@ class PagingCollector<T : Any> internal constructor(
     private val adapter: ListAdapter<T, *>,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) : FlowCollector<PagingData<T>> {
-    private var updateVersion = 0
+    private var version = 0
     private var mediator: PagingMediator? = null
     private var loadStatesListeners: ArrayList<LoadStatesListener>? = null
     private var handleEventListeners: ArrayList<HandleEventListener<in T>>? = null
@@ -206,21 +206,21 @@ class PagingCollector<T : Any> internal constructor(
         }
         handleEventListeners?.reverseAccessEach { it.handleEvent(rv, event) }
 
-        val op = when (event) {
+        val op: UpdateOp<T>? = when (event) {
             is PagingEvent.ListStateUpdate -> event.op
             is PagingEvent.LoadDataSuccess -> event.toUpdateOp()
             is PagingEvent.LoadStateUpdate -> null
         }
 
-        val beforeIsEmpty = !adapter.hasDisplayItem
-        val mediator = mediator?.asListMediator<T>()
-        val newVersion = mediator?.updateVersion ?: 0
-        // 若mediator的类型是ListMediator，
-        // 则updateVersion < newVersion时才更新列表
-        if (op != null && (mediator == null || updateVersion < newVersion)) {
+        val isPreviousEmpty = !adapter.hasDisplayItem
+        val listMediator = mediator?.asListMediator<T>()
+        val newVersion = listMediator?.version ?: 0
+
+        // 若mediator的类型是ListMediator，则version < newVersion时才更新列表
+        if (op != null && (listMediator == null || version < newVersion)) {
             adapter.awaitUpdateList(op, dispatch = false)
             // 更新列表完成后才保存版本号
-            updateVersion = newVersion
+            version = newVersion
             if (event.loadType == LoadType.APPEND) {
                 // 确保ItemDecoration能正常显示
                 adapter.invalidateItemDecorations()
@@ -230,7 +230,7 @@ class PagingCollector<T : Any> internal constructor(
         when {
             loadStates == event.loadStates -> return
             event is PagingEvent.LoadDataSuccess
-                    && beforeIsEmpty
+                    && isPreviousEmpty
                     && rv.isLayoutRequested
                     && rv.layoutManager is StaggeredGridLayoutManager -> {
                 // 若此时将加载状态同步分发给listener，则listener可能会调用notifyItemRemoved()，

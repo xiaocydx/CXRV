@@ -9,6 +9,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * ### 函数作用
@@ -90,24 +92,21 @@ private class PagingEventStateFlow<T : Any>(
     upstream: Flow<PagingEvent<T>>,
     private val mediator: PagingMediator
 ) : CancellableFlow<PagingEvent<T>>(scope, upstream) {
-    private var isNeedState = false
+    private var isFirstActive = true
 
     override fun onActive(): PagingEvent<T>? {
-        if (!isNeedState) {
+        if (isFirstActive) {
+            isFirstActive = false
             return null
         }
         val listMediator = mediator.asListMediator<T>()
         val currentStates = mediator.loadStates
         return if (listMediator != null) {
-            val op = UpdateOp.SubmitList(listMediator.currentList)
+            val op: UpdateOp<T> = UpdateOp.SubmitList(listMediator.currentList)
             PagingEvent.ListStateUpdate(op, currentStates)
         } else {
             PagingEvent.LoadStateUpdate(loadType = null, currentStates)
         }
-    }
-
-    override fun onReceive(value: PagingEvent<T>) {
-        isNeedState = true
     }
 }
 
@@ -129,7 +128,7 @@ private open class CancellableFlow<T>(
     private val channel: Channel<T> = Channel(RENDEZVOUS)
 
     override suspend fun collect(collector: FlowCollector<T>) {
-        val active = withContext(mainDispatcher.immediate) {
+        val active = withMainDispatcher {
             require(!isCompleted) {
                 "CancellableFlow已完成，不能再被收集"
             }
@@ -149,7 +148,7 @@ private open class CancellableFlow<T>(
             }
         } finally {
             // 当前协程可能已经被取消，因此用NonCancellable替换Job
-            withContext(NonCancellable + mainDispatcher.immediate) {
+            withMainDispatcher(NonCancellable) {
                 isCollected = false
                 onInactive()
             }
@@ -185,6 +184,18 @@ private open class CancellableFlow<T>(
             isCompleted = true
             collectJob = null
             channel.close()
+        }
+    }
+
+    private suspend inline fun <R> withMainDispatcher(
+        context: CoroutineContext = EmptyCoroutineContext,
+        crossinline block: suspend () -> R
+    ): R {
+        val dispatcher = mainDispatcher.immediate
+        return if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
+            withContext(dispatcher + context) { block() }
+        } else {
+            block()
         }
     }
 

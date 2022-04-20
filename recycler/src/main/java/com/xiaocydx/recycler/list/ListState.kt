@@ -47,7 +47,7 @@ class ListState<T : Any> : ListOwner<T> {
     private var listeners: ArrayList<(UpdateOp<T>) -> Unit>? = null
     private val sourceList: MutableList<T> = mutableListOf()
     override val currentList: List<T> = sourceList.toReadOnlyList()
-    internal var updateVersion: Int = 0
+    internal var version: Int = 0
         private set
 
     override fun updateList(op: UpdateOp<T>) {
@@ -71,7 +71,7 @@ class ListState<T : Any> : ListOwner<T> {
         if (!succeed) {
             return@runOnMainThread
         }
-        updateVersion++
+        version++
         if (dispatch) {
             listeners?.reverseAccessEach { it(op) }
         }
@@ -169,8 +169,8 @@ internal class ListMediatorImpl<T : Any>(
     private val listState: ListState<T>
 ) : ListMediator<T> {
     private val collected = AtomicBoolean()
-    override val updateVersion: Int
-        get() = listState.updateVersion
+    override val version: Int
+        get() = listState.version
     override val currentList: List<T>
         get() = listState.currentList
 

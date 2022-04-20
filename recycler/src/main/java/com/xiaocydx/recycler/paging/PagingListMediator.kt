@@ -22,8 +22,8 @@ internal class PagingListMediator<T : Any>(
     data: PagingData<T>,
     private val listState: ListState<T>
 ) : ListMediator<T>, PagingMediator by data.mediator {
-    override val updateVersion: Int
-        get() = listState.updateVersion
+    override val version: Int
+        get() = listState.version
     override val currentList: List<T>
         get() = listState.currentList
 
