@@ -221,10 +221,6 @@ class PagingCollector<T : Any> internal constructor(
             adapter.awaitUpdateList(op, dispatch = false)
             // 更新列表完成后才保存版本号
             version = newVersion
-            if (event.loadType == LoadType.APPEND) {
-                // 确保ItemDecoration能正常显示
-                adapter.invalidateItemDecorations()
-            }
         }
 
         when {

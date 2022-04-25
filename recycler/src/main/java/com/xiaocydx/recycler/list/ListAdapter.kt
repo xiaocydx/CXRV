@@ -13,14 +13,14 @@ import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.xiaocydx.recycler.extension.accessEach
-import com.xiaocydx.recycler.extension.assertMainThread
-import com.xiaocydx.recycler.extension.reverseAccessEach
-import com.xiaocydx.recycler.helper.ListAdapterHelper
 import com.xiaocydx.recycler.concat.SpanSizeProvider
 import com.xiaocydx.recycler.concat.onAttachedToRecyclerView
 import com.xiaocydx.recycler.concat.onViewAttachedToWindow
 import com.xiaocydx.recycler.concat.spanSizeProvider
+import com.xiaocydx.recycler.extension.accessEach
+import com.xiaocydx.recycler.extension.assertMainThread
+import com.xiaocydx.recycler.extension.reverseAccessEach
+import com.xiaocydx.recycler.helper.ListAdapterHelper
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -218,10 +218,6 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
 
     internal fun removeListExecuteListener(listener: ListExecuteListener<ITEM>) {
         differ.removeListExecuteListener(listener)
-    }
-
-    internal fun invalidateItemDecorations() {
-        helper.invalidateItemDecorations()
     }
 
     @CallSuper

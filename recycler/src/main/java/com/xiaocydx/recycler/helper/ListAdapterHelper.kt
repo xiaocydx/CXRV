@@ -33,53 +33,49 @@ internal class ListAdapterHelper(
     }
 
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-        // 即使Adapter是[ConcatAdapter]的元素，也不会影响该判断逻辑
         if (positionStart == 0 && helper.isFirstItemCompletelyVisible) {
+            // 即使Adapter是ConcatAdapter的元素，也不会影响该判断逻辑
             recyclerView?.scrollToPosition(0)
         }
-        postInvalidateItemDecorations()
+        if (isStaggeredGrid) {
+            postInvalidateItemDecorations()
+        } else if (positionStart == adapter.itemCount - itemCount) {
+            invalidateItemDecorations()
+        }
     }
 
     override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
-        // 即使Adapter是[ConcatAdapter]的元素，也不会影响该判断逻辑
         if ((fromPosition == 0 || toPosition == 0) && helper.isFirstItemCompletelyVisible) {
+            // 即使Adapter是ConcatAdapter的元素，也不会影响该判断逻辑
             recyclerView?.scrollToPosition(0)
         }
-        postInvalidateItemDecorations()
+        if (isStaggeredGrid) {
+            postInvalidateItemDecorations()
+        }
     }
 
     override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-        postInvalidateItemDecorations()
-    }
-
-    /**
-     * 确保瀑布流布局添加/移除/交换item后，ItemDecoration能正常显示
-     */
-    private fun postInvalidateItemDecorations() {
-        if (!isStaggeredGrid) {
-            return
-        }
-        recyclerView?.doOnFrameComplete {
-            invalidateItemDecorationsInternal()
-        }
-    }
-
-    /**
-     * 瀑布流布局会在添加/移除/交换item时，使所有ItemDecoration无效
-     */
-    fun invalidateItemDecorations() {
         if (isStaggeredGrid) {
-            return
+            postInvalidateItemDecorations()
         }
-        invalidateItemDecorationsInternal()
     }
 
-    private fun invalidateItemDecorationsInternal() {
+    private fun invalidateItemDecorations() {
         val rv = recyclerView ?: return
         if (previousEmpty || rv.itemDecorationCount < 1) {
             return
         }
         rv.invalidateItemDecorations()
+    }
+
+    private fun postInvalidateItemDecorations() {
+        val rv = recyclerView ?: return
+        if (previousEmpty || rv.itemDecorationCount < 1) {
+            return
+        }
+        recyclerView?.doOnFrameComplete {
+            rv.invalidateItemDecorations()
+        }
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
