@@ -70,8 +70,8 @@ class ListCollector<T : Any> internal constructor(
     override suspend fun emit(
         value: ListData<T>
     ): Unit = withContext(mainDispatcher.immediate) {
-        mediator = value.mediator
         val mediator = value.mediator
+        setMediator(mediator)
         value.flow
             .onStart {
                 if (version < mediator.version) {
@@ -86,5 +86,17 @@ class ListCollector<T : Any> internal constructor(
                     version = newVersion
                 }
             }
+    }
+
+    private fun setMediator(mediator: ListMediator<T>) {
+        this.mediator = mediator
+        val currentList = adapter.currentList
+        if (mediator.version > 0 || currentList.isEmpty()) {
+            return
+        }
+        mediator.updateList(UpdateOp.SubmitList(currentList))
+        if (version < mediator.version) {
+            version = mediator.version
+        }
     }
 }
