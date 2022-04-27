@@ -1,12 +1,13 @@
 package com.xiaocydx.recycler.concat
 
+import android.view.View
 import androidx.core.view.doOnAttach
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.xiaocydx.recycler.R
+import androidx.recyclerview.widget.StaggeredGridLayoutManager.LayoutParams as StaggeredGridLayoutParams
 
 /**
  * item所占用的跨度空间数提供者
@@ -24,8 +25,8 @@ interface SpanSizeProvider {
      * 仅当[RecyclerView.getLayoutManager]为[StaggeredGridLayoutManager]时有效,
      * 实现方式对应[StaggeredGridLayoutManager.LayoutParams.setFullSpan]。
      *
-     * **注意**：在[Adapter.onViewAttachedToWindow]下
-     * 调用了[SpanSizeProvider.onViewAttachedToWindow]，该函数才会生效。
+     * **注意**：在[Adapter.onAttachedToRecyclerView]下
+     * 调用了[SpanSizeProvider.onAttachedToRecyclerView]，该函数才会生效。
      *
      * @return item是否占用所有跨度空间，返回true表示占用所有跨度空间。
      */
@@ -47,42 +48,48 @@ interface SpanSizeProvider {
 }
 
 /**
- * 显式Receiver，方便实现类内部调用扩展函数
+ * 显式Receiver，方便实现类调用[SpanSizeProvider.onAttachedToRecyclerView]
  */
 val SpanSizeProvider.spanSizeProvider: SpanSizeProvider
     get() = this
 
 /**
- * 在[Adapter.onViewAttachedToWindow]下调用
- */
-fun SpanSizeProvider.onViewAttachedToWindow(holder: ViewHolder) {
-    (holder.itemView.layoutParams as? StaggeredGridLayoutManager.LayoutParams)
-        ?.let { it.isFullSpan = fullSpan(holder.bindingAdapterPosition, holder) }
-}
-
-/**
  * 在[Adapter.onAttachedToRecyclerView]下调用
  */
 @Suppress("unused")
-fun SpanSizeProvider.onAttachedToRecyclerView(
-    recyclerView: RecyclerView
-) = with(recyclerView) {
+fun SpanSizeProvider.onAttachedToRecyclerView(rv: RecyclerView): Unit = with(rv) {
     if (getTag(R.id.tag_span_size_lookup) == true) {
-        // 避免ConcatAdapter的adapter元素重复执行设置操作
+        // 避免重复执行rv.trySetSpanSizeLookup()，重复执行的原因可能是：
+        // 1.对rv多次设置实现了SpanSizeProvider的adapter。
+        // 2.ConcatAdapter包含多个实现了SpanSizeProvider的adapter。
         return
     }
 
     if (layoutManager != null) {
-        trySetSpanSizeLookup()
+        initSpanSizeLookup()
     } else {
-        // RecyclerView此时还未设置LayoutManager，将设置操作延后执行
-        doOnAttach { trySetSpanSizeLookup() }
+        doOnAttach { initSpanSizeLookup() }
     }
     setTag(R.id.tag_span_size_lookup, true)
 }
 
-private fun RecyclerView.trySetSpanSizeLookup() {
-    (layoutManager as? GridLayoutManager)
-        ?.takeIf { it.spanSizeLookup !is ConcatSpanSizeLookup }
-        ?.let { it.spanSizeLookup = ConcatSpanSizeLookup(this, it) }
+private fun RecyclerView.initSpanSizeLookup() {
+    when (val lm = layoutManager) {
+        is StaggeredGridLayoutManager -> {
+            addOnChildAttachStateChangeListener(object : OnChildAttachStateChangeListener {
+                override fun onChildViewAttachedToWindow(view: View) {
+                    val lp =
+                            view.layoutParams as? StaggeredGridLayoutParams ?: return
+                    val holder = getChildViewHolder(view) ?: return
+                    val adapter = holder.bindingAdapter as? SpanSizeProvider ?: return
+                    lp.isFullSpan = adapter.fullSpan(holder.bindingAdapterPosition, holder)
+                }
+
+                override fun onChildViewDetachedFromWindow(view: View): Unit = Unit
+            })
+        }
+        is GridLayoutManager -> if (lm.spanSizeLookup !is ConcatSpanSizeLookup) {
+            lm.spanSizeLookup = ConcatSpanSizeLookup(this, lm)
+        }
+    }
 }

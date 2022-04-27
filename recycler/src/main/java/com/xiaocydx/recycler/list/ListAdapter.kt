@@ -15,7 +15,6 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.recycler.concat.SpanSizeProvider
 import com.xiaocydx.recycler.concat.onAttachedToRecyclerView
-import com.xiaocydx.recycler.concat.onViewAttachedToWindow
 import com.xiaocydx.recycler.concat.spanSizeProvider
 import com.xiaocydx.recycler.extension.accessEach
 import com.xiaocydx.recycler.extension.assertMainThread
@@ -187,11 +186,6 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     fun <V> getTag(key: String): V? {
         assertMainThread()
         return tags?.get(key) as? V
-    }
-
-    @CallSuper
-    override fun onViewAttachedToWindow(holder: VH) {
-        spanSizeProvider.onViewAttachedToWindow(holder)
     }
 
     @CallSuper

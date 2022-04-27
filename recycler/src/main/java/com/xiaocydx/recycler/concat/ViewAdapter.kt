@@ -67,11 +67,6 @@ abstract class ViewAdapter<VH : ViewHolder>(
     }
 
     @CallSuper
-    override fun onViewAttachedToWindow(holder: VH) {
-        spanSizeProvider.onViewAttachedToWindow(holder)
-    }
-
-    @CallSuper
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         controller.onAttachedToRecyclerView(recyclerView)
         spanSizeProvider.onAttachedToRecyclerView(recyclerView)
