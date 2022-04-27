@@ -1,12 +1,10 @@
 package com.xiaocydx.recycler.extension
 
-import android.os.Handler
 import android.os.Looper
-import android.view.Choreographer
 import android.view.View
 import androidx.core.os.HandlerCompat
+import androidx.core.view.doOnPreDraw
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flowOn
@@ -43,34 +41,12 @@ internal fun assertMainThread() {
 }
 
 /**
- * 在下一帧绘制完成后执行[action]
+ * 即将绘制视图树时，结束挂起
  */
-internal fun View.doOnFrameComplete(
-    action: () -> Unit
-): Disposable = when {
-    !isAttachedToWindow -> emptyDisposable()
-    isLayoutRequested -> {
-        // 已经申请重绘，发送同步消息，等待下一帧同步屏障解除后被执行
-        FrameCompleteObserver(postFrame = false, handler, action)
-    }
-    else -> {
-        // 下一帧doFrame()的执行过程可能会申请重绘，添加同步屏障，
-        // 因此发送异步消息，避免被同步屏障影响，无法在当前帧被执行。
-        FrameCompleteObserver(postFrame = true, asyncHandler, action)
-    }
-}
-
-/**
- * 等待下一帧绘制完成
- */
-internal suspend fun View.awaitFrameComplete() {
-    suspendCancellableCoroutine<Unit> { continuation ->
-        val disposable = doOnFrameComplete {
-            continuation.resume(Unit)
-        }
-        continuation.invokeOnCancellation {
-            disposable.dispose()
-        }
+internal suspend fun View.awaitPreDraw() {
+    suspendCancellableCoroutine<Unit> { cont ->
+        val listener = doOnPreDraw { cont.resume(Unit) }
+        cont.invokeOnCancellation { listener.removeListener() }
     }
 }
 
@@ -87,37 +63,5 @@ internal inline fun <T> unsafeFlow(
 ): Flow<T> = object : Flow<T> {
     override suspend fun collect(collector: FlowCollector<T>) {
         collector.block()
-    }
-}
-
-private class FrameCompleteObserver(
-    postFrame: Boolean,
-    handler: Handler,
-    action: () -> Unit
-) : Disposable, Runnable {
-    private var handler: Handler? = handler
-    private var action: (() -> Unit)? = action
-    override val isDisposed: Boolean
-        get() = handler == null && action == null
-
-    init {
-        if (postFrame) {
-            Choreographer.getInstance().postFrameCallback {
-                handler.post(this)
-            }
-        } else {
-            handler.post(this)
-        }
-    }
-
-    override fun run() {
-        action?.invoke()
-        dispose()
-    }
-
-    override fun dispose() = runOnMainThread {
-        handler?.removeCallbacks(this)
-        handler = null
-        action = null
     }
 }

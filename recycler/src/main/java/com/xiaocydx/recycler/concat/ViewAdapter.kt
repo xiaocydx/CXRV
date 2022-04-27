@@ -3,6 +3,7 @@ package com.xiaocydx.recycler.concat
 import android.view.View
 import androidx.annotation.CallSuper
 import androidx.annotation.VisibleForTesting
+import androidx.core.view.doOnPreDraw
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.ViewController
@@ -93,12 +94,12 @@ abstract class ViewAdapter<VH : ViewHolder>(
             !previousAsItem && currentAsItem -> when (anim) {
                 NeedAnim.ALL,
                 NeedAnim.NOT_CHANGE -> notifyItemInserted(0)
-                NeedAnim.NOT_ALL -> controller.withoutAnim { notifyItemInserted(0) }
+                NeedAnim.NOT_ALL -> withoutAnim { notifyItemInserted(0) }
             }
             previousAsItem && !currentAsItem -> when (anim) {
                 NeedAnim.ALL,
                 NeedAnim.NOT_CHANGE -> notifyItemRemoved(0)
-                NeedAnim.NOT_ALL -> controller.withoutAnim { notifyItemRemoved(0) }
+                NeedAnim.NOT_ALL -> withoutAnim { notifyItemRemoved(0) }
             }
             previousAsItem && currentAsItem -> when (anim) {
                 NeedAnim.ALL -> notifyItemChanged(0)
@@ -107,6 +108,14 @@ abstract class ViewAdapter<VH : ViewHolder>(
             }
         }
         previousAsItem = currentAsItem
+    }
+
+    private inline fun withoutAnim(block: () -> Unit) {
+        block()
+        val itemAnimator = recyclerView?.itemAnimator ?: return
+        recyclerView?.doOnPreDraw {
+            controller.viewHolder?.let(itemAnimator::endAnimation)
+        }
     }
 
     /**

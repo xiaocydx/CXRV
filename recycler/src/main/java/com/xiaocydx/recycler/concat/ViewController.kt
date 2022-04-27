@@ -7,7 +7,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
-import com.xiaocydx.recycler.extension.doOnFrameComplete
 
 /**
  * 从[Recycler]中清除ViewHolder的控制器
@@ -26,12 +25,13 @@ import com.xiaocydx.recycler.extension.doOnFrameComplete
  */
 internal class ViewController : View.OnAttachStateChangeListener {
     private var viewType = INVALID_TYPE
-    private var viewHolder: ViewHolder? = null
     private var View.hasTransientState: Boolean
         get() = ViewCompat.hasTransientState(this)
         set(value) = ViewCompat.setHasTransientState(this, value)
     private val isAdapterAttached: Boolean
         get() = recyclerView != null
+    var viewHolder: ViewHolder? = null
+        private set
     var recyclerView: RecyclerView? = null
         private set
 
@@ -150,14 +150,6 @@ internal class ViewController : View.OnAttachStateChangeListener {
         // holder.isRecyclable()为true，导致仍然可以回收viewHolder。
         holder.setIsRecyclable(false)
         return false
-    }
-
-    inline fun withoutAnim(block: () -> Unit) {
-        block()
-        val itemAnimator = recyclerView?.itemAnimator ?: return
-        recyclerView?.doOnFrameComplete {
-            viewHolder?.let(itemAnimator::endAnimation)
-        }
     }
 
     @VisibleForTesting

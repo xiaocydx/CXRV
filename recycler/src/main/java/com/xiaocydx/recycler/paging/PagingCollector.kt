@@ -231,11 +231,11 @@ class PagingCollector<T : Any> internal constructor(
                     && rv.isLayoutRequested
                     && rv.layoutManager is StaggeredGridLayoutManager -> {
                 // 若此时将加载状态同步分发给listener，则listener可能会调用notifyItemRemoved()，
-                // 那么在下一帧绘制流程中，因为瀑布流布局的spanIndex变得不准确，
+                // 那么在下一帧rv布局流程中，因为瀑布流布局的spanIndex变得不准确，
                 // 导致ItemDecoration计算出错误的间距，例如item分割线显示异常。
                 // 注意：协程主线程调度器发送的是异步消息，因此这里不能使用yield()，
-                // 而是在下一帧绘制完成后，才将加载状态分发给listener。
-                rv.awaitFrameComplete()
+                // 而是在下一帧rv布局完成后，才将加载状态分发给listener。
+                rv.awaitPreDraw()
             }
             rv.isComputingLayout -> {
                 // 此时可能是onBindViewHolder()触发了末尾加载，
@@ -298,8 +298,8 @@ class PagingCollector<T : Any> internal constructor(
                 return
             }
             rv.scrollToPosition(0)
-            // 等待下一帧绘制完成，确保滚动不受影响
-            rv.awaitFrameComplete()
+            // 等待下一帧rv布局完成，确保滚动不受影响
+            rv.awaitPreDraw()
         }
     }
 }
