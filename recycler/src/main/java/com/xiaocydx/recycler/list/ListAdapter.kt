@@ -20,7 +20,8 @@ import com.xiaocydx.recycler.concat.spanSizeProvider
 import com.xiaocydx.recycler.extension.accessEach
 import com.xiaocydx.recycler.extension.assertMainThread
 import com.xiaocydx.recycler.extension.reverseAccessEach
-import com.xiaocydx.recycler.helper.ListAdapterHelper
+import com.xiaocydx.recycler.helper.InvalidateHelper
+import com.xiaocydx.recycler.helper.ScrollHelper
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -42,7 +43,8 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
         updateCallback = AdapterListUpdateCallback(this),
         workDispatcher = workDispatcher
     )
-    private val helper = ListAdapterHelper(this)
+    private val scrollHelper = ScrollHelper()
+    private val invalidateHelper = InvalidateHelper()
     var recyclerView: RecyclerView? = null
         private set
     final override val currentList: List<ITEM>
@@ -59,14 +61,6 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
      */
     protected fun ViewGroup.inflate(@LayoutRes resource: Int): View {
         return inflater.inflate(resource, this, false)
-    }
-
-    /**
-     * 可用于[onViewRecycled]中清除itemView及其子View的点击、长按监听
-     */
-    fun View.clearClickListener() {
-        setOnClickListener(null)
-        setOnLongClickListener(null)
     }
 
     /**
@@ -195,6 +189,27 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
         return tags?.get(key) as? V
     }
 
+    @CallSuper
+    override fun onViewAttachedToWindow(holder: VH) {
+        spanSizeProvider.onViewAttachedToWindow(holder)
+    }
+
+    @CallSuper
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        this.recyclerView = recyclerView
+        registerHelper(recyclerView)
+        callbacks?.reverseAccessEach { it.onAttachedToRecyclerView(recyclerView) }
+        spanSizeProvider.onAttachedToRecyclerView(recyclerView)
+    }
+
+    @CallSuper
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        this.recyclerView = null
+        unregisterHelper(recyclerView)
+        callbacks?.reverseAccessEach { it.onDetachedFromRecyclerView(recyclerView) }
+        differ.cancelChildren()
+    }
+
     internal fun addViewHolderListener(listener: ViewHolderListener<in VH>) {
         if (listeners == null) {
             listeners = arrayListOf()
@@ -220,23 +235,14 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
         differ.removeListExecuteListener(listener)
     }
 
-    @CallSuper
-    override fun onViewAttachedToWindow(holder: VH) {
-        spanSizeProvider.onViewAttachedToWindow(holder)
+    private fun registerHelper(recyclerView: RecyclerView) {
+        scrollHelper.register(recyclerView, this)
+        invalidateHelper.register(recyclerView, this)
     }
 
-    @CallSuper
-    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        this.recyclerView = recyclerView
-        callbacks?.reverseAccessEach { it.onAttachedToRecyclerView(recyclerView) }
-        spanSizeProvider.onAttachedToRecyclerView(recyclerView)
-    }
-
-    @CallSuper
-    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        this.recyclerView = null
-        callbacks?.reverseAccessEach { it.onDetachedFromRecyclerView(recyclerView) }
-        differ.cancelChildren()
+    private fun unregisterHelper(recyclerView: RecyclerView) {
+        scrollHelper.unregister(recyclerView, this)
+        invalidateHelper.unregister(recyclerView, this)
     }
 
     private inner class InternalDiffItemCallback : DiffUtil.ItemCallback<ITEM>() {
