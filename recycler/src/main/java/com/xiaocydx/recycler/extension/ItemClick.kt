@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.isTouched
 import com.xiaocydx.recycler.click.itemClickDispatcher
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.doOnAttach
-import com.xiaocydx.recycler.list.getItem
+import com.xiaocydx.recycler.list.getItemOrNull
 import com.xiaocydx.recycler.multitype.ViewTypeDelegate
 import java.util.*
 
@@ -172,7 +172,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.doOnItemClick(
     where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     doOnAttach { rv ->
         rv.doOnItemClick(adapter = this, target) { holder, position ->
-            block(holder, getItem(position))
+            getItemOrNull(position)?.let { block(holder, it) }
         }
     }
     return this
@@ -232,7 +232,7 @@ inline fun <AdapterT, ITEM, VH> AdapterT.doOnLongItemClick(
     where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     doOnAttach { rv ->
         rv.doOnLongItemClick(adapter = this, target) { holder, position ->
-            block(holder, getItem(position))
+            getItemOrNull(position)?.let { block(holder, it) } ?: false
         }
     }
     return this
