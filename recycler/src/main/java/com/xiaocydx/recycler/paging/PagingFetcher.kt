@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 
 /**
  * 分页提取器，从[PagingSource]中加载结果
@@ -83,6 +84,8 @@ internal class PagingFetcher<K : Any, T : Any>(
 
             loadResult = if (config.loadResultEmptyFetchNext) {
                 nextKey = loadResult.nextKey
+                // 防止在一个消息中出现死循环
+                yield()
                 null
             } else {
                 LoadResult.Failure(IllegalArgumentException(
