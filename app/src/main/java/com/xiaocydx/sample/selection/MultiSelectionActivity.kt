@@ -41,8 +41,7 @@ class MultiSelectionActivity : AppCompatActivity() {
 
     private fun contentView(): View = RecyclerView(this).apply {
         id = viewModel.rvId
-        linear()
-        divider {
+        linear().fixedSize().divider {
             height = 0.5.dp
             color = 0xFF7E7AAA.toInt()
         }

@@ -43,7 +43,7 @@ class ItemClickActivity : AppCompatActivity() {
 
     private fun contentView(): View {
         return RecyclerView(this).apply {
-            linear()
+            linear().fixedSize()
             type1Delegate = getTextType1Delegate()
             type2Delegate = getTextType2Delegate()
 

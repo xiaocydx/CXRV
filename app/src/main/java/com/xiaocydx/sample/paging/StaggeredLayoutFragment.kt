@@ -2,6 +2,7 @@ package com.xiaocydx.sample.paging
 
 import androidx.lifecycle.flowWithLifecycle
 import com.xiaocydx.recycler.extension.divider
+import com.xiaocydx.recycler.extension.fixedSize
 import com.xiaocydx.recycler.extension.onEach
 import com.xiaocydx.recycler.extension.staggered
 import com.xiaocydx.sample.dp
@@ -19,6 +20,7 @@ class StaggeredLayoutFragment : PagingFragment() {
     override fun initView() {
         rvPaging
             .staggered(spanCount = 3)
+            .fixedSize()
             .divider {
                 height = 5.dp
                 width = 5.dp

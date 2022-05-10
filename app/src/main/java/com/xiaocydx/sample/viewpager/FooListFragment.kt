@@ -11,6 +11,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
 import com.xiaocydx.recycler.extension.divider
+import com.xiaocydx.recycler.extension.fixedSize
 import com.xiaocydx.recycler.extension.linear
 import com.xiaocydx.recycler.extension.onEach
 import com.xiaocydx.sample.dp
@@ -55,8 +56,7 @@ class FooListFragment : SharedRecycledFragment() {
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
         id = viewModel.rvId
-        linear()
-        divider {
+        linear().fixedSize().divider {
             height = 2.dp
             color = 0xFF9DAA8F.toInt()
         }

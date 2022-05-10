@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import com.xiaocydx.recycler.extension.doOnSimpleItemClick
+import com.xiaocydx.recycler.extension.fixedSize
 import com.xiaocydx.recycler.extension.linear
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.submitList
@@ -30,7 +31,7 @@ class OneToOneFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
-        linear()
+        linear().fixedSize()
         adapter = listAdapter<OneToOneMessage> {
             register(getTextDelegate())
             register(getImageDelegate())

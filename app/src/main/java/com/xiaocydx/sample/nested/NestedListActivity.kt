@@ -7,6 +7,7 @@ import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.recycler.extension.fixedSize
 import com.xiaocydx.recycler.extension.linear
 import com.xiaocydx.recycler.list.submitList
 
@@ -24,7 +25,7 @@ class NestedListActivity : AppCompatActivity() {
     }
 
     private fun contentView(): View = RecyclerView(this).apply {
-        linear()
+        linear().fixedSize()
         overScrollMode = OVER_SCROLL_NEVER
         layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
         adapter = VerticalAdapter().apply {

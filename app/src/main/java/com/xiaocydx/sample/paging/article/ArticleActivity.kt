@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.recycler.binding.bindingAdapter
 import com.xiaocydx.recycler.extension.divider
+import com.xiaocydx.recycler.extension.fixedSize
 import com.xiaocydx.recycler.extension.linear
 import com.xiaocydx.recycler.extension.onEach
 import com.xiaocydx.recycler.list.ListAdapter
@@ -42,7 +43,7 @@ class ArticleActivity : AppCompatActivity() {
     private fun initView() {
         val rv = RecyclerView(this).apply {
             id = viewModel.rvId
-            linear().divider {
+            linear().fixedSize().divider {
                 width = 10.dp
                 height = 10.dp
                 horizontalEdge = true
