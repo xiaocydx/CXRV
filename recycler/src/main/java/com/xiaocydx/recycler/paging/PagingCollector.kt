@@ -215,7 +215,7 @@ class PagingCollector<T : Any> internal constructor(
 
         val isPreviousEmpty = !adapter.hasDisplayItem
         val listMediator = mediator?.asListMediator<T>()
-        val newVersion = listMediator?.version ?: 0
+        val newVersion = event.getVersionOrZero()
 
         // 若mediator的类型是ListMediator，则version < newVersion时才更新列表
         if (op != null && (listMediator == null || version < newVersion)) {

@@ -1,5 +1,6 @@
 package com.xiaocydx.recycler.paging
 
+import androidx.annotation.CheckResult
 import androidx.annotation.MainThread
 import com.xiaocydx.recycler.extension.flowOnMain
 import com.xiaocydx.recycler.list.ListMediator
@@ -33,12 +34,12 @@ internal class PagingListMediator<T : Any>(
                 if (event is PagingEvent.LoadDataSuccess) {
                     updateList(event.toUpdateOp())
                 }
-                send(event)
+                send(event.fusion(version))
             }
         }
 
         val listener: (UpdateOp<T>) -> Unit = {
-            trySend(PagingEvent.ListStateUpdate(it, loadStates))
+            trySend(PagingEvent.ListStateUpdate(it, loadStates).fusion(version))
         }
         listState.addUpdatedListener(listener)
         awaitClose {
@@ -63,3 +64,36 @@ internal class PagingListMediator<T : Any>(
 internal fun <T : Any> PagingMediator.asListMediator(): PagingListMediator<T>? {
     return this as? PagingListMediator<T>
 }
+
+@CheckResult
+internal fun <T : Any> PagingEvent<T>.fusion(version: Int): PagingEvent<T> = when (this) {
+    is PagingEvent.LoadStateUpdate -> FusionLoadStateUpdate(loadType, loadStates, version)
+    is PagingEvent.LoadDataSuccess -> FusionLoadDataSuccess(data, loadType, loadStates, version)
+    is PagingEvent.ListStateUpdate -> FusionListStateUpdate(op, loadStates, version)
+}
+
+internal fun PagingEvent<*>.getVersionOrZero(): Int = when (this) {
+    is FusionLoadStateUpdate -> version
+    is FusionLoadDataSuccess -> version
+    is FusionListStateUpdate -> version
+    else -> 0
+}
+
+private class FusionLoadStateUpdate<T : Any>(
+    loadType: LoadType?,
+    loadStates: LoadStates,
+    val version: Int
+) : PagingEvent.LoadStateUpdate<T>(loadType, loadStates)
+
+private class FusionLoadDataSuccess<T : Any>(
+    data: List<T>,
+    loadType: LoadType,
+    loadStates: LoadStates,
+    val version: Int
+) : PagingEvent.LoadDataSuccess<T>(data, loadType, loadStates)
+
+private class FusionListStateUpdate<T : Any>(
+    op: UpdateOp<T>,
+    loadStates: LoadStates,
+    val version: Int
+) : PagingEvent.ListStateUpdate<T>(op, loadStates)

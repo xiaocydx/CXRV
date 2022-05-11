@@ -99,13 +99,13 @@ private class PagingEventStateFlow<T : Any>(
             isFirstActive = false
             return null
         }
-        val listMediator = mediator.asListMediator<T>()
-        val currentStates = mediator.loadStates
-        return if (listMediator != null) {
-            val op: UpdateOp<T> = UpdateOp.SubmitList(listMediator.currentList)
-            PagingEvent.ListStateUpdate(op, currentStates)
+        val mediator = mediator.asListMediator<T>()
+        val loadStates = this.mediator.loadStates
+        return if (mediator != null) {
+            val op: UpdateOp<T> = UpdateOp.SubmitList(mediator.currentList)
+            PagingEvent.ListStateUpdate(op, loadStates).fusion(mediator.version)
         } else {
-            PagingEvent.LoadStateUpdate(loadType = null, currentStates)
+            PagingEvent.LoadStateUpdate(loadType = null, loadStates)
         }
     }
 }

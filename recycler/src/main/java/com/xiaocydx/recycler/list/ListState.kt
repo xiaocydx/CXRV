@@ -3,11 +3,9 @@ package com.xiaocydx.recycler.list
 import androidx.annotation.MainThread
 import com.xiaocydx.recycler.extension.reverseAccessEach
 import com.xiaocydx.recycler.extension.runOnMainThread
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.*
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -174,19 +172,18 @@ internal class ListMediatorImpl<T : Any>(
     override val currentList: List<T>
         get() = listState.currentList
 
-    val flow: Flow<UpdateOp<T>> = flow {
+    val flow: Flow<ListEvent<T>> = callbackFlow {
         check(collected.compareAndSet(false, true)) {
             "列表更新数据流Flow<UpdateOp<*>>只能被收集一次"
         }
-        val channel = Channel<UpdateOp<T>>(UNLIMITED)
-        val listener: (UpdateOp<T>) -> Unit = { channel.trySend(it) }
+        val listener: (UpdateOp<T>) -> Unit = {
+            trySend(ListEvent(it, version))
+        }
         listState.addUpdatedListener(listener)
-        try {
-            emitAll(channel)
-        } finally {
+        awaitClose {
             listState.removeUpdatedListener(listener)
         }
-    }
+    }.buffer(UNLIMITED)
 
     override fun updateList(op: UpdateOp<T>) {
         listState.updateList(op, dispatch = false)

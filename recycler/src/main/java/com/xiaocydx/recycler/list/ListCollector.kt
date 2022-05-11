@@ -76,16 +76,20 @@ class ListCollector<T : Any> internal constructor(
         value.flow
             .onStart {
                 if (version < mediator.version) {
-                    emit(UpdateOp.SubmitList(mediator.currentList))
+                    emit(mediator.getListEvent())
                 }
             }
-            .collect { op ->
-                val newVersion = mediator.version
+            .collect { event ->
+                val newVersion = event.version
                 if (version < newVersion) {
-                    adapter.awaitUpdateList(op, dispatch = false)
+                    adapter.awaitUpdateList(event.op, dispatch = false)
                     // 更新列表完成后才保存版本号
                     version = newVersion
                 }
             }
+    }
+
+    private fun ListMediator<T>.getListEvent(): ListEvent<T> {
+        return ListEvent(UpdateOp.SubmitList(currentList), version)
     }
 }
