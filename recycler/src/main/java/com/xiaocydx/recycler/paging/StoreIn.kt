@@ -16,15 +16,15 @@ import kotlin.coroutines.EmptyCoroutineContext
  * ### 函数作用
  * 1. 将[PagingData.flow]发射的事件的列表数据保存到[state]中。
  * 2. [state]和视图控制器建立基于[ListOwner]的双向通信。
- * 3. 若[scope]不为`null`，则会构建[PagingData]的状态流作为返回结果，
- * 构建的状态流可以被重复收集，但同时只能被一个收集器收集，
- * 在被首次收集时，才会开始收集它的上游，直到[scope]被取消。
+ * 3. 将`Flow<PagingData<T>>`转换为热流，
+ * 热流可以被重复收集，但同时只能被一个收集器收集，
+ * 热流被首次收集时，才会开始收集它的上游，直到[scope]被取消。
  *
  * ### 调用顺序
  * 不能在调用[storeIn]之后，再调用[flowMap]转换[PagingData.flow]，
  * 因为[state]和视图控制器会建立双向通信，所以需要确保[state]和视图控制器中的数据一致。
  *
- * 在ViewModel中使用[storeIn]的例子：
+ * 在ViewModel中使用[storeIn]：
  * ```
  * class FooViewModel : ViewModel(private val repository: FooRepository) {
  *     private val listState = ListState<Foo>()
@@ -40,38 +40,23 @@ import kotlin.coroutines.EmptyCoroutineContext
  */
 fun <T : Any> Flow<PagingData<T>>.storeIn(
     state: ListState<T>,
-    scope: CoroutineScope? = null
-): Flow<PagingData<T>> {
-    val flow = map { data ->
-        val mediator = PagingListMediator(data, state)
-        PagingData(mediator.flow, mediator)
-    }
-    return if (scope != null) flow.stateIn(scope) else flow
-}
-
-/**
- * 构建[PagingData]的状态流
- *
- * 构建的状态流可以被重复收集，但同时只能被一个收集器收集，
- * 在被首次收集时，才会开始收集它的上游，直到[scope]被取消。
- */
-private fun <T : Any> Flow<PagingData<T>>.stateIn(
     scope: CoroutineScope
 ): Flow<PagingData<T>> {
-    var previous: CancellableFlow<PagingEvent<T>>? = null
+    var previous: PagingEventFlow<T>? = null
     val upstream: Flow<PagingData<T>> = map { data ->
         previous?.cancel()
-        val flow = PagingEventStateFlow(scope, data.flow, data.mediator)
+        val mediator = PagingListMediator(data, state)
+        val flow = PagingEventFlow(scope, mediator.flow, mediator)
         previous = flow
-        data.modifyFlow(flow)
+        PagingData(flow, mediator)
     }
-    return PagingDataStateFlow(scope, upstream)
+    return PagingDataFlow(scope, upstream)
 }
 
 /**
- * [PagingData]状态流
+ * 可取消的`Flow<PagingData<T>>`
  */
-private class PagingDataStateFlow<T : Any>(
+private class PagingDataFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingData<T>>
 ) : CancellableFlow<PagingData<T>>(scope, upstream) {
@@ -85,27 +70,23 @@ private class PagingDataStateFlow<T : Any>(
 }
 
 /**
- * [PagingEvent]状态流
+ * 可取消的`Flow<PagingEvent<T>>`
  */
-private class PagingEventStateFlow<T : Any>(
+private class PagingEventFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingEvent<T>>,
-    private val mediator: PagingMediator
+    private val mediator: PagingListMediator<T>
 ) : CancellableFlow<PagingEvent<T>>(scope, upstream) {
     private var isFirstActive = true
 
-    override fun onActive(): PagingEvent<T>? {
-        if (isFirstActive) {
+    override fun onActive(): PagingEvent<T>? = when {
+        isFirstActive -> {
             isFirstActive = false
-            return null
+            null
         }
-        val mediator = mediator.asListMediator<T>()
-        val loadStates = this.mediator.loadStates
-        return if (mediator != null) {
-            val op: UpdateOp<T> = UpdateOp.SubmitList(mediator.currentList)
-            PagingEvent.ListStateUpdate(op, loadStates).fusion(mediator.version)
-        } else {
-            PagingEvent.LoadStateUpdate(loadType = null, loadStates)
+        else -> mediator.run {
+            val op: UpdateOp<T> = UpdateOp.SubmitList(currentList)
+            PagingEvent.ListStateUpdate(op, loadStates).fusion(version)
         }
     }
 }

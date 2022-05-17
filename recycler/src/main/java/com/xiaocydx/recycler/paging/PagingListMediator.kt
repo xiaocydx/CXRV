@@ -80,7 +80,7 @@ internal fun PagingEvent<*>.getVersionOrZero(): Int = when (this) {
 }
 
 private class FusionLoadStateUpdate<T : Any>(
-    loadType: LoadType?,
+    loadType: LoadType,
     loadStates: LoadStates,
     val version: Int
 ) : PagingEvent.LoadStateUpdate<T>(loadType, loadStates)

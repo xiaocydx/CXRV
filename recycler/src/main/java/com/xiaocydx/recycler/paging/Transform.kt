@@ -1,6 +1,5 @@
 package com.xiaocydx.recycler.paging
 
-import androidx.annotation.CheckResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -75,8 +74,3 @@ internal fun PagingData<*>.ensureAllowTransform() {
         "flowMap()必须在storeIn()之前调用"
     }
 }
-
-@CheckResult
-internal fun <T : Any> PagingData<T>.modifyFlow(
-    flow: Flow<PagingEvent<T>>
-): PagingData<T> = PagingData(flow, mediator)

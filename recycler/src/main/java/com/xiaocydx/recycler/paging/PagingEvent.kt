@@ -11,32 +11,39 @@ import com.xiaocydx.recycler.list.UpdateOp
  * @author xcc
  * @date 2021/9/13
  */
-sealed class PagingEvent<out T : Any>(
-    open val loadType: LoadType?,
-    val loadStates: LoadStates
-) {
+sealed class PagingEvent<out T : Any>(val loadStates: LoadStates) {
     /**
      * 加载状态更新事件
      */
-    open class LoadStateUpdate<T : Any>(
-        loadType: LoadType?,
+    open class LoadStateUpdate<T : Any>
+    @PublishedApi internal constructor(
+        val loadType: LoadType,
         loadStates: LoadStates
-    ) : PagingEvent<T>(loadType, loadStates)
+    ) : PagingEvent<T>(loadStates)
 
     /**
      * 加载数据成功事件
      */
-    open class LoadDataSuccess<T : Any>(
+    open class LoadDataSuccess<T : Any>
+    @PublishedApi internal constructor(
         val data: List<T>,
-        override val loadType: LoadType,
+        val loadType: LoadType,
         loadStates: LoadStates
-    ) : PagingEvent<T>(loadType, loadStates)
+    ) : PagingEvent<T>(loadStates)
 
     /**
      * 列表状态更新事件
      */
-    open class ListStateUpdate<T : Any> internal constructor(
+    open class ListStateUpdate<T : Any>
+    @PublishedApi internal constructor(
         internal val op: UpdateOp<T>,
         loadStates: LoadStates
-    ) : PagingEvent<T>(loadType = null, loadStates)
+    ) : PagingEvent<T>(loadStates)
 }
+
+val PagingEvent<*>.loadType: LoadType?
+    get() = when (this) {
+        is PagingEvent.LoadStateUpdate -> loadType
+        is PagingEvent.LoadDataSuccess -> loadType
+        is PagingEvent.ListStateUpdate -> null
+    }
