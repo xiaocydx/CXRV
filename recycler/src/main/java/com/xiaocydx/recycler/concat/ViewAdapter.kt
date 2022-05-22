@@ -137,6 +137,4 @@ abstract class ViewAdapter<VH : ViewHolder>(
     internal fun getRecycledViewHolder(): RecyclerView.ViewHolder? {
         return controller.getRecycledViewHolder()
     }
-
-    class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 }

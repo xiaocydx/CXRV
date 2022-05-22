@@ -3,10 +3,12 @@
 package androidx.recyclerview.widget
 
 import android.view.View
+import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView.LayoutParams
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.recycler.concat.ViewAdapter
+import com.xiaocydx.recycler.extension.resolveLayoutParams
 
 internal val View.holder: ViewHolder?
     get() = (layoutParams as? LayoutParams)?.mViewHolder
@@ -42,4 +44,8 @@ internal fun View.isTouched(rawX: Float, rawY: Float): Boolean {
     val isContainX = rawX in left.toFloat()..right.toFloat()
     val isContainY = rawY in top.toFloat()..bottom.toFloat()
     return isContainX && isContainY
+}
+
+internal fun ViewHolder(itemView: View, parent: ViewGroup): ViewHolder {
+    return object : ViewHolder(itemView) {}.resolveLayoutParams(parent)
 }

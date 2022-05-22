@@ -6,8 +6,8 @@ import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter
-import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
+import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.ViewHolder
 import com.xiaocydx.recycler.concat.ViewAdapter
 
 /**
@@ -168,10 +168,10 @@ private fun Adapter<*>.containView(view: View): Boolean {
 @VisibleForTesting
 internal class SimpleViewAdapter(
     val view: View
-) : ViewAdapter<ViewAdapter.ViewHolder>(currentAsItem = true) {
+) : ViewAdapter<ViewHolder>(currentAsItem = true) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(view).resolveLayoutParams(parent)
+        return ViewHolder(view, parent)
     }
 
     override fun getItemViewType(): Int = view.hashCode()
