@@ -4,9 +4,10 @@ import androidx.annotation.MainThread
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.xiaocydx.recycler.helper.ItemVisibleHelper
 import com.google.android.flexbox.FlexboxLayoutManager
+import com.xiaocydx.recycler.helper.ItemVisibleHelper
 
 /**
  * 第一个item是否可视
@@ -15,10 +16,7 @@ import com.google.android.flexbox.FlexboxLayoutManager
  * 请使用[ItemVisibleHelper]，或者使用[doOnFirstItemVisible]。
  */
 val RecyclerView.isFirstItemVisible: Boolean
-    get() = when (layoutManager) {
-        null -> false
-        else -> findFirstVisibleItemPosition() == 0
-    }
+    get() = findFirstVisibleItemPosition() == 0
 
 /**
  * 第一个item是否完全可视
@@ -27,10 +25,7 @@ val RecyclerView.isFirstItemVisible: Boolean
  * 请使用[ItemVisibleHelper]，或者使用[doOnFirstItemCompletelyVisible]。
  */
 val RecyclerView.isFirstItemCompletelyVisible: Boolean
-    get() = when (layoutManager) {
-        null -> false
-        else -> findFirstCompletelyVisibleItemPosition() == 0
-    }
+    get() = findFirstCompletelyVisibleItemPosition() == 0
 
 /**
  * 最后一个item是否可视
@@ -66,7 +61,7 @@ fun RecyclerView.findFirstVisibleItemPosition(): Int =
             is LinearLayoutManager -> lm.findFirstVisibleItemPosition()
             is StaggeredGridLayoutManager -> lm.findFirstVisibleItemPosition()
             is FlexboxLayoutManager -> lm.findFirstVisibleItemPosition()
-            else -> RecyclerView.NO_POSITION
+            else -> NO_POSITION
         }
 
 /**
@@ -79,7 +74,7 @@ fun RecyclerView.findFirstCompletelyVisibleItemPosition(): Int =
             is LinearLayoutManager -> lm.findFirstCompletelyVisibleItemPosition()
             is StaggeredGridLayoutManager -> lm.findFirstCompletelyVisibleItemPosition()
             is FlexboxLayoutManager -> lm.findFirstCompletelyVisibleItemPosition()
-            else -> RecyclerView.NO_POSITION
+            else -> NO_POSITION
         }
 
 /**
@@ -92,7 +87,7 @@ fun RecyclerView.findLastVisibleItemPosition(): Int =
             is LinearLayoutManager -> lm.findLastVisibleItemPosition()
             is StaggeredGridLayoutManager -> lm.findLastVisibleItemPosition()
             is FlexboxLayoutManager -> lm.findLastVisibleItemPosition()
-            else -> RecyclerView.NO_POSITION
+            else -> NO_POSITION
         }
 
 /**
@@ -105,7 +100,7 @@ fun RecyclerView.findLastCompletelyVisibleItemPosition(): Int =
             is LinearLayoutManager -> lm.findLastCompletelyVisibleItemPosition()
             is StaggeredGridLayoutManager -> lm.findLastCompletelyVisibleItemPosition()
             is FlexboxLayoutManager -> lm.findLastCompletelyVisibleItemPosition()
-            else -> RecyclerView.NO_POSITION
+            else -> NO_POSITION
         }
 
 /**
@@ -113,51 +108,49 @@ fun RecyclerView.findLastCompletelyVisibleItemPosition(): Int =
  *
  * @param into 各个跨度空间所对应的position
  */
-fun StaggeredGridLayoutManager.findFirstVisibleItemPosition(
-    into: IntArray? = null
-): Int = findFirstVisibleItemPositions(into).minPosition()
+fun StaggeredGridLayoutManager.findFirstVisibleItemPosition(into: IntArray? = null): Int {
+    return findFirstVisibleItemPositions(into).minPosition()
+}
 
 /**
  * 查找第一个完全可视item的position
  *
  * @param into 各个跨度空间所对应的position，若传`null`，则创建新的数组对象。
  */
-fun StaggeredGridLayoutManager.findFirstCompletelyVisibleItemPosition(
-    into: IntArray? = null
-): Int = findFirstCompletelyVisibleItemPositions(into).minPosition()
+fun StaggeredGridLayoutManager.findFirstCompletelyVisibleItemPosition(into: IntArray? = null): Int {
+    return findFirstCompletelyVisibleItemPositions(into).minPosition()
+}
 
 /**
  * 查找最后一个可视item的position
  *
  * @param into 各个跨度空间所对应的position，若传`null`，则创建新的数组对象。
  */
-fun StaggeredGridLayoutManager.findLastVisibleItemPosition(
-    into: IntArray? = null
-): Int = findLastVisibleItemPositions(into).maxPosition()
+fun StaggeredGridLayoutManager.findLastVisibleItemPosition(into: IntArray? = null): Int {
+    return findLastVisibleItemPositions(into).maxPosition()
+}
 
 /**
  * 查找最后一个完全可视item的position
  *
  * @param into 各个跨度空间所对应的position，若传`null`，则创建新的数组对象。
  */
-fun StaggeredGridLayoutManager.findLastCompletelyVisibleItemPosition(
-    into: IntArray? = null
-): Int = findLastCompletelyVisibleItemPositions(into).maxPosition()
+fun StaggeredGridLayoutManager.findLastCompletelyVisibleItemPosition(into: IntArray? = null): Int {
+    return findLastCompletelyVisibleItemPositions(into).maxPosition()
+}
 
 /**
  * 不能使用[IntArray.minOrNull]简化代码，
  * 因为返回值是可空类型，调用处会对返回值执行装箱操作。
  */
 private fun IntArray.minPosition(): Int {
-    if (isEmpty()) {
-        return RecyclerView.NO_POSITION
-    }
+    if (isEmpty()) return NO_POSITION
     var minPosition = this[0]
+    if (minPosition == 0) return minPosition
     for (i in 1..lastIndex) {
         val spanPosition = this[i]
-        if (minPosition > spanPosition) {
-            minPosition = spanPosition
-        }
+        if (spanPosition == 0) return spanPosition
+        minPosition = spanPosition.coerceAtMost(minPosition)
     }
     return minPosition
 }
@@ -167,15 +160,11 @@ private fun IntArray.minPosition(): Int {
  * 因为返回值是可空类型，调用处会对返回值执行装箱操作。
  */
 private fun IntArray.maxPosition(): Int {
-    if (isEmpty()) {
-        return RecyclerView.NO_POSITION
-    }
+    if (isEmpty()) return NO_POSITION
     var maxPosition = this[0]
     for (index in 1..lastIndex) {
         val spanPosition = this[index]
-        if (maxPosition < spanPosition) {
-            maxPosition = spanPosition
-        }
+        maxPosition = spanPosition.coerceAtLeast(maxPosition)
     }
     return maxPosition
 }
@@ -187,10 +176,9 @@ private fun IntArray.maxPosition(): Int {
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
 @MainThread
-fun RecyclerView.doOnFirstItemVisible(
-    once: Boolean = false,
-    handler: () -> Unit
-): Disposable = ItemVisibleObserver(this, handler, once, VisibleTarget.FIRST_ITEM)
+fun RecyclerView.doOnFirstItemVisible(once: Boolean = false, handler: () -> Unit): Disposable {
+    return ItemVisibleObserver(this, handler, once, VisibleTarget.FIRST_ITEM)
+}
 
 /**
  * 添加第一个item完全可视时的处理程序
@@ -199,10 +187,9 @@ fun RecyclerView.doOnFirstItemVisible(
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
 @MainThread
-fun RecyclerView.doOnFirstItemCompletelyVisible(
-    once: Boolean = false,
-    handler: () -> Unit
-): Disposable = ItemVisibleObserver(this, handler, once, VisibleTarget.FIRST_ITEM_COMPLETELY)
+fun RecyclerView.doOnFirstItemCompletelyVisible(once: Boolean = false, handler: () -> Unit): Disposable {
+    return ItemVisibleObserver(this, handler, once, VisibleTarget.FIRST_ITEM_COMPLETELY)
+}
 
 /**
  * 添加最后一个item可视时的处理程序
@@ -211,10 +198,9 @@ fun RecyclerView.doOnFirstItemCompletelyVisible(
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
 @MainThread
-fun RecyclerView.doOnLastItemVisible(
-    once: Boolean = false,
-    handler: () -> Unit
-): Disposable = ItemVisibleObserver(this, handler, once, VisibleTarget.LAST_ITEM)
+fun RecyclerView.doOnLastItemVisible(once: Boolean = false, handler: () -> Unit): Disposable {
+    return ItemVisibleObserver(this, handler, once, VisibleTarget.LAST_ITEM)
+}
 
 /**
  * 添加最后一个item完全可视时的处理程序
@@ -223,10 +209,9 @@ fun RecyclerView.doOnLastItemVisible(
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
 @MainThread
-fun RecyclerView.doOnLastItemCompletelyVisible(
-    once: Boolean = false,
-    handler: () -> Unit
-): Disposable = ItemVisibleObserver(this, handler, once, VisibleTarget.LAST_ITEM_COMPLETELY)
+fun RecyclerView.doOnLastItemCompletelyVisible(once: Boolean = false, handler: () -> Unit): Disposable {
+    return ItemVisibleObserver(this, handler, once, VisibleTarget.LAST_ITEM_COMPLETELY)
+}
 
 /**
  * 可废弃的item可视观察者
