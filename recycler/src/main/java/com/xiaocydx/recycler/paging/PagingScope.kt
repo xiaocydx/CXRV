@@ -3,11 +3,11 @@ package com.xiaocydx.recycler.paging
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
+import com.xiaocydx.recycler.concat.ViewAdapter
 import com.xiaocydx.recycler.extension.withFooter
 import com.xiaocydx.recycler.extension.withHeader
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.marker.RvDslMarker
-import com.xiaocydx.recycler.concat.ViewAdapter
 
 /**
  * 分页初始化作用域
@@ -17,12 +17,12 @@ import com.xiaocydx.recycler.concat.ViewAdapter
  */
 @RvDslMarker
 open class PagingScope {
-    private var needHeader = true
-    private var needFooter = true
+    private var isNeedHeader = true
+    private var isNeedFooter = true
     private var loadHeader: ViewAdapter<*>? = null
     private var loadFooter: ViewAdapter<*>? = null
-    private var initHeader: (LoadHeader.Config.() -> Unit)? = null
-    private var initFooter: (LoadFooter.Config.() -> Unit)? = null
+    private var initHeader: (LoadHeaderConfig.() -> Unit)? = null
+    private var initFooter: (LoadFooterConfig.() -> Unit)? = null
 
     /**
      * 是否启用item动画
@@ -42,13 +42,13 @@ open class PagingScope {
     fun loadHeader(adapter: ViewAdapter<*>?) {
         loadHeader = adapter
         initHeader = null
-        needHeader = adapter != null
+        isNeedHeader = adapter != null
     }
 
     /**
      * 设置加载头部配置
      *
-     * 详细的加载头部配置描述[LoadHeader.Config]
+     * 详细的加载头部配置描述[LoadHeaderConfig]
      * ```
      * loadHeader {
      *     loadingView { parent -> ProgressBar(parent.context) }
@@ -58,23 +58,23 @@ open class PagingScope {
      *     // 在显示视图时执行某些操作，可以用以下写法
      *     loading<ProgressBar> {
      *         onCreateView { parent -> ProgressBar(parent.context) }
-     *         onBindView { view -> ... }
+     *         onVisibleChanged { view, isVisible -> ... }
      *     }
      *     empty<TextView> {
      *         onCreateView { parent -> TextView(parent.context) }
-     *         onBindView { view -> view.text = "empty" }
+     *         onVisibleChanged { view, isVisible -> ... }
      *     }
      *     failure<TextView> {
      *         onCreateView { parent -> TextView(parent.context) }
-     *         onBindView { view, exception -> view.text = "failure" }
+     *         onVisibleChanged { view, isVisible -> exception() }
      *     }
      * }
      * ```
      */
-    fun loadHeader(block: LoadHeader.Config.() -> Unit) {
+    fun loadHeader(block: LoadHeaderConfig.() -> Unit) {
         loadHeader = null
         initHeader = block
-        needHeader = true
+        isNeedHeader = true
     }
 
     /**
@@ -85,13 +85,13 @@ open class PagingScope {
     fun loadFooter(adapter: ViewAdapter<*>?) {
         loadFooter = adapter
         initFooter = null
-        needFooter = adapter != null
+        isNeedFooter = adapter != null
     }
 
     /**
      * 设置加载尾部配置
      *
-     * 详细的加载尾部配置描述[LoadFooter.Config]
+     * 详细的加载尾部配置描述[LoadFooterConfig]
      * ```
      * loadFooter {
      *     loadingView { parent -> ProgressBar(parent.context) }
@@ -101,23 +101,23 @@ open class PagingScope {
      *     // 在显示视图时执行某些操作，可以用以下写法
      *     loading<ProgressBar> {
      *         onCreateView { parent -> ProgressBar(parent.context) }
-     *         onBindView { view -> ... }
+     *         onVisibleChanged { view, isVisible -> ... }
      *     }
      *     fully<TextView> {
      *         onCreateView { parent -> TextView(parent.context) }
-     *         onBindView { view -> view.text = "fully" }
+     *         onVisibleChanged { view, isVisible -> ... }
      *     }
      *     failure<TextView> {
      *         onCreateView { parent -> TextView(parent.context) }
-     *         onBindView { view, exception -> view.text = "failure" }
+     *         onVisibleChanged { view, isVisible -> exception() }
      *     }
      * }
      * ```
      */
-    fun loadFooter(block: LoadFooter.Config.() -> Unit) {
+    fun loadFooter(block: LoadFooterConfig.() -> Unit) {
         loadFooter = null
         initFooter = block
-        needFooter = true
+        isNeedFooter = true
     }
 
     protected open fun init(rv: RecyclerView) {
@@ -142,25 +142,25 @@ open class PagingScope {
     /**
      * 加载头部默认配置，返回`true`表示有默认配置
      */
-    protected open fun LoadHeader.Config.withDefault(): Boolean = false
+    protected open fun LoadHeaderConfig.withDefault(): Boolean = false
 
     /**
      * 加载尾部默认配置，返回`true`表示有默认配置
      */
-    protected open fun LoadFooter.Config.withDefault(): Boolean = false
+    protected open fun LoadFooterConfig.withDefault(): Boolean = false
 
-    protected fun getFinalListAdapter(): ListAdapter<*, *> = requireNotNull(listAdapter) {
-        "未设置或已清除ListAdapter<*, *>，无法连接LoadHeader、ListAdapter<*, *>、LoadFooter。"
+    protected fun getFinalListAdapter(): ListAdapter<*, *> {
+        return requireNotNull(listAdapter) { "未设置或已清除listAdapter" }
     }
 
     private fun getFinalLoadHeader(): ViewAdapter<*>? {
-        if (!needHeader) {
+        if (!isNeedHeader) {
             return null
         }
         loadHeader?.let { return it }
-        val config = LoadHeader.Config()
-        val hasDefault = config.withDefault()
-        if (!hasDefault && initHeader == null) {
+        val config = LoadHeaderConfig()
+        val withDefault = config.withDefault()
+        if (!withDefault && initHeader == null) {
             return null
         }
         initHeader?.invoke(config)
@@ -168,13 +168,13 @@ open class PagingScope {
     }
 
     private fun getFinalLoadFooter(): ViewAdapter<*>? {
-        if (!needFooter) {
+        if (!isNeedFooter) {
             return null
         }
         loadFooter?.let { return it }
-        val config = LoadFooter.Config()
-        val hasDefault = config.withDefault()
-        if (!hasDefault && initFooter == null) {
+        val config = LoadFooterConfig()
+        val withDefault = config.withDefault()
+        if (!withDefault && initFooter == null) {
             return null
         }
         initFooter?.invoke(config)

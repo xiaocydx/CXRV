@@ -8,9 +8,9 @@ import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.xiaocydx.recycler.list.ListAdapter
-import com.xiaocydx.recycler.paging.LoadFooter
-import com.xiaocydx.recycler.paging.LoadHeader
-import com.xiaocydx.recycler.paging.OnCreateLoadView
+import com.xiaocydx.recycler.paging.LoadFooterConfig
+import com.xiaocydx.recycler.paging.LoadHeaderConfig
+import com.xiaocydx.recycler.paging.OnCreateView
 import com.xiaocydx.recycler.paging.PagingScope
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.dp
@@ -19,7 +19,7 @@ import com.xiaocydx.sample.dp
  * 分页场景的初始化函数，可用于链式调用场景
  *
  * 通过[PagingScope.loadHeader]、[PagingScope.loadFooter]设置加载头尾配置，
- * 详细的加载头尾配置描述[LoadHeader.Config]、[LoadFooter.Config]。
+ * 详细的加载头尾配置描述[LoadHeaderConfig]、[LoadFooterConfig]。
  * ```
  * val adapter: ListAdapter<*, *> = ...
  * recyclerView.paging(
@@ -40,7 +40,7 @@ inline fun <T : RecyclerView> T.paging(
  * 分页拖拽刷新场景的初始化函数，可用于链式调用场景
  *
  * 通过[PagingScope.loadHeader]、[PagingScope.loadFooter]设置加载头尾配置，
- * 详细的加载头尾配置描述[LoadHeader.Config]、[LoadFooter.Config]。
+ * 详细的加载头尾配置描述[LoadHeaderConfig]、[LoadFooterConfig]。
  * ```
  * val adapter: ListAdapter<*, *> = ...
  * recyclerView.pagingSwipeRefresh(
@@ -98,16 +98,16 @@ open class DefaultPagingScope(
         init(rv)
     }
 
-    override fun LoadHeader.Config.withDefault(): Boolean {
+    override fun LoadHeaderConfig.withDefault(): Boolean {
         loadingView(DefaultHeaderLoadingView)
         failureView(DefaultHeaderFailureView)
         emptyView(DefaultHeaderEmptyView)
         return true
     }
 
-    override fun LoadFooter.Config.withDefault(): Boolean {
-        footerHeight = 50.dp
-        isShowFullyWhileExceed = true
+    override fun LoadFooterConfig.withDefault(): Boolean {
+        height = 50.dp
+        isFullyVisibleWhileExceed = true
         loadingView(DefaultFooterLoadingView)
         failureView(DefaultFooterFailureView)
         fullyView(DefaultFooterFullyView)
@@ -115,31 +115,31 @@ open class DefaultPagingScope(
     }
 
     private companion object {
-        val DefaultHeaderLoadingView: OnCreateLoadView<View> = { parent ->
+        val DefaultHeaderLoadingView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_header_loading)
         }
 
-        val DefaultHeaderFailureView: OnCreateLoadView<View> = { parent ->
+        val DefaultHeaderFailureView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_header_failure).apply {
                 findViewById<View>(R.id.btnRetry).setOnClickListener { retry() }
             }
         }
 
-        val DefaultHeaderEmptyView: OnCreateLoadView<View> = { parent ->
+        val DefaultHeaderEmptyView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_header_empty)
         }
 
-        val DefaultFooterLoadingView: OnCreateLoadView<View> = { parent ->
+        val DefaultFooterLoadingView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_footer_loading)
         }
 
-        val DefaultFooterFailureView: OnCreateLoadView<View> = { parent ->
+        val DefaultFooterFailureView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_footer_failure).apply {
                 setOnClickListener { retry() }
             }
         }
 
-        val DefaultFooterFullyView: OnCreateLoadView<View> = { parent ->
+        val DefaultFooterFullyView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_footer_fully)
         }
 

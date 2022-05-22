@@ -1,6 +1,7 @@
 package com.xiaocydx.recycler.paging
 
 import android.os.Build
+import android.os.Looper.getMainLooper
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Lifecycle
@@ -8,18 +9,20 @@ import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
+import com.google.common.truth.Truth.assertThat
 import com.xiaocydx.recycler.TestActivity
 import com.xiaocydx.recycler.extension.withHeader
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.insertItem
-import com.google.common.truth.Truth.assertThat
 import io.mockk.spyk
 import io.mockk.verify
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.LooperMode
 
 /**
  * [LoadFooterAdapter]的单元测试
@@ -27,12 +30,13 @@ import org.robolectric.annotation.Config
  * @author xcc
  * @date 2021/12/11
  */
+@LooperMode(LooperMode.Mode.PAUSED)
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
 class LoadFooterAdapterTest {
-    private val adapter = TestListAdapter()
-    private val collector = adapter.pagingCollector
-    private val onCreate: OnCreateLoadView<View> = spyk({ View(it.context) })
+    private val listAdapter = TestListAdapter()
+    private val collector = listAdapter.pagingCollector
+    private val onCreateView: OnCreateView<View> = spyk({ View(it.context) })
     private lateinit var scenario: ActivityScenario<TestActivity>
 
     @Before
@@ -47,97 +51,101 @@ class LoadFooterAdapterTest {
 
     @Test
     fun createAndShow_LoadingView() {
-        val onBind: OnBindLoadView<View> = spyk({
-            assertThat(it.isShown).isTrue()
-            assertThat(it.visibility).isEqualTo(View.VISIBLE)
+        val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
+            assertThat(exception()).isNull()
         })
         val concatAdapter = getConcatAdapter {
             loading<View> {
-                onCreateView(onCreate)
-                onBindView(onBind)
+                onCreateView(onCreateView)
+                onVisibleChanged(onVisibleChanged)
             }
         }
         scenario.onActivity { activity ->
             activity.recyclerView.adapter = concatAdapter
-            adapter.insertItem("A")
+            listAdapter.insertItem("A")
             collector.setLoadState(LoadType.APPEND, LoadState.Loading)
-            verify(exactly = 1) { onCreate(collector, ofType()) }
-            verify(exactly = 1) { onBind(collector, ofType()) }
+
+            shadowOf(getMainLooper()).idle()
+            verify(exactly = 1) { onCreateView(ofType(), ofType()) }
+            verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
         }
     }
 
     @Test
     fun createAndShow_FullyView() {
-        val onBind: OnBindLoadView<View> = spyk({
-            assertThat(it.isShown).isTrue()
-            assertThat(it.visibility).isEqualTo(View.VISIBLE)
+        val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
+            assertThat(exception()).isNull()
         })
         val concatAdapter = getConcatAdapter {
             fully<View> {
-                onCreateView(onCreate)
-                onBindView(onBind)
+                onCreateView(onCreateView)
+                onVisibleChanged(onVisibleChanged)
             }
         }
         scenario.onActivity { activity ->
             activity.recyclerView.adapter = concatAdapter
-            adapter.insertItem("A")
+            listAdapter.insertItem("A")
             collector.setLoadState(LoadType.APPEND, LoadState.Success(isFully = true))
-            verify(exactly = 1) { onCreate(collector, ofType()) }
-            verify(exactly = 1) { onBind(collector, ofType()) }
+
+            shadowOf(getMainLooper()).idle()
+            verify(exactly = 1) { onCreateView(ofType(), ofType()) }
+            verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
         }
     }
 
     @Test
     fun createAndShow_FailureView() {
-        val onBind: OnBindLoadViewWithException<View> = spyk({ view, _ ->
-            assertThat(view.isShown).isTrue()
-            assertThat(view.visibility).isEqualTo(View.VISIBLE)
+        val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
+            assertThat(exception()).isNotNull()
         })
         val concatAdapter = getConcatAdapter {
             failure<View> {
-                onCreateView(onCreate)
-                onBindView(onBind)
+                onCreateView(onCreateView)
+                onVisibleChanged(onVisibleChanged)
             }
         }
         scenario.onActivity { activity ->
             activity.recyclerView.adapter = concatAdapter
-            adapter.insertItem("A")
+            listAdapter.insertItem("A")
             val exception = IllegalArgumentException()
             collector.setLoadState(LoadType.APPEND, LoadState.Failure(exception))
-            verify(exactly = 1) { onCreate(collector, ofType()) }
-            verify(exactly = 1) { onBind(collector, ofType(), exception) }
+
+            shadowOf(getMainLooper()).idle()
+            verify(exactly = 1) { onCreateView(ofType(), ofType()) }
+            verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
         }
     }
 
     @Test
     fun insertItem_CreateAndShow_FullyView() {
-        val onBind: OnBindLoadView<View> = spyk({
-            assertThat(it.isShown).isTrue()
-            assertThat(it.visibility).isEqualTo(View.VISIBLE)
+        val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
+            assertThat(exception()).isNull()
         })
         val concatAdapter = getConcatAdapter {
             fully<View> {
-                onCreateView(onCreate)
-                onBindView(onBind)
+                onCreateView(onCreateView)
+                onVisibleChanged(onVisibleChanged)
             }
         }
         scenario.onActivity { activity ->
             activity.recyclerView.adapter = concatAdapter
             collector.setLoadState(LoadType.APPEND, LoadState.Success(isFully = true))
-            verify(exactly = 0) { onCreate(collector, ofType()) }
-            verify(exactly = 0) { onBind(collector, ofType()) }
 
-            adapter.insertItem("A")
-            verify(exactly = 1) { onCreate(collector, ofType()) }
-            verify(exactly = 1) { onBind(collector, ofType()) }
+            shadowOf(getMainLooper()).idle()
+            verify(exactly = 0) { onCreateView(ofType(), ofType()) }
+            verify(exactly = 0) { onVisibleChanged(ofType(), ofType(), ofType()) }
+
+            listAdapter.insertItem("A")
+
+            shadowOf(getMainLooper()).idle()
+            verify(exactly = 1) { onCreateView(ofType(), ofType()) }
+            verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
         }
     }
 
-    private inline fun getConcatAdapter(
-        block: LoadFooter.Config.() -> Unit
-    ): ConcatAdapter {
-        val config = LoadFooter.Config().also(block)
-        return adapter.withHeader(LoadFooterAdapter(config, adapter))
+    private inline fun getConcatAdapter(block: LoadFooterConfig.() -> Unit): ConcatAdapter {
+        val config = LoadFooterConfig().also(block)
+        return listAdapter.withHeader(LoadFooterAdapter(config, listAdapter))
     }
 
     private class TestListAdapter : ListAdapter<String, ViewHolder>() {

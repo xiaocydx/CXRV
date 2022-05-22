@@ -1,12 +1,12 @@
 package com.xiaocydx.recycler.paging
 
 import android.view.ViewGroup
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.ViewHolder
+import com.xiaocydx.recycler.concat.ViewAdapter
 import com.xiaocydx.recycler.extension.hasDisplayItem
-import com.xiaocydx.recycler.extension.resolveLayoutParams
 import com.xiaocydx.recycler.list.ListAdapter
 import com.xiaocydx.recycler.list.ListChangedListener
-import com.xiaocydx.recycler.concat.ViewAdapter
 
 /**
  * 加载头部适配器
@@ -15,16 +15,18 @@ import com.xiaocydx.recycler.concat.ViewAdapter
  * @date 2021/9/17
  */
 internal class LoadHeaderAdapter(
-    private val config: LoadHeader.Config,
+    private val config: LoadHeaderConfig,
     private val adapter: ListAdapter<*, *>
-) : ViewAdapter<LoadHeaderAdapter.ViewHolder>(),
-    LoadStatesListener, ListChangedListener<Any> {
-    private var showType: ShowType = ShowType.NONE
+) : ViewAdapter<ViewHolder>(), LoadStatesListener, ListChangedListener<Any> {
+    private var visible: Visible = Visible.NONE
     private var loadStates: LoadStates = LoadStates.Incomplete
 
     init {
         val collector = adapter.pagingCollector
-        config.setCollector(collector)
+        config.complete(
+            retry = collector::retry,
+            exception = { collector.loadStates.exception }
+        )
         adapter.addListChangedListener(this)
         collector.addLoadStatesListener(this)
     }
@@ -32,36 +34,26 @@ internal class LoadHeaderAdapter(
     override fun getItemViewType(): Int = hashCode()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val loadHeader = LoadHeader(parent.context, config)
-        return ViewHolder(loadHeader).resolveLayoutParams(parent)
+        val itemView = LoadViewLayout(
+            context = parent.context,
+            loadingItem = config.loadingScope?.getViewItem(),
+            successItem = config.emptyScope?.getViewItem(),
+            failureItem = config.failureScope?.getViewItem()
+        )
+        return ViewHolder(itemView, parent).apply {
+            itemView.layoutParams.width = config.width
+            itemView.layoutParams.height = config.height
+        }
     }
 
     override fun onBindViewHolder(
         holder: ViewHolder
-    ) = with(holder.loadHeader) {
-        when (showType) {
-            ShowType.NONE -> return@with
-            ShowType.LOADING -> postShowLoading()
-            ShowType.FAILURE -> postShowFailure(
-                exception = loadStates.exception
-                    ?: throw AssertionError("失败类型的显示出现断言异常")
-            )
-            ShowType.EMPTY -> postShowEmpty()
-        }
-    }
-
-    /**
-     * 刷新加载完成前和完成时，在加载状态更改时更新视图类型
-     *
-     * @param previous 之前的加载状态集合
-     * @param current  当前的加载状态集合
-     */
-    override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
-        loadStates = current
-        val currentType = getCurrentType(current)
-        if (showType != currentType) {
-            showType = currentType
-            updateLoadHeader()
+    ): Unit = with(holder.itemView as LoadViewLayout) {
+        when (visible) {
+            Visible.LOADING -> loadingVisible()
+            Visible.FAILURE -> failureVisible()
+            Visible.EMPTY -> successVisible()
+            Visible.NONE -> throw AssertionError("局部刷新出现断言异常")
         }
     }
 
@@ -73,32 +65,38 @@ internal class LoadHeaderAdapter(
     override fun onListChanged(current: List<Any>) {
         when {
             !loadStates.isFully -> return
-            showType == ShowType.EMPTY && adapter.hasDisplayItem -> {
-                showType = ShowType.NONE
-                updateLoadHeader()
+            visible == Visible.EMPTY && adapter.hasDisplayItem -> {
+                // 此时EMPTY视图已显示，并且列表不为空
+                updateLoadHeader(Visible.NONE)
             }
-            showType == ShowType.NONE && !adapter.hasDisplayItem -> {
-                showType = ShowType.EMPTY
-                updateLoadHeader()
+            visible == Visible.NONE && !adapter.hasDisplayItem -> {
+                // 此时EMPTY视图未显示，并且列表为空
+                updateLoadHeader(Visible.EMPTY)
             }
         }
     }
 
-    private fun getCurrentType(current: LoadStates): ShowType = when {
-        adapter.hasDisplayItem -> ShowType.NONE
-        current.isLoading -> ShowType.LOADING
-        current.isFailure -> ShowType.FAILURE
-        current.isFully -> ShowType.EMPTY
-        else -> showType
+    override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
+        loadStates = current
+        updateLoadHeader(current.toVisible())
     }
 
-    private fun updateLoadHeader() {
-        updateItem(show = showType != ShowType.NONE, anim = NeedAnim.NOT_ALL)
+    private fun LoadStates.toVisible(): Visible = when {
+        adapter.hasDisplayItem -> Visible.NONE
+        this.isLoading -> if (config.loadingScope != null) Visible.LOADING else Visible.NONE
+        this.isFailure -> if (config.failureScope != null) Visible.FAILURE else Visible.NONE
+        this.isFully -> if (config.emptyScope != null) Visible.EMPTY else Visible.NONE
+        else -> visible
     }
 
-    private enum class ShowType {
+    private fun updateLoadHeader(visible: Visible) {
+        if (this.visible != visible) {
+            this.visible = visible
+            updateItem(show = visible != Visible.NONE, anim = NeedAnim.NOT_ALL)
+        }
+    }
+
+    private enum class Visible {
         NONE, LOADING, FAILURE, EMPTY
     }
-
-    class ViewHolder(val loadHeader: LoadHeader) : RecyclerView.ViewHolder(loadHeader)
 }
