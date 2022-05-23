@@ -90,9 +90,9 @@ internal class ItemClickDispatcher(
         clearPendingLongClickTargets()
 
         val itemView = rv.findChildViewUnder(event.x, event.y) ?: return false
-        dispatchTargets?.accessEach next@{
+        dispatchTargets?.accessEach action@{
             if (!it.setCurrentTargetView(itemView, event)) {
-                return@next
+                return@action
             }
             when {
                 it is ClickDispatchTarget && it.setOnClickListener(this) -> {

@@ -51,14 +51,14 @@ sealed class Selection<ITEM : Any, K : Any>(
     /**
      * 选择
      *
-     * @return `true`表示选择成功，`false`表示选择失败
+     * @return `true`表示选择成功，`false`表示没有`itemKey`或者选择过。
      */
     internal abstract fun select(item: ITEM, position: Int): Boolean
 
     /**
      * 取消选择
      *
-     * @return `true`表示取消成功，`false`表示取消失败
+     * @return  `true`表示取消成功，`false`表示没有`itemKey`或者未选择过。
      */
     internal abstract fun unselect(item: ITEM, position: Int): Boolean
 
@@ -152,19 +152,18 @@ fun <ITEM : Any> Selection<ITEM, *>.isSelected(holder: ViewHolder): Boolean {
  *
  * 该函数执行效率低于`select(ViewHolder)`，用于只能通过[item]选择的情况。
  *
- * @return `true`表示选择成功，`false`若是[SingleSelection]则表示选择过，
- *  若是[MultiSelection]则表示选择过或者已到选择上限。
+ * @return `true`表示选择成功，`false`表示没有`itemKey`或者选择过。
  */
 fun <ITEM : Any, K : Any> Selection<ITEM, K>.select(item: ITEM): Boolean {
     val itemKey = item.key ?: return false
+    if (isSelected(item)) return false
     return select(item, findPositionByKey(itemKey))
 }
 
 /**
  * 选择
  *
- * @return `true`表示选择成功，`false`若是[SingleSelection]则表示选择过，
- *  若是[MultiSelection]则表示选择过或者已到选择上限。
+ * @return `true`表示选择成功，`false`表示没有`itemKey`或者选择过。
  */
 fun <ITEM : Any> Selection<ITEM, *>.select(holder: ViewHolder): Boolean {
     val item = holder.item ?: return false
@@ -176,17 +175,18 @@ fun <ITEM : Any> Selection<ITEM, *>.select(holder: ViewHolder): Boolean {
  *
  * 该函数执行效率低于`unselect(ViewHolder)`，用于只能通过[item]取消选择的情况。
  *
- * @return `true`表示取消成功，`false`表示未选择过
+ * @return `true`表示取消成功，`false`表示没有`itemKey`或者未选择过。
  */
 fun <ITEM : Any, K : Any> Selection<ITEM, K>.unselect(item: ITEM): Boolean {
     val itemKey = item.key ?: return false
+    if (!isSelected(item)) return false
     return unselect(item, findPositionByKey(itemKey))
 }
 
 /**
  * 取消选择
  *
- * @return `true`表示取消成功，`false`表示未选择过
+ * @return `true`表示取消成功，`false`表示没有`itemKey`或者未选择过。
  */
 fun <ITEM : Any> Selection<ITEM, *>.unselect(holder: ViewHolder): Boolean {
     val item = holder.item ?: return false
