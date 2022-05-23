@@ -29,10 +29,8 @@ import com.xiaocydx.sample.dp
  * )
  * ```
  */
-inline fun <T : RecyclerView> T.paging(
-    block: PagingScope.() -> Unit
-): T {
-    DefaultPagingScope(this).apply(block).init()
+inline fun <T : RecyclerView> T.paging(block: PagingScope.() -> Unit): T {
+    DefaultPagingScope().apply(block).init(this)
     return this
 }
 
@@ -50,53 +48,50 @@ inline fun <T : RecyclerView> T.paging(
  * )
  * ```
  */
-inline fun <T : RecyclerView> T.pagingSwipeRefresh(
-    block: SwipeRefreshPagingScope.() -> Unit
-): T {
-    SwipeRefreshPagingScope(this).apply(block).init()
+inline fun <T : RecyclerView> T.pagingSwipeRefresh(block: SwipeRefreshPagingScope.() -> Unit): T {
+    SwipeRefreshPagingScope(replaceWithSwipeRefresh()).apply(block).init(this)
     return this
 }
 
 /**
  * 分页场景的初始化函数，可用于链式调用场景
  */
-infix fun <T : RecyclerView> T.paging(
-    adapter: ListAdapter<*, *>
-): T = paging { listAdapter = adapter }
+infix fun <T : RecyclerView> T.paging(adapter: ListAdapter<*, *>): T {
+    return paging { listAdapter = adapter }
+}
 
 /**
  * 分页拖拽刷新场景的初始化函数，可用于链式调用场景
  */
-infix fun <T : RecyclerView> T.pagingSwipeRefresh(
-    adapter: ListAdapter<*, *>
-): T = pagingSwipeRefresh { listAdapter = adapter }
+infix fun <T : RecyclerView> T.pagingSwipeRefresh(adapter: ListAdapter<*, *>): T {
+    return pagingSwipeRefresh { listAdapter = adapter }
+}
 
 /**
  * 添加了默认配置的分页拖拽刷新初始化作用域
  */
-class SwipeRefreshPagingScope(
-    rv: RecyclerView
-) : DefaultPagingScope(rv) {
-    private val _refreshLayout: DefaultSwipeRefreshLayout = rv.replaceWithSwipeRefresh()
+class SwipeRefreshPagingScope
+@PublishedApi internal constructor(
+    private val _refreshLayout: DefaultSwipeRefreshLayout
+) : DefaultPagingScope() {
     val refreshLayout: SwipeRefreshLayout = _refreshLayout
 
-    override fun init() {
+    @PublishedApi
+    override fun init(rv: RecyclerView) {
         _refreshLayout.setAdapter(getFinalListAdapter())
-        return super.init()
+        return super.init(rv)
     }
 }
 
 /**
  * 添加了默认配置的分页初始化作用域
  */
-open class DefaultPagingScope(
-    private val rv: RecyclerView
-) : PagingScope() {
+open class DefaultPagingScope
+@PublishedApi internal constructor() : PagingScope() {
 
     @CallSuper
-    open fun init() {
-        init(rv)
-    }
+    @PublishedApi
+    internal open fun init(rv: RecyclerView) = complete(rv)
 
     override fun LoadHeaderConfig.withDefault(): Boolean {
         loadingView(DefaultHeaderLoadingView)

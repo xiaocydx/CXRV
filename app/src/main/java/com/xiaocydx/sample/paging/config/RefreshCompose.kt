@@ -48,6 +48,7 @@ internal fun RecyclerView.withSwipeRefresh(): DefaultSwipeRefreshLayout {
 /**
  * 将RecyclerView的父级替换为[SwipeRefreshLayout]
  */
+@PublishedApi
 internal fun RecyclerView.replaceWithSwipeRefresh(): DefaultSwipeRefreshLayout {
     val oldParent = requireNotNull(parent) {
         "RecyclerView的父级为空，无法进行父级替换，" +

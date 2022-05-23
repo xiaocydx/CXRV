@@ -120,7 +120,7 @@ open class PagingScope {
         isNeedFooter = true
     }
 
-    protected open fun init(rv: RecyclerView) {
+    protected fun complete(rv: RecyclerView) {
         val sourceAdapter: Adapter<*>? = rv.adapter
         if (sourceAdapter is ConcatAdapter) {
             sourceAdapter.apply {
