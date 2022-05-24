@@ -78,7 +78,7 @@ class TransformCallAdapterFactory(
             return null
         }
         require(returnType is ParameterizedType) {
-            "Call<T>的T不是ParameterizedType"
+            "returnType = ${returnType}，不是ParameterizedType"
         }
 
         val transform = annotations
@@ -115,27 +115,25 @@ class TransformCallAdapter(
 
     @Suppress("UNCHECKED_CAST")
     override fun adapt(call: Call<Any>): Call<*> {
-        val adapted = (next as CallAdapter<Any, Any>).adapt(call)
-        require(adapted is Call<*>) {
+        val delegate = (next as CallAdapter<Any, Any>).adapt(call)
+        require(delegate is Call<*>) {
             "${next.javaClass.simpleName}.adapt()的返回值类型不是Call，无法做转换处理"
         }
         require(next.responseType() == dataType) {
             "${next.javaClass.simpleName}.responseType()和Call<T>的T不一致，无法做转换处理"
         }
-        return CallImpl(adapted, exceptionTransform)
+        return CallImpl(delegate, exceptionTransform)
     }
 
     private data class ParameterizedTypeImpl(
         private val rawType: Type,
         private val responseType: Type
     ) : ParameterizedType {
-        private val typeArguments = arrayOf(responseType)
-
         override fun getOwnerType(): Type? = null
 
         override fun getRawType(): Type = rawType
 
-        override fun getActualTypeArguments(): Array<Type> = typeArguments.clone()
+        override fun getActualTypeArguments(): Array<Type> = arrayOf(responseType)
     }
 
     private class CallImpl<T>(
