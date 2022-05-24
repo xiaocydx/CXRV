@@ -81,6 +81,11 @@ class TransformCallAdapterFactory(
             "returnType = ${returnType}，不是ParameterizedType"
         }
 
+        val dataType = getParameterUpperBound(0, returnType)
+        if (ContractResponse::class.java.isAssignableFrom(getRawType(dataType))) {
+            return null
+        }
+
         val transform = annotations
             .firstNotNullOfOrNull { it as? Transform }
         val rawType: Class<out ContractResponse> = when {
@@ -90,7 +95,7 @@ class TransformCallAdapterFactory(
 
         return TransformCallAdapter(
             rawType = rawType,
-            dataType = getParameterUpperBound(0, returnType),
+            dataType = dataType,
             next = retrofit.nextCallAdapter(this, returnType, annotations),
             exceptionTransform = exceptionTransform
         )
