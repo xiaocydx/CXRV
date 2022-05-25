@@ -5,7 +5,6 @@ import android.view.View
 import androidx.recyclerview.widget.*
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.R
-import com.xiaocydx.cxrv.extension.*
 import com.xiaocydx.cxrv.internal.childEach
 import com.xiaocydx.cxrv.list.isHeaderOrFooter
 
