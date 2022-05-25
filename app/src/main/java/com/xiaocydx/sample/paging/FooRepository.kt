@@ -1,6 +1,6 @@
 package com.xiaocydx.sample.paging
 
-import com.xiaocydx.recycler.paging.*
+import com.xiaocydx.cxrv.paging.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 

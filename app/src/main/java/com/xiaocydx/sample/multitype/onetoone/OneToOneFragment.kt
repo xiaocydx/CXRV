@@ -10,13 +10,13 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
-import com.xiaocydx.recycler.extension.doOnSimpleItemClick
-import com.xiaocydx.recycler.extension.fixedSize
-import com.xiaocydx.recycler.extension.linear
-import com.xiaocydx.recycler.list.ListAdapter
-import com.xiaocydx.recycler.list.submitList
-import com.xiaocydx.recycler.multitype.listAdapter
-import com.xiaocydx.recycler.multitype.register
+import com.xiaocydx.cxrv.extension.doOnSimpleItemClick
+import com.xiaocydx.cxrv.extension.fixedSize
+import com.xiaocydx.cxrv.extension.linear
+import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.cxrv.multitype.listAdapter
+import com.xiaocydx.cxrv.multitype.register
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.showToast
 

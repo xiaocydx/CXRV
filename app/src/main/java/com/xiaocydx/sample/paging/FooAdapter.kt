@@ -4,8 +4,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.recycler.list.ListAdapter
-import com.xiaocydx.recycler.list.getItem
+import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.getItem
 import com.xiaocydx.sample.R
 
 /**

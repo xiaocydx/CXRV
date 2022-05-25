@@ -7,9 +7,9 @@ import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.recycler.extension.fixedSize
-import com.xiaocydx.recycler.extension.linear
-import com.xiaocydx.recycler.list.submitList
+import com.xiaocydx.cxrv.extension.fixedSize
+import com.xiaocydx.cxrv.extension.linear
+import com.xiaocydx.cxrv.list.submitList
 
 /**
  * 嵌套列表示例代码

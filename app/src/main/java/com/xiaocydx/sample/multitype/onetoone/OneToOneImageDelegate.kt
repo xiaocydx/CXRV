@@ -8,7 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.recycler.multitype.ViewTypeDelegate
+import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.dp
 

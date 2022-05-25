@@ -7,11 +7,11 @@ import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.xiaocydx.recycler.list.ListAdapter
-import com.xiaocydx.recycler.paging.LoadFooterConfig
-import com.xiaocydx.recycler.paging.LoadHeaderConfig
-import com.xiaocydx.recycler.paging.OnCreateView
-import com.xiaocydx.recycler.paging.PagingScope
+import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.paging.LoadFooterConfig
+import com.xiaocydx.cxrv.paging.LoadHeaderConfig
+import com.xiaocydx.cxrv.paging.OnCreateView
+import com.xiaocydx.cxrv.paging.PagingScope
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.dp
 

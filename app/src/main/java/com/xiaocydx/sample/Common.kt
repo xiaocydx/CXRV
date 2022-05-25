@@ -9,10 +9,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.xiaocydx.recycler.binding.BindingDelegate
-import com.xiaocydx.recycler.binding.bindingDelegate
-import com.xiaocydx.recycler.list.ListAdapter
-import com.xiaocydx.recycler.list.submitList
+import com.xiaocydx.cxrv.binding.BindingDelegate
+import com.xiaocydx.cxrv.binding.bindingDelegate
+import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.databinding.ItemTextType1Binding
 import com.xiaocydx.sample.databinding.ItemTextType2Binding
 import kotlinx.coroutines.CoroutineScope

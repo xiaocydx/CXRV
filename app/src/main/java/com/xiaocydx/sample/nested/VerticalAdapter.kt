@@ -4,11 +4,11 @@ import android.os.Parcelable
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
-import com.xiaocydx.recycler.extension.adapter
-import com.xiaocydx.recycler.extension.divider
-import com.xiaocydx.recycler.extension.fixedSize
-import com.xiaocydx.recycler.extension.linear
-import com.xiaocydx.recycler.list.ListAdapter
+import com.xiaocydx.cxrv.extension.adapter
+import com.xiaocydx.cxrv.extension.divider
+import com.xiaocydx.cxrv.extension.fixedSize
+import com.xiaocydx.cxrv.extension.linear
+import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.sample.databinding.ItemNestedVerticalBinding
 import com.xiaocydx.sample.dp
 

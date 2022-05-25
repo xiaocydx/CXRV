@@ -4,11 +4,11 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.xiaocydx.recycler.list.ListOwner
-import com.xiaocydx.recycler.list.ListState
-import com.xiaocydx.recycler.list.addItem
-import com.xiaocydx.recycler.list.removeItemAt
-import com.xiaocydx.recycler.paging.*
+import com.xiaocydx.cxrv.list.ListOwner
+import com.xiaocydx.cxrv.list.ListState
+import com.xiaocydx.cxrv.list.addItem
+import com.xiaocydx.cxrv.list.removeItemAt
+import com.xiaocydx.cxrv.paging.*
 
 /**
  * 视图控制器 + [PagingViewModel]作为UI层

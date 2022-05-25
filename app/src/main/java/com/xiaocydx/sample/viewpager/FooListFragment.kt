@@ -9,11 +9,11 @@ import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.lifecycle.flowWithLifecycle
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-import com.xiaocydx.recycler.extension.divider
-import com.xiaocydx.recycler.extension.fixedSize
-import com.xiaocydx.recycler.extension.linear
-import com.xiaocydx.recycler.extension.onEach
+// import androidx.recyclerview.widget.RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+import com.xiaocydx.cxrv.extension.divider
+import com.xiaocydx.cxrv.extension.fixedSize
+import com.xiaocydx.cxrv.extension.linear
+import com.xiaocydx.cxrv.extension.onEach
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.paging.FooAdapter
 import com.xiaocydx.sample.paging.PagingViewModel
@@ -40,7 +40,7 @@ class FooListFragment : SharedRecycledFragment() {
         factoryProducer = { PagingViewModel.Factory }
     )
     private val fooAdapter = FooAdapter().apply {
-        stateRestorationPolicy = PREVENT_WHEN_EMPTY
+        // stateRestorationPolicy = PREVENT_WHEN_EMPTY
     }
     override lateinit var rv: RecyclerView
         private set

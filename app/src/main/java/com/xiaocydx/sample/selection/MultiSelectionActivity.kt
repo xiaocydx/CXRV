@@ -9,16 +9,16 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.recycler.binding.BindingAdapter
-import com.xiaocydx.recycler.binding.Inflate
-import com.xiaocydx.recycler.binding.bindingAdapter
-import com.xiaocydx.recycler.extension.*
-import com.xiaocydx.recycler.list.ListAdapter
-import com.xiaocydx.recycler.list.getItem
-import com.xiaocydx.recycler.list.submitList
-import com.xiaocydx.recycler.selection.hasPayload
-import com.xiaocydx.recycler.selection.isSelected
-import com.xiaocydx.recycler.selection.toggleSelect
+import com.xiaocydx.cxrv.binding.BindingAdapter
+import com.xiaocydx.cxrv.binding.Inflate
+import com.xiaocydx.cxrv.binding.bindingAdapter
+import com.xiaocydx.cxrv.extension.*
+import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.getItem
+import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.cxrv.selection.hasPayload
+import com.xiaocydx.cxrv.selection.isSelected
+import com.xiaocydx.cxrv.selection.toggleSelect
 import com.xiaocydx.sample.databinding.ItemSelectionBinding
 import com.xiaocydx.sample.dp
 

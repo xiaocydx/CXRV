@@ -1,10 +1,10 @@
 package com.xiaocydx.sample.paging
 
 import androidx.lifecycle.flowWithLifecycle
-import com.xiaocydx.recycler.extension.divider
-import com.xiaocydx.recycler.extension.fixedSize
-import com.xiaocydx.recycler.extension.grid
-import com.xiaocydx.recycler.extension.onEach
+import com.xiaocydx.cxrv.extension.divider
+import com.xiaocydx.cxrv.extension.fixedSize
+import com.xiaocydx.cxrv.extension.grid
+import com.xiaocydx.cxrv.extension.onEach
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.paging.config.pagingSwipeRefresh
 import com.xiaocydx.sample.viewLifecycle

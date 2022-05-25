@@ -4,8 +4,8 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.xiaocydx.recycler.list.ListState
-import com.xiaocydx.recycler.paging.storeIn
+import com.xiaocydx.cxrv.list.ListState
+import com.xiaocydx.cxrv.paging.storeIn
 import com.xiaocydx.sample.retrofit.RetrofitInstance
 import com.xiaocydx.sample.retrofit.WanAndroidApi
 

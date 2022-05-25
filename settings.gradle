@@ -6,6 +6,6 @@ dependencyResolutionManagement {
         jcenter() // Warning: this repository is going to shut down soon
     }
 }
-rootProject.name = "Recycler"
+rootProject.name = "CXRV"
 include ':app'
-include ':recycler'
+include ':cxrv'

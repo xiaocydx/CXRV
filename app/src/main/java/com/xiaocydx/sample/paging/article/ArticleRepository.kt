@@ -1,9 +1,9 @@
 package com.xiaocydx.sample.paging.article
 
-import com.xiaocydx.recycler.paging.LoadResult
-import com.xiaocydx.recycler.paging.Pager
-import com.xiaocydx.recycler.paging.PagingConfig
-import com.xiaocydx.recycler.paging.PagingData
+import com.xiaocydx.cxrv.paging.LoadResult
+import com.xiaocydx.cxrv.paging.Pager
+import com.xiaocydx.cxrv.paging.PagingConfig
+import com.xiaocydx.cxrv.paging.PagingData
 import com.xiaocydx.sample.retrofit.ArticleInfo
 import com.xiaocydx.sample.retrofit.WanAndroidApi
 import kotlinx.coroutines.flow.Flow

@@ -5,6 +5,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.cxrv.extension.findFirstVisibleItemPosition
 import com.xiaocydx.sample.click.ItemClickActivity
 import com.xiaocydx.sample.selection.MultiSelectionActivity
 import com.xiaocydx.sample.selection.SingleSelectionActivity
@@ -23,6 +25,15 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        val recyclerView = RecyclerView(this)
+        recyclerView.layoutManager = MyTestLm()
+        recyclerView.findFirstVisibleItemPosition()
+    }
+
+    class MyTestLm: RecyclerView.LayoutManager() {
+        override fun generateDefaultLayoutParams(): RecyclerView.LayoutParams {
+            return RecyclerView.LayoutParams(-1,-1)
+        }
     }
 
     fun startItemClickActivity(view: View) {

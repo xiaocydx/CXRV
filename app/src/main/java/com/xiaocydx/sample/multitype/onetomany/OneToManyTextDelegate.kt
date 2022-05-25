@@ -2,14 +2,14 @@ package com.xiaocydx.sample.multitype.onetomany
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.recycler.extension.resolveLayoutParams
-import com.xiaocydx.recycler.multitype.ViewTypeDelegate
+import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 
 /**
  * @author xcc
  * @date 2022/2/17
  */
-class OneToManyTextDelegate : ViewTypeDelegate<OneToManyMessage, OneToManyTextDelegate.ViewHolder>() {
+class OneToManyTextDelegate :
+    ViewTypeDelegate<OneToManyMessage, OneToManyTextDelegate.ViewHolder>() {
 
     override fun areItemsTheSame(oldItem: OneToManyMessage, newItem: OneToManyMessage): Boolean {
         return oldItem.id == newItem.id
@@ -17,7 +17,7 @@ class OneToManyTextDelegate : ViewTypeDelegate<OneToManyMessage, OneToManyTextDe
 
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
         val layout = MessageTextLayout(parent.context)
-        return ViewHolder(layout).resolveLayoutParams(parent)
+        return ViewHolder(layout)
     }
 
     override fun onBindViewHolder(

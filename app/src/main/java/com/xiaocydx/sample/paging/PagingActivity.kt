@@ -4,9 +4,9 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.xiaocydx.recycler.binding.bindingAdapter
-import com.xiaocydx.recycler.extension.*
-import com.xiaocydx.recycler.list.submitList
+import com.xiaocydx.cxrv.binding.bindingAdapter
+import com.xiaocydx.cxrv.extension.*
+import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.databinding.ActivityPagingBinding
 import com.xiaocydx.sample.databinding.ItemMenuBinding
