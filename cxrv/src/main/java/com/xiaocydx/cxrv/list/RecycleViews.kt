@@ -4,7 +4,6 @@ package androidx.recyclerview.widget
 
 import android.util.SparseArray
 import android.util.SparseIntArray
-import androidx.core.util.forEach
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
 
@@ -91,8 +90,12 @@ private class MaxScrapController(
     fun restoreMaxScrap() {
         when (val state = state) {
             is Pair -> restoreMaxScrap(state.viewType, state.maxScrap)
-            is SparseIntArray -> state.forEach { viewType, maxScrap ->
-                restoreMaxScrap(viewType, maxScrap)
+            is SparseIntArray -> {
+                for (index in 0 until state.size()) {
+                    val viewType = state.keyAt(index)
+                    val maxScrap = state.valueAt(index)
+                    restoreMaxScrap(viewType, maxScrap)
+                }
             }
         }
     }
