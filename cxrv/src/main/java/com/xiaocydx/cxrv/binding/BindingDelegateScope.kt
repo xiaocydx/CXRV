@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewbinding.ViewBinding
 import com.xiaocydx.cxrv.concat.SpanSizeProvider
-import com.xiaocydx.cxrv.marker.RvDslMarker
+import com.xiaocydx.cxrv.internal.RvDslMarker
 
 /**
  * [BindingDelegate]的构建函数，适用于简单列表场景

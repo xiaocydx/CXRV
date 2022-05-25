@@ -7,6 +7,10 @@ import androidx.recyclerview.widget.*
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
 import com.xiaocydx.cxrv.extension.*
+import com.xiaocydx.cxrv.internal.childEach
+import com.xiaocydx.cxrv.list.isFirstChildBindingAdapterPosition
+import com.xiaocydx.cxrv.list.isHeaderOrFooter
+import com.xiaocydx.cxrv.list.isLastChildBindingAdapterPosition
 
 /**
  * 线性分割线策略

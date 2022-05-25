@@ -4,10 +4,10 @@ import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import com.xiaocydx.cxrv.concat.ViewAdapter
-import com.xiaocydx.cxrv.extension.withFooter
-import com.xiaocydx.cxrv.extension.withHeader
+import com.xiaocydx.cxrv.concat.withFooter
+import com.xiaocydx.cxrv.concat.withHeader
+import com.xiaocydx.cxrv.internal.RvDslMarker
 import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.marker.RvDslMarker
 
 /**
  * 分页初始化作用域

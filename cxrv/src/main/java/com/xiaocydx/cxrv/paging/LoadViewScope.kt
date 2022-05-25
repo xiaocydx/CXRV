@@ -9,8 +9,8 @@ import android.view.ViewTreeObserver
 import android.view.ViewTreeObserver.OnPreDrawListener
 import android.widget.FrameLayout
 import androidx.core.view.OneShotPreDrawListener
-import com.xiaocydx.cxrv.extension.isVisible
-import com.xiaocydx.cxrv.marker.RvDslMarker
+import com.xiaocydx.cxrv.internal.RvDslMarker
+import com.xiaocydx.cxrv.internal.isVisible
 
 /**
  * 加载视图的构建作用域

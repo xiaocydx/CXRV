@@ -6,11 +6,11 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnChildAttachStateChangeListener
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.isPreLayout
-import com.xiaocydx.cxrv.extension.*
-import com.xiaocydx.cxrv.list.AdapterAttachCallback
-import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.list.ListChangedListener
-import com.xiaocydx.cxrv.list.ViewHolderListener
+import com.xiaocydx.cxrv.internal.doOnPreDraw
+import com.xiaocydx.cxrv.internal.hasDisplayItem
+import com.xiaocydx.cxrv.internal.isLastDisplayItem
+import com.xiaocydx.cxrv.itemvisible.isLastItemVisible
+import com.xiaocydx.cxrv.list.*
 
 /**
  * [PagingSource]的末尾加载触发器
@@ -42,7 +42,7 @@ internal class AppendTrigger(
     private val adapter: ListAdapter<*, *>,
     private val collector: PagingCollector<*>
 ) : LoadStatesListener, ViewHolderListener<ViewHolder>,
-    ListChangedListener<Any>, AdapterAttachCallback {
+        ListChangedListener<Any>, AdapterAttachCallback {
     private var rv: RecyclerView? = null
     private var previousNotEmpty = adapter.hasDisplayItem
     private var postAppendDisposable: OneShotPreDrawListener? = null

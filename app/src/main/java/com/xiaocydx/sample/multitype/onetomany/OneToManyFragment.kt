@@ -9,10 +9,10 @@ import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.cxrv.extension.doOnSimpleItemClick
-import com.xiaocydx.cxrv.extension.fixedSize
-import com.xiaocydx.cxrv.extension.linear
+import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.fixedSize
+import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register

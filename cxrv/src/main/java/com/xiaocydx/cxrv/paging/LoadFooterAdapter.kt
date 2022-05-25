@@ -1,14 +1,14 @@
 package com.xiaocydx.cxrv.paging
 
 import android.view.ViewGroup
-import androidx.recyclerview.widget.SimpleViewHolder
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.SimpleViewHolder
 import com.xiaocydx.cxrv.concat.ViewAdapter
-import com.xiaocydx.cxrv.extension.findLastCompletelyVisibleItemPosition
-import com.xiaocydx.cxrv.extension.findLastVisibleItemPosition
-import com.xiaocydx.cxrv.extension.hasDisplayItem
-import com.xiaocydx.cxrv.extension.isFirstItemCompletelyVisible
+import com.xiaocydx.cxrv.internal.hasDisplayItem
+import com.xiaocydx.cxrv.itemvisible.findLastCompletelyVisibleItemPosition
+import com.xiaocydx.cxrv.itemvisible.findLastVisibleItemPosition
+import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.ListChangedListener
 

@@ -5,8 +5,8 @@ import android.view.Choreographer.FrameCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.xiaocydx.cxrv.extension.doOnPreDraw
-import com.xiaocydx.cxrv.extension.hasDisplayItem
+import com.xiaocydx.cxrv.internal.doOnPreDraw
+import com.xiaocydx.cxrv.internal.hasDisplayItem
 
 /**
  * 列表更新时调用[RecyclerView.invalidateItemDecorations]的帮助类

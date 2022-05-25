@@ -5,9 +5,9 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.xiaocydx.cxrv.extension.getChildBindingAdapterItemCount
-import com.xiaocydx.cxrv.extension.getChildBindingAdapterPosition
-import com.xiaocydx.cxrv.extension.getChildLastBindingAdapterPosition
+import com.xiaocydx.cxrv.list.getChildBindingAdapterItemCount
+import com.xiaocydx.cxrv.list.getChildBindingAdapterPosition
+import com.xiaocydx.cxrv.list.getChildLastBindingAdapterPosition
 
 /**
  * 跨度空间参数

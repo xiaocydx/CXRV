@@ -1,9 +1,8 @@
 package com.xiaocydx.cxrv.list
 
 import androidx.annotation.MainThread
-import com.xiaocydx.cxrv.extension.Disposable
-import com.xiaocydx.cxrv.extension.assertMainThread
-import com.xiaocydx.cxrv.extension.runOnMainThread
+import com.xiaocydx.cxrv.internal.assertMainThread
+import com.xiaocydx.cxrv.internal.runOnMainThread
 
 /**
  * 列表已更改的监听

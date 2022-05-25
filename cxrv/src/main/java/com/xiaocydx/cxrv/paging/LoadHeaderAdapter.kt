@@ -1,10 +1,10 @@
 package com.xiaocydx.cxrv.paging
 
 import android.view.ViewGroup
-import androidx.recyclerview.widget.SimpleViewHolder
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.SimpleViewHolder
 import com.xiaocydx.cxrv.concat.ViewAdapter
-import com.xiaocydx.cxrv.extension.hasDisplayItem
+import com.xiaocydx.cxrv.internal.hasDisplayItem
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.ListChangedListener
 

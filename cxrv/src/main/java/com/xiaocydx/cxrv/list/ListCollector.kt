@@ -4,7 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withContext
 
@@ -25,7 +25,22 @@ val <T : Any> ListAdapter<T, *>.listCollector: ListCollector<T>
     }
 
 /**
- * 收集[flow]的所有值，并将它们发送给[listCollector]，是一种简化写法
+ * `Flow<ListData<T>>`的值发射给[listCollector]，是一种简化写法
+ *
+ * ```
+ * val adapter: ListAdapter<Foo, *> = ...
+ * flow.onEach { adapter.listCollector.emit(it) }
+ *
+ * // 简化上面的写法
+ * flow.onEach(adapter)
+ * ```
+ */
+fun <T : Any> Flow<ListData<T>>.onEach(
+    adapter: ListAdapter<T, *>
+): Flow<ListData<T>> = onEach(adapter.listCollector::emit)
+
+/**
+ * `Flow<ListData<T>>`的值发射给[listCollector]，是一种简化写法
  *
  * ```
  * val adapter: ListAdapter<Foo, *> = ...
@@ -34,22 +49,12 @@ val <T : Any> ListAdapter<T, *>.listCollector: ListCollector<T>
  * }
  *
  * // 简化上面的写法
- * adapter.listCollector.emitAll(flow)
- *
- * // 再进行简化
- * adapter.emitAll(flow)
+ * flow.collect(adapter)
  * ```
  */
-@Deprecated(
-    message = "其它相同形式的扩展函数，导致该函数调用体验不好，因此废弃",
-    replaceWith = ReplaceWith(
-        expression = "flow.collect(adapter)",
-        imports = ["com.xiaocydx.cxrv.extension.collect"]
-    )
-)
-suspend fun <T : Any> ListAdapter<T, *>.emitAll(
-    flow: Flow<ListData<T>>
-) = listCollector.emitAll(flow)
+suspend fun <T : Any> Flow<ListData<T>>.collect(
+    adapter: ListAdapter<T, *>
+): Unit = collect(adapter.listCollector)
 
 /**
  * 列表数据收集器，负责收集指定流的[ListData]

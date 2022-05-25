@@ -3,7 +3,7 @@ package com.xiaocydx.cxrv.list
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
-import com.xiaocydx.cxrv.extension.reverseAccessEach
+import com.xiaocydx.cxrv.internal.reverseAccessEach
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

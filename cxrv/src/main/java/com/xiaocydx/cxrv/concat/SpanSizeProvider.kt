@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.xiaocydx.cxrv.R
-import com.xiaocydx.cxrv.extension.doOnAttach
+import com.xiaocydx.cxrv.internal.doOnAttach
 import androidx.recyclerview.widget.StaggeredGridLayoutManager.LayoutParams as StaggeredGridLayoutParams
 
 /**

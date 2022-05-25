@@ -1,8 +1,9 @@
 package com.xiaocydx.cxrv.list
 
 import androidx.annotation.MainThread
-import com.xiaocydx.cxrv.extension.reverseAccessEach
-import com.xiaocydx.cxrv.extension.runOnMainThread
+import com.xiaocydx.cxrv.internal.reverseAccessEach
+import com.xiaocydx.cxrv.internal.runOnMainThread
+import com.xiaocydx.cxrv.internal.unsafeFlow
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
@@ -160,6 +161,14 @@ class ListState<T : Any> : ListOwner<T> {
         Collections.swap(sourceList, fromPosition, toPosition)
         return true
     }
+}
+
+/**
+ * 将[ListState]转换为列表更新数据流
+ */
+fun <T : Any> ListState<T>.asFlow(): Flow<ListData<T>> = unsafeFlow {
+    val mediator = ListMediatorImpl(this@asFlow)
+    emit(ListData(mediator.flow, mediator))
 }
 
 @PublishedApi

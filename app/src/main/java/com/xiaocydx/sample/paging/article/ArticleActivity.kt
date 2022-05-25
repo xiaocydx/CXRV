@@ -10,11 +10,11 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.bindingAdapter
-import com.xiaocydx.cxrv.extension.divider
-import com.xiaocydx.cxrv.extension.fixedSize
-import com.xiaocydx.cxrv.extension.linear
-import com.xiaocydx.cxrv.extension.onEach
+import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.fixedSize
+import com.xiaocydx.cxrv.list.linear
+import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.sample.databinding.ItemArticleBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.paging.config.paging

@@ -4,14 +4,18 @@ import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.xiaocydx.cxrv.extension.*
+import com.xiaocydx.cxrv.internal.assertMainThread
+import com.xiaocydx.cxrv.internal.awaitPreDraw
+import com.xiaocydx.cxrv.internal.hasDisplayItem
+import com.xiaocydx.cxrv.internal.reverseAccessEach
+import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.UpdateOp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 
@@ -43,7 +47,22 @@ val <T : Any> ListAdapter<T, *>.pagingCollector: PagingCollector<T>
     }
 
 /**
- * 收集[flow]的所有值，并将它们发送给[pagingCollector]，是一种简化写法
+ * `Flow<PagingData<T>>`的值发射给[pagingCollector]，是一种简化写法
+ *
+ * ```
+ * val adapter: ListAdapter<Foo, *> = ...
+ * flow.onEach { adapter.pagingCollector.emit(it) }
+ *
+ * // 简化上面的写法
+ * flow.onEach(adapter)
+ * ```
+ */
+fun <T : Any> Flow<PagingData<T>>.onEach(
+    adapter: ListAdapter<T, *>
+): Flow<PagingData<T>> = onEach(adapter.pagingCollector::emit)
+
+/**
+ * `Flow<PagingData<T>>`的值发射给[pagingCollector]，是一种简化写法
  *
  * ```
  * val adapter: ListAdapter<Foo, *> = ...
@@ -52,22 +71,12 @@ val <T : Any> ListAdapter<T, *>.pagingCollector: PagingCollector<T>
  * }
  *
  * // 简化上面的写法
- * adapter.pagingCollector.emitAll(flow)
- *
- * // 再进行简化
- * adapter.emitAll(flow)
+ * flow.collect(adapter)
  * ```
  */
-@Deprecated(
-    message = "其它相同形式的扩展函数，导致该函数调用体验不好，因此废弃",
-    replaceWith = ReplaceWith(
-        expression = "flow.collect(adapter)",
-        imports = ["com.xiaocydx.cxrv.extension.collect"]
-    )
-)
-suspend fun <T : Any> ListAdapter<T, *>.emitAll(
-    flow: Flow<PagingData<T>>
-) = pagingCollector.emitAll(flow)
+suspend fun <T : Any> Flow<PagingData<T>>.collect(
+    adapter: ListAdapter<T, *>
+): Unit = collect(adapter.pagingCollector)
 
 /**
  * 开始处理分页事件的监听

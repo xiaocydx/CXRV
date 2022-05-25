@@ -2,7 +2,7 @@ package com.xiaocydx.cxrv.paging
 
 import androidx.annotation.CheckResult
 import androidx.annotation.MainThread
-import com.xiaocydx.cxrv.extension.flowOnMain
+import com.xiaocydx.cxrv.internal.flowOnMain
 import com.xiaocydx.cxrv.list.ListMediator
 import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.UpdateOp

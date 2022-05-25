@@ -6,7 +6,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.ViewController
-import com.xiaocydx.cxrv.extension.doOnPreDraw
+import com.xiaocydx.cxrv.internal.doOnPreDraw
 
 /**
  * View适配器，用于构建HeaderFooter

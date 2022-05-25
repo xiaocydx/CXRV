@@ -5,7 +5,11 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.xiaocydx.cxrv.binding.bindingAdapter
-import com.xiaocydx.cxrv.extension.*
+import com.xiaocydx.cxrv.divider.divider
+import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
+import com.xiaocydx.cxrv.list.adapter
+import com.xiaocydx.cxrv.list.fixedSize
+import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.databinding.ActivityPagingBinding

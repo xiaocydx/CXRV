@@ -1,7 +1,7 @@
 package com.xiaocydx.cxrv.paging
 
 import androidx.annotation.MainThread
-import com.xiaocydx.cxrv.extension.flowOnMain
+import com.xiaocydx.cxrv.internal.flowOnMain
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job

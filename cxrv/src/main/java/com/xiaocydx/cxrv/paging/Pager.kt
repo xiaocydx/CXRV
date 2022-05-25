@@ -1,6 +1,6 @@
 package com.xiaocydx.cxrv.paging
 
-import com.xiaocydx.cxrv.extension.flowOnMain
+import com.xiaocydx.cxrv.internal.flowOnMain
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flow

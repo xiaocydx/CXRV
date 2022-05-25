@@ -5,9 +5,9 @@ package com.xiaocydx.cxrv.multitype
 import android.os.Build
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.google.common.truth.Truth.assertThat
 import com.xiaocydx.cxrv.list.UpdateOp
 import com.xiaocydx.cxrv.list.submitList
-import com.google.common.truth.Truth.assertThat
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk

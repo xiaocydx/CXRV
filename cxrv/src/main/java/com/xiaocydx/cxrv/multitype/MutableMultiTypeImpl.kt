@@ -1,7 +1,7 @@
 package com.xiaocydx.cxrv.multitype
 
 import android.util.SparseArray
-import com.xiaocydx.cxrv.extension.accessEach
+import com.xiaocydx.cxrv.internal.accessEach
 
 /**
  * 可变的多类型容器实现类

@@ -21,13 +21,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".click.ItemClickActivity"
+            android:name=".itemclick.ItemClickActivity"
             android:exported="false" />
         <activity
-            android:name=".selection.SingleSelectionActivity"
+            android:name=".itemselect.SingleSelectionActivity"
             android:exported="false" />
         <activity
-            android:name=".selection.MultiSelectionActivity"
+            android:name=".itemselect.MultiSelectionActivity"
             android:exported="false" />
         <activity
             android:name=".multitype.MultiTypeActivity"

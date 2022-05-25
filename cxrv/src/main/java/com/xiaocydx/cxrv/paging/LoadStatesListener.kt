@@ -1,8 +1,8 @@
 package com.xiaocydx.cxrv.paging
 
 import androidx.annotation.MainThread
-import com.xiaocydx.cxrv.extension.Disposable
-import com.xiaocydx.cxrv.extension.runOnMainThread
+import com.xiaocydx.cxrv.internal.runOnMainThread
+import com.xiaocydx.cxrv.list.Disposable
 
 /**
  * 加载状态集合的监听

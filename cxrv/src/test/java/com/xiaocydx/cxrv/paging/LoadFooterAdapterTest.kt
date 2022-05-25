@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
 import com.google.common.truth.Truth.assertThat
 import com.xiaocydx.cxrv.TestActivity
-import com.xiaocydx.cxrv.extension.withHeader
+import com.xiaocydx.cxrv.concat.withHeader
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.insertItem
 import io.mockk.spyk

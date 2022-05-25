@@ -3,7 +3,7 @@ package com.xiaocydx.cxrv.paging
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.annotation.Px
-import com.xiaocydx.cxrv.marker.RvDslMarker
+import com.xiaocydx.cxrv.internal.RvDslMarker
 
 /**
  * 加载头部配置

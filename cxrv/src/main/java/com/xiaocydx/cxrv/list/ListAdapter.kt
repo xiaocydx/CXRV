@@ -16,11 +16,11 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.concat.SpanSizeProvider
 import com.xiaocydx.cxrv.concat.onAttachedToRecyclerView
 import com.xiaocydx.cxrv.concat.spanSizeProvider
-import com.xiaocydx.cxrv.extension.accessEach
-import com.xiaocydx.cxrv.extension.assertMainThread
-import com.xiaocydx.cxrv.extension.reverseAccessEach
 import com.xiaocydx.cxrv.helper.InvalidateHelper
 import com.xiaocydx.cxrv.helper.ScrollHelper
+import com.xiaocydx.cxrv.internal.accessEach
+import com.xiaocydx.cxrv.internal.assertMainThread
+import com.xiaocydx.cxrv.internal.reverseAccessEach
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 

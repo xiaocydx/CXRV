@@ -1,7 +1,7 @@
 package com.xiaocydx.cxrv.helper
 
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.cxrv.extension.isFirstItemCompletelyVisible
+import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 
 /**
  * 列表更新时调用[RecyclerView.scrollToPosition]的帮助类
