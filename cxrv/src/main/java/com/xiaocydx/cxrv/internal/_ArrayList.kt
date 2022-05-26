@@ -42,3 +42,7 @@ internal inline fun <T> ArrayList<T>.reverseAccessEach(action: (T) -> Unit) {
         action(get(index))
     }
 }
+
+internal fun <T> List<T>.ensureMutable(): ArrayList<T> {
+    return if (this is ArrayList<T>) this else ArrayList(this)
+}

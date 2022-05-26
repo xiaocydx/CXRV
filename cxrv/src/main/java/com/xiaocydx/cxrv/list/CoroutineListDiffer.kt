@@ -3,6 +3,7 @@ package com.xiaocydx.cxrv.list
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
+import com.xiaocydx.cxrv.internal.ensureMutable
 import com.xiaocydx.cxrv.internal.reverseAccessEach
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -38,7 +39,7 @@ class CoroutineListDiffer<T : Any>(
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) : Continuation<Any?>, CoroutineScope {
     private val mutex = Mutex()
-    private var sourceList: MutableList<T> = mutableListOf()
+    private var sourceList: ArrayList<T> = arrayListOf()
     private var executeListeners: ArrayList<ListExecuteListener<T>>? = null
     private var changedListeners: ArrayList<ListChangedListener<T>>? = null
     override val context: CoroutineContext = SupervisorJob() + mainDispatcher.immediate
@@ -130,7 +131,7 @@ class CoroutineListDiffer<T : Any>(
             is UpdateOp.SetItem -> setItem(op.position, op.item)
             is UpdateOp.AddItem -> addItem(op.position, op.item)
             is UpdateOp.AddItems -> addItems(op.position, op.items)
-            is UpdateOp.RemoveItemAt -> removeItemAt(op.position)
+            is UpdateOp.RemoveItems -> removeItems(op.position, op.itemCount)
             is UpdateOp.SwapItem -> swapItem(op.fromPosition, op.toPosition)
         }
         changedListeners?.reverseAccessEach { it.onListChanged(currentList) }
@@ -231,12 +232,23 @@ class CoroutineListDiffer<T : Any>(
     }
 
     @MainThread
-    private fun removeItemAt(position: Int) {
-        if (position !in sourceList.indices) {
+    @Suppress("UnnecessaryVariable")
+    private fun removeItems(position: Int, itemCount: Int) {
+        if (position !in sourceList.indices || itemCount <= 0) {
             return
         }
-        sourceList.removeAt(position)
-        updateCallback.onRemoved(position, 1)
+        if (itemCount == 1) {
+            // ArrayList.removeAt()相比于ArrayList.removeRange()，
+            // 移除的是最后一位元素时，不会调用System.arraycopy()。
+            sourceList.removeAt(position)
+            updateCallback.onRemoved(position, 1)
+            return
+        }
+        val fromIndex = position
+        val toIndex = (fromIndex + itemCount).coerceAtMost(sourceList.size)
+        // 调用链SubList.clear() -> ArrayList.removeRange()
+        sourceList.subList(fromIndex, toIndex).clear()
+        updateCallback.onRemoved(position, toIndex - fromIndex)
     }
 
     @MainThread

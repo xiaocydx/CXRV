@@ -103,12 +103,13 @@ fun <T : Any> ListOwner<T>.addItems(position: Int, items: List<T>) {
 }
 
 /**
- * 移除下标为[position]的item
+ * 移除起始下标为[position]的[itemCount]个item
  *
- * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
+ * @param position  取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
+ * @param itemCount 小于1不会抛出异常，仅作为无效操作。
  */
-fun ListOwner<*>.removeItemAt(position: Int) {
-    updateList(UpdateOp.RemoveItemAt(position))
+fun <T : Any> ListOwner<T>.removeItems(position: Int, itemCount: Int) {
+    updateList(UpdateOp.RemoveItems(position, itemCount))
 }
 
 /**
@@ -119,6 +120,43 @@ fun ListOwner<*>.removeItemAt(position: Int) {
  */
 fun ListOwner<*>.swapItem(fromPosition: Int, toPosition: Int) {
     updateList(UpdateOp.SwapItem(fromPosition, toPosition))
+}
+
+/**
+ * 往首位插入item
+ */
+fun <T : Any> ListOwner<T>.insertItem(item: T) {
+    addItem(0, item)
+}
+
+/**
+ * 往首位插入items
+ */
+fun <T : Any> ListOwner<T>.insertItems(items: List<T>) {
+    addItems(0, items)
+}
+
+/**
+ * 移除下标为[position]的item
+ *
+ * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
+ */
+fun ListOwner<*>.removeItemAt(position: Int) {
+    removeItems(position, itemCount = 1)
+}
+
+/**
+ * 移除item
+ */
+fun <T : Any> ListOwner<T>.removeItem(item: T) {
+    removeItemAt(currentList.indexOfFirst { it === item })
+}
+
+/**
+ * 清空列表
+ */
+fun ListOwner<*>.clear() {
+    submitList(emptyList())
 }
 
 /**
@@ -152,20 +190,6 @@ inline fun <T : Any> ListOwner<T>.submitTransform(
 }
 
 /**
- * 插入item
- */
-fun <T : Any> ListOwner<T>.insertItem(item: T) {
-    addItem(0, item)
-}
-
-/**
- * 移除item
- */
-fun <T : Any> ListOwner<T>.removeItem(item: T) {
-    removeItemAt(currentList.indexOfFirst { it === item })
-}
-
-/**
  * 遍历[ListOwner.currentList]，设置[block]返回的第一个不空的item
  */
 inline fun <T : Any> ListOwner<T>.setFirstNotNull(block: (item: T) -> T?) {
@@ -190,16 +214,6 @@ inline fun <T : Any> ListOwner<T>.setLastNotNull(block: (item: T) -> T?) {
         }
     }
 }
-
-/**
- * 清空列表
- */
-fun ListOwner<*>.clear() {
-    submitList(emptyList())
-}
-
-internal fun <T> List<T>.ensureMutable(): MutableList<T> =
-        if (this is ArrayList<T>) this else ArrayList(this)
 
 /**
  * 创建当前列表的可变对象

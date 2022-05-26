@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class ListState<T : Any> : ListOwner<T> {
     private var listeners: ArrayList<(UpdateOp<T>) -> Unit>? = null
-    private val sourceList: MutableList<T> = mutableListOf()
+    private val sourceList: ArrayList<T> = arrayListOf()
     override val currentList: List<T> = sourceList.toReadOnlyList()
     internal var version: Int = 0
         private set
@@ -64,7 +64,7 @@ class ListState<T : Any> : ListOwner<T> {
             is UpdateOp.SetItem -> setItem(op.position, op.item)
             is UpdateOp.AddItem -> addItem(op.position, op.item)
             is UpdateOp.AddItems -> addItems(op.position, op.items)
-            is UpdateOp.RemoveItemAt -> removeItemAt(op.position)
+            is UpdateOp.RemoveItems -> removeItems(op.position, op.itemCount)
             is UpdateOp.SwapItem -> swapItem(op.fromPosition, op.toPosition)
         }
         if (!succeed) {
@@ -144,11 +144,21 @@ class ListState<T : Any> : ListOwner<T> {
     }
 
     @MainThread
-    private fun removeItemAt(position: Int): Boolean {
-        if (position !in sourceList.indices) {
+    @Suppress("UnnecessaryVariable")
+    private fun removeItems(position: Int, itemCount: Int): Boolean {
+        if (position !in sourceList.indices || itemCount <= 0) {
             return false
         }
-        sourceList.removeAt(position)
+        if (itemCount == 1) {
+            // ArrayList.removeAt()相比于ArrayList.removeRange()，
+            // 移除的是最后一位元素时，不会调用System.arraycopy()。
+            sourceList.removeAt(position)
+            return true
+        }
+        val fromIndex = position
+        val toIndex = (fromIndex + itemCount).coerceAtMost(sourceList.size)
+        // 调用链SubList.clear() -> ArrayList.removeRange()
+        sourceList.subList(fromIndex, toIndex).clear()
         return true
     }
 

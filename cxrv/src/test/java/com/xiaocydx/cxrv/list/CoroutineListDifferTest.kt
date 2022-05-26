@@ -115,14 +115,14 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_RemoveItemAt() {
+    fun execute_UpdateOp_RemoveItems() {
         val count = CountDownLatch(2)
-        val initList = listOf("A", "B")
+        val initList = listOf("A", "B", "C")
         val removeItemAt = fun() {
-            differ.updateList(UpdateOp.RemoveItemAt(0)) {
-                assertThat(differ.currentList).isEqualTo(listOf("B"))
+            differ.updateList(UpdateOp.RemoveItems(position = 0, itemCount = 2)) {
+                assertThat(differ.currentList).isEqualTo(listOf("C"))
                 verify(exactly = 0) { diffCallback.areItemsTheSame(any(), any()) }
-                verify(exactly = 1) { updateCallback.onRemoved(0, 1) }
+                verify(exactly = 1) { updateCallback.onRemoved(0, 2) }
                 count.countDown()
             }
         }
@@ -199,13 +199,13 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_RemoveItemAt_Await(): Unit = runBlocking {
-        val initList = listOf("A", "B")
+    fun execute_UpdateOp_RemoveItems_Await(): Unit = runBlocking {
+        val initList = listOf("A", "B", "C")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
-        differ.awaitUpdateList(UpdateOp.RemoveItemAt(0))
-        assertThat(differ.currentList).isEqualTo(listOf("B"))
+        differ.awaitUpdateList(UpdateOp.RemoveItems(position = 0, itemCount = 2))
+        assertThat(differ.currentList).isEqualTo(listOf("C"))
         verify(exactly = 0) { diffCallback.areItemsTheSame(any(), any()) }
-        verify(exactly = 1) { updateCallback.onRemoved(0, 1) }
+        verify(exactly = 1) { updateCallback.onRemoved(0, 2) }
     }
 
     @Test
