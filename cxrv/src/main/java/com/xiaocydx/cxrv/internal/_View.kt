@@ -47,6 +47,10 @@ internal suspend fun View.awaitPreDraw() {
     }
 }
 
+internal fun View.doOnPreDraw(action: Runnable): OneShotPreDrawListener {
+    return OneShotPreDrawListener.add(this, action)
+}
+
 internal inline fun View.doOnPreDraw(crossinline action: (view: View) -> Unit): OneShotPreDrawListener {
     return OneShotPreDrawListener.add(this) { action(this) }
 }

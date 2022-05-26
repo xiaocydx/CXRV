@@ -44,12 +44,11 @@ internal class AppendTrigger(
 ) : LoadStatesListener, ViewHolderListener<ViewHolder>,
         ListChangedListener<Any>, AdapterAttachCallback {
     private var rv: RecyclerView? = null
-    private var previousNotEmpty = adapter.hasDisplayItem
-    private var postAppendDisposable: OneShotPreDrawListener? = null
+    private var postAppendListener: OneShotPreDrawListener? = null
     private val appendIfLastItemVisible = AppendIfLastItemVisible()
     private val appendIfLastItemAttached = AppendIfLastItemAttached()
-    private val isAllowAppend: Boolean
-        get() = collector.loadStates.isAllowAppend
+    private val loadStates: LoadStates
+        get() = collector.loadStates
 
     init {
         adapter.also {
@@ -61,7 +60,7 @@ internal class AppendTrigger(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>) {
-        if (!isAllowAppend || !adapter.isLastDisplayItem(position)) {
+        if (!loadStates.isAllowAppend || !adapter.isLastDisplayItem(position)) {
             return
         }
         if (rv?.isPreLayout == true) {
@@ -73,43 +72,47 @@ internal class AppendTrigger(
         append()
     }
 
+    /**
+     * [onListChanged]在[onLoadStatesChanged]之前被调用，
+     * 当刷新加载成功时，`lm.itemCount`已更新，`loadStates.refresh`未更新，
+     * 因此不会调用[postAppend]，由[onLoadStatesChanged]主动触发末尾加载。
+     */
+    override fun onListChanged(current: List<Any>) {
+        val lm = rv?.layoutManager ?: return
+        if (loadStates.isFully
+                || !loadStates.refresh.isSuccess
+                || lm.itemCount >= lm.childCount) {
+            return
+        }
+        postAppend()
+    }
+
+    /**
+     * 当刷新加载成功时，加载结果可能和之前第一页结果一致，
+     * 此时[onBindViewHolder]不会被调用，因此需要主动触发末尾加载。
+     */
     override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
         if (!adapter.hasDisplayItem || !previous.refreshToSuccess(current)) {
             return
         }
-        // 刷新加载结果可能和之前第一页结果一致，
-        // 此时onBindViewHolder()不会被调用，需要主动触发末尾加载
         postAppend()
-        appendIfLastItemAttached.keepEnabled()
-    }
-
-    override fun onListChanged(current: List<Any>) {
-        val currentNotEmpty = adapter.hasDisplayItem
-        if (previousNotEmpty
-                && !currentNotEmpty
-                && !collector.loadStates.isFully) {
-            // 当前列表被清空，但是还未加载完全，则主动触发末尾加载
-            append()
-        }
-        previousNotEmpty = currentNotEmpty
     }
 
     private fun postAppend() {
         removeAppend()
-        postAppendDisposable = rv?.doOnPreDraw {
-            appendIfLastItemVisible()
-        }
+        postAppendListener = rv?.doOnPreDraw(appendIfLastItemVisible)
+        appendIfLastItemAttached.keepEnabled()
     }
 
     private fun removeAppend() {
-        postAppendDisposable?.removeListener()
-        postAppendDisposable = null
+        postAppendListener?.removeListener()
+        postAppendListener = null
+        appendIfLastItemAttached.failureEnabled()
     }
 
     private fun append() {
         removeAppend()
         collector.append()
-        appendIfLastItemAttached.failureEnabled()
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
@@ -125,11 +128,12 @@ internal class AppendTrigger(
 
     /**
      * 若最后一个item可视，则触发末尾加载，
-     * 最后一个item可能是加载Footer或者[adapter]的最后一个item。
+     * 最后一个item可能是loadFooter或者[adapter]的最后一个item。
      */
     private inner class AppendIfLastItemVisible : () -> Unit {
         override fun invoke() {
-            if (isAllowAppend && rv?.isLastItemVisible == true) {
+            if (loadStates.isAllowAppend
+                    && rv?.isLastItemVisible == true) {
                 append()
             }
         }
@@ -141,8 +145,6 @@ internal class AppendTrigger(
      */
     private inner class AppendIfLastItemAttached : OnChildAttachStateChangeListener {
         private var enabled = false
-        private val isAppendFailure: Boolean
-            get() = collector.loadStates.append.isFailure
 
         fun keepEnabled() {
             enabled = true
@@ -156,7 +158,7 @@ internal class AppendTrigger(
             if (rv?.isPreLayout == true) {
                 return
             }
-            if (enabled || isAppendFailure) {
+            if (enabled || loadStates.append.isFailure) {
                 val lm = rv?.layoutManager ?: return
                 val holder = rv?.getChildViewHolder(view) ?: return
                 if (holder.layoutPosition == lm.itemCount - 1) {
