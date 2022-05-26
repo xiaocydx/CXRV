@@ -27,7 +27,7 @@ abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> :
     var VB.holder: BindingHolder<VB>
         get() = requireNotNull(
             value = root.getTag(R.id.tag_view_holder) as? BindingHolder<VB>,
-            lazyMessage = { "root还未关联ViewHolder。" }
+            lazyMessage = { "root还未关联ViewHolder" }
         )
         private set(value) {
             root.setTag(R.id.tag_view_holder, value)
@@ -82,17 +82,17 @@ abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> :
             inflate = inflate()
         }
         val binding = inflate!!(parent.inflater, parent, false)
+        val holder = BindingHolder(binding)
+        binding.holder = holder
         binding.onCreateView()
-        return BindingHolder(binding)
+        return holder
     }
 
     final override fun onBindViewHolder(holder: BindingHolder<VB>, item: ITEM, payloads: List<Any>) {
-        holder.binding.holder = holder
         holder.binding.onBindView(item, payloads)
     }
 
     final override fun onBindViewHolder(holder: BindingHolder<VB>, item: ITEM) {
-        holder.binding.holder = holder
         holder.binding.onBindView(item)
     }
 
