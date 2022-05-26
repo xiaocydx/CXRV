@@ -52,16 +52,18 @@ internal class ItemClickDispatcher(
     /**
      * 添加点击分发目标
      *
+     * @param intervalMs   执行[clickHandler]的间隔时间
      * @param targetView   返回需要触发点击的目标视图
      * @param clickHandler 触发目标视图点击时的执行程序
      * @return 调用[Disposable.dispose]移除添加的点击分发目标
      */
     fun addItemClick(
+        intervalMs: Long,
         targetView: (itemView: View, event: MotionEvent) -> View?,
         clickHandler: (itemView: View) -> Unit
     ): Disposable = DispatchTargetObserver(
         dispatcher = this,
-        target = ClickDispatchTarget(targetView, clickHandler)
+        target = ClickDispatchTarget(intervalMs, targetView, clickHandler)
     )
 
     /**

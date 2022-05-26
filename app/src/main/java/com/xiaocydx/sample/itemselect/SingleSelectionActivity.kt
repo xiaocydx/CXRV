@@ -47,7 +47,7 @@ class SingleSelectionActivity : AppCompatActivity() {
         }
         adapter = SingleSelectionBindingAdapter()
         // adapter = SingleSelectionAdapter()
-        layoutParams = LayoutParams(MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+        layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
         overScrollMode = OVER_SCROLL_NEVER
     }
 

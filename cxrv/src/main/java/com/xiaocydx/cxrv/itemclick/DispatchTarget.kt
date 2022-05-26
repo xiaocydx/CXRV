@@ -1,5 +1,6 @@
 package com.xiaocydx.cxrv.itemclick
 
+import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.*
@@ -50,9 +51,11 @@ internal sealed class DispatchTarget(
 }
 
 internal class ClickDispatchTarget(
+    private val intervalMs: Long,
     targetView: (itemView: View, event: MotionEvent) -> View?,
     private val clickHandler: (itemView: View) -> Unit,
 ) : DispatchTarget(targetView) {
+    private var lastPerformUptimeMs = 0L
 
     /**
      * 将[listener]设置给[currentTargetView]，成功则返回`true`，失败则返回`false`
@@ -63,12 +66,20 @@ internal class ClickDispatchTarget(
     }
 
     /**
-     * 若[view]等于[currentTargetView]，则执行[clickHandler]
+     * 若[view]等于[currentTargetView]且满足执行间隔，则执行[clickHandler]
      */
     fun tryPerformClickHandler(view: View, itemView: View) {
-        if (view == currentTargetView) {
+        if (view == currentTargetView && checkPerformInterval()) {
             clickHandler.invoke(itemView)
         }
+    }
+
+    private fun checkPerformInterval(): Boolean {
+        val performUptimeMs = SystemClock.uptimeMillis()
+        return if (lastPerformUptimeMs + intervalMs < performUptimeMs) {
+            lastPerformUptimeMs = performUptimeMs
+            true
+        } else false
     }
 }
 
