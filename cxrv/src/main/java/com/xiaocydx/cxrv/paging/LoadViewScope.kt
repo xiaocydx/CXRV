@@ -90,10 +90,8 @@ internal class LoadViewItem<V : View>(
         }
         val view = view ?: return
         val isVisibleChanged = view.isVisible != isVisible
-        if (isVisibleChanged) {
-            view.isVisible = isVisible
-        }
         if (isFirstVisible || isVisibleChanged) {
+            view.isVisible = isVisible
             onVisibleChanged?.invoke(scope, view, isVisible)
         }
     }
