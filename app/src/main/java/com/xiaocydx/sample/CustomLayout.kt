@@ -3,254 +3,250 @@ package com.xiaocydx.sample
 import android.content.Context
 import android.util.AttributeSet
 import android.util.TypedValue
+import android.view.MotionEvent.ACTION_DOWN
 import android.view.View
-import android.view.View.MeasureSpec.*
+import android.view.View.MeasureSpec.UNSPECIFIED
 import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import android.widget.TextView
+import androidx.annotation.CheckResult
 import androidx.annotation.Px
 import androidx.core.view.*
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlin.math.max
+import androidx.recyclerview.widget.RecyclerView.LayoutManager
 
 /**
- * 提供测量、布局相关扩展的自定义ViewGroup
+ * 自定义ViewGroup的测量、布局相关扩展
  *
  * @author xcc
- * @date 2022/2/16
+ * @date 2022/6/2
  */
+@Suppress("MemberVisibilityCanBePrivate", "NOTHING_TO_INLINE")
 abstract class CustomLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : ViewGroup(context, attrs, defStyleAttr) {
 
+    final override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        onMeasureChildren(widthMeasureSpec, heightMeasureSpec)
+    }
+
     /**
-     * 若[CustomLayout]的`parent`是RecyclerView、ScrollView等滑动控件，
-     * 则传入的测量规格的模式可能为[UNSPECIFIED]，这取决于`layoutParams`的宽高值。
-     *
-     * [onMeasure]的默认实现，若测量规格的模式为[UNSPECIFIED]，则保存`suggestedMinimum`值，
-     * 这不符合[CustomLayout]的意图，[CustomLayout]在测量阶段希望给到子View最大可用空间，
-     * 因此修改[onMeasure]的默认实现，当`parent`是滑动控件时，保存调整后的默认值。
+     * [CustomLayout]的子类需要重写[onMeasure]，
+     * 定义抽象函数[onMeasureChildren]，作为重写提示。
      */
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val measuredWidth = getDefaultSize(
-            measureSpec = widthMeasureSpec,
-            layoutParamsSize = { layoutParams?.width ?: 0 },
-            suggestedMinimumSize = { suggestedMinimumWidth }
-        )
-        val measuredHeight = getDefaultSize(
-            measureSpec = heightMeasureSpec,
-            layoutParamsSize = { layoutParams?.height ?: 0 },
-            suggestedMinimumSize = { suggestedMinimumHeight }
-        )
-        setMeasuredDimension(measuredWidth, measuredHeight)
+    protected abstract fun onMeasureChildren(widthMeasureSpec: Int, heightMeasureSpec: Int)
+
+    /**
+     * [CustomLayout]的子类一般不作为滚动容器，因此重写返回`false`，
+     * 防止产生按压延时，详细逻辑可以看[View.onTouchEvent]的[ACTION_DOWN]分支。
+     */
+    override fun shouldDelayChildPressedState(): Boolean = false
+
+    protected inline fun addView(child: View, width: Int, height: Int, block: LayoutParams.() -> Unit) {
+        addView(child, generateDefaultLayoutParams(width, height).also(block))
     }
 
-    private inline fun getDefaultSize(
-        measureSpec: Int,
-        layoutParamsSize: () -> Int,
-        suggestedMinimumSize: () -> Int
-    ): Int {
-        val specMode = measureSpec.specMode
-        val specSize = measureSpec.specSize
-        return when (specMode) {
-            UNSPECIFIED -> {
-                if ((parent as? View)?.isScrollContainer == true) {
-                    val size = layoutParamsSize()
-                    if (size >= 0) size else specSize
-                } else suggestedMinimumSize()
-            }
-            AT_MOST, EXACTLY -> specSize
-            else -> throw IllegalArgumentException("无效的measureSpec。")
-        }
+    protected fun generateDefaultLayoutParams(width: Int, height: Int): LayoutParams {
+        return LayoutParams(width, height)
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        if (parent is RecyclerView) {
-            // 若宽高值为WRAP_CONTENT，则调整为MATCH_PARENT
-            val lp = layoutParams ?: return
-            lp.width = max(lp.width, MATCH_PARENT)
-            lp.height = max(lp.height, MATCH_PARENT)
-        }
+    override fun generateDefaultLayoutParams(): LayoutParams {
+        return generateDefaultLayoutParams(wrapContent, wrapContent)
     }
 
-    //region 间距相关扩展，后续考虑迁出
+    class LayoutParams(width: Int, height: Int) : MarginLayoutParams(width, height)
+
     @get:Px
-    protected inline val View.horizontalMargin: Int
+    @setparam:Px
+    protected var MarginLayoutParams.horizontalMargin: Int
+        get() = leftMargin + rightMargin
+        set(size) = updateMargins(left = size, right = size)
+
+    @get:Px
+    @setparam:Px
+    protected var MarginLayoutParams.verticalMargin: Int
+        get() = topMargin + bottomMargin
+        set(size) = updateMargins(top = size, bottom = size)
+
+    @get:Px
+    @setparam:Px
+    protected var View.horizontalPadding: Int
+        get() = paddingLeft + paddingRight
+        set(size) = updatePadding(left = size, right = size)
+
+    @get:Px
+    @setparam:Px
+    protected var View.verticalPadding: Int
+        get() = paddingTop + paddingBottom
+        set(size) = updatePadding(top = size, bottom = size)
+
+    @get:Px
+    protected val View.horizontalMargin: Int
         get() = marginLeft + marginRight
 
     @get:Px
-    protected inline val View.verticalMargin: Int
+    protected val View.verticalMargin: Int
         get() = marginTop + marginBottom
 
     @get:Px
-    protected inline var View.horizontalPadding: Int
-        get() = paddingLeft + paddingRight
-        set(value) = updatePadding(left = value, right = value)
+    protected val View.measuredWidthWithMargins: Int
+        get() = measuredWidth + horizontalMargin
 
     @get:Px
-    protected inline var View.verticalPadding: Int
-        get() = paddingTop + paddingBottom
-        set(value) = updatePadding(top = value, bottom = value)
-
-    @get:Px
-    protected inline val View.measureHeightWithMargins: Int
+    protected val View.measuredHeightWithMargins: Int
         get() = measuredHeight + verticalMargin
 
-    @get:Px
-    protected inline val View.measureWidthWithMargins: Int
-        get() = measuredWidth + horizontalMargin
-    //endregion
-
-    //region 测量相关扩展
-    protected inline val Int.specSize: Int
-        get() = getSize(this)
-
-    protected inline val Int.specMode: Int
-        get() = getMode(this)
-
-    protected fun Int.toUnspecifiedSpec(): Int = makeMeasureSpec(this, UNSPECIFIED)
-
-    protected fun Int.toExactlySpec(): Int = makeMeasureSpec(this, EXACTLY)
-
-    protected fun Int.toAtMostSpec(): Int = makeMeasureSpec(this, AT_MOST)
-
-    private val View.parentView: ViewGroup
-        get() {
-            requireNotNull(parent) { "parent为空。" }
-            return requireNotNull(parent as? ViewGroup) { "parent的类型不是ViewGroup。" }
-        }
-
     /**
-     * **注意**：调用[defaultWidthSpec]时，需要parent先完成自我测量，例如：
-     * ```
-     * class MessageLayout(context: Context) : CustomLayout(context) {
-     *     val ivAvatar: ImageView = AppCompatImageView(context).apply {
-     *         layoutParams = LayoutParams(48.dp, 48.dp)
-     *         scaleType = ImageView.ScaleType.CENTER_CROP
-     *     }.also(::addView)
-     *
-     *     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-     *         // 先完成自我测量
-     *         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-     *         // 再调用扩展属性
-     *         ivAvatar.defaultWidthSpec
-     *     }
-     * }
-     * ```
+     * [TypedValue.complexToDimensionPixelSize]的舍入逻辑，
+     * 用于确保[dp]、[sp]转换的px值，和xml解析转换的px值一致。
      */
-    protected val View.defaultWidthSpec: Int
-        get() = when (layoutParams.width) {
-            MATCH_PARENT -> parentView.measuredWidth.toExactlySpec()
-            WRAP_CONTENT -> parentView.measuredWidth.toAtMostSpec()
-            else -> layoutParams.width.toExactlySpec()
-        }
-
-    /**
-     * **注意**：调用[defaultHeightSpec]时，需要parent先完成自我测量，例如：
-     * ```
-     * class MessageLayout(context: Context) : CustomLayout(context) {
-     *     val ivAvatar: ImageView = AppCompatImageView(context).apply {
-     *         layoutParams = LayoutParams(48.dp, 48.dp)
-     *         scaleType = ImageView.ScaleType.CENTER_CROP
-     *     }.also(::addView)
-     *
-     *     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-     *         // 先完成自我测量
-     *         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-     *         // 再调用扩展属性
-     *         ivAvatar.defaultHeightSpec
-     *     }
-     * }
-     * ```
-     */
-    protected val View.defaultHeightSpec: Int
-        get() = when (layoutParams.height) {
-            MATCH_PARENT -> parentView.measuredHeight.toExactlySpec()
-            WRAP_CONTENT -> parentView.measuredHeight.toAtMostSpec()
-            else -> layoutParams.height.toExactlySpec()
-        }
-
-    /**
-     * **注意**：调用[autoMeasure]时，需要parent先完成自我测量，例如：
-     * ```
-     * class MessageLayout(context: Context) : CustomLayout(context) {
-     *     val ivAvatar: ImageView = AppCompatImageView(context).apply {
-     *         layoutParams = LayoutParams(48.dp, 48.dp)
-     *         scaleType = ImageView.ScaleType.CENTER_CROP
-     *     }.also(::addView)
-     *
-     *     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-     *         // 先完成自我测量
-     *         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-     *         // 再调用扩展函数
-     *         ivAvatar.autoMeasure()
-     *     }
-     * }
-     * ```
-     */
-    protected fun View.autoMeasure() {
-        measure(defaultWidthSpec, defaultHeightSpec)
+    @Px
+    private inline fun Float.toRoundingPx(): Int {
+        return (if (this >= 0) this + 0.5f else this - 0.5f).toInt()
     }
-    //endregion
-
-    //region 布局相关扩展
-    protected fun View.layout(left: Int, top: Int) {
-        layout(left, top, left + measuredWidth, top + measuredHeight)
-    }
-    //endregion
-
-    //region TextView相关扩展，后续考虑迁出
-    protected var TextView.isFakeBoldText: Boolean
-        get() = paint.isFakeBoldText
-        set(value) {
-            paint.isFakeBoldText = value
-        }
-
-    protected fun TextView.setTextSizeDp(size: Float) {
-        setTextSize(TypedValue.COMPLEX_UNIT_DIP, size)
-    }
-    //endregion
-
-    //region MarginLayoutParams相关扩展，后续考虑迁出
-    @get:Px
-    @setparam:Px
-    protected inline var MarginLayoutParams.horizontalMargin: Int
-        get() = leftMargin + rightMargin
-        set(value) = updateMargin(left = value, right = value)
 
     @get:Px
-    @setparam:Px
-    protected inline var MarginLayoutParams.verticalMargin: Int
-        get() = topMargin + bottomMargin
-        set(value) = updateMargin(top = value, bottom = value)
+    protected val Int.dp: Int
+        get() = toFloat().dp
 
-    protected fun View.withLayoutParams(
-        @Px width: Int = WRAP_CONTENT,
-        @Px height: Int = WRAP_CONTENT
-    ): MarginLayoutParams {
-        return LayoutParams(width, height).also { layoutParams = it }
+    @get:Px
+    protected val Float.dp: Int
+        get() = (this * resources.displayMetrics.density).toRoundingPx()
+
+    @get:Px
+    protected val Int.sp: Int
+        get() = toFloat().sp
+
+    @get:Px
+    protected val Float.sp: Int
+        get() = (this * resources.displayMetrics.scaledDensity).toRoundingPx()
+
+    @Px
+    protected fun Int.toMeasureSpecSize(): Int {
+        return MeasureSpec.getSize(this)
     }
 
-    protected fun MarginLayoutParams.setMargin(@Px value: Int) {
-        updateMargin(value, value, value, value)
+    protected fun Int.toMeasureSpecMode(): Int {
+        return MeasureSpec.getMode(this)
     }
 
-    protected fun MarginLayoutParams.updateMargin(
-        @Px left: Int = leftMargin,
-        @Px top: Int = topMargin,
-        @Px right: Int = rightMargin,
-        @Px bottom: Int = bottomMargin
-    ) {
-        leftMargin = left
-        topMargin = top
-        rightMargin = right
-        bottomMargin = bottom
+    protected fun Int.toUnspecifiedMeasureSpec(): Int {
+        return MeasureSpec.makeMeasureSpec(this, MeasureSpec.UNSPECIFIED)
     }
 
-    protected class LayoutParams(width: Int, height: Int) : MarginLayoutParams(width, height)
-    //endregion
+    protected fun Int.toExactlyMeasureSpec(): Int {
+        return MeasureSpec.makeMeasureSpec(this, MeasureSpec.EXACTLY)
+    }
 
-    override fun shouldDelayChildPressedState(): Boolean = false
+    protected fun Int.toAtMostMeasureSpec(): Int {
+        return MeasureSpec.makeMeasureSpec(this, MeasureSpec.AT_MOST)
+    }
+
+    protected fun View.requireParentView(): ViewGroup {
+        requireNotNull(parent) { "parent为空" }
+        return requireNotNull(parent as? ViewGroup) { "parent的类型不是ViewGroup" }
+    }
+
+    /**
+     * [defaultWidthMeasureSpec]的意图，是给到View最大可用size
+     *
+     * ### [UNSPECIFIED]场景
+     * `parent.onMeasure()`传入的`widthMeasureSpec`，其测量模式可能为[UNSPECIFIED]，
+     * 例如`parent`作为[RecyclerView]的`itemView`，`layoutManager`是水平方向的[LinearLayoutManager]，
+     * 当`parent.layoutParams.width = wrapContent`时，`widthMeasureSpec`的测量模式为[UNSPECIFIED]，
+     * 详细逻辑可以看[LayoutManager.measureChildWithMargins]。
+     *
+     * ### [wrapContent]分支
+     * 若`parent`的`widthMeasureSpec`的测量模式为[UNSPECIFIED]，
+     * 则`super.onMeasure()`会将宽度测量为[getSuggestedMinimumWidth]，
+     * 这不符合[defaultWidthMeasureSpec]的意图，因此[wrapContent]分支，
+     * 不返回`parent.measuredWidth.toAtMostMeasureSpec()`，
+     * 而是返回`Int.MAX_VALUE.toAtMostMeasureSpec()`。
+     */
+    protected fun View.defaultWidthMeasureSpec(): Int = when (layoutParams.width) {
+        matchParent -> requireParentView().measuredWidth.toExactlyMeasureSpec()
+        wrapContent -> Int.MAX_VALUE.toAtMostMeasureSpec()
+        else -> layoutParams.width.toExactlyMeasureSpec()
+    }
+
+    /**
+     * [defaultHeightMeasureSpec]的意图，是给到View最大可用size
+     *
+     * ### [UNSPECIFIED]场景
+     * `parent.onMeasure()`传入的`heightMeasureSpec`，其测量模式可能为[UNSPECIFIED]，
+     * 例如`parent`作为[RecyclerView]的`itemView`，`layoutManager`是垂直方向的[LinearLayoutManager]，
+     * 当`parent.layoutParams.height = wrapContent`时，`heightMeasureSpec`的测量模式为[UNSPECIFIED]，
+     * 详细逻辑可以看[LayoutManager.measureChildWithMargins]。
+     *
+     * ### [wrapContent]分支
+     * 若`parent`的`heightMeasureSpec`的测量模式为[UNSPECIFIED]，
+     * 则`super.onMeasure()`会将高度测量为[getSuggestedMinimumHeight]，
+     * 这不符合[defaultHeightMeasureSpec]的意图，因此[wrapContent]分支，
+     * 不返回`parent.measuredHeight.toAtMostMeasureSpec()`，
+     * 而是返回`Int.MAX_VALUE.toAtMostMeasureSpec()`。
+     */
+    protected fun View.defaultHeightMeasureSpec(): Int = when (layoutParams.height) {
+        matchParent -> requireParentView().measuredHeight.toExactlyMeasureSpec()
+        wrapContent -> Int.MAX_VALUE.toAtMostMeasureSpec()
+        else -> layoutParams.height.toExactlyMeasureSpec()
+    }
+
+    protected fun View.maxWidthMeasureSpec(@Px size: Int): Int = when (layoutParams.width) {
+        matchParent -> size.toExactlyMeasureSpec()
+        wrapContent -> size.toAtMostMeasureSpec()
+        else -> layoutParams.width.coerceAtMost(size).toExactlyMeasureSpec()
+    }
+
+    protected fun View.maxHeightMeasureSpec(@Px size: Int): Int = when (layoutParams.height) {
+        matchParent -> size.toExactlyMeasureSpec()
+        wrapContent -> size.toAtMostMeasureSpec()
+        else -> layoutParams.height.coerceAtMost(size).toExactlyMeasureSpec()
+    }
+
+    protected fun View.measureWith(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        if (isGone) return
+        measure(widthMeasureSpec, heightMeasureSpec)
+    }
+
+    protected fun View.measureWithDefault() {
+        measureWith(defaultWidthMeasureSpec(), defaultHeightMeasureSpec())
+    }
+
+    protected fun View.layout(x: Int, y: Int, fromRight: Boolean = false) {
+        if (isGone) return
+        if (!fromRight) {
+            layout(x, y, x + measuredWidth, y + measuredHeight)
+        } else {
+            layout(requireParentView().measuredWidth - x - measuredWidth, y)
+        }
+    }
+
+    protected fun View.layoutCenterOf(other: View, offsetX: Int = 0, offsetY: Int = 0) {
+        layout(centerXOf(other) + offsetX, centerYOf(other) + offsetY)
+    }
+
+    @CheckResult
+    protected fun View.centerXOf(other: View): Int {
+        return centerXOf(other.left, other.right)
+    }
+
+    @CheckResult
+    protected fun View.centerXOf(left: Int, right: Int): Int {
+        return left + (right - left - measuredWidth) / 2
+    }
+
+    @CheckResult
+    protected fun View.centerYOf(other: View): Int {
+        return centerYOf(other.top, other.bottom)
+    }
+
+    @CheckResult
+    protected fun View.centerYOf(top: Int, bottom: Int): Int {
+        return top + (bottom - top - measuredHeight) / 2
+    }
+
+    protected companion object {
+        const val matchParent = ViewGroup.LayoutParams.MATCH_PARENT
+        const val wrapContent = ViewGroup.LayoutParams.WRAP_CONTENT
+    }
 }

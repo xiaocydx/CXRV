@@ -2,10 +2,10 @@ package com.xiaocydx.sample.multitype.onetomany
 
 import android.content.Context
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.view.setPadding
-import com.xiaocydx.sample.dp
 
 /**
  * @author xcc
@@ -17,9 +17,9 @@ class MessageTextLayout @JvmOverloads constructor(
 
     val tvContent: TextView = AppCompatTextView(context).apply {
         setPadding(12.dp)
-        setTextSizeDp(15f)
         setTextColor(0xFFFFFFFF.toInt())
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, 15.sp.toFloat())
         setBackgroundColor(0xFF5998FF.toInt())
         includeFontPadding = false
-    }.also(container::addView)
+    }.also(::setContentView)
 }

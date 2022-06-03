@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.ImageView
 import androidx.appcompat.widget.AppCompatImageView
-import com.xiaocydx.sample.dp
 
 /**
  * @author xcc
@@ -15,7 +14,7 @@ class MessageImageLayout @JvmOverloads constructor(
 ) : MessageLayout(context, attrs, defStyleAttr) {
 
     val ivContent: ImageView = AppCompatImageView(context).apply {
-        withLayoutParams(150.dp, 150.dp)
+        layoutParams = LayoutParams(150.dp, 150.dp)
         scaleType = ImageView.ScaleType.CENTER_CROP
-    }.also(container::addView)
+    }.also(::setContentView)
 }

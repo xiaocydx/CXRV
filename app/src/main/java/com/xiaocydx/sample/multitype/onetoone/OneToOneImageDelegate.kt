@@ -2,15 +2,11 @@ package com.xiaocydx.sample.multitype.onetoone
 
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewGroup.MarginLayoutParams
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.widget.AppCompatImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 import com.xiaocydx.sample.R
-import com.xiaocydx.sample.dp
 
 /**
  * @author xcc
@@ -23,7 +19,7 @@ class OneToOneImageDelegate : ViewTypeDelegate<OneToOneMessage.Image, OneToOneIm
     }
 
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
-        return ViewHolder(parent.inflate(R.layout.item_message))
+        return ViewHolder(parent.inflate(R.layout.item_message_image))
     }
 
     override fun onBindViewHolder(
@@ -38,10 +34,6 @@ class OneToOneImageDelegate : ViewTypeDelegate<OneToOneMessage.Image, OneToOneIm
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val ivAvatar: ImageView = itemView.findViewById(R.id.ivAvatar)
         val tvUsername: TextView = itemView.findViewById(R.id.tvUsername)
-        val flContainer: FrameLayout = itemView.findViewById(R.id.flContainer)
-        val ivContent: ImageView = AppCompatImageView(itemView.context).apply {
-            scaleType = ImageView.ScaleType.CENTER_CROP
-            layoutParams = MarginLayoutParams(150.dp, 150.dp)
-        }.also(flContainer::addView)
+        val ivContent: ImageView = itemView.findViewById(R.id.ivContent)
     }
 }

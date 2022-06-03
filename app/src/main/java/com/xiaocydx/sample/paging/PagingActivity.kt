@@ -44,7 +44,7 @@ class PagingActivity : AppCompatActivity() {
             .linear()
             .fixedSize()
             .divider {
-                height = 0.5.dp
+                height = 0.5f.dp
                 color = 0xFFD5D5D5.toInt()
             }
             .adapter(bindingAdapter(

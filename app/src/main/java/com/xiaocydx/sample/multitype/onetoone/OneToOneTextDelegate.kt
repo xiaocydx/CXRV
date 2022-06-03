@@ -1,19 +1,12 @@
 package com.xiaocydx.sample.multitype.onetoone
 
-import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import android.view.ViewGroup.MarginLayoutParams
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.widget.AppCompatTextView
-import androidx.core.view.setPadding
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 import com.xiaocydx.sample.R
-import com.xiaocydx.sample.dp
 
 /**
  * @author xcc
@@ -26,7 +19,7 @@ class OneToOneTextDelegate : ViewTypeDelegate<OneToOneMessage.Text, OneToOneText
     }
 
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
-        return ViewHolder(parent.inflate(R.layout.item_message))
+        return ViewHolder(parent.inflate(R.layout.item_message_text))
     }
 
     override fun onBindViewHolder(
@@ -41,14 +34,6 @@ class OneToOneTextDelegate : ViewTypeDelegate<OneToOneMessage.Text, OneToOneText
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val ivAvatar: ImageView = itemView.findViewById(R.id.ivAvatar)
         val tvUsername: TextView = itemView.findViewById(R.id.tvUsername)
-        val flContainer: FrameLayout = itemView.findViewById(R.id.flContainer)
-        val tvContent: TextView = AppCompatTextView(itemView.context).apply {
-            setTextColor(0xFFFFFFFF.toInt())
-            setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15f)
-            setBackgroundColor(0xFF5998FF.toInt())
-            setPadding(12.dp)
-            includeFontPadding = false
-            layoutParams = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
-        }.also(flContainer::addView)
+        val tvContent: TextView = itemView.findViewById(R.id.tvContent)
     }
 }

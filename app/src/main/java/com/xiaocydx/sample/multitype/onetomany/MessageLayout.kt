@@ -2,16 +2,16 @@ package com.xiaocydx.sample.multitype.onetomany
 
 import android.content.Context
 import android.util.AttributeSet
-import android.widget.FrameLayout
+import android.util.TypedValue
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.view.marginStart
 import androidx.core.view.marginTop
-import androidx.core.view.setPadding
+import androidx.core.view.setMargins
 import com.xiaocydx.sample.CustomLayout
-import com.xiaocydx.sample.dp
 import kotlin.math.max
 
 /**
@@ -21,51 +21,52 @@ import kotlin.math.max
 abstract class MessageLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : CustomLayout(context, attrs, defStyleAttr) {
+    private var contentView: View? = null
+    private val maxContentWidth = 254.dp
+
     val ivAvatar: ImageView = AppCompatImageView(context).apply {
-        withLayoutParams(48.dp, 48.dp)
+        addView(this, 48.dp, 48.dp)
         scaleType = ImageView.ScaleType.CENTER_CROP
-    }.also(::addView)
-
-    val tvUsername: TextView = AppCompatTextView(context).apply {
-        withLayoutParams().apply {
-            leftMargin = 12.dp
-        }
-        setTextSizeDp(14f)
-        setTextColor(0xFF000000.toInt())
-        includeFontPadding = false
-    }.also(::addView)
-
-    val container: FrameLayout = FrameLayout(context).apply {
-        withLayoutParams().apply {
-            leftMargin = 12.dp
-            topMargin = 12.dp
-        }
-    }.also(::addView)
-
-    init {
-        setPadding(16.dp)
     }
 
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        ivAvatar.autoMeasure()
-        tvUsername.autoMeasure()
-        container.also {
-            it.measure(254.dp.toAtMostSpec(), it.defaultHeightSpec)
-        }
-        val maxHeight = max(
-            ivAvatar.measuredHeight,
-            tvUsername.measureHeightWithMargins + container.measureHeightWithMargins
+    val tvUsername: TextView = AppCompatTextView(context).apply {
+        addView(this, wrapContent, wrapContent) { leftMargin = 12.dp }
+        setTextColor(0xFF000000.toInt())
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, 14.sp.toFloat())
+        includeFontPadding = false
+    }
+
+    init {
+        layoutParams = LayoutParams(matchParent, wrapContent)
+            .apply { setMargins(16.dp) }
+    }
+
+    fun setContentView(view: View) {
+        contentView?.let(::removeView)
+        contentView = view
+        val lp = view.layoutParams
+        val width = lp?.width ?: wrapContent
+        val height = lp?.height ?: wrapContent
+        addView(view, width, height) { topMargin = 12.dp }
+    }
+
+    override fun onMeasureChildren(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        ivAvatar.measureWithDefault()
+        tvUsername.measureWithDefault()
+        contentView?.measureWith(
+            contentView!!.maxWidthMeasureSpec(maxContentWidth),
+            contentView!!.defaultHeightMeasureSpec()
         )
-        setMeasuredDimension(measuredWidth, maxHeight + verticalPadding)
+        val measuredHeight = max(
+            ivAvatar.measuredHeight,
+            tvUsername.measuredHeight + (contentView?.measuredHeightWithMargins ?: 0)
+        )
+        setMeasuredDimension(measuredWidth, measuredHeight)
     }
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
-        ivAvatar.layout(paddingTop, paddingStart)
-        tvUsername.layout(ivAvatar.right + tvUsername.marginStart, ivAvatar.top)
-        container.layout(
-            ivAvatar.right + container.marginStart,
-            tvUsername.bottom + container.marginTop
-        )
+        ivAvatar.layout(x = 0, y = 0)
+        tvUsername.layout(x = ivAvatar.right + tvUsername.marginStart, y = ivAvatar.top)
+        contentView?.layout(x = tvUsername.left, y = tvUsername.bottom + contentView!!.marginTop)
     }
 }

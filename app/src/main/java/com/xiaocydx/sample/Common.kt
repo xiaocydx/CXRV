@@ -4,11 +4,10 @@ import android.content.Context
 import android.content.res.Resources
 import android.util.TypedValue
 import android.widget.Toast
-import androidx.core.app.ComponentActivity
+import androidx.annotation.Px
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -16,25 +15,24 @@ import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.databinding.ItemTextType1Binding
 import com.xiaocydx.sample.databinding.ItemTextType2Binding
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.max
 
-val Float.dp: Int
-    get() = TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_DIP,
-        this,
-        Resources.getSystem().displayMetrics
-    ).let { if (it >= 0) it + 0.5f else it - 0.5f }.toInt()
+/**
+ * [TypedValue.complexToDimensionPixelSize]的舍入逻辑，
+ * 用于确保[dp]转换的px值，和xml解析转换的px值一致。
+ */
+@Px
+private fun Float.toRoundingPx(): Int {
+    return (if (this >= 0) this + 0.5f else this - 0.5f).toInt()
+}
 
-val Double.dp: Int
-    get() = toFloat().dp
-
+@get:Px
 val Int.dp: Int
     get() = toFloat().dp
+
+@get:Px
+val Float.dp: Int
+    get() = (this * Resources.getSystem().displayMetrics.density).toRoundingPx()
 
 val Fragment.viewLifecycle: Lifecycle
     get() = viewLifecycleOwner.lifecycle
@@ -48,24 +46,6 @@ fun Context.showToast(text: CharSequence, duration: Int = Toast.LENGTH_SHORT) {
 
 fun Fragment.showToast(text: CharSequence, duration: Int = Toast.LENGTH_SHORT) {
     requireContext().showToast(text, duration)
-}
-
-fun ComponentActivity.launchRepeatOnLifecycle(
-    context: CoroutineContext = EmptyCoroutineContext,
-    start: CoroutineStart = CoroutineStart.DEFAULT,
-    state: Lifecycle.State = Lifecycle.State.STARTED,
-    block: suspend CoroutineScope.() -> Unit
-): Job = lifecycleScope.launch(context, start) {
-    repeatOnLifecycle(state, block)
-}
-
-fun Fragment.launchRepeatOnViewLifecycle(
-    context: CoroutineContext = EmptyCoroutineContext,
-    start: CoroutineStart = CoroutineStart.DEFAULT,
-    state: Lifecycle.State = Lifecycle.State.STARTED,
-    block: suspend CoroutineScope.() -> Unit
-): Job = viewLifecycleScope.launch(context, start) {
-    viewLifecycle.repeatOnLifecycle(state, block)
 }
 
 data class TextItem(val text: String, val type: String)
