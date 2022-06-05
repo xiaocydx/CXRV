@@ -83,7 +83,7 @@ inline fun LoadState.onSuccess(action: LoadState.Success.() -> Unit): LoadState 
 }
 
 /**
- * 若当前状态为加载是失败，则执行[action]
+ * 若当前状态为加载失败，则执行[action]
  */
 inline fun LoadState.onFailure(action: LoadState.Failure.() -> Unit): LoadState {
     (this as? LoadState.Failure)?.apply(action)

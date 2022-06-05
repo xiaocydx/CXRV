@@ -22,7 +22,7 @@ data class LoadStates(
 
     companion object {
         /**
-         * 加载未状态集合，用于表示初始化状态
+         * 加载未完成状态集合，用于表示初始化状态
          */
         val Incomplete = LoadStates(
             refresh = LoadState.Incomplete,
