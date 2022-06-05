@@ -130,10 +130,6 @@ abstract class CustomLayout @JvmOverloads constructor(
         return MeasureSpec.getMode(this)
     }
 
-    protected fun Int.toUnspecifiedMeasureSpec(): Int {
-        return MeasureSpec.makeMeasureSpec(this, MeasureSpec.UNSPECIFIED)
-    }
-
     protected fun Int.toExactlyMeasureSpec(): Int {
         return MeasureSpec.makeMeasureSpec(this, MeasureSpec.EXACTLY)
     }
@@ -209,39 +205,82 @@ abstract class CustomLayout @JvmOverloads constructor(
     }
 
     protected fun View.measureWithDefault() {
-        measureWith(defaultWidthMeasureSpec(), defaultHeightMeasureSpec())
+        if (isGone) return
+        measure(defaultWidthMeasureSpec(), defaultHeightMeasureSpec())
     }
 
-    protected fun View.layout(x: Int, y: Int, fromRight: Boolean = false) {
+    protected fun View.layout(x: Int, y: Int) {
         if (isGone) return
-        if (!fromRight) {
-            layout(x, y, x + measuredWidth, y + measuredHeight)
+        layout(x, y, x + measuredWidth, y + measuredHeight)
+    }
+
+    protected fun View.layoutFromRight(x: Int, y: Int) {
+        if (isGone) return
+        val left = requireParentView().measuredWidth - x - measuredWidth
+        layout(left, y, left + measuredWidth, y + measuredHeight)
+    }
+
+    /**
+     * [View]布局到[other]的中心
+     *
+     * @param other   父View或者同级子View
+     * @param offsetX 水平方向偏移
+     * @param offsetY 垂直方向偏移
+     */
+    protected fun View.layoutToCenter(other: View, offsetX: Int = 0, offsetY: Int = 0) {
+        if (isGone) return
+        val x = alignCenterX(other) + offsetX
+        val y = alignCenterY(other) + offsetY
+        layout(x, y, x + measuredWidth, y + measuredHeight)
+    }
+
+    /**
+     * [View]的水平中心对齐[other]的水平中心
+     *
+     * @param other 父View或者同级子View
+     * @return 对齐后的`view.left`值
+     */
+    @CheckResult
+    protected fun View.alignCenterX(other: View): Int {
+        return if (other === parent) {
+            alignCenterX(left = 0, right = requireParentView().width)
         } else {
-            layout(requireParentView().measuredWidth - x - measuredWidth, y)
+            alignCenterX(other.left, other.right)
         }
     }
 
-    protected fun View.layoutCenterOf(other: View, offsetX: Int = 0, offsetY: Int = 0) {
-        layout(centerXOf(other) + offsetX, centerYOf(other) + offsetY)
-    }
-
+    /**
+     * [View]的水平中心对齐[left]到[right]的中心
+     *
+     * @return 对齐后的`view.left`值
+     */
     @CheckResult
-    protected fun View.centerXOf(other: View): Int {
-        return centerXOf(other.left, other.right)
-    }
-
-    @CheckResult
-    protected fun View.centerXOf(left: Int, right: Int): Int {
+    protected fun View.alignCenterX(left: Int, right: Int): Int {
         return left + (right - left - measuredWidth) / 2
     }
 
+    /**
+     * [View]的垂直中心对齐[other]的垂直中心
+     *
+     * @param other 父View或者同级子View
+     * @return 对齐后的`view.top`值
+     */
     @CheckResult
-    protected fun View.centerYOf(other: View): Int {
-        return centerYOf(other.top, other.bottom)
+    protected fun View.alignCenterY(other: View): Int {
+        return if (other == parent) {
+            alignCenterY(top = 0, bottom = requireParentView().height)
+        } else {
+            alignCenterY(other.top, other.bottom)
+        }
     }
 
+    /**
+     * [View]的垂直中心对齐[top]到[bottom]的中心
+     *
+     * @return 对齐后的`view.top`值
+     */
     @CheckResult
-    protected fun View.centerYOf(top: Int, bottom: Int): Int {
+    protected fun View.alignCenterY(top: Int, bottom: Int): Int {
         return top + (bottom - top - measuredHeight) / 2
     }
 
