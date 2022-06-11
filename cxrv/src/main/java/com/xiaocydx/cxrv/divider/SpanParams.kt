@@ -43,7 +43,7 @@ internal class SpanParams {
         isFirstSpan = spanIndex == 0
         isLastSpan = parent.isLastSpan(child, spanIndex)
         isFirstGroup = parent.isFirstSpanGroup(child, spanGroupIndex)
-        isLastGroup = parent.isLastSpanGroup(child, spanGroupIndex)
+        isLastGroup = parent.isLastSpanGroup(child, spanIndex, spanGroupIndex)
     }
 
     private val RecyclerView.spanCount: Int
@@ -51,7 +51,7 @@ internal class SpanParams {
             is GridLayoutManager -> lm.spanCount
             is StaggeredGridLayoutManager -> lm.spanCount
             is LinearLayoutManager -> 1
-            else -> 0
+            else -> NOT_SUPPORT
         }
 
     private fun RecyclerView.getSpanSize(
@@ -72,7 +72,7 @@ internal class SpanParams {
         is StaggeredGridLayoutManager -> {
             (child.layoutParams as StaggeredGridLayoutManager.LayoutParams).spanIndex
         }
-        else -> 0
+        else -> NOT_SUPPORT
     }
 
     private fun RecyclerView.getSpanGroupIndex(child: View): Int =
@@ -84,7 +84,7 @@ internal class SpanParams {
         is GridLayoutManager -> {
             lm.spanSizeLookup.getSpanGroupIndex(globalPosition, lm.spanCount)
         }
-        else -> 0
+        else -> NOT_SUPPORT
     }
 
     /**
@@ -114,7 +114,7 @@ internal class SpanParams {
     /**
      * 是否为排除Footer后的末尾跨度空间所属组
      */
-    private fun RecyclerView.isLastSpanGroup(child: View, spanGroupIndex: Int): Boolean {
+    private fun RecyclerView.isLastSpanGroup(child: View, spanIndex: Int, spanGroupIndex: Int): Boolean {
         val localPosition = getChildBindingAdapterPosition(child)
         return when (val lm: RecyclerView.LayoutManager? = layoutManager) {
             is GridLayoutManager -> {
@@ -125,10 +125,20 @@ internal class SpanParams {
                 spanGroupIndex == getSpanGroupIndex(lastPosition)
             }
             is StaggeredGridLayoutManager -> {
+                // 注意：计算逻辑不考虑isFullSpan = true的情况。
+                // 先假设spanCount个item位于末尾spanGroup，计算出预测的spanIndex，
+                // 若spanIndex <= predictSpanIndex，则能粗略表示item位于末尾spanGroup。
                 val itemCount = getChildBindingAdapterItemCount(child)
-                localPosition >= itemCount - lm.spanCount
+                val thresholdPosition = (itemCount - lm.spanCount).coerceAtLeast(0)
+                if (localPosition < thresholdPosition) return false
+                val predictSpanIndex = localPosition - thresholdPosition
+                spanIndex <= predictSpanIndex
             }
             else -> false
         }
+    }
+
+    companion object {
+        const val NOT_SUPPORT = -1
     }
 }
