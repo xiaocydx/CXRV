@@ -173,10 +173,9 @@ class CoroutineListDiffer<T : Any>(
     @MainThread
     private suspend fun submitList(newList: List<T>) {
         val oldList = sourceList
-        if (newList === oldList) {
-            return
-        }
         when {
+            oldList === newList -> return
+            oldList.isEmpty() && newList.isEmpty() -> return
             oldList.isNotEmpty() && newList.isEmpty() -> {
                 val count = oldList.size
                 sourceList.clear()
