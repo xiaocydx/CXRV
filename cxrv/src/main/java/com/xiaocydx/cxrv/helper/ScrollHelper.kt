@@ -12,8 +12,11 @@ import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 class ScrollHelper : ListUpdateHelper() {
 
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-        if (positionStart == 0 && rv?.isFirstItemCompletelyVisible == true) {
+        if (positionStart == 0
+                && previousItemCount != 0
+                && rv?.isFirstItemCompletelyVisible == true) {
             // 即使Adapter是ConcatAdapter的元素，也不会影响该判断逻辑
+            // TODO: 2022/6/12 观察对StaggeredGridLayoutManager的影响
             rv?.scrollToPosition(0)
         }
     }

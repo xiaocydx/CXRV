@@ -3,10 +3,8 @@ package com.xiaocydx.cxrv.paging
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.awaitPreDraw
-import com.xiaocydx.cxrv.internal.hasDisplayItem
 import com.xiaocydx.cxrv.internal.reverseAccessEach
 import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -222,7 +220,6 @@ class PagingCollector<T : Any> internal constructor(
             is PagingEvent.LoadStateUpdate -> null
         }
 
-        val isPreviousEmpty = !adapter.hasDisplayItem
         val listMediator = mediator?.asListMediator<T>()
         val newVersion = event.getVersionOrZero()
 
@@ -233,27 +230,18 @@ class PagingCollector<T : Any> internal constructor(
             version = newVersion
         }
 
-        when {
-            loadStates == event.loadStates -> return
-            event is PagingEvent.LoadDataSuccess
-                    && isPreviousEmpty
-                    && rv.isLayoutRequested
-                    && rv.layoutManager is StaggeredGridLayoutManager -> {
-                // 若此时将加载状态同步分发给listener，则listener可能会调用notifyItemRemoved()，
-                // 那么在下一帧rv布局流程中，因为瀑布流布局的spanIndex变得不准确，
-                // 导致ItemDecoration计算出错误的间距，例如item分割线显示异常。
-                // 注意：协程主线程调度器发送的是异步消息，因此这里不能使用yield()，
-                // 而是在下一帧rv布局完成后，才将加载状态分发给listener。
-                rv.awaitPreDraw()
-            }
-            rv.isComputingLayout -> {
-                // 此时可能是onBindViewHolder()触发了末尾加载，
-                // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成。
-                // 若此时将加载状态同步分发给listener，则listener可能会调用notifyXXX()函数，
-                // 导致RecyclerView内部抛出异常，因此在下一个异步消息中分发加载状态。
-                yield()
-            }
+        if (loadStates == event.loadStates) {
+            return
         }
+
+        if (rv.isComputingLayout) {
+            // 此时可能是onBindViewHolder()触发了末尾加载，
+            // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成。
+            // 若此时将加载状态同步分发给listener，则listener可能会调用notifyXXX()函数，
+            // 导致RecyclerView内部抛出异常，因此在下一个异步消息中分发加载状态。
+            yield()
+        }
+
         setLoadStates(event.loadStates)
     }
 

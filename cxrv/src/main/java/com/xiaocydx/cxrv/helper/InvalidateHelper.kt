@@ -3,10 +3,8 @@ package com.xiaocydx.cxrv.helper
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.xiaocydx.cxrv.internal.doOnPreDraw
-import com.xiaocydx.cxrv.internal.hasDisplayItem
 
 /**
  * 列表更新时调用[RecyclerView.invalidateItemDecorations]的帮助类
@@ -16,58 +14,46 @@ import com.xiaocydx.cxrv.internal.hasDisplayItem
  */
 class InvalidateHelper : ListUpdateHelper() {
     private var isInvalid = false
-    private var previousEmpty = true
     private val resetInvalid = ResetInvalid()
     private val isStaggered: Boolean
         get() = rv?.layoutManager is StaggeredGridLayoutManager
-    private val adapterItemCount: Int
+    private val currentItemCount: Int
         get() = adapter?.itemCount ?: 0
 
-    override fun register(rv: RecyclerView, adapter: Adapter<*>) {
-        super.register(rv, adapter)
-        saveDisplayState()
-    }
-
-    override fun onChanged() {
-        saveDisplayState()
-    }
-
     override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
-        saveDisplayState()
+        when {
+            // notifyItemRangeChanged()可以用于首次插入item，这种情况不做处理
+            previousItemCount == 0 -> return
+            isStaggered -> invalidateItemDecorations()
+        }
     }
 
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-        if (isStaggered) {
-            invalidateItemDecorations()
-        } else if (positionStart == adapterItemCount - itemCount) {
-            // 插入到最后
-            invalidateItemDecorations()
+        when {
+            previousItemCount == 0 -> return
+            isStaggered -> invalidateItemDecorations()
+            positionStart == currentItemCount - itemCount -> {
+                // 插入到最后
+                invalidateItemDecorations()
+            }
         }
-        saveDisplayState()
     }
 
     override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
         if (isStaggered) {
             invalidateItemDecorations()
         }
-        saveDisplayState()
     }
 
     override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
         if (isStaggered) {
             invalidateItemDecorations()
         }
-        saveDisplayState()
-    }
-
-    private fun saveDisplayState() {
-        val adapter = adapter
-        previousEmpty = if (adapter == null) true else !adapter.hasDisplayItem
     }
 
     private fun invalidateItemDecorations() {
         val rv = rv ?: return
-        if (isInvalid || previousEmpty || rv.itemDecorationCount < 1) {
+        if (isInvalid || previousItemCount == 0 || rv.itemDecorationCount < 1) {
             return
         }
         if (isStaggered) {
