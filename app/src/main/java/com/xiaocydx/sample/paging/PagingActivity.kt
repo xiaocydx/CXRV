@@ -15,6 +15,7 @@ import com.xiaocydx.sample.R
 import com.xiaocydx.sample.databinding.ActivityPagingBinding
 import com.xiaocydx.sample.databinding.ItemMenuBinding
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.navigationEdgeToEdge
 import com.xiaocydx.sample.paging.MenuAction.*
 import com.xiaocydx.sample.showToast
 
@@ -37,6 +38,7 @@ class PagingActivity : AppCompatActivity() {
         setContentView(binding.root)
         initMenuDrawer()
         initPagingFragment()
+        window.navigationEdgeToEdge()
     }
 
     private fun initMenuDrawer() {
@@ -69,8 +71,11 @@ class PagingActivity : AppCompatActivity() {
     }
 
     private fun initPagingFragment() {
-        if (supportFragmentManager.findFragmentByTag(fragmentTag) == null) {
+        val fragment = supportFragmentManager.findFragmentByTag(fragmentTag)
+        if (fragment == null) {
             initLinearLayout()
+        } else {
+            setActionBarTitle(fragment)
         }
     }
 
@@ -91,6 +96,10 @@ class PagingActivity : AppCompatActivity() {
             .beginTransaction()
             .replace(R.id.flContainer, fragment, fragmentTag)
             .commit()
+        setActionBarTitle(fragment)
+    }
+
+    private fun setActionBarTitle(fragment: Fragment) {
         supportActionBar?.title = fragment.javaClass.simpleName
     }
 }

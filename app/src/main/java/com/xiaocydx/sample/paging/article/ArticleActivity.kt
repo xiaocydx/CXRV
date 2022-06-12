@@ -6,6 +6,7 @@ import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.updatePadding
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -16,7 +17,10 @@ import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.sample.databinding.ItemArticleBinding
+import com.xiaocydx.sample.doOnApplyWindowInsetsCompat
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.getNavigationBarHeight
+import com.xiaocydx.sample.navigationEdgeToEdge
 import com.xiaocydx.sample.paging.config.paging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.retrofit.ArticleInfo
@@ -29,7 +33,8 @@ import kotlinx.coroutines.flow.launchIn
  * @date 2022/3/17
  */
 class ArticleActivity : AppCompatActivity() {
-    private lateinit var adapter: ListAdapter<ArticleInfo, *>
+    private lateinit var rvArticle: RecyclerView
+    private lateinit var listAdapter: ListAdapter<ArticleInfo, *>
     private val viewModel: ArticleViewModel by viewModels(
         factoryProducer = { ArticleViewModel.Factory }
     )
@@ -38,10 +43,11 @@ class ArticleActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         initView()
         initObserve()
+        initEdgeToEdge()
     }
 
     private fun initView() {
-        val rv = RecyclerView(this).apply {
+        rvArticle = RecyclerView(this).apply {
             id = viewModel.rvId
             linear().fixedSize().divider {
                 width = 10.dp
@@ -52,7 +58,7 @@ class ArticleActivity : AppCompatActivity() {
                 uniqueId = ArticleInfo::id,
                 inflate = ItemArticleBinding::inflate
             ) {
-                this@ArticleActivity.adapter = this
+                listAdapter = this
                 onBindView {
                     tvTitle.text = it.title ?: ""
                     tvAuthor.text = ("作者：${it.author ?: ""}")
@@ -61,13 +67,22 @@ class ArticleActivity : AppCompatActivity() {
             overScrollMode = OVER_SCROLL_NEVER
             layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
         }
-        setContentView(rv.withSwipeRefresh(adapter))
+        setContentView(rvArticle.withSwipeRefresh(listAdapter))
     }
 
     private fun initObserve() {
         viewModel.flow
-            .onEach(adapter)
+            .onEach(listAdapter)
             .flowWithLifecycle(lifecycle)
             .launchIn(lifecycleScope)
+    }
+
+    private fun initEdgeToEdge() {
+        window.navigationEdgeToEdge()
+        rvArticle.clipToPadding = false
+        rvArticle.doOnApplyWindowInsetsCompat { view, insets, initialState ->
+            val paddingBottom = initialState.paddings.bottom
+            view.updatePadding(bottom = insets.getNavigationBarHeight() + paddingBottom)
+        }
     }
 }
