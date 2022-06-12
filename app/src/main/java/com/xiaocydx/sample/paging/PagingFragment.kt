@@ -53,9 +53,13 @@ abstract class PagingFragment : Fragment() {
             layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
         }
         rvPaging.clipToPadding = false
-        rvPaging.doOnApplyRootWindowInsetsCompat { view, rootInsets, initialState ->
-            val initialPaddingBottom = initialState.paddings.bottom
-            view.updatePadding(bottom = rootInsets.getNavigationBarHeight() + initialPaddingBottom)
+        rvPaging.doOnApplyWindowInsetsCompat { view, insets, initialState ->
+            val navigationBarHeight = insets.getNavigationBarHeight()
+            val isGestureNavigation = insets.isGestureNavigation(view.resources)
+            view.updatePadding(bottom = when {
+                isGestureNavigation -> navigationBarHeight + initialState.paddings.bottom
+                else -> initialState.paddings.bottom
+            })
         }
         addView(rvPaging)
     }

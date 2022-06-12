@@ -5,7 +5,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import androidx.annotation.CheckResult
-import androidx.annotation.ColorInt
 import androidx.annotation.Px
 import androidx.annotation.RequiresApi
 import androidx.core.graphics.Insets
@@ -13,9 +12,7 @@ import androidx.core.view.*
 import androidx.core.view.WindowInsetsCompat.Type.InsetsType
 
 @RequiresApi(21)
-fun Window.navigationEdgeToEdge(@ColorInt navigationBarColor: Int = 0x33000000) {
-    this.navigationBarColor = navigationBarColor
-
+fun Window.navigationEdgeToEdge() {
     setDecorFitsSystemWindowsCompat(decorFitsSystemWindows = false)
     decorView.doOnApplyWindowInsetsCompat { view, insets, _ ->
         val isGestureNavigation = insets.isGestureNavigation(view.resources)
@@ -28,16 +25,15 @@ fun Window.navigationEdgeToEdge(@ColorInt navigationBarColor: Int = 0x33000000) 
         })
     }
 
-    // 初始化时，contentParent.marginTop为0，后续可能赋值为ActionBar的高度，
-    // 因此通过设置contentParent.paddingTop，补充回statusBarInsets.top。
     val contentParent: View = findViewById(android.R.id.content)
-    contentParent.doOnApplyWindowInsetsCompat apply@{ view, _, initialState ->
-        // 1.ActionBarOverlayLayout.onApplyWindowInsets()会消费WindowInsets，
-        // 2.ActionBarOverlayLayout.dispatchApplyWindowInsets()停止对子View分发WindowInsets，
-        // 3.ActionBarOverlayLayout.onMeasure()仍会对子View分发WindowInsets，但不是原始值。
-        // 因此需要获取分发到视图树的RootWindowInsets，才能得到statusBarInsets.top的原始值。
-        val applyInsets = view.getRootWindowInsetsCompat() ?: return@apply
-        view.updatePadding(top = applyInsets.getStatusBarHeight() + initialState.paddings.top)
+    contentParent.doOnApplyWindowInsetsCompat apply@{ view, insets, initialState ->
+        view.updatePadding(
+            top = insets.getStatusBarHeight() + initialState.paddings.top,
+            bottom = when {
+                insets.isGestureNavigation(view.resources) -> initialState.paddings.bottom
+                else -> insets.getNavigationBarHeight() + initialState.paddings.bottom
+            }
+        )
     }
 }
 
@@ -54,22 +50,6 @@ fun View.doOnApplyWindowInsetsCompat(
         insets
     }
     doOnAttach(View::requestApplyInsetsCompat)
-}
-
-fun View.doOnApplyRootWindowInsetsCompat(
-    block: (view: View, rootInsets: WindowInsetsCompat, initialState: ViewState) -> Unit
-) {
-    val initialState = ViewState(this)
-    setOnApplyWindowInsetsListenerCompat { view, insets ->
-        view.getRootWindowInsetsCompat()
-            ?.let { block(view, it, initialState) }
-        insets
-    }
-    doOnAttach { view ->
-        view.getRootWindowInsetsCompat()
-            ?.let { block(view, it, initialState) }
-        view.requestApplyInsetsCompat()
-    }
 }
 
 fun View.setOnApplyWindowInsetsListenerCompat(listener: OnApplyWindowInsetsListener?) {
