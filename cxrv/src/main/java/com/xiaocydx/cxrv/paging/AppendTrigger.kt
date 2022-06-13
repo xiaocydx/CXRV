@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.isPreLayout
 import com.xiaocydx.cxrv.internal.doOnPreDraw
 import com.xiaocydx.cxrv.internal.hasDisplayItem
 import com.xiaocydx.cxrv.internal.isLastDisplayItem
-import com.xiaocydx.cxrv.itemvisible.isLastItemVisible
 import com.xiaocydx.cxrv.list.*
 
 /**
@@ -132,10 +131,10 @@ internal class AppendTrigger(
      */
     private inner class AppendIfLastItemVisible : () -> Unit {
         override fun invoke() {
-            if (loadStates.isAllowAppend
-                    && rv?.isLastItemVisible == true) {
-                append()
-            }
+            if (!loadStates.isAllowAppend) return
+            val lm = rv?.layoutManager ?: return
+            rv?.findViewHolderForLayoutPosition(lm.itemCount - 1) ?: return
+            append()
         }
     }
 
@@ -161,9 +160,8 @@ internal class AppendTrigger(
             if (enabled || loadStates.append.isFailure) {
                 val lm = rv?.layoutManager ?: return
                 val holder = rv?.getChildViewHolder(view) ?: return
-                if (holder.layoutPosition == lm.itemCount - 1) {
-                    append()
-                }
+                if (holder.layoutPosition != lm.itemCount - 1) return
+                append()
             }
         }
 
