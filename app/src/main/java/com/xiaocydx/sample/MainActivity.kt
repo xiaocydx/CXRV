@@ -11,7 +11,7 @@ import com.xiaocydx.sample.itemselect.SingleSelectionActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
 import com.xiaocydx.sample.nested.NestedListActivity
 import com.xiaocydx.sample.paging.PagingActivity
-import com.xiaocydx.sample.paging.article.ArticleActivity
+import com.xiaocydx.sample.paging.article.ArticleListActivity
 import com.xiaocydx.sample.viewpager.ViewPagerActivity
 
 /**
@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun startArticleActivity(view: View) {
-        startActivity<ArticleActivity>()
+        startActivity<ArticleListActivity>()
     }
 
     fun startViewPagerActivity(view: View) {

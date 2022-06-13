@@ -17,10 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.xiaocydx.cxrv.list.addItem
-import com.xiaocydx.cxrv.list.clear
-import com.xiaocydx.cxrv.list.removeItemAt
-import com.xiaocydx.cxrv.list.submitTransform
+import com.xiaocydx.cxrv.list.*
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.*
 import com.xiaocydx.sample.paging.MenuAction.*
@@ -52,15 +49,6 @@ abstract class PagingFragment : Fragment() {
             overScrollMode = OVER_SCROLL_NEVER
             layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
         }
-        rvPaging.clipToPadding = false
-        rvPaging.doOnApplyWindowInsetsCompat { view, insets, initialState ->
-            val navigationBarHeight = insets.getNavigationBarHeight()
-            val isGestureNavigation = insets.isGestureNavigation(view.resources)
-            view.updatePadding(bottom = when {
-                isGestureNavigation -> navigationBarHeight + initialState.paddings.bottom
-                else -> initialState.paddings.bottom
-            })
-        }
         addView(rvPaging)
     }
 
@@ -68,6 +56,7 @@ abstract class PagingFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         initView()
         initCollect()
+        initEdgeToEdge()
     }
 
     protected abstract fun initView()
@@ -90,6 +79,14 @@ abstract class PagingFragment : Fragment() {
                 else -> return@onEach
             }
         }.launchIn(viewLifecycleScope)
+    }
+
+    private fun initEdgeToEdge() {
+        rvPaging.clipToPadding = false
+        rvPaging.layoutManager?.enableViewBoundCheckCompat()
+        rvPaging.doOnApplyWindowInsetsCompat { view, insets, initialState ->
+            view.updatePadding(bottom = insets.getNavigationBarHeight() + initialState.paddings.bottom)
+        }
     }
 
     private fun increaseSpanCount() {

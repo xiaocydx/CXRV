@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.enableViewBoundCheckCompat
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
@@ -20,7 +21,7 @@ import com.xiaocydx.sample.databinding.ItemArticleBinding
 import com.xiaocydx.sample.doOnApplyWindowInsetsCompat
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.getNavigationBarHeight
-import com.xiaocydx.sample.navigationEdgeToEdge
+import com.xiaocydx.sample.navigationBarEdgeToEdge
 import com.xiaocydx.sample.paging.config.paging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.retrofit.ArticleInfo
@@ -32,12 +33,10 @@ import kotlinx.coroutines.flow.launchIn
  * @author xcc
  * @date 2022/3/17
  */
-class ArticleActivity : AppCompatActivity() {
+class ArticleListActivity : AppCompatActivity() {
     private lateinit var rvArticle: RecyclerView
     private lateinit var listAdapter: ListAdapter<ArticleInfo, *>
-    private val viewModel: ArticleViewModel by viewModels(
-        factoryProducer = { ArticleViewModel.Factory }
-    )
+    private val viewModel: ArticleListViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,8 +77,9 @@ class ArticleActivity : AppCompatActivity() {
     }
 
     private fun initEdgeToEdge() {
-        window.navigationEdgeToEdge()
+        window.navigationBarEdgeToEdge()
         rvArticle.clipToPadding = false
+        rvArticle.layoutManager?.enableViewBoundCheckCompat()
         rvArticle.doOnApplyWindowInsetsCompat { view, insets, initialState ->
             val paddingBottom = initialState.paddings.bottom
             view.updatePadding(bottom = insets.getNavigationBarHeight() + paddingBottom)

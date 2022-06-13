@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import androidx.annotation.CheckResult
+import androidx.annotation.ColorInt
 import androidx.annotation.Px
 import androidx.annotation.RequiresApi
 import androidx.core.graphics.Insets
@@ -12,29 +13,40 @@ import androidx.core.view.*
 import androidx.core.view.WindowInsetsCompat.Type.InsetsType
 
 @RequiresApi(21)
-fun Window.navigationEdgeToEdge() {
+fun Window.navigationBarEdgeToEdge(
+    buttonNavigationBarSupport: Boolean = true,
+    @ColorInt buttonNavigationBarColor: Int = 0x33000000
+) {
+    if (buttonNavigationBarSupport) {
+        navigationBarColor = buttonNavigationBarColor
+    }
     setDecorFitsSystemWindowsCompat(decorFitsSystemWindows = false)
-    decorView.doOnApplyWindowInsetsCompat { view, insets, _ ->
-        val isGestureNavigation = insets.isGestureNavigation(view.resources)
-        view.onApplyWindowInsetsCompat(when {
-            isGestureNavigation -> insets.modifyInsets(
-                typeMask = WindowInsetsCompat.Type.navigationBars(),
-                newInsets = { copy(bottom = 0) }
-            )
-            else -> insets
-        })
+    decorView.setOnApplyWindowInsetsListenerCompat apply@{ view, insets ->
+        if (insets.isGestureNavigationBar(view.resources)) {
+            view.onApplyWindowInsetsCompat(insets.consumeNavigationBarHeight())
+            return@apply insets
+        }
+        view.onApplyWindowInsetsCompat(insets)
+        if (buttonNavigationBarSupport) insets else insets.consumeNavigationBarHeight()
     }
 
     val contentParent: View = findViewById(android.R.id.content)
-    contentParent.doOnApplyWindowInsetsCompat apply@{ view, insets, initialState ->
+    contentParent.doOnApplyWindowInsetsCompat apply@{ view, _, initialState ->
+        val rootInsets = view.getRootWindowInsetsCompat() ?: return@apply
+        val consumedNavigationBarHeight = when {
+            rootInsets.isGestureNavigationBar(view.resources) -> 0
+            buttonNavigationBarSupport -> 0
+            else -> rootInsets.getNavigationBarHeight()
+        }
         view.updatePadding(
-            top = insets.getStatusBarHeight() + initialState.paddings.top,
-            bottom = when {
-                insets.isGestureNavigation(view.resources) -> initialState.paddings.bottom
-                else -> insets.getNavigationBarHeight() + initialState.paddings.bottom
-            }
+            top = rootInsets.getStatusBarHeight() + initialState.paddings.top,
+            bottom = consumedNavigationBarHeight + initialState.paddings.bottom
         )
     }
+}
+
+private fun WindowInsetsCompat.consumeNavigationBarHeight(): WindowInsetsCompat {
+    return modifyInsets(WindowInsetsCompat.Type.navigationBars()) { copy(bottom = 0) }
 }
 
 fun Window.setDecorFitsSystemWindowsCompat(decorFitsSystemWindows: Boolean) {
@@ -110,7 +122,7 @@ fun WindowInsetsCompat.getNavigationBarHeight(): Int {
     return getNavigationBarInsets().bottom
 }
 
-fun WindowInsetsCompat.isGestureNavigation(resources: Resources): Boolean {
+fun WindowInsetsCompat.isGestureNavigationBar(resources: Resources): Boolean {
     val threshold = (24 * resources.displayMetrics.density).toInt()
     return getNavigationBarHeight() <= threshold.coerceAtLeast(66)
 }

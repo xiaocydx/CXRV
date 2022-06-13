@@ -15,7 +15,7 @@ import com.xiaocydx.sample.R
 import com.xiaocydx.sample.databinding.ActivityPagingBinding
 import com.xiaocydx.sample.databinding.ItemMenuBinding
 import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.navigationEdgeToEdge
+import com.xiaocydx.sample.navigationBarEdgeToEdge
 import com.xiaocydx.sample.paging.MenuAction.*
 import com.xiaocydx.sample.showToast
 
@@ -38,7 +38,7 @@ class PagingActivity : AppCompatActivity() {
         setContentView(binding.root)
         initMenuDrawer()
         initPagingFragment()
-        window.navigationEdgeToEdge()
+        window.navigationBarEdgeToEdge()
     }
 
     private fun initMenuDrawer() {

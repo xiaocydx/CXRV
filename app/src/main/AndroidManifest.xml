@@ -36,7 +36,7 @@
             android:name=".paging.PagingActivity"
             android:exported="false" />
         <activity
-            android:name=".paging.article.ArticleActivity"
+            android:name=".paging.article.ArticleListActivity"
             android:exported="false" />
         <activity
             android:name=".viewpager.ViewPagerActivity"
