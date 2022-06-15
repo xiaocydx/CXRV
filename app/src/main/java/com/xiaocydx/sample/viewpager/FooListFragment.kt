@@ -55,6 +55,7 @@ class FooListFragment : SharedRecycledFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
+        rv = this
         id = viewModel.rvId
         linear().fixedSize().divider {
             height = 2.dp
@@ -63,10 +64,7 @@ class FooListFragment : SharedRecycledFragment() {
         paging(fooAdapter)
         overScrollMode = View.OVER_SCROLL_NEVER
         layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
-    }.let {
-        rv = it
-        it.withSwipeRefresh(fooAdapter)
-    }
+    }.withSwipeRefresh(fooAdapter)
 
     override fun onLazyInitialize() {
         viewModel.flow
