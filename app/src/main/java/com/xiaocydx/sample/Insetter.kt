@@ -14,34 +14,36 @@ import androidx.core.view.WindowInsetsCompat.Type.InsetsType
 
 @RequiresApi(21)
 fun Window.navigationBarEdgeToEdge(
-    buttonNavigationBarSupport: Boolean = true,
+    isSupportButtonNavigationBar: Boolean = true,
     @ColorInt buttonNavigationBarColor: Int = 0x33000000
 ) {
-    if (buttonNavigationBarSupport) {
-        navigationBarColor = buttonNavigationBarColor
-    }
     setDecorFitsSystemWindowsCompat(decorFitsSystemWindows = false)
     decorView.setOnApplyWindowInsetsListenerCompat apply@{ view, insets ->
-        if (insets.isGestureNavigationBar(view.resources)) {
-            view.onApplyWindowInsetsCompat(insets.consumeNavigationBarHeight())
-            return@apply insets
-        }
-        view.onApplyWindowInsetsCompat(insets)
-        if (buttonNavigationBarSupport) insets else insets.consumeNavigationBarHeight()
+        view.onApplyWindowInsetsCompat(when {
+            !insets.isGestureNavigationBar(view.resources) -> insets
+            else -> insets.consumeNavigationBarHeight()
+        })
+        insets
     }
+    decorView.doOnAttach(View::requestApplyInsetsCompat)
 
+    if (isSupportButtonNavigationBar) {
+        navigationBarColor = buttonNavigationBarColor
+    }
     val contentParent: View = findViewById(android.R.id.content)
-    contentParent.doOnApplyWindowInsetsCompat apply@{ view, _, initialState ->
-        val rootInsets = view.getRootWindowInsetsCompat() ?: return@apply
-        val consumedNavigationBarHeight = when {
-            rootInsets.isGestureNavigationBar(view.resources) -> 0
-            buttonNavigationBarSupport -> 0
-            else -> rootInsets.getNavigationBarHeight()
+    val initialState = ViewState(contentParent)
+    contentParent.setOnApplyWindowInsetsListenerCompat { view, insets ->
+        var applyInsets = insets
+        var navigationBarHeight = 0
+        if (!insets.isGestureNavigationBar(view.resources) && !isSupportButtonNavigationBar) {
+            applyInsets = insets.consumeNavigationBarHeight()
+            navigationBarHeight = insets.getNavigationBarHeight()
         }
         view.updatePadding(
-            top = rootInsets.getStatusBarHeight() + initialState.paddings.top,
-            bottom = consumedNavigationBarHeight + initialState.paddings.bottom
+            top = insets.getStatusBarHeight() + initialState.paddings.top,
+            bottom = navigationBarHeight + initialState.paddings.bottom
         )
+        applyInsets
     }
 }
 
