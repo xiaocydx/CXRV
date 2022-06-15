@@ -83,7 +83,7 @@ abstract class PagingFragment : Fragment() {
 
     private fun initEdgeToEdge() {
         rvPaging.clipToPadding = false
-        rvPaging.layoutManager?.enableViewBoundCheckCompat()
+        rvPaging.layoutManager?.enableBoundCheckCompat()
         rvPaging.doOnApplyWindowInsetsCompat { view, insets, initialState ->
             view.updatePadding(bottom = insets.getNavigationBarHeight() + initialState.paddings.bottom)
         }

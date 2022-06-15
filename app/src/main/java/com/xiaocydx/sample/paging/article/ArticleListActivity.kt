@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.list.enableViewBoundCheckCompat
+import com.xiaocydx.cxrv.list.enableBoundCheckCompat
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
@@ -79,7 +79,7 @@ class ArticleListActivity : AppCompatActivity() {
     private fun initEdgeToEdge() {
         window.navigationBarEdgeToEdge()
         rvArticle.clipToPadding = false
-        rvArticle.layoutManager?.enableViewBoundCheckCompat()
+        rvArticle.layoutManager?.enableBoundCheckCompat()
         rvArticle.doOnApplyWindowInsetsCompat { view, insets, initialState ->
             val paddingBottom = initialState.paddings.bottom
             view.updatePadding(bottom = insets.getNavigationBarHeight() + paddingBottom)

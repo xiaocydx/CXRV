@@ -47,7 +47,7 @@ fun <T : RecyclerView> T.fixedSize(): T {
 }
 
 /**
- * 启用[ViewBoundsCheck]兼容，该函数仅在初始化时可调用
+ * 启用[ViewBoundsCheck]兼容
  *
  * ### 兼容效果
  * 让`layoutManager.findXXXVisibleItemPosition()`这类查找函数，不去除`recyclerView.padding`区域。
@@ -60,6 +60,6 @@ fun <T : RecyclerView> T.fixedSize(): T {
  * 导致函数返回结果不是实际的最后一个可视itemView的position。
  */
 @ExperimentalFeature
-fun LayoutManager.enableViewBoundCheckCompat() {
-    enableUnsafeViewBoundCheckCompat()
+fun LayoutManager.enableBoundCheckCompat() {
+    isBoundCheckCompatEnabled = true
 }

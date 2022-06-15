@@ -3,34 +3,47 @@
 package androidx.recyclerview.widget
 
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
+import com.xiaocydx.cxrv.internal.ExperimentalFeature
 
 @PublishedApi
-internal fun LayoutManager.enableUnsafeViewBoundCheckCompat() {
-    if (horizontalBoundCheck.mCallback !is HorizontalBoundCheckCallbackCompat) {
-        horizontalBoundCheck = ViewBoundsCheck(HorizontalBoundCheckCallbackCompat(
-            layoutManager = this,
-            delegate = horizontalBoundCheck.mCallback
-        ))
+@ExperimentalFeature
+internal var LayoutManager.isBoundCheckCompatEnabled: Boolean
+    get() = isHorizontalBoundCheckCompatEnabled && isVerticalBoundCheckCompatEnabled
+    set(isEnabled) {
+        isHorizontalBoundCheckCompatEnabled = isEnabled
+        isVerticalBoundCheckCompatEnabled = isEnabled
     }
 
-    if (verticalBoundCheck.mCallback !is VerticalBoundCheckCallbackCompat) {
-        verticalBoundCheck = ViewBoundsCheck(VerticalBoundCheckCallbackCompat(
-            layoutManager = this,
-            delegate = verticalBoundCheck.mCallback
-        ))
+private var LayoutManager.isHorizontalBoundCheckCompatEnabled: Boolean
+    get() = mHorizontalBoundCheck.mCallback is HorizontalBoundCheckCallbackCompat
+    set(isEnabled) {
+        val boundsCheck = mHorizontalBoundCheck
+        val callback = boundsCheck.mCallback
+        val newBoundsCheck = if (isEnabled) {
+            if (callback is HorizontalBoundCheckCallbackCompat) return
+            ViewBoundsCheck(HorizontalBoundCheckCallbackCompat(this, callback))
+        } else {
+            if (callback !is HorizontalBoundCheckCallbackCompat) return
+            ViewBoundsCheck(callback.delegate)
+        }
+        newBoundsCheck.mBoundFlags = boundsCheck.mBoundFlags
+        mHorizontalBoundCheck = newBoundsCheck
     }
-}
 
-private var LayoutManager.horizontalBoundCheck: ViewBoundsCheck
-    get() = mHorizontalBoundCheck
-    set(value) {
-        mHorizontalBoundCheck = value
-    }
-
-private var LayoutManager.verticalBoundCheck: ViewBoundsCheck
-    get() = mVerticalBoundCheck
-    set(value) {
-        mVerticalBoundCheck = value
+private var LayoutManager.isVerticalBoundCheckCompatEnabled: Boolean
+    get() = mVerticalBoundCheck.mCallback is VerticalBoundCheckCallbackCompat
+    set(isEnabled) {
+        val boundsCheck = mVerticalBoundCheck
+        val callback = boundsCheck.mCallback
+        val newBoundsCheck = if (isEnabled) {
+            if (callback is VerticalBoundCheckCallbackCompat) return
+            ViewBoundsCheck(VerticalBoundCheckCallbackCompat(this, callback))
+        } else {
+            if (callback !is VerticalBoundCheckCallbackCompat) return
+            ViewBoundsCheck(callback.delegate)
+        }
+        newBoundsCheck.mBoundFlags = boundsCheck.mBoundFlags
+        mVerticalBoundCheck = newBoundsCheck
     }
 
 /**
@@ -38,7 +51,7 @@ private var LayoutManager.verticalBoundCheck: ViewBoundsCheck
  */
 private class HorizontalBoundCheckCallbackCompat(
     private val layoutManager: LayoutManager,
-    private val delegate: ViewBoundsCheck.Callback
+    val delegate: ViewBoundsCheck.Callback
 ) : ViewBoundsCheck.Callback by delegate {
 
     override fun getParentStart(): Int = layoutManager.run {
@@ -55,7 +68,7 @@ private class HorizontalBoundCheckCallbackCompat(
  */
 private class VerticalBoundCheckCallbackCompat(
     private val layoutManager: LayoutManager,
-    private val delegate: ViewBoundsCheck.Callback
+    val delegate: ViewBoundsCheck.Callback
 ) : ViewBoundsCheck.Callback by delegate {
 
     override fun getParentStart(): Int = layoutManager.run {
