@@ -17,7 +17,7 @@ import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
  * * 若在初始化RecyclerView时不添加[header]，而是之后根据情况动态添加[header]，
  * 则可以将Adapter设置为[HeaderFooterConcatAdapter]，之后动态添加[header]的性能更高。
  * ```
- * val contentAdapter = RecyclerView.Adapter<*> = ...
+ * val contentAdapter: RecyclerView.Adapter<*> = ...
  * recyclerView.adapter = HeaderFooterConcatAdapter(contentAdapter)
  * ```
  */
@@ -49,7 +49,7 @@ fun <T : RecyclerView> T.addHeader(header: View): T {
  * * 若在初始化RecyclerView时不添加[footer]，而是之后根据情况动态添加[footer]，
  * 则可以将Adapter设置为[HeaderFooterConcatAdapter]，之后动态添加[footer]的性能更高。
  * ```
- * val contentAdapter = RecyclerView.Adapter<*> = ...
+ * val contentAdapter: RecyclerView.Adapter<*> = ...
  * recyclerView.adapter = HeaderFooterConcatAdapter(contentAdapter)
  * ```
  */
