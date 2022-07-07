@@ -124,7 +124,7 @@ open class PagingScope {
         val sourceAdapter: Adapter<*>? = rv.adapter
         if (sourceAdapter is ConcatAdapter) {
             sourceAdapter.apply {
-                addAdapterIfNonNull(getFinalLoadFooter())
+                addAdapterIfNonNull(getFinalLoadHeader())
                 addAdapter(getFinalListAdapter())
                 addAdapterIfNonNull(getFinalLoadFooter())
             }
