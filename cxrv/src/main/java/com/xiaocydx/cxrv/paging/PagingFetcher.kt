@@ -2,15 +2,12 @@ package com.xiaocydx.cxrv.paging
 
 import androidx.annotation.MainThread
 import com.xiaocydx.cxrv.internal.flowOnMain
-import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 
 /**
  * 分页提取器，从[PagingSource]中加载结果
@@ -137,7 +134,7 @@ internal class PagingFetcher<K : Any, T : Any>(
         retryEvent.send(Unit)
     }
 
-    fun close() {
-        completableJob.complete()
+    suspend fun close() {
+        completableJob.cancelAndJoin()
     }
 }

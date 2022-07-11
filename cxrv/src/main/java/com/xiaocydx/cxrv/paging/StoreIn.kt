@@ -8,7 +8,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
 import kotlinx.coroutines.channels.ClosedSendChannelException
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.map
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -189,7 +191,7 @@ private open class CancellableFlow<T>(
     @MainThread
     protected open fun onInactive(): Unit = Unit
 
-    fun cancel() {
-        completableJob.complete()
+    suspend fun cancel() {
+        completableJob.cancelAndJoin()
     }
 }
