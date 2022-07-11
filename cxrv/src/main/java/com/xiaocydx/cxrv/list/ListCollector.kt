@@ -32,9 +32,28 @@ val <T : Any> ListAdapter<T, *>.listCollector: ListCollector<T>
  * flow.onEach { adapter.listCollector.emit(it) }
  *
  * // 简化上面的写法
+ * flow.onEach(adapter.listCollector)
+ * ```
+ */
+fun <T : Any> Flow<ListData<T>>.onEach(
+    collector: ListCollector<T>
+): Flow<ListData<T>> = onEach(collector::emit)
+
+/**
+ * `Flow<ListData<T>>`的值发射给[listCollector]，是一种简化写法
+ *
+ * ```
+ * val adapter: ListAdapter<Foo, *> = ...
+ * flow.onEach { adapter.listCollector.emit(it) }
+ *
+ * // 简化上面的写法
  * flow.onEach(adapter)
  * ```
  */
+@Deprecated(
+    message = "虽然简化了代码，但是降低了可读性",
+    replaceWith = ReplaceWith(expression = "onEach(adapter.listCollector)")
+)
 fun <T : Any> Flow<ListData<T>>.onEach(
     adapter: ListAdapter<T, *>
 ): Flow<ListData<T>> = onEach(adapter.listCollector::emit)
@@ -52,6 +71,10 @@ fun <T : Any> Flow<ListData<T>>.onEach(
  * flow.collect(adapter)
  * ```
  */
+@Deprecated(
+    message = "虽然简化了代码，但是降低了可读性",
+    replaceWith = ReplaceWith(expression = "collect(adapter.listCollector)")
+)
 suspend fun <T : Any> Flow<ListData<T>>.collect(
     adapter: ListAdapter<T, *>
 ): Unit = collect(adapter.listCollector)

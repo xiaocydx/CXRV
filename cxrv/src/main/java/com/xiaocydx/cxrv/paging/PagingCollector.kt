@@ -52,9 +52,28 @@ val <T : Any> ListAdapter<T, *>.pagingCollector: PagingCollector<T>
  * flow.onEach { adapter.pagingCollector.emit(it) }
  *
  * // 简化上面的写法
+ * flow.onEach(adapter.pagingCollector)
+ * ```
+ */
+fun <T : Any> Flow<PagingData<T>>.onEach(
+    collector: PagingCollector<T>
+): Flow<PagingData<T>> = onEach(collector::emit)
+
+/**
+ * `Flow<PagingData<T>>`的值发射给[pagingCollector]，是一种简化写法
+ *
+ * ```
+ * val adapter: ListAdapter<Foo, *> = ...
+ * flow.onEach { adapter.pagingCollector.emit(it) }
+ *
+ * // 简化上面的写法
  * flow.onEach(adapter)
  * ```
  */
+@Deprecated(
+    message = "虽然简化了代码，但是降低了可读性",
+    replaceWith = ReplaceWith(expression = "onEach(adapter.pagingCollector)")
+)
 fun <T : Any> Flow<PagingData<T>>.onEach(
     adapter: ListAdapter<T, *>
 ): Flow<PagingData<T>> = onEach(adapter.pagingCollector::emit)
@@ -72,6 +91,10 @@ fun <T : Any> Flow<PagingData<T>>.onEach(
  * flow.collect(adapter)
  * ```
  */
+@Deprecated(
+    message = "虽然简化了代码，但是降低了可读性",
+    replaceWith = ReplaceWith(expression = "collect(adapter.pagingCollector)")
+)
 suspend fun <T : Any> Flow<PagingData<T>>.collect(
     adapter: ListAdapter<T, *>
 ): Unit = collect(adapter.pagingCollector)
