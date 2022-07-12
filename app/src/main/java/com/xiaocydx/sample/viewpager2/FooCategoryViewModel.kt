@@ -30,39 +30,33 @@ class FooCategoryViewModel : ViewModel() {
         copy(items = items + FooCategory(id = (item?.id ?: 0) + 1))
     }
 
-    fun removeCurrentItem() {
-        updateState {
-            val item = items.getOrNull(currentItem) ?: return
-            viewModels.remove(item.id.toString())
-            var newItem = currentItem
-            if (newItem == items.lastIndex) {
-                newItem = (newItem - 1).coerceAtLeast(0)
-            }
-            val items = items
-                .toMutableList().apply { removeAt(currentItem) }
-            copy(items = items, currentItem = newItem, pendingItem = newItem)
+    fun removeCurrentItem() = updateState {
+        val item = items.getOrNull(currentItem) ?: return
+        viewModels.remove(item.id.toString())
+        var newItem = currentItem
+        if (newItem == items.lastIndex) {
+            newItem = (newItem - 1).coerceAtLeast(0)
         }
-        clearPendingItem()
+        val items = items
+            .toMutableList().apply { removeAt(currentItem) }
+        copy(items = items, currentItem = newItem, pendingItem = newItem)
+    }.apply { clearPendingItem() }
+
+    fun moveCurrentItemToFirst() = updateState {
+        if (currentItem == 0) return
+        val items = items.toMutableList()
+        Collections.swap(items, 0, currentItem)
+        copy(items = items, currentItem = 0, pendingItem = 0)
+    }.apply { clearPendingItem() }
+
+    fun setCurrentItem(currentItem: Int) = updateState {
+        if (this.currentItem == currentItem) return
+        copy(currentItem = currentItem)
     }
 
-    fun moveCurrentItemToFirst() {
-        updateState {
-            if (currentItem == 0) return
-            val items = items.toMutableList()
-            Collections.swap(items, 0, currentItem)
-            copy(items = items, currentItem = 0, pendingItem = 0)
-        }
-        clearPendingItem()
-    }
-
-    fun setCurrentItem(currentItem: Int) {
-        if (categoryState.value.currentItem == currentItem) return
-        updateState { copy(currentItem = currentItem) }
-    }
-
-    private fun clearPendingItem() {
-        if (categoryState.value.pendingItem == NO_ITEM) return
-        updateState { copy(pendingItem = NO_ITEM) }
+    private fun clearPendingItem() = updateState {
+        if (pendingItem == NO_ITEM) return
+        copy(pendingItem = NO_ITEM)
     }
 
     private inline fun updateState(newState: FooCategoryState.() -> FooCategoryState) {

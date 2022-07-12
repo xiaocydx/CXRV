@@ -14,7 +14,10 @@ import com.xiaocydx.sample.databinding.ActivityViewPager2Binding
 import com.xiaocydx.sample.onClick
 import com.xiaocydx.sample.overScrollNever
 import com.xiaocydx.sample.registerOnPageChangeCallback
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 
 /**
  * @author xcc
@@ -64,15 +67,13 @@ class ViewPager2Activity : AppCompatActivity() {
             .onEach(adapter::setItems)
             .launchIn(lifecycleScope)
 
-        state.map { it.currentItem }
-            .filter { it != viewPager2.currentItem }
-            .onEach(viewPager2::setCurrentItem)
-            .launchIn(lifecycleScope)
-
-        state.map { it.pendingItem }
-            .filter { it != NO_ITEM }
-            .onEach { viewPager2.setCurrentItem(it, false) }
-            .launchIn(lifecycleScope)
+        state.map {
+            if (it.pendingItem != NO_ITEM) {
+                viewPager2.setCurrentItem(it.pendingItem, false)
+            } else if (it.currentItem != viewPager2.currentItem) {
+                viewPager2.currentItem = it.currentItem
+            }
+        }.launchIn(lifecycleScope)
     }
 
     private class FooListFragmentAdapter(
