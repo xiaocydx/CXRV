@@ -2,7 +2,6 @@ package com.xiaocydx.sample.paging
 
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListOwner
 import com.xiaocydx.cxrv.list.ListState
@@ -11,7 +10,7 @@ import com.xiaocydx.cxrv.list.removeItemAt
 import com.xiaocydx.cxrv.paging.*
 
 /**
- * 视图控制器 + [PagingViewModel]作为UI层
+ * 视图控制器 + [FooListViewModel]作为UI层
  *
  * 视图控制器可以在非活跃/重建期间取消收集[flow]，
  * 在恢复活跃/重建后，重新收集分页[flow]，更新/恢复视图。
@@ -19,11 +18,13 @@ import com.xiaocydx.cxrv.paging.*
  * @author xcc
  * @date 2022/2/17
  */
-class PagingViewModel(
+class FooListViewModel(
     /**
      * [FooRepository]作为Data层
      */
-    private val repository: FooRepository
+    private val repository: FooRepository = FooRepository(
+        FooSource(maxKey = 5, resultType = ResultType.Normal)
+    )
 ) : ViewModel() {
     /**
      * 分页的主要入口，提供[PagingData]数据流，当调用了[Pager.refresh]，
@@ -38,6 +39,20 @@ class PagingViewModel(
      * 保存列表数据，跟视图控制器建立基于[ListOwner]的双向通信。
      */
     private val listState = ListState<Foo>()
+
+    /**
+     * 保存视图id，视图控制器重建后恢复滚动位置
+     */
+    val rvId = ViewCompat.generateViewId()
+
+    /**
+     * 是否加载过
+     *
+     * 视图控制器在收集[flow]之前，若刷新已开始，则表示加载过，
+     * 即使在视图控制器销毁期间，主动调用了[refresh]，上述含义仍然成立。
+     */
+    val isLoaded: Boolean
+        get() = !pager.loadStates.refresh.isIncomplete
 
     /**
      * 分页数据流
@@ -59,11 +74,6 @@ class PagingViewModel(
             }
         }
         .storeIn(listState, viewModelScope)
-
-    /**
-     * 保存视图id，视图控制器重建后恢复滚动位置
-     */
-    val rvId = ViewCompat.generateViewId()
 
     fun refresh() {
         pager.refresh()
@@ -87,18 +97,5 @@ class PagingViewModel(
 
     fun enableMultiTypeFoo() {
         repository.enableMultiTypeFoo()
-    }
-
-    companion object Factory : ViewModelProvider.Factory {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-            if (modelClass === PagingViewModel::class.java) {
-                val repository = FooRepository(FooSource(
-                    maxKey = 5,
-                    resultType = ResultType.Normal
-                ))
-                return PagingViewModel(repository) as T
-            }
-            throw IllegalArgumentException()
-        }
     }
 }

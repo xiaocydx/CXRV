@@ -28,7 +28,7 @@ import com.xiaocydx.sample.showToast
  * @date 2022/2/17
  */
 class PagingActivity : AppCompatActivity() {
-    private val viewModel: SharedViewModel by viewModels()
+    private val sharedViewModel: PagingSharedViewModel by viewModels()
     private lateinit var binding: ActivityPagingBinding
     private val fragmentTag = PagingFragment::class.java.simpleName
 
@@ -64,7 +64,7 @@ class PagingActivity : AppCompatActivity() {
             LINEAR_LAYOUT -> initLinearLayout()
             GIRD_LAYOUT -> initGridLayout()
             STAGGERED_LAYOUT -> initStaggeredLayout()
-            else -> viewModel.submitMenuAction(action)
+            else -> sharedViewModel.submitMenuAction(action)
         }
         binding.root.closeDrawer(binding.rvMenu)
         showToast(action.text)

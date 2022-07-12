@@ -29,14 +29,14 @@ class GridLayoutFragment : PagingFragment() {
                 verticalEdge = true
                 horizontalEdge = true
             }
-            // .paging(adapter) // 无拖拽刷新
-            .pagingSwipeRefresh(adapter)
+            // .paging(fooAdapter) // 无拖拽刷新
+            .pagingSwipeRefresh(fooAdapter)
     }
 
     override fun initCollect() {
         super.initCollect()
-        viewModel.flow
-            .onEach(adapter.pagingCollector)
+        listViewModel.flow
+            .onEach(fooAdapter.pagingCollector)
             .flowWithLifecycle(viewLifecycle)
             .launchIn(viewLifecycleScope)
     }

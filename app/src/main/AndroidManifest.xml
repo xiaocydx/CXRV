@@ -39,7 +39,7 @@
             android:name=".paging.article.ArticleListActivity"
             android:exported="false" />
         <activity
-            android:name=".viewpager.ViewPagerActivity"
+            android:name=".viewpager2.ViewPager2Activity"
             android:exported="false" />
         <activity
             android:name=".nested.NestedListActivity"

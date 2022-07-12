@@ -12,7 +12,7 @@ import com.xiaocydx.sample.multitype.MultiTypeActivity
 import com.xiaocydx.sample.nested.NestedListActivity
 import com.xiaocydx.sample.paging.PagingActivity
 import com.xiaocydx.sample.paging.article.ArticleListActivity
-import com.xiaocydx.sample.viewpager.ViewPagerActivity
+import com.xiaocydx.sample.viewpager2.ViewPager2Activity
 
 /**
  * @author xcc
@@ -49,8 +49,8 @@ class MainActivity : AppCompatActivity() {
         startActivity<ArticleListActivity>()
     }
 
-    fun startViewPagerActivity(view: View) {
-        startActivity<ViewPagerActivity>()
+    fun startViewPager2Activity(view: View) {
+        startActivity<ViewPager2Activity>()
     }
 
     fun startNestedListActivity(view: View) {

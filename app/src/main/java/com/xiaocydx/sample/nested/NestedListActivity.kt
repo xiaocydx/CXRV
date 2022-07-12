@@ -2,14 +2,14 @@ package com.xiaocydx.sample.nested
 
 import android.os.Bundle
 import android.view.View
-import android.view.View.OVER_SCROLL_NEVER
-import android.view.ViewGroup.LayoutParams
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.sample.matchParent
+import com.xiaocydx.sample.overScrollNever
+import com.xiaocydx.sample.withLayoutParams
 
 /**
  * 嵌套列表示例代码
@@ -25,12 +25,12 @@ class NestedListActivity : AppCompatActivity() {
     }
 
     private fun contentView(): View = RecyclerView(this).apply {
-        linear().fixedSize()
-        overScrollMode = OVER_SCROLL_NEVER
-        layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
         adapter = VerticalAdapter().apply {
             submitList(getItems(15))
         }
+        linear().fixedSize()
+        overScrollNever()
+        withLayoutParams(matchParent, matchParent)
     }
 
     private fun getItems(

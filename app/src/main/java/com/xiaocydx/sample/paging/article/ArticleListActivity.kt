@@ -1,9 +1,6 @@
 package com.xiaocydx.sample.paging.article
 
 import android.os.Bundle
-import android.view.View.OVER_SCROLL_NEVER
-import android.view.ViewGroup.LayoutParams
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.updatePadding
@@ -18,11 +15,8 @@ import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
+import com.xiaocydx.sample.*
 import com.xiaocydx.sample.databinding.ItemArticleBinding
-import com.xiaocydx.sample.doOnApplyWindowInsetsCompat
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.getNavigationBarHeight
-import com.xiaocydx.sample.navigationBarEdgeToEdge
 import com.xiaocydx.sample.paging.config.paging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.retrofit.ArticleInfo
@@ -64,8 +58,8 @@ class ArticleListActivity : AppCompatActivity() {
                     tvAuthor.text = ("作者：${it.author ?: ""}")
                 }
             }
-            overScrollMode = OVER_SCROLL_NEVER
-            layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
+            overScrollNever()
+            withLayoutParams(matchParent, matchParent)
         }
         setContentView(rvArticle.withSwipeRefresh(listAdapter))
     }

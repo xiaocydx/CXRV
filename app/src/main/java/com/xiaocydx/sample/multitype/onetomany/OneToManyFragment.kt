@@ -3,10 +3,7 @@ package com.xiaocydx.sample.multitype.onetomany
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.OVER_SCROLL_NEVER
 import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
@@ -16,8 +13,7 @@ import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
-import com.xiaocydx.sample.R
-import com.xiaocydx.sample.showToast
+import com.xiaocydx.sample.*
 
 class OneToManyFragment : Fragment() {
 
@@ -26,13 +22,13 @@ class OneToManyFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
-        linear().fixedSize()
         adapter = listAdapter<OneToManyMessage> {
             register(getTextDelegate()) { it.type == "text" }
             register(getImageDelegate()) { it.type == "image" }
         }.initMessages()
-        overScrollMode = OVER_SCROLL_NEVER
-        layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
+        linear().fixedSize()
+        overScrollNever()
+        withLayoutParams(matchParent, matchParent)
     }
 
     private fun getTextDelegate(): OneToManyTextDelegate {

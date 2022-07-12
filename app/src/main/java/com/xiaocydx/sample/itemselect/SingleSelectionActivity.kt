@@ -2,9 +2,6 @@ package com.xiaocydx.sample.itemselect
 
 import android.os.Bundle
 import android.view.View
-import android.view.View.OVER_SCROLL_NEVER
-import android.view.ViewGroup.LayoutParams
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -21,6 +18,9 @@ import com.xiaocydx.cxrv.itemselect.toggleSelect
 import com.xiaocydx.cxrv.list.*
 import com.xiaocydx.sample.databinding.ItemSelectionBinding
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.matchParent
+import com.xiaocydx.sample.overScrollNever
+import com.xiaocydx.sample.withLayoutParams
 
 /**
  * [singleSelection]示例代码
@@ -41,14 +41,14 @@ class SingleSelectionActivity : AppCompatActivity() {
 
     private fun contentView(): View = RecyclerView(this).apply {
         id = viewModel.rvId
+        adapter = SingleSelectionBindingAdapter()
+        // adapter = SingleSelectionAdapter()
         linear().fixedSize().divider {
             height = 0.5f.dp
             color = 0xFF7E7AAA.toInt()
         }
-        adapter = SingleSelectionBindingAdapter()
-        // adapter = SingleSelectionAdapter()
-        layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
-        overScrollMode = OVER_SCROLL_NEVER
+        overScrollNever()
+        withLayoutParams(matchParent, matchParent)
     }
 
     @Suppress("FunctionName")

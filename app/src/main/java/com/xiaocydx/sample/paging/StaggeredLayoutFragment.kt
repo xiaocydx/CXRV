@@ -29,15 +29,15 @@ class StaggeredLayoutFragment : PagingFragment() {
                 verticalEdge = true
                 horizontalEdge = true
             }
-            // .paging(adapter) // 无拖拽刷新
-            .pagingSwipeRefresh(adapter)
+            // .paging(fooAdapter) // 无拖拽刷新
+            .pagingSwipeRefresh(fooAdapter)
     }
 
     override fun initCollect() {
         super.initCollect()
-        viewModel.enableMultiTypeFoo()
-        viewModel.flow
-            .onEach(adapter.pagingCollector)
+        listViewModel.enableMultiTypeFoo()
+        listViewModel.flow
+            .onEach(fooAdapter.pagingCollector)
             .flowWithLifecycle(viewLifecycle)
             .launchIn(viewLifecycleScope)
     }

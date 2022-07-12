@@ -2,9 +2,6 @@ package com.xiaocydx.sample.itemclick
 
 import android.os.Bundle
 import android.view.View
-import android.view.View.OVER_SCROLL_NEVER
-import android.view.ViewGroup.LayoutParams
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -46,30 +43,29 @@ class ItemClickActivity : AppCompatActivity() {
         setupLongItemClick()
     }
 
-    private fun contentView(): View {
-        return RecyclerView(this).apply {
-            linear().fixedSize()
-            type1Delegate = getTextType1Delegate()
-            type2Delegate = getTextType2Delegate()
+    private fun contentView(): View = RecyclerView(this).apply {
+        recyclerView = this
+        type1Delegate = getTextType1Delegate()
+        type2Delegate = getTextType2Delegate()
 
-            adapter1 = listAdapter<TextItem> {
-                register(type1Delegate)
-                register(type2Delegate)
-            }.initMultiTypeTextItems()
+        adapter1 = listAdapter<TextItem> {
+            register(type1Delegate)
+            register(type2Delegate)
+        }.initMultiTypeTextItems()
 
-            adapter2 = listAdapter<TextItem> {
-                register(getTextType1Delegate())
-                register(getTextType2Delegate())
-            }.initMultiTypeTextItems()
+        adapter2 = listAdapter<TextItem> {
+            register(getTextType1Delegate())
+            register(getTextType2Delegate())
+        }.initMultiTypeTextItems()
 
-            adapter = ConcatAdapter(
-                ConcatAdapter.Config.Builder()
-                    .setIsolateViewTypes(false).build(),
-                adapter1, adapter2
-            )
-            overScrollMode = OVER_SCROLL_NEVER
-            layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
-        }.also { recyclerView = it }
+        adapter = ConcatAdapter(
+            ConcatAdapter.Config.Builder()
+                .setIsolateViewTypes(false).build(),
+            adapter1, adapter2
+        )
+        linear().fixedSize()
+        overScrollNever()
+        withLayoutParams(matchParent, matchParent)
     }
 
     private fun setupItemClick() {

@@ -3,10 +3,7 @@ package com.xiaocydx.sample.paging
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.OVER_SCROLL_NEVER
 import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import androidx.annotation.CallSuper
 import androidx.core.view.updatePadding
@@ -21,7 +18,6 @@ import com.xiaocydx.cxrv.list.*
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.*
 import com.xiaocydx.sample.paging.MenuAction.*
-import com.xiaocydx.sample.viewmodel.activityViewModels
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -30,12 +26,10 @@ import kotlinx.coroutines.flow.onEach
  * @date 2022/2/17
  */
 abstract class PagingFragment : Fragment() {
-    private val sharedViewModel: SharedViewModel by activityViewModels()
-    protected val viewModel: PagingViewModel by activityViewModels(
-        key = { this::class.java.simpleName },
-        factoryProducer = { PagingViewModel.Factory }
-    )
-    protected val adapter = FooAdapter()
+    private val sharedViewModel: PagingSharedViewModel by activityViewModels()
+    protected val fooAdapter = FooAdapter()
+    protected lateinit var listViewModel: FooListViewModel
+        private set
     protected lateinit var rvPaging: RecyclerView
         private set
 
@@ -43,13 +37,15 @@ abstract class PagingFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View = FrameLayout(requireContext()).apply {
+    ): View = FrameLayout(requireContext()).also {
+        listViewModel = sharedViewModel
+            .getListViewModel(key = this.javaClass.simpleName)
         rvPaging = RecyclerView(requireContext()).apply {
-            id = viewModel.rvId
-            overScrollMode = OVER_SCROLL_NEVER
-            layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
+            id = listViewModel.rvId
+            overScrollNever()
+            withLayoutParams(matchParent, matchParent)
         }
-        addView(rvPaging)
+        it.addView(rvPaging)
     }
 
     final override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -118,42 +114,42 @@ abstract class PagingFragment : Fragment() {
 
     private fun refresh() {
         // viewModel.refresh()
-        adapter.pagingCollector.refresh()
+        fooAdapter.pagingCollector.refresh()
     }
 
     private fun adapterInsertItem() {
-        val item = viewModel.createFoo(
+        val item = listViewModel.createFoo(
             tag = "Adapter",
-            num = adapter.currentList.size
+            num = fooAdapter.currentList.size
         )
-        adapter.addItem(0, item)
+        fooAdapter.addItem(0, item)
     }
 
     private fun adapterDeleteItem() {
-        adapter.removeItemAt(0)
+        fooAdapter.removeItemAt(0)
     }
 
     private fun listStateInsertItem() {
-        viewModel.insertItem()
+        listViewModel.insertItem()
     }
 
     private fun listStateDeleteItem() {
-        viewModel.deleteItem()
+        listViewModel.deleteItem()
     }
 
     private fun clearOddItem() {
-        adapter.submitTransform {
+        fooAdapter.submitTransform {
             filter { it.num % 2 == 0 }
         }
     }
 
     private fun clearEvenItem() {
-        adapter.submitTransform {
+        fooAdapter.submitTransform {
             filter { it.num % 2 != 0 }
         }
     }
 
     private fun clearAllItem() {
-        adapter.clear()
+        fooAdapter.clear()
     }
 }

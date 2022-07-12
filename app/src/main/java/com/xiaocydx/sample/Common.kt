@@ -3,10 +3,15 @@ package com.xiaocydx.sample
 import android.content.Context
 import android.content.res.Resources
 import android.util.TypedValue
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Toast
 import androidx.annotation.Px
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate
@@ -40,12 +45,43 @@ val Fragment.viewLifecycle: Lifecycle
 val Fragment.viewLifecycleScope: CoroutineScope
     get() = viewLifecycleOwner.lifecycleScope
 
+inline fun Lifecycle.doOnStateChanged(
+    targetState: Lifecycle.State,
+    once: Boolean = true,
+    crossinline action: (Lifecycle) -> Unit
+) {
+    addObserver(object : LifecycleEventObserver {
+        override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+            val lifecycle = source.lifecycle
+            if (lifecycle.currentState !== targetState) return
+            if (once) lifecycle.removeObserver(this)
+            action(lifecycle)
+        }
+    })
+}
+
 fun Context.showToast(text: CharSequence, duration: Int = Toast.LENGTH_SHORT) {
     Toast.makeText(this, text, duration).show()
 }
 
 fun Fragment.showToast(text: CharSequence, duration: Int = Toast.LENGTH_SHORT) {
     requireContext().showToast(text, duration)
+}
+
+@Suppress("unused")
+inline val View.matchParent: Int
+    get() = ViewGroup.LayoutParams.MATCH_PARENT
+
+@Suppress("unused")
+inline val View.wrapContent: Int
+    get() = ViewGroup.LayoutParams.WRAP_CONTENT
+
+fun View.overScrollNever() {
+    overScrollMode = View.OVER_SCROLL_NEVER
+}
+
+inline fun View.withLayoutParams(width: Int, height: Int, block: MarginLayoutParams.() -> Unit = {}) {
+    layoutParams = MarginLayoutParams(width, height).apply(block)
 }
 
 data class TextItem(val text: String, val type: String)
