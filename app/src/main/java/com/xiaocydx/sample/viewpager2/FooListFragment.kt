@@ -35,15 +35,15 @@ import kotlinx.coroutines.flow.launchIn
 class FooListFragment : Fragment() {
     @Suppress("PrivatePropertyName")
     private val TAG = this::class.java.simpleName
-    private val sharedViewModel: FooSharedViewModel by activityViewModels()
+    private val sharedViewModel: FooCategoryViewModel by activityViewModels()
     private lateinit var listViewModel: FooListViewModel
     private val fooAdapter = FooAdapter()
-    private val key: String
-        get() = requireNotNull(arguments?.getString(KEY_FOO))
+    private val categoryId: Long
+        get() = requireNotNull(arguments?.getLong(KEY_CATEGORY_ID))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.e(TAG, "onCreate: key = $key")
+        Log.e(TAG, "onCreate: categoryId = $categoryId")
     }
 
     override fun onCreateView(
@@ -51,7 +51,7 @@ class FooListFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
-        listViewModel = sharedViewModel.getListViewModel(key)
+        listViewModel = sharedViewModel.getListViewModel(categoryId)
         id = listViewModel.rvId
         linear().fixedSize().divider {
             height = 2.dp
@@ -101,15 +101,15 @@ class FooListFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.e(TAG, "onDestroy: key = $key")
+        Log.e(TAG, "onDestroy: categoryId = $categoryId")
     }
 
     companion object {
-        private const val KEY_FOO = "KEY_FOO"
+        private const val KEY_CATEGORY_ID = "KEY_CATEGORY_ID"
 
-        fun newInstance(key: String): FooListFragment {
+        fun newInstance(categoryId: Long): FooListFragment {
             return FooListFragment().apply {
-                arguments = Bundle(1).apply { putString(KEY_FOO, key) }
+                arguments = Bundle(1).apply { putLong(KEY_CATEGORY_ID, categoryId) }
             }
         }
     }

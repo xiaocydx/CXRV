@@ -1,14 +1,20 @@
 package com.xiaocydx.sample.viewpager2
 
 import android.os.Bundle
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayoutMediator
 import com.xiaocydx.sample.databinding.ActivityViewPager2Binding
+import com.xiaocydx.sample.onClick
 import com.xiaocydx.sample.overScrollNever
+import com.xiaocydx.sample.registerOnPageChangeCallback
+import kotlinx.coroutines.flow.*
 
 /**
  * @author xcc
@@ -16,16 +22,19 @@ import com.xiaocydx.sample.overScrollNever
  */
 class ViewPager2Activity : AppCompatActivity() {
     private lateinit var binding: ActivityViewPager2Binding
+    private lateinit var adapter: FooListFragmentAdapter
+    private val sharedViewModel: FooCategoryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityViewPager2Binding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.initView()
+        initView()
+        initCollect()
     }
 
-    private fun ActivityViewPager2Binding.initView() {
-        val adapter = FooListFragmentAdapter(this@ViewPager2Activity)
+    private fun initView() = with(binding) {
+        adapter = FooListFragmentAdapter(this@ViewPager2Activity)
         viewPager2.adapter = adapter
         // getChildAt(0) = RecyclerView
         viewPager2.getChildAt(0).overScrollNever()
@@ -35,25 +44,59 @@ class ViewPager2Activity : AppCompatActivity() {
             /*autoRefresh*/true,
             /*smoothScroll*/true
         ) { tab, position ->
-            tab.text = "List-${adapter.getItem(position)}"
+            tab.text = adapter.getItem(position).title
         }.attach()
+
+        viewPager2.registerOnPageChangeCallback(
+            onSelected = sharedViewModel::setCurrentItem
+        )
+        btnAdd.onClick(sharedViewModel::addItemToLast)
+        btnRemove.onClick(sharedViewModel::removeCurrentItem)
+        btnMove.onClick(sharedViewModel::moveCurrentItemToFirst)
+    }
+
+    private fun initCollect() = with(binding) {
+        val state = sharedViewModel
+            .categoryState.flowWithLifecycle(lifecycle)
+
+        state.map { it.items }
+            .distinctUntilChanged()
+            .onEach(adapter::setItems)
+            .launchIn(lifecycleScope)
+
+        state.map { it.currentItem }
+            .filter { it != viewPager2.currentItem }
+            .onEach(viewPager2::setCurrentItem)
+            .launchIn(lifecycleScope)
+
+        state.map { it.pendingItem }
+            .filter { it != NO_ITEM }
+            .onEach { viewPager2.setCurrentItem(it, false) }
+            .launchIn(lifecycleScope)
     }
 
     private class FooListFragmentAdapter(
         fragmentActivity: FragmentActivity
     ) : FragmentStateAdapter(fragmentActivity) {
-        private val data = (1L..10L).toList()
+        private var items: List<FooCategory> = emptyList()
 
-        fun getItem(position: Int): Long = data[position]
+        fun setItems(items: List<FooCategory>) {
+            this.items = items
+            notifyDataSetChanged()
+        }
 
-        override fun getItemCount(): Int = data.size
+        fun getItem(position: Int): FooCategory = items[position]
 
-        override fun getItemId(position: Int): Long = data[position]
+        override fun getItemCount(): Int = items.size
 
-        override fun containsItem(itemId: Long): Boolean = data.contains(itemId)
+        override fun getItemId(position: Int): Long = items[position].id
+
+        override fun containsItem(itemId: Long): Boolean {
+            return items.firstOrNull { it.id == itemId } != null
+        }
 
         override fun createFragment(position: Int): Fragment {
-            return FooListFragment.newInstance(getItem(position).toString())
+            return FooListFragment.newInstance(getItem(position).id)
         }
 
         override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {

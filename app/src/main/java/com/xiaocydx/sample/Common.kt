@@ -13,6 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -82,6 +83,32 @@ fun View.overScrollNever() {
 
 inline fun View.withLayoutParams(width: Int, height: Int, block: MarginLayoutParams.() -> Unit = {}) {
     layoutParams = MarginLayoutParams(width, height).apply(block)
+}
+
+inline fun View.onClick(crossinline block: () -> Unit) {
+    setOnClickListener { block() }
+}
+
+inline fun ViewPager2.registerOnPageChangeCallback(
+    crossinline onScrolled: (position: Int, positionOffset: Float, positionOffsetPixels: Int) -> Unit = { _, _, _ -> },
+    crossinline onSelected: (position: Int) -> Unit = {},
+    crossinline onScrollStateChanged: (state: Int) -> Unit = {}
+): ViewPager2.OnPageChangeCallback {
+    val callback = object : ViewPager2.OnPageChangeCallback() {
+        override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+            onScrolled(position, positionOffset, positionOffsetPixels)
+        }
+
+        override fun onPageSelected(position: Int) {
+            onSelected(position)
+        }
+
+        override fun onPageScrollStateChanged(state: Int) {
+            onScrollStateChanged(state)
+        }
+    }
+    registerOnPageChangeCallback(callback)
+    return callback
 }
 
 data class TextItem(val text: String, val type: String)
