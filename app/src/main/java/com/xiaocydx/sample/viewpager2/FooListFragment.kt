@@ -34,12 +34,12 @@ import kotlinx.coroutines.flow.launchIn
  */
 class FooListFragment : Fragment() {
     @Suppress("PrivatePropertyName")
-    private val TAG = this::class.java.simpleName
+    private val TAG = javaClass.simpleName
     private val sharedViewModel: FooCategoryViewModel by activityViewModels()
     private lateinit var listViewModel: FooListViewModel
     private val fooAdapter = FooAdapter()
     private val categoryId: Long
-        get() = requireNotNull(arguments?.getLong(KEY_CATEGORY_ID))
+        get() = arguments?.getLong(KEY_CATEGORY_ID) ?: 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +64,25 @@ class FooListFragment : Fragment() {
     }.withSwipeRefresh(fooAdapter)
 
     /**
+     * 在[RecyclerView.isAttachedToWindow] = `true`之后，向上查找[ViewPager2]父级：
+     * 1. 处理[ViewPager2]嵌套[RecyclerView]的滚动冲突。
+     * 2. 对[RecyclerView]设置[ViewPager2.sharedRecycledViewPool]。
+     * 3. Fragment视图销毁时，将[RecyclerView]的子View、`Scrap`、离屏缓存，
+     * 回收进`sharedRecycledViewPool`。
+     */
+    private fun RecyclerView.doOnAttachToViewPager2() = doOnAttach {
+        val vp2 = findParentViewPager2() ?: return@doOnAttach
+        isVp2NestedScrollable = true
+        setRecycledViewPool(vp2.sharedRecycledViewPool)
+        viewLifecycle.doOnStateChanged(targetState = DESTROYED) {
+            // 回收进sharedRecycledViewPool的上限，是当前子View数量的2倍，
+            // 这是一种简易的策略，意图是最多回收2页满数量的View，供重建复用。
+            val maxScrap = childCount * 2
+            destroyRecycleViews { _, _ -> maxScrap }
+        }
+    }
+
+    /**
      * 若[FooListViewModel.isLoaded] = `false`，则当[viewLifecycle]状态为[RESUMED]时，
      * 才收集[FooListViewModel.flow]，开始列表分页加载，达到首次懒加载的目的。
      * 否则当[viewLifecycle]状态为[STARTED]时，收集[FooListViewModel.flow]，
@@ -80,25 +99,6 @@ class FooListFragment : Fragment() {
         }
     }
 
-    /**
-     * 在[RecyclerView.isAttachedToWindow] = `true`之后，向上查找[ViewPager2]父级：
-     * 1. 处理[ViewPager2]嵌套[RecyclerView]的滚动冲突。
-     * 2. 对[RecyclerView]设置[ViewPager2.sharedRecycledViewPool]。
-     * 3. Fragment视图销毁时，将[RecyclerView]的子View、`Scrap`、离屏缓存，
-     * 回收进`sharedRecycledViewPool`。
-     */
-    private fun RecyclerView.doOnAttachToViewPager2() = doOnAttach {
-        val vp2 = findParentViewPager2() ?: return@doOnAttach
-        isVp2NestedScrollable = true
-        setRecycledViewPool(vp2.sharedRecycledViewPool)
-        viewLifecycle.doOnStateChanged(targetState = DESTROYED) {
-            // 回收进sharedRecycledViewPool的上限，是当前子View数量的2倍，
-            // 这是一个简易的策略，意图是最多回收2页满数量的View，供重建复用。
-            val maxScrap = childCount * 2
-            destroyRecycleViews { _, _ -> maxScrap }
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         Log.e(TAG, "onDestroy: categoryId = $categoryId")
@@ -107,10 +107,8 @@ class FooListFragment : Fragment() {
     companion object {
         private const val KEY_CATEGORY_ID = "KEY_CATEGORY_ID"
 
-        fun newInstance(categoryId: Long): FooListFragment {
-            return FooListFragment().apply {
-                arguments = Bundle(1).apply { putLong(KEY_CATEGORY_ID, categoryId) }
-            }
+        fun newInstance(categoryId: Long): FooListFragment = FooListFragment().apply {
+            arguments = Bundle(1).apply { putLong(KEY_CATEGORY_ID, categoryId) }
         }
     }
 }

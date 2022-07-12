@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.onEach
  */
 class ViewPager2Activity : AppCompatActivity() {
     private lateinit var binding: ActivityViewPager2Binding
-    private lateinit var adapter: FooListFragmentAdapter
+    private lateinit var adapter: FooCategoryAdapter
     private val sharedViewModel: FooCategoryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,10 +37,8 @@ class ViewPager2Activity : AppCompatActivity() {
     }
 
     private fun initView() = with(binding) {
-        adapter = FooListFragmentAdapter(this@ViewPager2Activity)
+        adapter = FooCategoryAdapter(this@ViewPager2Activity)
         viewPager2.adapter = adapter
-        // getChildAt(0) = RecyclerView
-        viewPager2.getChildAt(0).overScrollNever()
         TabLayoutMediator(
             binding.tabLayout,
             binding.viewPager2,
@@ -60,40 +58,41 @@ class ViewPager2Activity : AppCompatActivity() {
 
     private fun initCollect() = with(binding) {
         val state = sharedViewModel
-            .categoryState.flowWithLifecycle(lifecycle)
+            .state.flowWithLifecycle(lifecycle)
 
-        state.map { it.items }
+        state.map { it.list }
             .distinctUntilChanged()
-            .onEach(adapter::setItems)
+            .onEach(adapter::submitList)
             .launchIn(lifecycleScope)
 
         state.map {
             if (it.pendingItem != NO_ITEM) {
-                viewPager2.setCurrentItem(it.pendingItem, false)
+                sharedViewModel.consumePendingItem()
+                viewPager2.setCurrentItem(it.pendingItem, /*smoothScroll*/false)
             } else if (it.currentItem != viewPager2.currentItem) {
-                viewPager2.currentItem = it.currentItem
+                viewPager2.setCurrentItem(it.currentItem, /*smoothScroll*/true)
             }
         }.launchIn(lifecycleScope)
     }
 
-    private class FooListFragmentAdapter(
+    private class FooCategoryAdapter(
         fragmentActivity: FragmentActivity
     ) : FragmentStateAdapter(fragmentActivity) {
-        private var items: List<FooCategory> = emptyList()
+        private var list: List<FooCategory> = emptyList()
 
-        fun setItems(items: List<FooCategory>) {
-            this.items = items
+        fun submitList(newList: List<FooCategory>) {
+            list = newList
             notifyDataSetChanged()
         }
 
-        fun getItem(position: Int): FooCategory = items[position]
+        fun getItem(position: Int): FooCategory = list[position]
 
-        override fun getItemCount(): Int = items.size
+        override fun getItemCount(): Int = list.size
 
-        override fun getItemId(position: Int): Long = items[position].id
+        override fun getItemId(position: Int): Long = list[position].id
 
         override fun containsItem(itemId: Long): Boolean {
-            return items.firstOrNull { it.id == itemId } != null
+            return list.firstOrNull { it.id == itemId } != null
         }
 
         override fun createFragment(position: Int): Fragment {
@@ -102,6 +101,7 @@ class ViewPager2Activity : AppCompatActivity() {
 
         override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
             super.onAttachedToRecyclerView(recyclerView)
+            recyclerView.overScrollNever()
             recyclerView.itemAnimator = null
         }
     }
