@@ -36,8 +36,8 @@ class FooListFragment : Fragment() {
     @Suppress("PrivatePropertyName")
     private val TAG = javaClass.simpleName
     private val sharedViewModel: FooCategoryViewModel by activityViewModels()
+    private lateinit var fooAdapter: FooAdapter
     private lateinit var listViewModel: FooListViewModel
-    private val fooAdapter = FooAdapter()
     private val categoryId: Long
         get() = arguments?.getLong(KEY_CATEGORY_ID) ?: 0L
 
@@ -51,6 +51,7 @@ class FooListFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
+        fooAdapter = FooAdapter()
         listViewModel = sharedViewModel.getListViewModel(categoryId)
         id = listViewModel.rvId
         linear().fixedSize().divider {
