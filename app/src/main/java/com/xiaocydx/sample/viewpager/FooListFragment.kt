@@ -14,6 +14,7 @@ import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
+import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.paging.FooAdapter
 import com.xiaocydx.sample.paging.PagingViewModel
@@ -68,7 +69,7 @@ class FooListFragment : SharedRecycledFragment() {
 
     override fun onLazyInitialize() {
         viewModel.flow
-            .onEach(fooAdapter)
+            .onEach(fooAdapter.pagingCollector)
             .flowWithLifecycle(viewLifecycle)
             .launchIn(viewLifecycleScope)
     }

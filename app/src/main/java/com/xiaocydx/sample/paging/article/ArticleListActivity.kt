@@ -17,6 +17,7 @@ import com.xiaocydx.cxrv.list.enableBoundCheckCompat
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
+import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.databinding.ItemArticleBinding
 import com.xiaocydx.sample.doOnApplyWindowInsetsCompat
 import com.xiaocydx.sample.dp
@@ -71,7 +72,7 @@ class ArticleListActivity : AppCompatActivity() {
 
     private fun initObserve() {
         viewModel.flow
-            .onEach(listAdapter)
+            .onEach(listAdapter.pagingCollector)
             .flowWithLifecycle(lifecycle)
             .launchIn(lifecycleScope)
     }
