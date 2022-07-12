@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
 
 /**
- * 在视图控制器销毁阶段，将子View和`Scrap`回收进[RecycledViewPool]
+ * 在视图控制器销毁阶段，将子View、`Scrap`、离屏缓存回收进[RecycledViewPool]
  *
  * ### 增加回收上限
  * 当回收数量超过viewType对应的`maxScrap`时，
