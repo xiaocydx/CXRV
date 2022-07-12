@@ -3,6 +3,7 @@ package com.xiaocydx.sample.viewpager2
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.flowWithLifecycle
@@ -10,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.MarginPageTransformer
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.xiaocydx.sample.databinding.ActivityViewPager2Binding
 import com.xiaocydx.sample.dp
@@ -66,6 +68,7 @@ class ViewPager2Activity : AppCompatActivity() {
         state.map { it.list }
             .distinctUntilChanged()
             .onEach(adapter::submitList)
+            .onEach { viewPager2.ensureTransform() }
             .launchIn(lifecycleScope)
 
         state.map {
@@ -76,6 +79,15 @@ class ViewPager2Activity : AppCompatActivity() {
                 viewPager2.setCurrentItem(it.currentItem, /*smoothScroll*/true)
             }
         }.launchIn(lifecycleScope)
+    }
+
+    /**
+     * 下一帧布局完成后，调用[ViewPager2.requestTransform]，
+     * 用于确保[ViewPager2.PageTransformer]的转换效果正常。
+     * 例如移除页面后，确保[MarginPageTransformer]的间距正常。
+     */
+    private fun ViewPager2.ensureTransform() {
+        doOnPreDraw { requestTransform() }
     }
 
     private class FooCategoryAdapter(
