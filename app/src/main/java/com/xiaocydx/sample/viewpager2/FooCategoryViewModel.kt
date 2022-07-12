@@ -26,8 +26,8 @@ class FooCategoryViewModel : ViewModel() {
     }
 
     fun addItemToLast() = updateState {
-        val item = list.lastOrNull()
-        copy(list = list + FooCategory(id = (item?.id ?: 0) + 1))
+        val id = if (list.isEmpty()) 1 else list.maxOf { it.id } + 1
+        copy(list = list + FooCategory(id = id))
     }
 
     fun removeCurrentItem() = updateState {
