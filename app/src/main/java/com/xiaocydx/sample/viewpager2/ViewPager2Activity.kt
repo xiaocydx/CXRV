@@ -9,8 +9,10 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.MarginPageTransformer
 import com.google.android.material.tabs.TabLayoutMediator
 import com.xiaocydx.sample.databinding.ActivityViewPager2Binding
+import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.onClick
 import com.xiaocydx.sample.overScrollNever
 import com.xiaocydx.sample.registerOnPageChangeCallback
@@ -48,6 +50,7 @@ class ViewPager2Activity : AppCompatActivity() {
             tab.text = adapter.getItem(position).title
         }.attach()
 
+        viewPager2.setPageTransformer(MarginPageTransformer(5.dp))
         viewPager2.registerOnPageChangeCallback(
             onSelected = sharedViewModel::setCurrentItem
         )
