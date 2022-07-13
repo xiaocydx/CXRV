@@ -8,6 +8,7 @@ import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.addItem
 import com.xiaocydx.cxrv.list.removeItemAt
 import com.xiaocydx.cxrv.paging.*
+import kotlinx.coroutines.flow.onStart
 
 /**
  * 视图控制器 + [FooListViewModel]作为UI层
@@ -46,13 +47,10 @@ class FooListViewModel(
     val rvId = ViewCompat.generateViewId()
 
     /**
-     * 是否加载过
-     *
-     * 视图控制器在收集[flow]之前，若刷新已开始，则表示加载过，
-     * 即使在视图控制器销毁期间，主动调用了[refresh]，上述含义仍然成立。
+     * 是否加载过，可用于视图控制器的重建恢复判断
      */
-    val isLoaded: Boolean
-        get() = !pager.loadStates.refresh.isIncomplete
+    var isLoaded: Boolean = false
+        private set
 
     /**
      * 分页数据流
@@ -64,6 +62,7 @@ class FooListViewModel(
      * 在视图控制器恢复活跃/重建后，重新收集转换后的热流，完成更新/恢复视图。
      */
     val flow = pager.flow
+        .onStart { isLoaded = true }
         .flowMap { flow ->
             flow.itemMap { loadType, item ->
                 val suffix = when (loadType) {
