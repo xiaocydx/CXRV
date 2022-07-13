@@ -30,7 +30,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
 
     final override fun getItemViewType(position: Int): Int = getItemViewType()
 
-    final override fun fullSpan(position: Int, holder: RecyclerView.ViewHolder): Boolean = true
+    final override fun fullSpan(position: Int, holder: ViewHolder): Boolean = true
 
     final override fun getSpanSize(position: Int, spanCount: Int): Int = spanCount
 
@@ -48,8 +48,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
         onBindViewHolder(holder)
     }
 
-    protected open fun onBindViewHolder(holder: VH) {
-    }
+    protected open fun onBindViewHolder(holder: VH): Unit = Unit
 
     /**
      * 返回唯一的ViewType值，例如[View.hashCode]
@@ -134,7 +133,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
     }
 
     @VisibleForTesting
-    internal fun getRecycledViewHolder(): RecyclerView.ViewHolder? {
+    internal fun getRecycledViewHolder(): ViewHolder? {
         return controller.getRecycledViewHolder()
     }
 }

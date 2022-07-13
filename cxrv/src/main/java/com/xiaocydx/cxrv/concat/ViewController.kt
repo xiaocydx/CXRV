@@ -153,26 +153,22 @@ internal class ViewController {
             get() = recyclerView != null
 
         fun track(holder: ViewHolder) {
-            assert(viewHolder == null) { "track出现断言异常" }
             viewType = holder.itemViewType
             viewHolder = holder
         }
 
         fun untrack(holder: ViewHolder) {
-            assert(viewHolder == holder) { "untrack出现断言异常" }
             // 保留viewType，用于后续清除Scrap
             viewType = holder.itemViewType
             viewHolder = null
         }
 
         fun track(recyclerView: RecyclerView) {
-            assert(this.recyclerView == null) { "track出现断言异常" }
             this.recyclerView = recyclerView
             recyclerView.addOnAttachStateChangeListener(this)
         }
 
         fun untrack(recyclerView: RecyclerView) {
-            assert(this.recyclerView == recyclerView) { "untrack出现断言异常" }
             this.recyclerView = null
             recyclerView.removeOnAttachStateChangeListener(this)
         }
