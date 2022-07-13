@@ -75,9 +75,9 @@ class FooListFragment : Fragment() {
         val vp2 = findParentViewPager2() ?: return@doOnAttach
         isVp2NestedScrollable = true
         setRecycledViewPool(vp2.sharedRecycledViewPool)
-        viewLifecycle.doOnStateChanged(targetState = DESTROYED) {
+        viewLifecycle.doOnTargetState(DESTROYED) {
             // 回收进sharedRecycledViewPool的上限，是当前子View数量的2倍，
-            // 这是一种简易的策略，意图是最多回收2页满数量的View，供重建复用。
+            // 这是一种简易策略，意图是最多回收2页满数量的View，供重建复用。
             val maxScrap = childCount * 2
             destroyRecycleViews { _, _ -> maxScrap }
         }
@@ -90,8 +90,8 @@ class FooListFragment : Fragment() {
      * 确保[ViewPager2]滚动过程[RecyclerView]及时添加`itemView`。
      */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        viewLifecycle.doOnStateChanged(
-            targetState = if (listViewModel.isLoaded) STARTED else RESUMED
+        viewLifecycle.doOnTargetState(
+            state = if (listViewModel.isLoaded) STARTED else RESUMED
         ) {
             listViewModel.flow
                 .onEach(fooAdapter.pagingCollector)

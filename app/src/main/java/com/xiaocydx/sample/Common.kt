@@ -9,10 +9,7 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Toast
 import androidx.annotation.Px
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.*
 import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate
@@ -47,19 +44,25 @@ val Fragment.viewLifecycleScope: CoroutineScope
     get() = viewLifecycleOwner.lifecycleScope
 
 inline fun Lifecycle.doOnStateChanged(
-    targetState: Lifecycle.State,
-    once: Boolean = true,
-    crossinline action: (Lifecycle) -> Unit
-) {
-    addObserver(object : LifecycleEventObserver {
-        override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-            val lifecycle = source.lifecycle
-            if (lifecycle.currentState !== targetState) return
-            if (once) lifecycle.removeObserver(this)
-            action(lifecycle)
-        }
-    })
-}
+    once: Boolean = false,
+    crossinline action: (source: LifecycleOwner, event: Lifecycle.Event) -> Unit
+): LifecycleObserver = object : LifecycleEventObserver {
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        if (once) source.lifecycle.removeObserver(this)
+        action(source, event)
+    }
+}.also(::addObserver)
+
+inline fun Lifecycle.doOnTargetState(
+    state: Lifecycle.State,
+    crossinline action: () -> Unit
+): LifecycleObserver = object : LifecycleEventObserver {
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        if (source.lifecycle.currentState !== state) return
+        source.lifecycle.removeObserver(this)
+        action()
+    }
+}.also(::addObserver)
 
 fun Context.showToast(text: CharSequence, duration: Int = Toast.LENGTH_SHORT) {
     Toast.makeText(this, text, duration).show()
@@ -93,23 +96,17 @@ inline fun ViewPager2.registerOnPageChangeCallback(
     crossinline onScrolled: (position: Int, positionOffset: Float, positionOffsetPixels: Int) -> Unit = { _, _, _ -> },
     crossinline onSelected: (position: Int) -> Unit = {},
     crossinline onScrollStateChanged: (state: Int) -> Unit = {}
-): ViewPager2.OnPageChangeCallback {
-    val callback = object : ViewPager2.OnPageChangeCallback() {
-        override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-            onScrolled(position, positionOffset, positionOffsetPixels)
-        }
+): ViewPager2.OnPageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
+    override fun onPageScrolled(
+        position: Int,
+        positionOffset: Float,
+        positionOffsetPixels: Int
+    ) = onScrolled(position, positionOffset, positionOffsetPixels)
 
-        override fun onPageSelected(position: Int) {
-            onSelected(position)
-        }
+    override fun onPageSelected(position: Int) = onSelected(position)
 
-        override fun onPageScrollStateChanged(state: Int) {
-            onScrollStateChanged(state)
-        }
-    }
-    registerOnPageChangeCallback(callback)
-    return callback
-}
+    override fun onPageScrollStateChanged(state: Int) = onScrollStateChanged(state)
+}.also(::registerOnPageChangeCallback)
 
 data class TextItem(val text: String, val type: String)
 
