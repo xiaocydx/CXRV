@@ -8,10 +8,12 @@ import android.view.ViewGroup
 import androidx.core.view.doOnAttach
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.Lifecycle.State.*
+import androidx.lifecycle.Lifecycle.State.RESUMED
+import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.lifecycle.flowWithLifecycle
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.destroyRecycleViews
+import androidx.recyclerview.widget.RecyclerView.LayoutManager
+import androidx.recyclerview.widget.setRecycleAllViewsOnDetach
 import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.fixedSize
@@ -68,26 +70,25 @@ class FooListFragment : Fragment() {
      * 在[RecyclerView.isAttachedToWindow] = `true`之后，向上查找[ViewPager2]父级：
      * 1. 处理[ViewPager2]嵌套[RecyclerView]的滚动冲突。
      * 2. 对[RecyclerView]设置[ViewPager2.sharedRecycledViewPool]。
-     * 3. Fragment视图销毁时，将[RecyclerView]的子View、`Scrap`、离屏缓存，
-     * 回收进`sharedRecycledViewPool`。
+     * 3. 当[RecyclerView]从Window上分离时，保存[LayoutManager]的状态，
+     * 将子View和离屏缓存回收进[ViewPager2.sharedRecycledViewPool]。
      */
     private fun RecyclerView.doOnAttachToViewPager2() = doOnAttach {
         val vp2 = findParentViewPager2() ?: return@doOnAttach
         isVp2NestedScrollable = true
         setRecycledViewPool(vp2.sharedRecycledViewPool)
-        viewLifecycle.doOnTargetState(DESTROYED) {
+        setRecycleAllViewsOnDetach { _, _, initialState ->
             // 回收进sharedRecycledViewPool的上限，是当前子View数量的2倍，
             // 这是一种简易策略，意图是最多回收2页满数量的View，供重建复用。
-            val maxScrap = childCount * 2
-            destroyRecycleViews { _, _ -> maxScrap }
+            initialState.childCount * 2
         }
     }
 
     /**
-     * 若[FooListViewModel.isLoaded] = `false`，则当[viewLifecycle]状态为[RESUMED]时，
+     * 1. 若[FooListViewModel.isLoaded] = `false`，则当[viewLifecycle]状态为[RESUMED]时，
      * 才收集[FooListViewModel.flow]，开始列表分页加载，达到首次懒加载的目的。
-     * 否则当[viewLifecycle]状态为[STARTED]时，收集[FooListViewModel.flow]，
-     * 确保[ViewPager2]滚动过程[RecyclerView]及时添加`itemView`。
+     * 2. 否则当[viewLifecycle]状态为[STARTED]时，收集[FooListViewModel.flow]，
+     * 确保[ViewPager2]的滚动过程能及时对[RecyclerView]添加`itemView`。
      */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         viewLifecycle.doOnTargetState(
