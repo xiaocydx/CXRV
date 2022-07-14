@@ -76,7 +76,7 @@ fun RecyclerView.setRecycleAllViewsOnDetach(
         pendingSavedState = lm.onSaveInstanceState()
         // 这是一种取巧的做法，对LayoutManager实现类的mPendingSavedState赋值，
         // 确保Fragment销毁时能保存状态，Fragment重建时恢复RecyclerView的滚动位置。
-        lm.onRestoreInstanceState(pendingSavedState)
+        pendingSavedState?.let(lm::onRestoreInstanceState)
         rv.recycleAllViews(canIncrease, increaseMaxScrap)
     }
 }.also(::addOnAttachStateChangeListener)
