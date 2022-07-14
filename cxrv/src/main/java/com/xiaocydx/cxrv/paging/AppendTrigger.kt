@@ -133,8 +133,11 @@ internal class AppendTrigger(
         override fun invoke() {
             if (!loadStates.isAllowAppend) return
             val lm = rv?.layoutManager ?: return
-            rv?.findViewHolderForLayoutPosition(lm.itemCount - 1) ?: return
-            append()
+            val position = lm.itemCount - 1
+            if (!adapter.hasDisplayItem
+                    || rv?.findViewHolderForLayoutPosition(position) != null) {
+                append()
+            }
         }
     }
 
