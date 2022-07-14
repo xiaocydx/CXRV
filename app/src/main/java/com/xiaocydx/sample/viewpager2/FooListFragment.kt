@@ -80,7 +80,7 @@ class FooListFragment : Fragment() {
         setRecycleAllViewsOnDetach { _, _, initialState ->
             // 回收进sharedRecycledViewPool的上限，是当前子View数量的2倍，
             // 这是一种简易策略，意图是最多回收2页满数量的View，供重建复用。
-            initialState.childCount * 2
+            2 * initialState.childCount
         }
     }
 

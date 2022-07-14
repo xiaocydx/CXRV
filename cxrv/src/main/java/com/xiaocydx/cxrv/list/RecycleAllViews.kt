@@ -156,19 +156,6 @@ private class RecycleAllViewsRunner(
         scrapData.mMaxScrap = newMaxScrap
     }
 
-    fun restoreMaxScrap() {
-        when (val state = state) {
-            is Pair -> restoreMaxScrap(state.viewType, state.maxScrap)
-            is SparseIntArray -> {
-                for (index in 0 until state.size()) {
-                    val viewType = state.keyAt(index)
-                    val maxScrap = state.valueAt(index)
-                    restoreMaxScrap(viewType, maxScrap)
-                }
-            }
-        }
-    }
-
     private fun containsMaxScrap(viewType: Int): Boolean {
         return when (val state = state) {
             is Pair -> state.viewType == viewType
@@ -186,6 +173,19 @@ private class RecycleAllViewsRunner(
                 it.put(viewType, maxScrap)
             }
             is SparseIntArray -> state.put(viewType, maxScrap)
+        }
+    }
+
+    private fun restoreMaxScrap() {
+        when (val state = state) {
+            is Pair -> restoreMaxScrap(state.viewType, state.maxScrap)
+            is SparseIntArray -> {
+                for (index in 0 until state.size()) {
+                    val viewType = state.keyAt(index)
+                    val maxScrap = state.valueAt(index)
+                    restoreMaxScrap(viewType, maxScrap)
+                }
+            }
         }
     }
 

@@ -124,7 +124,7 @@ class Vp2NestedScrollableHandler constructor() {
 
     private fun View.requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
         var parent: ViewParent? = parent
-        if (parent == host) parent = host?.parent
+        if (parent === host) parent = host?.parent
         parent?.requestDisallowInterceptTouchEvent(disallowIntercept)
     }
 }
