@@ -1,5 +1,8 @@
 package com.xiaocydx.cxrv.list
 
+import android.content.Context
+import android.os.Parcelable
+import android.util.AttributeSet
 import androidx.recyclerview.widget.*
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.internal.ExperimentalFeature
@@ -22,13 +25,13 @@ inline fun <T : RecyclerView> T.grid(
 ): T = layout(GridLayoutManager(context, spanCount, orientation, false).apply(block))
 
 /**
- * 设置[StaggeredGridLayoutManager]，可用于链式调用场景
+ * 设置[StaggeredGridLayoutManagerCompat]，可用于链式调用场景
  */
 fun <T : RecyclerView> T.staggered(
     spanCount: Int,
     @Orientation orientation: Int = VERTICAL,
-    block: StaggeredGridLayoutManager.() -> Unit = {}
-): T = layout(StaggeredGridLayoutManager(spanCount, orientation).apply(block))
+    block: StaggeredGridLayoutManagerCompat.() -> Unit = {}
+): T = layout(StaggeredGridLayoutManagerCompat(spanCount, orientation).apply(block))
 
 /**
  * 设置[LayoutManager]，可用于链式调用场景
@@ -62,4 +65,46 @@ fun <T : RecyclerView> T.fixedSize(): T {
 @ExperimentalFeature
 fun LayoutManager.enableBoundCheckCompat() {
     isBoundCheckCompatEnabled = true
+}
+
+/**
+ * 提供一些兼容属性的[StaggeredGridLayoutManager]
+ */
+open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager {
+    private var pendingSavedState: Parcelable? = null
+
+    /**
+     * 是否在[onDetachedFromWindow]被调用时保存状态
+     *
+     * 由于`super.onDetachedFromWindow(view, recycler)`会执行清除逻辑，
+     * 因此需要在其之前保存状态，确保`ViewPager2`嵌套[RecyclerView]这些场景，
+     * [RecyclerView]的滚动位置能够被正确恢复。
+     */
+    var isSaveSateOnDetach = false
+
+    constructor(
+        spanCount: Int,
+        @RecyclerView.Orientation orientation: Int
+    ) : super(spanCount, orientation)
+
+    constructor(
+        context: Context,
+        attrs: AttributeSet,
+        defStyleAttr: Int,
+        defStyleRes: Int
+    ) : super(context, attrs, defStyleAttr, defStyleRes)
+
+    override fun onAttachedToWindow(view: RecyclerView) {
+        pendingSavedState?.let(::onRestoreInstanceState)
+        pendingSavedState = null
+        super.onAttachedToWindow(view)
+    }
+
+    override fun onDetachedFromWindow(view: RecyclerView, recycler: RecyclerView.Recycler) {
+        pendingSavedState = if (isSaveSateOnDetach) onSaveInstanceState() else null
+        // 这是一种取巧的做法，对StaggeredGridLayoutManager的mPendingSavedState赋值，
+        // 确保Fragment销毁时能保存状态，Fragment重建时恢复RecyclerView的滚动位置。
+        pendingSavedState?.let(::onRestoreInstanceState)
+        super.onDetachedFromWindow(view, recycler)
+    }
 }
