@@ -85,6 +85,7 @@ class RetainedViewModels<VM : ViewModel>
         return viewModels.keys
     }
 
+    @MainThread
     fun getOrNull(key: String): VM? = viewModels[key]
 
     @MainThread
