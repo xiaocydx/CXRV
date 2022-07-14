@@ -94,47 +94,47 @@ open class DefaultPagingScope
     internal open fun init(rv: RecyclerView) = complete(rv)
 
     override fun LoadHeaderConfig.withDefault(): Boolean {
-        loadingView(DefaultHeaderLoadingView)
-        failureView(DefaultHeaderFailureView)
-        emptyView(DefaultHeaderEmptyView)
+        loadingView(defaultHeaderLoadingView)
+        failureView(defaultHeaderFailureView)
+        emptyView(defaultHeaderEmptyView)
         return true
     }
 
     override fun LoadFooterConfig.withDefault(): Boolean {
         height = 50.dp
         isFullyVisibleWhileExceed = true
-        loadingView(DefaultFooterLoadingView)
-        failureView(DefaultFooterFailureView)
-        fullyView(DefaultFooterFullyView)
+        loadingView(defaultFooterLoadingView)
+        failureView(defaultFooterFailureView)
+        fullyView(defaultFooterFullyView)
         return true
     }
 
     private companion object {
-        val DefaultHeaderLoadingView: OnCreateView<View> = { parent ->
+        val defaultHeaderLoadingView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_header_loading)
         }
 
-        val DefaultHeaderFailureView: OnCreateView<View> = { parent ->
+        val defaultHeaderFailureView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_header_failure).apply {
                 findViewById<View>(R.id.btnRetry).setOnClickListener { retry() }
             }
         }
 
-        val DefaultHeaderEmptyView: OnCreateView<View> = { parent ->
+        val defaultHeaderEmptyView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_header_empty)
         }
 
-        val DefaultFooterLoadingView: OnCreateView<View> = { parent ->
+        val defaultFooterLoadingView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_footer_loading)
         }
 
-        val DefaultFooterFailureView: OnCreateView<View> = { parent ->
+        val defaultFooterFailureView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_footer_failure).apply {
                 setOnClickListener { retry() }
             }
         }
 
-        val DefaultFooterFullyView: OnCreateView<View> = { parent ->
+        val defaultFooterFullyView: OnCreateView<View> = { parent ->
             parent.inflate(R.layout.load_footer_fully)
         }
 
