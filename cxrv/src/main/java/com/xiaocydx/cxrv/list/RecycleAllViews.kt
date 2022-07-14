@@ -47,9 +47,9 @@ fun RecyclerView.recycleAllViews(
  * **注意**：由于[StaggeredGridLayoutManager.onDetachedFromWindow]的清除逻辑，
  * 比[View.OnAttachStateChangeListener.onViewDetachedFromWindow]先执行，
  * 因此导致该函数无法保存正确的状态，恢复的滚动位置带有一定程度的偏移。
- * 此时需要搭配[StaggeredGridLayoutManagerCompat.isSaveSateOnDetach]使用：
+ * 此时需要搭配[StaggeredGridLayoutManagerCompat.isSaveStateOnDetach]使用：
  * ```
- * recyclerView.staggered(spanCount) { isSaveSateOnDetach = true }
+ * recyclerView.staggered(spanCount) { isSaveStateOnDetach = true }
  * recyclerView.setRecycleAllViewsOnDetach(canIncrease, increaseMaxScrap)
  * ```
  *

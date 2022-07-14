@@ -80,7 +80,7 @@ open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager {
      * 因此需要在其之前保存状态，确保`ViewPager2`嵌套[RecyclerView]这些场景，
      * [RecyclerView]的滚动位置能够被正确恢复。
      */
-    var isSaveSateOnDetach = false
+    var isSaveStateOnDetach = false
 
     constructor(
         spanCount: Int,
@@ -101,7 +101,7 @@ open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager {
     }
 
     override fun onDetachedFromWindow(view: RecyclerView, recycler: RecyclerView.Recycler) {
-        pendingSavedState = if (isSaveSateOnDetach) onSaveInstanceState() else null
+        pendingSavedState = if (isSaveStateOnDetach) onSaveInstanceState() else null
         // 这是一种取巧的做法，对StaggeredGridLayoutManager的mPendingSavedState赋值，
         // 确保Fragment销毁时能保存状态，Fragment重建时恢复RecyclerView的滚动位置。
         pendingSavedState?.let(::onRestoreInstanceState)
