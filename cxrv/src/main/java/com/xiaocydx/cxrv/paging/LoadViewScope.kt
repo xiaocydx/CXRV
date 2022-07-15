@@ -3,13 +3,8 @@ package com.xiaocydx.cxrv.paging
 import android.annotation.SuppressLint
 import android.content.Context
 import android.view.View
-import android.view.View.OnAttachStateChangeListener
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
-import android.view.ViewTreeObserver.OnPreDrawListener
 import android.widget.FrameLayout
-import androidx.annotation.CallSuper
-import androidx.core.view.OneShotPreDrawListener
 import com.xiaocydx.cxrv.internal.RvDslMarker
 import com.xiaocydx.cxrv.internal.isVisible
 
@@ -135,52 +130,5 @@ internal class LoadViewLayout(
 
     private fun <V : View> LoadViewItem<V>.setVisible(isVisible: Boolean) {
         setVisible(parent = this@LoadViewLayout, isVisible)
-    }
-}
-
-/**
- * 实现逻辑copy自[OneShotPreDrawListener]
- */
-internal open class PreDrawListener(
-    private val view: View
-) : OnPreDrawListener, OnAttachStateChangeListener {
-    private var viewTreeObserver: ViewTreeObserver = view.viewTreeObserver
-    private var action: (() -> Unit)? = null
-
-    constructor(view: View, action: () -> Unit) : this(view) {
-        this.action = action
-    }
-
-    init {
-        viewTreeObserver.addOnPreDrawListener(this)
-        view.addOnAttachStateChangeListener(this)
-    }
-
-    @CallSuper
-    override fun onPreDraw(): Boolean {
-        action?.invoke()
-        return true
-    }
-
-    @CallSuper
-    override fun onViewAttachedToWindow(view: View) {
-        viewTreeObserver = view.viewTreeObserver
-    }
-
-    @CallSuper
-    override fun onViewDetachedFromWindow(view: View) {
-        if (action != null) {
-            action = null
-            removeListener()
-        }
-    }
-
-    fun removeListener() {
-        if (viewTreeObserver.isAlive) {
-            viewTreeObserver.removeOnPreDrawListener(this)
-        } else {
-            view.viewTreeObserver.removeOnPreDrawListener(this)
-        }
-        view.removeOnAttachStateChangeListener(this)
     }
 }
