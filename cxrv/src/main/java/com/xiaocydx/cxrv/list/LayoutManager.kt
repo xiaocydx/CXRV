@@ -27,7 +27,7 @@ inline fun <T : RecyclerView> T.grid(
 /**
  * 设置[StaggeredGridLayoutManagerCompat]，可用于链式调用场景
  */
-fun <T : RecyclerView> T.staggered(
+inline fun <T : RecyclerView> T.staggered(
     spanCount: Int,
     @Orientation orientation: Int = VERTICAL,
     block: StaggeredGridLayoutManagerCompat.() -> Unit = {}
