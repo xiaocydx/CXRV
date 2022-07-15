@@ -1,6 +1,7 @@
 package com.xiaocydx.cxrv.paging
 
 import android.view.View
+import android.view.View.OnAttachStateChangeListener
 import androidx.core.view.OneShotPreDrawListener
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnChildAttachStateChangeListener
@@ -78,12 +79,9 @@ internal class AppendTrigger(
      */
     override fun onListChanged(current: List<Any>) {
         val lm = rv?.layoutManager ?: return
-        if (loadStates.isFully
-                || !loadStates.refresh.isSuccess
-                || lm.itemCount >= lm.childCount) {
-            return
+        if (loadStates.isAllowAppend && lm.itemCount < lm.childCount) {
+            postAppend()
         }
-        postAppend()
     }
 
     /**
@@ -91,10 +89,11 @@ internal class AppendTrigger(
      * 此时[onBindViewHolder]不会被调用，因此需要主动触发末尾加载。
      */
     override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
-        if (!adapter.hasDisplayItem || !previous.refreshToSuccess(current)) {
-            return
+        if (previous.refreshToSuccess(current)
+                || (previous.refresh.isIncomplete && current.refresh.isSuccess)) {
+            // refresh从Incomplete直接流转至Success，可能是RecyclerView的重建恢复流程
+            postAppend()
         }
-        postAppend()
     }
 
     private fun postAppend() {
@@ -116,12 +115,14 @@ internal class AppendTrigger(
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         this.rv = recyclerView
+        recyclerView.addOnAttachStateChangeListener(appendIfLastItemVisible)
         recyclerView.addOnChildAttachStateChangeListener(appendIfLastItemAttached)
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         this.rv = null
         removeAppend()
+        recyclerView.removeOnAttachStateChangeListener(appendIfLastItemVisible)
         recyclerView.removeOnChildAttachStateChangeListener(appendIfLastItemAttached)
     }
 
@@ -129,8 +130,8 @@ internal class AppendTrigger(
      * 若最后一个item可视，则触发末尾加载，
      * 最后一个item可能是loadFooter或者[adapter]的最后一个item。
      */
-    private inner class AppendIfLastItemVisible : () -> Unit {
-        override fun invoke() {
+    private inner class AppendIfLastItemVisible : Runnable, OnAttachStateChangeListener {
+        override fun run() {
             if (!loadStates.isAllowAppend) return
             val lm = rv?.layoutManager ?: return
             val position = lm.itemCount - 1
@@ -139,6 +140,10 @@ internal class AppendTrigger(
                 append()
             }
         }
+
+        override fun onViewAttachedToWindow(view: View): Unit = run()
+
+        override fun onViewDetachedFromWindow(view: View): Unit = Unit
     }
 
     /**
