@@ -1,12 +1,14 @@
 package com.xiaocydx.cxrv.paging
 
 import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.SimpleViewHolder
 import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.cxrv.internal.hasDisplayItem
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.ListChangedListener
+import com.xiaocydx.cxrv.paging.LoadHeaderAdapter.Visible.*
 
 /**
  * 加载头部适配器
@@ -18,10 +20,11 @@ internal class LoadHeaderAdapter(
     private val config: LoadHeaderConfig,
     private val adapter: ListAdapter<*, *>
 ) : ViewAdapter<ViewHolder>(), LoadStatesListener, ListChangedListener<Any> {
-    private var visible: Visible = Visible.NONE
+    private var visible: Visible = NONE
     private var loadStates: LoadStates = LoadStates.Incomplete
 
-    init {
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
         val collector = adapter.pagingCollector
         config.complete(
             retry = collector::retry,
@@ -29,6 +32,12 @@ internal class LoadHeaderAdapter(
         )
         adapter.addListChangedListener(this)
         collector.addLoadStatesListener(this)
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        adapter.removeListChangedListener(this)
+        adapter.pagingCollector.removeLoadStatesListener(this)
     }
 
     override fun getItemViewType(): Int = hashCode()
@@ -45,14 +54,13 @@ internal class LoadHeaderAdapter(
         return SimpleViewHolder(itemView)
     }
 
-    override fun onBindViewHolder(
-        holder: ViewHolder
-    ): Unit = with(holder.itemView as LoadViewLayout) {
+    override fun onBindViewHolder(holder: ViewHolder) {
+        val itemView = holder.itemView as LoadViewLayout
         when (visible) {
-            Visible.LOADING -> loadingVisible()
-            Visible.FAILURE -> failureVisible()
-            Visible.EMPTY -> successVisible()
-            Visible.NONE -> throw AssertionError("局部刷新出现断言异常")
+            LOADING -> itemView.loadingVisible()
+            FAILURE -> itemView.failureVisible()
+            EMPTY -> itemView.successVisible()
+            NONE -> throw AssertionError("局部刷新出现断言异常")
         }
     }
 
@@ -64,14 +72,10 @@ internal class LoadHeaderAdapter(
     override fun onListChanged(current: List<Any>) {
         when {
             !loadStates.isFully -> return
-            visible == Visible.EMPTY && adapter.hasDisplayItem -> {
-                // 此时EMPTY视图已显示，并且列表不为空
-                updateLoadHeader(Visible.NONE)
-            }
-            visible == Visible.NONE && !adapter.hasDisplayItem -> {
-                // 此时EMPTY视图未显示，并且列表为空
-                updateLoadHeader(Visible.EMPTY)
-            }
+            // 此时EMPTY视图已显示，并且列表不为空
+            visible == EMPTY && adapter.hasDisplayItem -> updateLoadHeader(NONE)
+            // 此时EMPTY视图未显示，并且列表为空
+            visible == NONE && !adapter.hasDisplayItem -> updateLoadHeader(EMPTY)
         }
     }
 
@@ -81,17 +85,17 @@ internal class LoadHeaderAdapter(
     }
 
     private fun LoadStates.toVisible(): Visible = when {
-        adapter.hasDisplayItem -> Visible.NONE
-        this.isLoading -> if (config.loadingScope != null) Visible.LOADING else Visible.NONE
-        this.isFailure -> if (config.failureScope != null) Visible.FAILURE else Visible.NONE
-        this.isFully -> if (config.emptyScope != null) Visible.EMPTY else Visible.NONE
+        adapter.hasDisplayItem -> NONE
+        this.isLoading -> if (config.loadingScope != null) LOADING else NONE
+        this.isFailure -> if (config.failureScope != null) FAILURE else NONE
+        this.isFully -> if (config.emptyScope != null) EMPTY else NONE
         else -> visible
     }
 
     private fun updateLoadHeader(visible: Visible) {
         if (this.visible != visible) {
             this.visible = visible
-            updateItem(show = visible != Visible.NONE, anim = NeedAnim.NOT_ALL)
+            updateItem(show = visible != NONE, anim = NeedAnim.NOT_ALL)
         }
     }
 
