@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.ViewTreeObserver.OnPreDrawListener
 import android.widget.FrameLayout
+import androidx.annotation.CallSuper
 import androidx.core.view.OneShotPreDrawListener
 import com.xiaocydx.cxrv.internal.RvDslMarker
 import com.xiaocydx.cxrv.internal.isVisible
@@ -140,28 +141,38 @@ internal class LoadViewLayout(
 /**
  * 实现逻辑copy自[OneShotPreDrawListener]
  */
-internal class PreDrawListener(
-    private val view: View,
-    private val action: () -> Unit
+internal open class PreDrawListener(
+    private val view: View
 ) : OnPreDrawListener, OnAttachStateChangeListener {
     private var viewTreeObserver: ViewTreeObserver = view.viewTreeObserver
+    private var action: (() -> Unit)? = null
+
+    constructor(view: View, action: () -> Unit) : this(view) {
+        this.action = action
+    }
 
     init {
         viewTreeObserver.addOnPreDrawListener(this)
         view.addOnAttachStateChangeListener(this)
     }
 
+    @CallSuper
     override fun onPreDraw(): Boolean {
-        action()
+        action?.invoke()
         return true
     }
 
-    override fun onViewAttachedToWindow(v: View) {
-        viewTreeObserver = v.viewTreeObserver
+    @CallSuper
+    override fun onViewAttachedToWindow(view: View) {
+        viewTreeObserver = view.viewTreeObserver
     }
 
-    override fun onViewDetachedFromWindow(v: View) {
-        removeListener()
+    @CallSuper
+    override fun onViewDetachedFromWindow(view: View) {
+        if (action != null) {
+            action = null
+            removeListener()
+        }
     }
 
     fun removeListener() {

@@ -1,16 +1,16 @@
 package com.xiaocydx.cxrv.paging
 
+import android.graphics.Rect
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.SimpleViewHolder
 import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.cxrv.internal.hasDisplayItem
-import com.xiaocydx.cxrv.itemvisible.findLastCompletelyVisibleItemPosition
-import com.xiaocydx.cxrv.itemvisible.findLastVisibleItemPosition
-import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.ListChangedListener
+import com.xiaocydx.cxrv.paging.LoadFooterAdapter.Visible.*
 
 /**
  * 加载尾部适配器
@@ -22,12 +22,14 @@ internal class LoadFooterAdapter(
     private val config: LoadFooterConfig,
     private val adapter: ListAdapter<*, *>
 ) : ViewAdapter<ViewHolder>(), LoadStatesListener, ListChangedListener<Any> {
-    private var visible: Visible = Visible.NONE
+    private val bounds = Rect()
+    private var visible: Visible = NONE
     private var isPostponeHandleFullyVisible = false
     private var loadStates: LoadStates = LoadStates.Incomplete
-    private var preDrawListener: PreDrawListener? = null
+    private var preDrawListener: PreDrawListenerImpl? = null
 
-    init {
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
         val collector = adapter.pagingCollector
         config.complete(
             retry = collector::retry,
@@ -35,6 +37,15 @@ internal class LoadFooterAdapter(
         )
         adapter.addListChangedListener(this)
         collector.addLoadStatesListener(this)
+        preDrawListener = PreDrawListenerImpl(recyclerView)
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        adapter.removeListChangedListener(this)
+        adapter.pagingCollector.removeLoadStatesListener(this)
+        preDrawListener?.removeListener()
+        preDrawListener = null
     }
 
     override fun getItemViewType(): Int = hashCode()
@@ -51,14 +62,13 @@ internal class LoadFooterAdapter(
         return SimpleViewHolder(itemView)
     }
 
-    override fun onBindViewHolder(
-        holder: ViewHolder
-    ): Unit = with(holder.itemView as LoadViewLayout) {
+    override fun onBindViewHolder(holder: ViewHolder) {
+        val itemView = holder.itemView as LoadViewLayout
         when (visible) {
-            Visible.LOADING -> loadingVisible()
-            Visible.FAILURE -> failureVisible()
-            Visible.FULLY -> successVisible()
-            Visible.NONE -> throw AssertionError("局部刷新出现断言异常")
+            LOADING -> itemView.loadingVisible()
+            FAILURE -> itemView.failureVisible()
+            FULLY -> itemView.successVisible()
+            NONE -> throw AssertionError("局部刷新出现断言异常")
         }
     }
 
@@ -71,68 +81,60 @@ internal class LoadFooterAdapter(
         val hasDisplayItem = adapter.hasDisplayItem
         when {
             !loadStates.isFully -> return
-            visible == Visible.FULLY && hasDisplayItem
-                    && config.isFullyVisibleWhileExceed -> {
-                // 此时FULLY视图已显示，并且列表已更改
-                postponeHandleFullyVisible()
-            }
-            visible == Visible.FULLY && !hasDisplayItem -> {
-                // 此时FULLY视图已显示，并且列表已空
-                updateLoadFooter(Visible.NONE)
-            }
-            visible == Visible.NONE && hasDisplayItem -> {
-                // 此时FULLY视图未显示，并且列表不为空
-                if (config.isFullyVisibleWhileExceed) {
-                    postponeHandleFullyVisible()
-                } else {
-                    updateLoadFooter(Visible.FULLY)
-                }
-            }
+            // 此时FULLY视图未显示，并且列表不为空
+            visible == NONE && hasDisplayItem -> postponeHandleFullyVisible()
+            // 此时FULLY视图已显示，并且列表已更改
+            visible == FULLY && hasDisplayItem -> postponeHandleFullyVisible()
+            // 此时FULLY视图已显示，并且列表已空
+            visible == FULLY && !hasDisplayItem -> updateLoadFooter(NONE)
         }
     }
 
     override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
         loadStates = current
         val visible = current.toVisible()
-        if (visible == Visible.FULLY) {
-            // 末尾加载完全时，会在FULLY视图前面插入item，
-            // 若此时有item动画，则FULLY视图看起来像是被“挤下去”，体验并不好，
-            // 因此先移除loadFooter，在RV布局流程完成后，判断是否显示FULLY视图。
-            postponeHandleFullyVisible()
+        if (visible == FULLY) {
+            var removeFooter = true
+            if (previous.refresh.isIncomplete) {
+                // 由于当前加载状态的流转过程可能是RecyclerView的重建恢复流程，
+                // 因此假设重建之前FULLY视图已显示，此次先显示FULLY视图，参与下一帧的测量和布局，
+                // 确保正常恢复RecyclerView的滚动位置，在下一帧布局完成后，再判断是否需要显示FULLY视图。
+                removeFooter = false
+                updateLoadFooter(FULLY)
+            }
+            postponeHandleFullyVisible(removeFooter)
         } else {
             updateLoadFooter(visible)
         }
     }
 
     private fun LoadStates.toVisible(): Visible = when {
-        !adapter.hasDisplayItem -> Visible.NONE
-        this.isFully -> if (config.fullyScope != null) Visible.FULLY else Visible.NONE
-        append.isIncomplete -> Visible.NONE
-        append.isLoading -> if (config.loadingScope != null) Visible.LOADING else Visible.NONE
-        append.isFailure -> if (config.failureScope != null) Visible.FAILURE else Visible.NONE
-        append.isSuccess -> Visible.NONE
+        !adapter.hasDisplayItem -> NONE
+        this.isFully -> if (config.fullyScope != null) FULLY else NONE
+        append.isIncomplete -> NONE
+        append.isLoading -> if (config.loadingScope != null) LOADING else NONE
+        append.isFailure -> if (config.failureScope != null) FAILURE else NONE
+        append.isSuccess -> NONE
         else -> visible
     }
 
     private fun updateLoadFooter(visible: Visible) {
         if (this.visible != visible) {
             this.visible = visible
-            updateItem(show = visible != Visible.NONE, anim = NeedAnim.NOT_ALL)
+            updateItem(show = visible != NONE, anim = NeedAnim.NOT_ALL)
         }
     }
 
     /**
      * 在[handleFullyVisibleWhilePreDraw]被调用时判断是否显示FULLY视图
      *
-     * 先移除`loadFooter`是为了满足两种场景：
-     * 1. 当`config.isFullyVisibleWhileExceed = true`时，
-     * 需要先移除`loadFooter`，才能在RV布局流程完成后，判断是否显示FULLY视图。
-     * 2. 末尾加载完全时，会在FULLY视图前面插入item，
+     * [removeFooter] == `true`满足的场景：
+     * 末尾加载完全时，会在FULLY视图前面插入item，
      * 若此时有item动画，则FULLY视图看起来像是被“挤下去”，体验并不好，
      * 因此先移除`loadFooter`，在RV布局流程完成后，判断是否显示FULLY视图。
      */
-    private fun postponeHandleFullyVisible() {
-        updateLoadFooter(Visible.NONE)
+    private fun postponeHandleFullyVisible(removeFooter: Boolean = false) {
+        if (removeFooter) updateLoadFooter(NONE)
         isPostponeHandleFullyVisible = true
     }
 
@@ -141,32 +143,56 @@ internal class LoadFooterAdapter(
      */
     private fun handleFullyVisibleWhilePreDraw() {
         if (!isPostponeHandleFullyVisible) return
-        assert(visible == Visible.NONE) { "判断是否显示FULLY视图出现断言异常" }
         isPostponeHandleFullyVisible = false
+        if (!loadStates.isFully) return
         val rv = recyclerView ?: return
-        if (!config.isFullyVisibleWhileExceed || !rv.isFirstItemCompletelyVisible) {
-            updateLoadFooter(Visible.FULLY)
-            return
+        when {
+            !adapter.hasDisplayItem -> updateLoadFooter(NONE)
+            !config.isFullyVisibleWhileExceed -> updateLoadFooter(FULLY)
+            visible == NONE -> {
+                if (rv.isExceedVisibleRange()) updateLoadFooter(FULLY)
+            }
+            visible == FULLY -> {
+                val holder = viewHolder ?: return
+                val lm = rv.layoutManager ?: return
+                lm.getDecoratedBoundsWithMargins(holder.itemView, bounds)
+                val isExceedVisibleRange = if (lm.canScrollHorizontally()) {
+                    rv.isExceedVisibleRange(diffScrollRange = -bounds.width())
+                } else if (lm.canScrollVertically()) {
+                    rv.isExceedVisibleRange(diffScrollRange = -bounds.height())
+                } else false
+                if (!isExceedVisibleRange) updateLoadFooter(NONE)
+            }
         }
-
-        val lastVisiblePosition = rv.findLastVisibleItemPosition()
-        val lastCompletelyVisiblePosition = rv.findLastCompletelyVisibleItemPosition()
-        val isExceed = lastVisiblePosition != lastCompletelyVisiblePosition
-        updateLoadFooter(if (isExceed) Visible.FULLY else Visible.NONE)
     }
 
-    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        super.onAttachedToRecyclerView(recyclerView)
-        preDrawListener = PreDrawListener(recyclerView, ::handleFullyVisibleWhilePreDraw)
-    }
-
-    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        super.onDetachedFromRecyclerView(recyclerView)
-        preDrawListener?.removeListener()
-        preDrawListener = null
+    /**
+     * RecyclerView的滚动范围是否超过可视范围
+     *
+     * @param diffScrollRange 差异滚动范围，总的滚动范围加上该值后再进行判断
+     */
+    private fun RecyclerView.isExceedVisibleRange(diffScrollRange: Int = 0): Boolean {
+        val lm = layoutManager ?: return false
+        return if (lm.canScrollHorizontally()) {
+            computeHorizontalScrollRange() + diffScrollRange > computeHorizontalScrollExtent()
+        } else if (lm.canScrollVertically()) {
+            computeVerticalScrollRange() + diffScrollRange > computeVerticalScrollExtent()
+        } else false
     }
 
     private enum class Visible {
         NONE, LOADING, FAILURE, FULLY
+    }
+
+    private inner class PreDrawListenerImpl(rv: RecyclerView) : PreDrawListener(rv) {
+        override fun onPreDraw(): Boolean {
+            handleFullyVisibleWhilePreDraw()
+            return super.onPreDraw()
+        }
+
+        override fun onViewAttachedToWindow(view: View) {
+            super.onViewAttachedToWindow(view)
+            postponeHandleFullyVisible()
+        }
     }
 }

@@ -60,12 +60,7 @@ class LoadFooterConfig @PublishedApi internal constructor() {
         }
 
     /**
-     * 是否超过RecyclerView可视范围时才显示加载完全视图
-     *
-     * **注意**：若[isFullyVisibleWhileExceed]为`true`，则在列表更改时，
-     * 为了判断准确，会先移除`loadFooter`，在RecyclerView布局流程完成后，
-     * 再判断是否显示加载完全视图，若需要显示，则重新添加`loadFooter`，
-     * 这个过程可能会因为`loadFooter`被临时移除，而产生滚动。
+     * 是否当RecyclerView的滚动范围超过可视范围时，才显示加载完全视图
      */
     var isFullyVisibleWhileExceed: Boolean = false
         set(value) {

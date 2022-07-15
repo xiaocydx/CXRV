@@ -23,6 +23,8 @@ abstract class ViewAdapter<VH : ViewHolder>(
 ) : Adapter<VH>(), SpanSizeProvider {
     private val controller = ViewController()
     private var previousAsItem = currentAsItem
+    protected val viewHolder: ViewHolder?
+        get() = controller.viewHolder
     protected val recyclerView: RecyclerView?
         get() = controller.recyclerView
 
