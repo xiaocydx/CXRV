@@ -8,6 +8,7 @@ data class Foo(
     val id: String,
     val name: String,
     val num: Int,
+    val url: String = "",
     val type: FooType = FooType.TYPE1
 )
 

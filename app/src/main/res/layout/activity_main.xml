@@ -59,7 +59,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:onClick="startViewPager2Activity"
-        android:text="ViewPager2示例"
+        android:text="ViewPager2共享池示例"
         android:textAllCaps="false" />
 
     <Button

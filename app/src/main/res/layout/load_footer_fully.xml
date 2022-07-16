@@ -16,5 +16,5 @@
         android:maxLines="1"
         android:text="没有更多数据"
         android:textColor="@color/black"
-        android:textSize="18dp" />
+        android:textSize="16sp" />
 </FrameLayout>

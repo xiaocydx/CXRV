@@ -10,5 +10,5 @@
         android:background="#E7E7E7"
         android:gravity="center"
         android:text="Foo"
-        android:textSize="18sp" />
+        android:textSize="16sp" />
 </FrameLayout>

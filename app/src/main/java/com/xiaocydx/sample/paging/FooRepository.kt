@@ -3,6 +3,8 @@ package com.xiaocydx.sample.paging
 import com.xiaocydx.cxrv.paging.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * @author xcc
@@ -19,7 +21,7 @@ class FooRepository(private val source: FooSource) {
     }
 
     fun enableMultiTypeFoo() {
-        source.multiTypeFoo = true
+        source.enableMultiTypeFoo()
     }
 
     fun createFoo(num: Int, tag: String): Foo {
@@ -30,8 +32,21 @@ class FooRepository(private val source: FooSource) {
 class FooSource(
     private val maxKey: Int,
     private val resultType: ResultType,
-    var multiTypeFoo: Boolean = false
+    private val duration: Duration = 400L.milliseconds,
 ) : PagingSource<Int, Foo> {
+    private var multiTypeFoo = false
+    private val urls = arrayOf(
+        "https://cdn.pixabay.com/photo/2022/07/01/14/29/wheat-7295718_960_720.jpg",
+        "https://cdn.pixabay.com/photo/2022/07/10/18/21/allium-7313550_960_720.jpg",
+        "https://cdn.pixabay.com/photo/2022/07/04/23/52/beach-7302072_960_720.jpg",
+        "https://cdn.pixabay.com/photo/2022/07/05/11/06/mountains-7302806_960_720.jpg",
+        "https://cdn.pixabay.com/photo/2022/07/12/11/30/morning-view-7317119_960_720.jpg",
+        "https://cdn.pixabay.com/photo/2022/07/10/21/25/sky-7313775_960_720.jpg",
+        "https://cdn.pixabay.com/photo/2022/07/13/07/10/branch-7318716_960_720.jpg",
+        "https://cdn.pixabay.com/photo/2022/07/09/17/20/mushroom-7311371_960_720.jpg",
+        "https://cdn.pixabay.com/photo/2022/07/06/12/11/spaceship-7304985_960_720.jpg",
+        "https://cdn.pixabay.com/photo/2022/06/19/07/12/mount-kilimanjaro-7271184_960_720.jpg",
+    )
     private var retryCount: Int = when (resultType) {
         is ResultType.RefreshEmpty -> resultType.retryCount
         is ResultType.AppendEmpty -> resultType.retryCount
@@ -60,11 +75,16 @@ class FooSource(
             num % 2 != 0 -> FooType.TYPE1
             else -> FooType.TYPE2
         }
-        return Foo(id = "$tag-$num", name = "Foo-$num", num, type)
+        val url = urls[num % urls.size]
+        return Foo(id = "$tag-$num", name = "Foo-$num", num, url, type)
+    }
+
+    fun enableMultiTypeFoo() {
+        multiTypeFoo = true
     }
 
     private suspend fun normalResult(params: LoadParams<Int>): LoadResult<Int, Foo> {
-        delay(600)
+        delay(duration)
         val start = params.pageSize * (params.key - 1) + 1
         val end = start + params.pageSize - 1
         val data = (start..end).map { createFoo(num = it) }
@@ -73,7 +93,7 @@ class FooSource(
     }
 
     private suspend fun emptyResult(params: LoadParams<Int>): LoadResult<Int, Foo> {
-        delay(600)
+        delay(duration)
         if (resultType is ResultType.Empty) {
             return LoadResult.Success(listOf(), nextKey = null)
         }
@@ -101,7 +121,7 @@ class FooSource(
     }
 
     private suspend fun failureResult(params: LoadParams<Int>): LoadResult<Int, Foo> {
-        delay(600)
+        delay(duration)
         val start = params.pageSize * (params.key - 1) + 1
         val end = start + params.pageSize - 1
         val range = start..end

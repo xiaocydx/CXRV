@@ -35,9 +35,7 @@ class FooAdapter : ListAdapter<Foo, FooAdapter.ViewHolder>() {
         return getItem(position).type.ordinal
     }
 
-    class ViewHolder(
-        itemView: View
-    ) : RecyclerView.ViewHolder(itemView) {
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvFoo: TextView = itemView.findViewById(R.id.tvFoo)
     }
 }
