@@ -116,7 +116,7 @@ class FooListFragment : Fragment() {
             // 当上一个RequestManager销毁时，通过未清除的Target，对已被复用的视图设置占位图。
             // 将下面的代码修改为：val manager = Glide.with(this@FooListFragment)，
             // 将ViewPager2从1滚动到6，再滚动回2，就能观察到已被复用的视图设置为占位图的现象。
-            val manager = when (parentFragment) {
+            val requestManager = when (parentFragment) {
                 null -> Glide.with(requireActivity())
                 else -> Glide.with(requireParentFragment())
             }
@@ -131,7 +131,7 @@ class FooListFragment : Fragment() {
             // 此处示例代码选择是的解决方案1，因为它足够简单，并且从Glide源码角度来看，
             // 解决方案2在调用into(ImageView)时，仍然会有遍历全局RequestManager的性能损耗。
             onBindView { item ->
-                manager.load(item.url)
+                requestManager.load(item.url)
                     .placeholder(R.color.placeholder_color)
                     .centerCrop().into(imageView)
                 textView.text = item.name
