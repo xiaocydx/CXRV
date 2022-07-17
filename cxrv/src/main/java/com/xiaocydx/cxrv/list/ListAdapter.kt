@@ -3,10 +3,10 @@ package com.xiaocydx.cxrv.list
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.AnyThread
 import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
 import androidx.annotation.MainThread
-import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
@@ -69,29 +69,32 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
         get() = getItem(bindingAdapterPosition)
 
     /**
-     * 通过[VH]设置item
+     * 通过[VH]设置item，该函数必须在主线程调用
      *
      * **注意**：当[item]为新对象时，才能跟旧对象进行内容对比。
      */
+    @MainThread
     fun VH.setItem(item: ITEM) {
         setItem(bindingAdapterPosition, item)
     }
 
     /**
-     * 通过[VH]设置item
+     * 通过[VH]设置item，该函数必须在主线程调用
      *
      * 若[ITEM]是data class，则通过`oldItem.copy()`返回`newItem`：
      * ```
      * holder.setItem { it.copy(name = "newName") }
      * ```
      */
+    @MainThread
     inline fun VH.setItem(newItem: (oldItem: ITEM) -> ITEM) {
         setItem(newItem(item))
     }
 
     /**
-     * 通过[VH]移除item
+     * 通过[VH]移除item，该函数必须在主线程调用
      */
+    @MainThread
     fun VH.removeItem() {
         removeItemAt(bindingAdapterPosition)
     }
@@ -99,7 +102,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     /**
      * 对应[ItemCallback.areItemsTheSame]
      */
-    @WorkerThread
+    @AnyThread
     protected abstract fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean
 
     /**
@@ -107,7 +110,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
      *
      * 仅当[areItemsTheSame]返回true时才调用此函数。
      */
-    @WorkerThread
+    @AnyThread
     protected open fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean = oldItem == newItem
 
     /**
@@ -115,7 +118,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
      *
      * 仅当[areItemsTheSame]返回true、[areContentsTheSame]返回false时才调用此函数。
      */
-    @WorkerThread
+    @MainThread
     protected open fun getChangePayload(oldItem: ITEM, newItem: ITEM): Any? = null
 
     final override fun onBindViewHolder(holder: VH, position: Int, payloads: List<Any>) {
@@ -134,12 +137,14 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
 
     protected open fun onBindViewHolder(holder: VH, item: ITEM): Unit = Unit
 
-    final override fun updateList(op: UpdateOp<ITEM>) {
-        differ.updateList(op, dispatch = true)
-    }
-
     override fun getItemCount(): Int {
         return differ.currentList.size
+    }
+
+    @MainThread
+    final override fun updateList(op: UpdateOp<ITEM>) {
+        assertMainThread()
+        differ.updateList(op, dispatch = true)
     }
 
     /**
@@ -147,18 +152,24 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
      *
      * [ListChangedListener.onListChanged]中可以调用[removeListChangedListener]。
      */
+    @MainThread
     fun addListChangedListener(listener: ListChangedListener<ITEM>) {
+        assertMainThread()
         differ.addListChangedListener(listener)
     }
 
     /**
      * 移除列表已更改的监听
      */
+    @MainThread
     fun removeListChangedListener(listener: ListChangedListener<ITEM>) {
+        assertMainThread()
         differ.removeListChangedListener(listener)
     }
 
+    @MainThread
     fun addAdapterAttachCallback(callback: AdapterAttachCallback) {
+        assertMainThread()
         if (callbacks == null) {
             callbacks = arrayListOf()
         }
@@ -168,7 +179,9 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
         }
     }
 
+    @MainThread
     fun removeAdapterAttachCallback(callback: AdapterAttachCallback) {
+        assertMainThread()
         callbacks?.remove(callback)
     }
 
@@ -204,7 +217,9 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
         differ.cancelChildren()
     }
 
+    @MainThread
     internal fun addViewHolderListener(listener: ViewHolderListener<in VH>) {
+        assertMainThread()
         if (listeners == null) {
             listeners = arrayListOf()
         }
@@ -213,20 +228,26 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
         }
     }
 
+    @MainThread
     internal fun removeViewHolderListener(listener: ViewHolderListener<in VH>) {
+        assertMainThread()
         listeners?.remove(listener)
+    }
+
+    @MainThread
+    internal fun addListExecuteListener(listener: ListExecuteListener<ITEM>) {
+        assertMainThread()
+        differ.addListExecuteListener(listener)
+    }
+
+    @MainThread
+    internal fun removeListExecuteListener(listener: ListExecuteListener<ITEM>) {
+        assertMainThread()
+        differ.removeListExecuteListener(listener)
     }
 
     internal suspend fun awaitUpdateList(op: UpdateOp<ITEM>, dispatch: Boolean = true) {
         differ.awaitUpdateList(op, dispatch)
-    }
-
-    internal fun addListExecuteListener(listener: ListExecuteListener<ITEM>) {
-        differ.addListExecuteListener(listener)
-    }
-
-    internal fun removeListExecuteListener(listener: ListExecuteListener<ITEM>) {
-        differ.removeListExecuteListener(listener)
     }
 
     private fun registerHelper(recyclerView: RecyclerView) {
@@ -240,17 +261,17 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     }
 
     private inner class InternalDiffItemCallback : DiffUtil.ItemCallback<ITEM>() {
-        @WorkerThread
+        @AnyThread
         override fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean {
             return this@ListAdapter.areItemsTheSame(oldItem, newItem)
         }
 
-        @WorkerThread
+        @AnyThread
         override fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean {
             return this@ListAdapter.areContentsTheSame(oldItem, newItem)
         }
 
-        @WorkerThread
+        @MainThread
         override fun getChangePayload(oldItem: ITEM, newItem: ITEM): Any? {
             return this@ListAdapter.getChangePayload(oldItem, newItem)
         }

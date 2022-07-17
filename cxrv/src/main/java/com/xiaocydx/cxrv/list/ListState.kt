@@ -1,14 +1,16 @@
 package com.xiaocydx.cxrv.list
 
 import androidx.annotation.MainThread
+import com.xiaocydx.cxrv.internal.assertMainThread
+import com.xiaocydx.cxrv.internal.flowOnMain
 import com.xiaocydx.cxrv.internal.reverseAccessEach
-import com.xiaocydx.cxrv.internal.runOnMainThread
 import com.xiaocydx.cxrv.internal.unsafeFlow
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
 import java.util.*
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * 列表状态，和视图控制器建立基于[ListOwner]的双向通信
@@ -49,16 +51,19 @@ class ListState<T : Any> : ListOwner<T> {
     internal var version: Int = 0
         private set
 
+    @MainThread
     override fun updateList(op: UpdateOp<T>) {
         updateList(op, dispatch = true)
     }
 
     /**
-     * 更新列表
+     * 更新列表，该函数必须在主线程调用
      *
      * @param dispatch 是否将更新操作分发给[listeners]
      */
-    internal fun updateList(op: UpdateOp<T>, dispatch: Boolean) = runOnMainThread {
+    @MainThread
+    internal fun updateList(op: UpdateOp<T>, dispatch: Boolean) {
+        assertMainThread()
         val succeed = when (op) {
             is UpdateOp.SubmitList -> submitList(op.newList)
             is UpdateOp.SetItem -> setItem(op.position, op.item)
@@ -68,7 +73,7 @@ class ListState<T : Any> : ListOwner<T> {
             is UpdateOp.SwapItem -> swapItem(op.fromPosition, op.toPosition)
         }
         if (!succeed) {
-            return@runOnMainThread
+            return
         }
         version++
         if (dispatch) {
@@ -76,9 +81,9 @@ class ListState<T : Any> : ListOwner<T> {
         }
     }
 
-    internal fun addUpdatedListener(
-        listener: (UpdateOp<T>) -> Unit
-    ) = runOnMainThread {
+    @MainThread
+    internal fun addUpdatedListener(listener: (UpdateOp<T>) -> Unit) {
+        assertMainThread()
         if (listeners == null) {
             listeners = arrayListOf()
         }
@@ -87,16 +92,16 @@ class ListState<T : Any> : ListOwner<T> {
         }
     }
 
-    internal fun removeUpdatedListener(
-        listener: (UpdateOp<T>) -> Unit
-    ) = runOnMainThread {
+    @MainThread
+    internal fun removeUpdatedListener(listener: (UpdateOp<T>) -> Unit) {
+        assertMainThread()
         listeners?.remove(listener)
     }
 
     /**
      * 若[ListState]和[CoroutineListDiffer]建立了双向通信，
      * 则提交新列表，并将更新操作分发给[listeners]时:
-     * ### [newList]是[MutableList]类型
+     * ### [newList]是[MutableList]
      * [ListState]中的sourceList通过[addAll]更新为[newList]，
      * [CoroutineListDiffer]中的sourceList直接赋值替换为[newList]，
      * 整个过程仅[ListState]的[addAll]copy一次数组。
@@ -174,7 +179,7 @@ class ListState<T : Any> : ListOwner<T> {
 }
 
 /**
- * 将[ListState]转换为列表更新数据流
+ * 将[ListState]转换为列表数据流
  */
 fun <T : Any> ListState<T>.asFlow(): Flow<ListData<T>> = unsafeFlow {
     val mediator = ListMediatorImpl(this@asFlow)
@@ -185,24 +190,24 @@ fun <T : Any> ListState<T>.asFlow(): Flow<ListData<T>> = unsafeFlow {
 internal class ListMediatorImpl<T : Any>(
     private val listState: ListState<T>
 ) : ListMediator<T> {
-    private val collected = AtomicBoolean()
+    private var collected = false
     override val version: Int
         get() = listState.version
     override val currentList: List<T>
         get() = listState.currentList
 
     val flow: Flow<ListEvent<T>> = callbackFlow {
-        check(collected.compareAndSet(false, true)) {
-            "列表更新数据流Flow<UpdateOp<*>>只能被收集一次"
-        }
+        check(!collected) { "列表更新流Flow<ListEvent<*>>只能被收集一次" }
+        collected = true
+        // 先发射最新的列表数据和版本号，让下游判断是否需要更新
+        send(ListEvent(UpdateOp.SubmitList(currentList), version))
+
         val listener: (UpdateOp<T>) -> Unit = {
             trySend(ListEvent(it, version))
         }
         listState.addUpdatedListener(listener)
-        awaitClose {
-            listState.removeUpdatedListener(listener)
-        }
-    }.buffer(UNLIMITED)
+        awaitClose { listState.removeUpdatedListener(listener) }
+    }.buffer(UNLIMITED).flowOnMain()
 
     override fun updateList(op: UpdateOp<T>) {
         listState.updateList(op, dispatch = false)

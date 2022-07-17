@@ -160,7 +160,7 @@ class CoroutineListDiffer<T : Any>(
     /**
      * 若[CoroutineListDiffer]和[ListState]建立了双向通信，
      * 则提交新列表，并将更新操作分发给[ListExecuteListener]时:
-     * ### [newList]是[MutableList]类型
+     * ### [newList]是[MutableList]
      * [CoroutineListDiffer]中的sourceList直接赋值替换为[newList]，
      * [ListState]中的sourceList通过[addAll]更新为[newList]，
      * 整个过程仅[ListState]的[addAll]copy一次数组。
@@ -203,11 +203,8 @@ class CoroutineListDiffer<T : Any>(
         sourceList[position] = item
         var payload: Any? = null
         if (oldItem !== item && diffCallback.areItemsTheSame(oldItem, item)) {
-            if (diffCallback.areContentsTheSame(oldItem, item)) {
-                return
-            } else {
-                payload = diffCallback.getChangePayload(oldItem, item)
-            }
+            if (diffCallback.areContentsTheSame(oldItem, item)) return
+            payload = diffCallback.getChangePayload(oldItem, item)
         }
         updateCallback.onChanged(position, 1, payload)
     }

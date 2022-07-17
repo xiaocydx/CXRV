@@ -5,7 +5,6 @@ import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withContext
 
 private const val LIST_COLLECTOR_KEY = "com.xiaocydx.cxrv.list.LIST_COLLECTOR_KEY"
@@ -100,24 +99,12 @@ class ListCollector<T : Any> internal constructor(
         value: ListData<T>
     ): Unit = withContext(mainDispatcher.immediate) {
         mediator = value.mediator
-        val mediator = value.mediator
-        value.flow
-            .onStart {
-                if (version < mediator.version) {
-                    emit(mediator.getListEvent())
-                }
-            }
-            .collect { event ->
-                val newVersion = event.version
-                if (version < newVersion) {
-                    adapter.awaitUpdateList(event.op, dispatch = false)
-                    // 更新列表完成后才保存版本号
-                    version = newVersion
-                }
-            }
-    }
-
-    private fun ListMediator<T>.getListEvent(): ListEvent<T> {
-        return ListEvent(UpdateOp.SubmitList(currentList), version)
+        value.flow.collect { event ->
+            val newVersion = event.version
+            if (newVersion <= version) return@collect
+            adapter.awaitUpdateList(event.op, dispatch = false)
+            // 更新列表完成后才保存版本号
+            version = newVersion
+        }
     }
 }

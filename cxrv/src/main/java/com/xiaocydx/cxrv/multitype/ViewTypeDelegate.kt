@@ -9,6 +9,8 @@ import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.concat.SpanSizeProvider
+import com.xiaocydx.cxrv.internal.accessEach
+import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.getItem
 import com.xiaocydx.cxrv.list.removeItemAt
@@ -24,7 +26,7 @@ import com.xiaocydx.cxrv.list.setItem
  */
 abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider {
     private var maxScrap: Int = 0
-    private var attachActions: MutableList<(ListAdapter<*, *>) -> Unit>? = null
+    private var attachActions: ArrayList<(ListAdapter<*, *>) -> Unit>? = null
 
     @VisibleForTesting
     @Suppress("PropertyName")
@@ -75,29 +77,32 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
         get() = adapter.getItem(bindingAdapterPosition) as ITEM
 
     /**
-     * 通过[VH]设置item
+     * 通过[VH]设置item，该函数必须在主线程调用
      *
      * **注意**：当[item]为新对象时，才能跟旧对象进行内容对比。
      */
+    @MainThread
     fun VH.setItem(item: ITEM) {
         adapter.setItem(bindingAdapterPosition, item)
     }
 
     /**
-     * 通过[VH]设置item
+     * 通过[VH]设置item，该函数必须在主线程调用
      *
      * 若[ITEM]是data class，则通过`oldItem.copy()`返回`newItem`：
      * ```
      * holder.setItem { it.copy(name = "newName") }
      * ```
      */
+    @MainThread
     inline fun VH.setItem(newItem: (oldItem: ITEM) -> ITEM) {
         setItem(newItem(item))
     }
 
     /**
-     * 通过[VH]移除item
+     * 通过[VH]移除item，该函数必须在主线程调用
      */
+    @MainThread
     fun VH.removeItem() {
         adapter.removeItemAt(bindingAdapterPosition)
     }
@@ -109,17 +114,19 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
     @Suppress("UNCHECKED_CAST")
     open fun attachAdapter(adapter: ListAdapter<*, *>) {
         _adapter = adapter as ListAdapter<Any, *>
-        attachActions?.forEach { it(adapter) }
+        attachActions?.accessEach { it(adapter) }
         attachActions = null
     }
 
     /**
-     * 关联[ListAdapter]时，同步执行[block]
+     * 关联[ListAdapter]时，同步执行[block]，该函数必须在主线程调用
      */
+    @MainThread
     fun doOnAttachAdapter(block: (ListAdapter<*, *>) -> Unit) {
+        assertMainThread()
         _adapter?.apply(block)?.let { return }
         if (attachActions == null) {
-            attachActions = mutableListOf()
+            attachActions = ArrayList(2)
         }
         if (!attachActions!!.contains(block)) {
             attachActions!!.add(block)
@@ -128,18 +135,22 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
 
     /**
      * 设置[viewType]类型在[RecycledViewPool]中的回收上限，
-     * 当[onViewRecycled]被调用时，[maxScrap]就会被消费掉。
+     * 当[onViewRecycled]被调用时，[maxScrap]就会被消费掉，该函数必须在主线程调用。
      */
+    @MainThread
     fun setMaxScrap(@IntRange(from = 1) maxScrap: Int): ViewTypeDelegate<ITEM, VH> {
+        assertMainThread()
         require(maxScrap > 0) { "maxScrap = ${maxScrap}，需要大于0" }
         this.maxScrap = maxScrap
         return this
     }
 
     /**
-     * 设置类型链接器，用于一对多映射类型场景
+     * 设置类型链接器，用于一对多映射类型场景，该函数必须在主线程调用
      */
+    @MainThread
     fun typeLinker(linker: (item: ITEM) -> Boolean): ViewTypeDelegate<ITEM, VH> {
+        assertMainThread()
         typeLinker = linker
         return this
     }
@@ -154,7 +165,7 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
     /**
      * 对应[ItemCallback.areItemsTheSame]
      */
-    @WorkerThread
+    @AnyThread
     abstract fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean
 
     /**
@@ -162,7 +173,7 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      *
      * 仅当[areItemsTheSame]返回true时才调用此函数。
      */
-    @WorkerThread
+    @AnyThread
     open fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean = oldItem == newItem
 
     /**
@@ -170,7 +181,7 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      *
      * 仅当[areItemsTheSame]返回true、[areContentsTheSame]返回false时才调用此函数。
      */
-    @WorkerThread
+    @MainThread
     open fun getChangePayload(oldItem: ITEM, newItem: ITEM): Any? = null
 
     /**

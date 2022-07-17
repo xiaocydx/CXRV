@@ -42,9 +42,7 @@ internal class PagingListMediator<T : Any>(
             trySend(PagingEvent.ListStateUpdate(it, loadStates).fusion(version))
         }
         listState.addUpdatedListener(listener)
-        awaitClose {
-            listState.removeUpdatedListener(listener)
-        }
+        awaitClose { listState.removeUpdatedListener(listener) }
     }.buffer(UNLIMITED).flowOnMain()
 
     override fun updateList(op: UpdateOp<T>) {

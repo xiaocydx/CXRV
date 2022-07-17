@@ -7,7 +7,6 @@ package com.xiaocydx.cxrv.list
  * @date 2021/11/2
  */
 sealed class UpdateOp<out T : Any> {
-
     internal data class SubmitList<T : Any>(val newList: List<T>) : UpdateOp<T>()
 
     internal data class SetItem<T : Any>(val position: Int, val item: T) : UpdateOp<T>()

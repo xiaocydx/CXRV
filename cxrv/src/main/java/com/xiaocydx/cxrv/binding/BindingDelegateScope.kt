@@ -198,7 +198,7 @@ abstract class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
     }
 
     override fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean {
-        return areContentsTheSame?.invoke(oldItem, newItem) ?: oldItem == newItem
+        return areContentsTheSame?.invoke(oldItem, newItem) ?: (oldItem == newItem)
     }
 
     override fun getChangePayload(oldItem: ITEM, newItem: ITEM): Any? {
