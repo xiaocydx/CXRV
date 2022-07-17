@@ -3,7 +3,6 @@ package com.xiaocydx.cxrv.list
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
-import com.xiaocydx.cxrv.internal.ensureMutable
 import com.xiaocydx.cxrv.internal.reverseAccessEach
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -39,13 +38,12 @@ class CoroutineListDiffer<T : Any>(
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) : Continuation<Any?>, CoroutineScope {
     private val mutex = Mutex()
-    private var sourceList: ArrayList<T> = arrayListOf()
+    private val sourceList: ArrayList<T> = arrayListOf()
     private var executeListeners: ArrayList<ListExecuteListener<T>>? = null
     private var changedListeners: ArrayList<ListChangedListener<T>>? = null
     override val context: CoroutineContext = SupervisorJob() + mainDispatcher.immediate
     override val coroutineContext: CoroutineContext = context
-    var currentList: List<T> = sourceList.toReadOnlyList()
-        private set
+    val currentList: List<T> = sourceList.toReadOnlyList()
 
     /**
      * 更新列表
@@ -146,9 +144,9 @@ class CoroutineListDiffer<T : Any>(
             return false
         }
         // 对应submitList()的快路径
-        val oldList = sourceList
+        val oldList = currentList
         val newList = op.newList
-        if (newList === oldList) {
+        if (oldList === newList) {
             return false
         }
         if (oldList.isEmpty() || newList.isEmpty()) {
@@ -157,22 +155,9 @@ class CoroutineListDiffer<T : Any>(
         return true
     }
 
-    /**
-     * 若[CoroutineListDiffer]和[ListState]建立了双向通信，
-     * 则提交新列表，并将更新操作分发给[ListExecuteListener]时:
-     * ### [newList]是[MutableList]
-     * [CoroutineListDiffer]中的sourceList直接赋值替换为[newList]，
-     * [ListState]中的sourceList通过[addAll]更新为[newList]，
-     * 整个过程仅[ListState]的[addAll]copy一次数组。
-     *
-     * ### [newList]不是[MutableList]
-     * [CoroutineListDiffer]中的sourceList通过创建[MutableList]更新为[newList]，
-     * [ListState]中的sourceList通过[addAll]更新为[newList]，
-     * 整个过程[CoroutineListDiffer]创建[MutableList]和[ListState]的[addAll]copy两次数组。
-     */
     @MainThread
     private suspend fun submitList(newList: List<T>) {
-        val oldList = sourceList
+        val oldList = currentList
         when {
             oldList === newList -> return
             oldList.isEmpty() && newList.isEmpty() -> return
@@ -182,16 +167,15 @@ class CoroutineListDiffer<T : Any>(
                 updateCallback.onRemoved(0, count)
             }
             oldList.isEmpty() && newList.isNotEmpty() -> {
-                sourceList = newList.ensureMutable()
-                currentList = sourceList.toReadOnlyList()
+                sourceList.addAll(newList)
                 updateCallback.onInserted(0, newList.size)
             }
             else -> {
                 val result: DiffUtil.DiffResult = withContext(workDispatcher) {
                     oldList.calculateDiff(newList, diffCallback)
                 }
-                sourceList = newList.ensureMutable()
-                currentList = sourceList.toReadOnlyList()
+                sourceList.clear()
+                sourceList.addAll(newList)
                 result.dispatchUpdatesTo(updateCallback)
             }
         }

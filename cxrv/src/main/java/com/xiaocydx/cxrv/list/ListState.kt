@@ -98,28 +98,15 @@ class ListState<T : Any> : ListOwner<T> {
         listeners?.remove(listener)
     }
 
-    /**
-     * 若[ListState]和[CoroutineListDiffer]建立了双向通信，
-     * 则提交新列表，并将更新操作分发给[listeners]时:
-     * ### [newList]是[MutableList]
-     * [ListState]中的sourceList通过[addAll]更新为[newList]，
-     * [CoroutineListDiffer]中的sourceList直接赋值替换为[newList]，
-     * 整个过程仅[ListState]的[addAll]copy一次数组。
-     *
-     * ### [newList]不是[MutableList]
-     * [ListState]中的sourceList通过[addAll]更新为[newList]，
-     * [CoroutineListDiffer]中的sourceList通过创建[MutableList]更新为[newList]，
-     * 整个过程[ListState]的[addAll]和[CoroutineListDiffer]创建[MutableList]copy两次数组。
-     */
     @MainThread
     private fun submitList(newList: List<T>): Boolean {
-        if (newList.isEmpty()) {
+        if (sourceList.isNotEmpty()) {
             sourceList.clear()
-        } else {
-            sourceList.clear()
-            sourceList.addAll(newList)
         }
-        return true
+        if (newList.isEmpty()) {
+            return true
+        }
+        return sourceList.addAll(newList)
     }
 
     @MainThread
