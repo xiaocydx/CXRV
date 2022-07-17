@@ -32,8 +32,8 @@ internal sealed class DispatchTarget(
     override fun onViewAttachedToWindow(v: View?): Unit = Unit
 
     /**
-     * [currentTargetView]从Window上分离时，清除全部监听，
-     * 避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+     * 当[currentTargetView]从Window上分离时，清除监听，
+     * 避免共享[RecycledViewPool]场景出现内存泄漏问题。
      */
     override fun onViewDetachedFromWindow(v: View?) {
         clearCurrentTargetViewListeners()

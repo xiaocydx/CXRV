@@ -12,7 +12,7 @@ import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
  * 若触发了[target]的点击，则调用[block]
  *
  * 1. [block]的逻辑会覆盖[target]已经设置的[OnClickListener]。
- * 2. 在合适的时机会清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ * 2. 在合适的时机会清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏问题。
  *
  * @param intervalMs 执行[block]的间隔时间
  * @param target     需要触发点击的目标视图，若返回`null`则表示不触发点击
@@ -42,7 +42,7 @@ inline fun <DelegateT, ITEM, VH> DelegateT.doOnItemClick(
  * [ViewTypeDelegate.doOnItemClick]的简易版本
  *
  * 1. [block]的逻辑会覆盖`itemView`已经设置的[OnClickListener]。
- * 2. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ * 2. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏问题。
  * 3. 调用场景只关注item，可以将[doOnSimpleItemClick]和函数引用结合使用。
  */
 inline fun <DelegateT, ITEM, VH> DelegateT.doOnSimpleItemClick(
@@ -56,7 +56,7 @@ inline fun <DelegateT, ITEM, VH> DelegateT.doOnSimpleItemClick(
  * [ViewTypeDelegate.doOnItemClick]的简易版本
  *
  * 1. [block]的逻辑会覆盖`itemView`已经设置的[OnClickListener]。
- * 2. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ * 2. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏问题。
  * 3. 调用场景只关注item，可以将[doOnSimpleItemClick]和函数引用结合使用。
  *
  * @param intervalMs 执行[block]的间隔时间
@@ -74,7 +74,7 @@ inline fun <DelegateT, ITEM, VH> DelegateT.doOnSimpleItemClick(
  *
  * 1. [block]返回`true`表示消费长按，松手时不会触发点击。
  * 2. [block]的逻辑会覆盖[target]已经设置的[OnLongClickListener]。
- * 3. 在合适的时机会清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ * 3. 在合适的时机会清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏问题。
  *
  * @param target 需要触发点击的目标视图，若返回`null`则表示不触发长按
  */
@@ -102,7 +102,7 @@ inline fun <DelegateT, ITEM, VH> DelegateT.doOnLongItemClick(
  *
  * 1. [block]返回`true`表示消费长按，松手时不会触发点击。
  * 2. [block]的逻辑会覆盖`itemView`已经设置的[OnLongClickListener]。
- * 3. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ * 3. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏问题。
  * 4. 调用场景只关注item，可以将[doOnSimpleLongItemClick]和函数引用结合使用。
  */
 inline fun <DelegateT, ITEM, VH> DelegateT.doOnSimpleLongItemClick(

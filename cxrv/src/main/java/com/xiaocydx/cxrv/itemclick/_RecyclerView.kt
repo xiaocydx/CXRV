@@ -13,7 +13,7 @@ import com.xiaocydx.cxrv.internal.isTouched
  * 若`itemView`触发点击，则调用[block]
  *
  * 1. [block]的逻辑会覆盖`itemView`已经设置的[OnClickListener]。
- * 2. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ * 2. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏问题。
  */
 inline fun <RV : RecyclerView> RV.doOnItemClick(
     crossinline block: (holder: ViewHolder, position: Int) -> Unit
@@ -23,7 +23,7 @@ inline fun <RV : RecyclerView> RV.doOnItemClick(
  * 若`itemView`触发点击，则调用[block]
  *
  * 1. [block]的逻辑会覆盖`itemView`已经设置的[OnClickListener]。
- * 2. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ * 2. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏问题。
  *
  * @param intervalMs 执行[block]的间隔时间
  */
@@ -46,7 +46,7 @@ inline fun <RV : RecyclerView> RV.doOnItemClick(
  *
  * 1. [block]返回`true`表示消费长按，松手时不会触发点击。
  * 2. [block]的逻辑会覆盖`itemView`已经设置的[OnLongClickListener]。
- * 3. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ * 3. 在合适的时机会清除`itemView`的状态，避免共享[RecycledViewPool]场景出现内存泄漏问题。
  */
 inline fun <RV : RecyclerView> RV.doOnLongItemClick(
     crossinline block: (holder: ViewHolder, position: Int) -> Boolean
@@ -65,7 +65,7 @@ inline fun <RV : RecyclerView> RV.doOnLongItemClick(
  *
  * 1. [block]的Receiver为[adapter]，可以根据[adapter]自身特性获取`item`。
  * 2. [block]的逻辑会覆盖[target]已经设置的[OnClickListener]。
- * 3. 在合适的时机会清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ * 3. 在合适的时机会清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏问题。
  *
  * @param adapter    绑定[ViewHolder]的Adapter
  * @param intervalMs 执行[block]的间隔时间
@@ -96,7 +96,7 @@ inline fun <AdapterT, VH, RV> RV.doOnItemClick(
  * 1. [block]返回`true`表示消费长按，松手时不会触发点击。
  * 2. [block]的Receiver为[adapter]，可以根据[adapter]自身特性获取`item`。
  * 3. [block]的逻辑会覆盖[target]已经设置的[OnLongClickListener]。
- * 4. 在合适的时机会清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏的情况。
+ * 4. 在合适的时机会清除[target]的状态，避免共享[RecycledViewPool]场景出现内存泄漏问题。
  *
  * @param adapter 绑定[ViewHolder]的Adapter
  * @param target  需要触发点击的目标视图，若返回`null`则表示不触发长按
