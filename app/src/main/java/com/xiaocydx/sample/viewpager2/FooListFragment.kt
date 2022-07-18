@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.core.view.doOnAttach
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.lifecycle.flowWithLifecycle
@@ -47,7 +47,9 @@ class FooListFragment : Fragment() {
      */
     @Suppress("PrivatePropertyName")
     private val TAG = javaClass.simpleName
-    private val sharedViewModel: FooCategoryViewModel by activityViewModels()
+    private val sharedViewModel: FooCategoryViewModel by viewModels(
+        ownerProducer = { parentFragment ?: requireActivity() }
+    )
     private lateinit var fooAdapter: ListAdapter<Foo, *>
     private lateinit var listViewModel: FooListViewModel
     private val categoryId: Long
@@ -63,7 +65,8 @@ class FooListFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
-        listViewModel = sharedViewModel.getListViewModel(categoryId)
+        listViewModel = sharedViewModel
+            .getListViewModel(categoryId)
         id = listViewModel.rvId
         linear().fixedSize().divider {
             width = 10.dp
