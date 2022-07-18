@@ -47,7 +47,7 @@ import java.util.*
 class ListState<T : Any> : ListOwner<T> {
     private var listeners: ArrayList<(UpdateOp<T>) -> Unit>? = null
     private val sourceList: ArrayList<T> = arrayListOf()
-    override val currentList: List<T> = sourceList.toReadOnlyList()
+    override val currentList: List<T> = Collections.unmodifiableList(sourceList)
     internal var version: Int = 0
         private set
 

@@ -43,7 +43,7 @@ class CoroutineListDiffer<T : Any>(
     private var changedListeners: ArrayList<ListChangedListener<T>>? = null
     override val context: CoroutineContext = SupervisorJob() + mainDispatcher.immediate
     override val coroutineContext: CoroutineContext = context
-    val currentList: List<T> = sourceList.toReadOnlyList()
+    val currentList: List<T> = Collections.unmodifiableList(sourceList)
 
     /**
      * 更新列表
