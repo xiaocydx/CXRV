@@ -44,8 +44,8 @@ class ViewPager2Activity : AppCompatActivity() {
         adapter = FooCategoryAdapter(this@ViewPager2Activity)
         viewPager2.adapter = adapter
         TabLayoutMediator(
-            binding.tabLayout,
-            binding.viewPager2,
+            tabLayout,
+            viewPager2,
             /*autoRefresh*/true,
             /*smoothScroll*/true
         ) { tab, position ->

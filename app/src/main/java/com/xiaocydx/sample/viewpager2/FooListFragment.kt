@@ -114,7 +114,7 @@ class FooListFragment : Fragment() {
             // 当前FooListFragment会复用其它FooListFragment回收进sharedRecycledViewPool的视图，
             // 由于Glide源码对被复用的视图再次加载图片，未清除上一个RequestManager记录的Target，
             // 当上一个RequestManager销毁时，通过未清除的Target，对已被复用的视图设置占位图。
-            // 将下面的代码修改为：val manager = Glide.with(this@FooListFragment)，
+            // 将下面的代码修改为：val requestManager = Glide.with(this@FooListFragment)，
             // 将ViewPager2从1滚动到6，再滚动回2，就能观察到已被复用的视图设置为占位图的现象。
             val requestManager = when (parentFragment) {
                 null -> Glide.with(requireActivity())
