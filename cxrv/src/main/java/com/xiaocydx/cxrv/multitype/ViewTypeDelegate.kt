@@ -11,10 +11,7 @@ import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.concat.SpanSizeProvider
 import com.xiaocydx.cxrv.internal.accessEach
 import com.xiaocydx.cxrv.internal.assertMainThread
-import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.list.getItem
-import com.xiaocydx.cxrv.list.removeItemAt
-import com.xiaocydx.cxrv.list.setItem
+import com.xiaocydx.cxrv.list.*
 
 /**
  * ViewType委托类
@@ -26,9 +23,9 @@ import com.xiaocydx.cxrv.list.setItem
  */
 abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider {
     private var maxScrap: Int = 0
-    private var attachActions: ArrayList<(ListAdapter<*, *>) -> Unit>? = null
+    private var callbacks: ArrayList<AdapterAttachCallback>? = null
 
-    @VisibleForTesting
+    @PublishedApi
     @Suppress("PropertyName")
     internal var _adapter: ListAdapter<Any, *>? = null
         private set
@@ -107,30 +104,34 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
         adapter.removeItemAt(bindingAdapterPosition)
     }
 
-    /**
-     * 关联[ListAdapter]
-     */
     @CallSuper
     @Suppress("UNCHECKED_CAST")
     open fun attachAdapter(adapter: ListAdapter<*, *>) {
         _adapter = adapter as ListAdapter<Any, *>
-        attachActions?.accessEach { it(adapter) }
-        attachActions = null
+        callbacks?.accessEach { adapter.addAdapterAttachCallback(it) }
+        callbacks = null
     }
 
-    /**
-     * 关联[ListAdapter]时，同步执行[block]，该函数必须在主线程调用
-     */
     @MainThread
-    fun doOnAttachAdapter(block: (ListAdapter<*, *>) -> Unit) {
+    fun addAdapterAttachCallback(callback: AdapterAttachCallback) {
         assertMainThread()
-        _adapter?.apply(block)?.let { return }
-        if (attachActions == null) {
-            attachActions = ArrayList(2)
+        if (_adapter != null) {
+            _adapter!!.addAdapterAttachCallback(callback)
+            return
         }
-        if (!attachActions!!.contains(block)) {
-            attachActions!!.add(block)
+        if (callbacks == null) {
+            callbacks = ArrayList(2)
         }
+        if (!callbacks!!.contains(callback)) {
+            callbacks!!.add(callback)
+        }
+    }
+
+    @MainThread
+    fun removeAdapterAttachCallback(callback: AdapterAttachCallback) {
+        assertMainThread()
+        _adapter?.removeAdapterAttachCallback(callback)
+        callbacks?.remove(callback)
     }
 
     /**
