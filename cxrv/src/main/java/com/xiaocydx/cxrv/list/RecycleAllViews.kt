@@ -8,6 +8,9 @@ import android.util.SparseIntArray
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
+import com.xiaocydx.cxrv.internal.assertMainThread
+import com.xiaocydx.cxrv.internal.runOnMainThread
+import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.list.StaggeredGridLayoutManagerCompat
 
 /**
@@ -15,8 +18,7 @@ import com.xiaocydx.cxrv.list.StaggeredGridLayoutManagerCompat
  *
  * ### 增加回收上限
  * 当回收数量超过`viewType`的回收上限时，
- * 调用[canIncrease]判断是否允许增加回收上限，
- * 若允许增加，则调用[increaseMaxScrap]获取增加后的值。
+ * 调用[increaseMaxScrap]获取增加后的回收上限。
  *
  * ### 恢复回收上限
  * 若在回收过程中，调用了[increaseMaxScrap]并设置了增加后的回收上限，
@@ -29,14 +31,10 @@ import com.xiaocydx.cxrv.list.StaggeredGridLayoutManagerCompat
  * 3. [RecyclerListener.onViewRecycled]
  * 4. [OnChildAttachStateChangeListener.onChildViewDetachedFromWindow]
  *
- * @param canIncrease      是否允许增加`viewType`的回收上限。
- * @param increaseMaxScrap [canIncrease]返回`true`时，获取`viewType`增加后的回收上限。
+ * @param increaseMaxScrap 获取`viewType`增加后的回收上限。
  */
-fun RecyclerView.recycleAllViews(
-    canIncrease: CanIncrease = defaultCanIncrease,
-    increaseMaxScrap: IncreaseMaxScrap
-) {
-    RecycleAllViewsRunner(this, canIncrease, increaseMaxScrap).run()
+fun RecyclerView.recycleAllViews(increaseMaxScrap: IncreaseMaxScrap) {
+    RecycleAllViewsRunner(this, increaseMaxScrap).run()
 }
 
 /**
@@ -50,69 +48,27 @@ fun RecyclerView.recycleAllViews(
  * 此时需要搭配[StaggeredGridLayoutManagerCompat.isSaveStateOnDetach]使用：
  * ```
  * recyclerView.staggered(spanCount) { isSaveStateOnDetach = true }
- * recyclerView.setRecycleAllViewsOnDetach(canIncrease, increaseMaxScrap)
+ * recyclerView.setRecycleAllViewsOnDetach(increaseMaxScrap)
  * ```
  *
- * @param canIncrease      是否允许增加`viewType`的回收上限。
- * @param increaseMaxScrap [canIncrease]返回`true`时，获取`viewType`增加后的回收上限。
+ * @param increaseMaxScrap 获取`viewType`增加后的回收上限。
  */
-fun RecyclerView.setRecycleAllViewsOnDetach(
-    canIncrease: CanIncrease = defaultCanIncrease,
-    increaseMaxScrap: IncreaseMaxScrap
-): View.OnAttachStateChangeListener = object : View.OnAttachStateChangeListener {
-    private var pendingSavedState: Parcelable? = null
-
-    override fun onViewAttachedToWindow(view: View) {
-        if (pendingSavedState != null) {
-            (view as? RecyclerView)?.layoutManager
-                ?.onRestoreInstanceState(pendingSavedState)
-        }
-        pendingSavedState = null
-    }
-
-    override fun onViewDetachedFromWindow(view: View) {
-        val rv = view as? RecyclerView ?: return
-        val lm = rv.layoutManager ?: return
-        pendingSavedState = lm.onSaveInstanceState()
-        // 这是一种取巧的做法，对LayoutManager实现类的mPendingSavedState赋值，
-        // 确保Fragment销毁时能保存状态，Fragment重建时恢复RecyclerView的滚动位置。
-        pendingSavedState?.let(lm::onRestoreInstanceState)
-        rv.recycleAllViews(canIncrease, increaseMaxScrap)
-    }
-}.also(::addOnAttachStateChangeListener)
+fun RecyclerView.setRecycleAllViewsOnDetach(increaseMaxScrap: IncreaseMaxScrap): Disposable {
+    return RecycleAllViewsOnDetach(this, increaseMaxScrap)
+}
 
 /**
- * 记录[RecyclerView]的初始状态，用于[CanIncrease]和[IncreaseMaxScrap]
+ * 记录[RecyclerView]的初始状态，用于[IncreaseMaxScrap]
  */
 data class InitialState(val childCount: Int)
 
 /**
- * [ViewHolder]回收进[RecycledViewPool]之前，是否允许增加`viewType`的回收上限
- */
-typealias CanIncrease = (viewType: Int, currentMaxScrap: Int, initialState: InitialState) -> Boolean
-
-/**
- * [ViewHolder]回收进[RecycledViewPool]之前，获取`viewType`增加后的回收上限
+ * 回收数量超过`viewType`的回收上限，获取`viewType`增加后的回收上限
  */
 typealias IncreaseMaxScrap = (viewType: Int, currentMaxScrap: Int, initialState: InitialState) -> Int
 
-/**
- * [RecycledViewPool.DEFAULT_MAX_SCRAP]
- */
-private const val DEFAULT_MAX_SCRAP = 5
-
-/**
- * 若`currentMaxScrap`小于默认值[DEFAULT_MAX_SCRAP]，
- * 则说明回收上限被特意调小，一般表示该类型出现的较少，
- * 这种情况不需要增加回收上限，保持该类型原本的意图。
- */
-private val defaultCanIncrease: CanIncrease = { _, currentMaxScrap, _ ->
-    currentMaxScrap >= DEFAULT_MAX_SCRAP
-}
-
 private class RecycleAllViewsRunner(
     private val rv: RecyclerView,
-    private val canIncrease: CanIncrease,
     private val increaseMaxScrap: IncreaseMaxScrap
 ) : RecyclerListener {
     private var state: Any? = null
@@ -138,9 +94,8 @@ private class RecycleAllViewsRunner(
         val scrapData = scrap[viewType] ?: return
 
         val currentMaxScrap = scrapData.mMaxScrap
-        if (scrapData.mScrapHeap.size < currentMaxScrap
-                || !canIncrease(viewType, currentMaxScrap, initialState)) {
-            // 还可以继续回收，或者不允许增加maxScrap
+        if (scrapData.mScrapHeap.size < currentMaxScrap) {
+            // 还可以继续回收
             return
         }
 
@@ -194,4 +149,45 @@ private class RecycleAllViewsRunner(
     }
 
     private class Pair(val viewType: Int, val maxScrap: Int)
+}
+
+private class RecycleAllViewsOnDetach(
+    rv: RecyclerView,
+    increaseMaxScrap: IncreaseMaxScrap
+) : Disposable, View.OnAttachStateChangeListener {
+    private var rv: RecyclerView? = rv
+    private var increaseMaxScrap: IncreaseMaxScrap? = increaseMaxScrap
+    private var pendingSavedState: Parcelable? = null
+    override val isDisposed: Boolean
+        get() = rv == null && increaseMaxScrap == null
+
+    init {
+        assertMainThread()
+        rv.addOnAttachStateChangeListener(this)
+    }
+
+    override fun onViewAttachedToWindow(view: View) {
+        if (pendingSavedState != null) {
+            (view as? RecyclerView)?.layoutManager
+                ?.onRestoreInstanceState(pendingSavedState)
+        }
+        pendingSavedState = null
+    }
+
+    override fun onViewDetachedFromWindow(view: View) {
+        val rv = view as? RecyclerView ?: return
+        val lm = rv.layoutManager ?: return
+        pendingSavedState = lm.onSaveInstanceState()
+        // 这是一种取巧的做法，对LayoutManager实现类的mPendingSavedState赋值，
+        // 确保Fragment销毁时能保存状态，Fragment重建时恢复RecyclerView的滚动位置。
+        pendingSavedState?.let(lm::onRestoreInstanceState)
+        increaseMaxScrap?.let(rv::recycleAllViews)
+    }
+
+    override fun dispose() = runOnMainThread {
+        rv?.removeOnAttachStateChangeListener(this)
+        rv = null
+        increaseMaxScrap = null
+        pendingSavedState = null
+    }
 }
