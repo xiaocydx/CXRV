@@ -1,13 +1,10 @@
 package com.xiaocydx.cxrv.itemvisible
 
-import androidx.annotation.MainThread
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.xiaocydx.cxrv.internal.assertMainThread
-import com.xiaocydx.cxrv.internal.runOnMainThread
 import com.xiaocydx.cxrv.list.Disposable
 
 /**
@@ -182,9 +179,8 @@ private fun IntArray.maxPosition(): Int {
  * @param once 为true表示调用一次[handler]后就移除。
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
-@MainThread
 fun RecyclerView.doOnFirstItemVisible(once: Boolean = false, handler: () -> Unit): Disposable {
-    return ItemVisibleObserver(this, handler, once, VisibleTarget.FIRST_ITEM)
+    return ItemVisibleDisposable(this, handler, once, VisibleTarget.FIRST_ITEM)
 }
 
 /**
@@ -195,9 +191,8 @@ fun RecyclerView.doOnFirstItemVisible(once: Boolean = false, handler: () -> Unit
  * @param once 为true表示调用一次[handler]后就移除。
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
-@MainThread
 fun RecyclerView.doOnFirstItemCompletelyVisible(once: Boolean = false, handler: () -> Unit): Disposable {
-    return ItemVisibleObserver(this, handler, once, VisibleTarget.FIRST_ITEM_COMPLETELY)
+    return ItemVisibleDisposable(this, handler, once, VisibleTarget.FIRST_ITEM_COMPLETELY)
 }
 
 /**
@@ -208,9 +203,8 @@ fun RecyclerView.doOnFirstItemCompletelyVisible(once: Boolean = false, handler: 
  * @param once 为true表示调用一次[handler]后就移除。
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
-@MainThread
 fun RecyclerView.doOnLastItemVisible(once: Boolean = false, handler: () -> Unit): Disposable {
-    return ItemVisibleObserver(this, handler, once, VisibleTarget.LAST_ITEM)
+    return ItemVisibleDisposable(this, handler, once, VisibleTarget.LAST_ITEM)
 }
 
 /**
@@ -221,15 +215,14 @@ fun RecyclerView.doOnLastItemVisible(once: Boolean = false, handler: () -> Unit)
  * @param once 为true表示调用一次[handler]后就移除。
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
-@MainThread
 fun RecyclerView.doOnLastItemCompletelyVisible(once: Boolean = false, handler: () -> Unit): Disposable {
-    return ItemVisibleObserver(this, handler, once, VisibleTarget.LAST_ITEM_COMPLETELY)
+    return ItemVisibleDisposable(this, handler, once, VisibleTarget.LAST_ITEM_COMPLETELY)
 }
 
 /**
  * 可废弃的item可视观察者
  */
-private class ItemVisibleObserver(
+private class ItemVisibleDisposable(
     recyclerView: RecyclerView,
     handler: () -> Unit,
     private val once: Boolean,
@@ -242,7 +235,6 @@ private class ItemVisibleObserver(
         get() = helper.recyclerView == null && handler == null
 
     init {
-        assertMainThread()
         helper.recyclerView?.addOnScrollListener(this)
     }
 
@@ -264,7 +256,7 @@ private class ItemVisibleObserver(
         previousVisible = visible
     }
 
-    override fun dispose() = runOnMainThread {
+    override fun dispose() {
         helper.recyclerView?.addOnScrollListener(this)
         helper.recyclerView = null
         handler = null

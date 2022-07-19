@@ -3,12 +3,9 @@ package com.xiaocydx.cxrv.list
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.job
 
 /**
- * 表示可废弃的行为
+ * 表示可废弃的行为，不保证线程安全
  *
  * [Disposable.dispose]具有幂等性，重复调用不会有副作用
  *
@@ -18,9 +15,8 @@ import kotlinx.coroutines.job
  * // 主动废弃
  * disposable.dispose()
  * // 自动废弃
+ * disposable.autoDispose(lifecycle)
  * disposable.autoDispose(lifecycleOwner)
- * disposable.autoDispose(coroutineScope)
- * disposable.autoDispose(job)
  * ```
  *
  * ### 合并方式
@@ -38,7 +34,6 @@ import kotlinx.coroutines.job
  * @date 2021/9/9
  */
 interface Disposable {
-
     /**
      * 是否已废弃
      */
@@ -61,10 +56,17 @@ interface Disposable {
 }
 
 /**
- * 当[owner]的[Lifecycle]处于销毁状态时，则自动废弃
+ * 当[Lifecycle.getCurrentState]为[Lifecycle.State.DESTROYED]时，自动调用[Disposable.dispose]
  */
 fun Disposable.autoDispose(owner: LifecycleOwner) {
-    owner.lifecycle.addObserver(object : LifecycleEventObserver {
+    autoDispose(owner.lifecycle)
+}
+
+/**
+ * 当[Lifecycle.getCurrentState]为[Lifecycle.State.DESTROYED]时，自动调用[Disposable.dispose]
+ */
+fun Disposable.autoDispose(lifecycle: Lifecycle) {
+    lifecycle.addObserver(object : LifecycleEventObserver {
         override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
             if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
                 source.lifecycle.removeObserver(this)
@@ -72,23 +74,6 @@ fun Disposable.autoDispose(owner: LifecycleOwner) {
             }
         }
     })
-}
-
-/**
- * 当[scope]的[Job]处于完成状态时，则自动废弃
- */
-fun Disposable.autoDispose(scope: CoroutineScope) {
-    require(scope.coroutineContext[Job] != null) {
-        "协程作用域的上下文缺少Job"
-    }
-    autoDispose(scope.coroutineContext.job)
-}
-
-/**
- * 当[job]处于完成状态时，则自动废弃
- */
-fun Disposable.autoDispose(job: Job) {
-    job.invokeOnCompletion { dispose() }
 }
 
 /**

@@ -1,14 +1,9 @@
 package com.xiaocydx.cxrv.list
 
-import androidx.annotation.MainThread
-import com.xiaocydx.cxrv.internal.assertMainThread
-import com.xiaocydx.cxrv.internal.runOnMainThread
-
 /**
  * 列表已更改的监听
  */
 fun interface ListChangedListener<in T : Any> {
-
     /**
      * 列表已更改，此时列表数据修改完成、列表更新操作执行完成
      *
@@ -24,16 +19,15 @@ fun interface ListChangedListener<in T : Any> {
  * @param handler 被调用时，表示列表数据修改完成、列表更新操作执行完成。
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
-@MainThread
 fun <T : Any> ListAdapter<T, *>.doOnListChanged(
     once: Boolean = false,
     handler: ListChangedListener<T>
-): Disposable = ListChangedObserver(this, handler, once)
+): Disposable = ListChangedDisposable(this, handler, once)
 
 /**
  * 可废弃的列表更改观察者
  */
-private class ListChangedObserver<T : Any>(
+private class ListChangedDisposable<T : Any>(
     adapter: ListAdapter<T, *>,
     handler: ListChangedListener<T>,
     private val once: Boolean
@@ -44,7 +38,6 @@ private class ListChangedObserver<T : Any>(
         get() = adapter == null && handler == null
 
     init {
-        assertMainThread()
         adapter.addListChangedListener(this)
     }
 
@@ -57,7 +50,7 @@ private class ListChangedObserver<T : Any>(
         }
     }
 
-    override fun dispose() = runOnMainThread {
+    override fun dispose() {
         adapter?.removeListChangedListener(this)
         adapter = null
         handler = null

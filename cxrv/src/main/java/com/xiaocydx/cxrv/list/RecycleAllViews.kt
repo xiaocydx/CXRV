@@ -6,10 +6,9 @@ import android.os.Parcelable
 import android.util.SparseArray
 import android.util.SparseIntArray
 import android.view.View
+import android.view.View.OnAttachStateChangeListener
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
-import com.xiaocydx.cxrv.internal.assertMainThread
-import com.xiaocydx.cxrv.internal.runOnMainThread
 import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.list.StaggeredGridLayoutManagerCompat
 
@@ -52,9 +51,10 @@ fun RecyclerView.recycleAllViews(increaseMaxScrap: IncreaseMaxScrap) {
  * ```
  *
  * @param increaseMaxScrap 获取`viewType`增加后的回收上限。
+ * @return 调用[Disposable.dispose]可以移除设置的视图回收处理。
  */
 fun RecyclerView.setRecycleAllViewsOnDetach(increaseMaxScrap: IncreaseMaxScrap): Disposable {
-    return RecycleAllViewsOnDetach(this, increaseMaxScrap)
+    return RecycleAllViewsOnDetachDisposable(this, increaseMaxScrap)
 }
 
 /**
@@ -151,10 +151,10 @@ private class RecycleAllViewsRunner(
     private class Pair(val viewType: Int, val maxScrap: Int)
 }
 
-private class RecycleAllViewsOnDetach(
+private class RecycleAllViewsOnDetachDisposable(
     rv: RecyclerView,
     increaseMaxScrap: IncreaseMaxScrap
-) : Disposable, View.OnAttachStateChangeListener {
+) : OnAttachStateChangeListener, Disposable {
     private var rv: RecyclerView? = rv
     private var increaseMaxScrap: IncreaseMaxScrap? = increaseMaxScrap
     private var pendingSavedState: Parcelable? = null
@@ -162,7 +162,6 @@ private class RecycleAllViewsOnDetach(
         get() = rv == null && increaseMaxScrap == null
 
     init {
-        assertMainThread()
         rv.addOnAttachStateChangeListener(this)
     }
 
@@ -184,7 +183,7 @@ private class RecycleAllViewsOnDetach(
         increaseMaxScrap?.let(rv::recycleAllViews)
     }
 
-    override fun dispose() = runOnMainThread {
+    override fun dispose() {
         rv?.removeOnAttachStateChangeListener(this)
         rv = null
         increaseMaxScrap = null

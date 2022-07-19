@@ -1,14 +1,11 @@
 package com.xiaocydx.cxrv.paging
 
-import androidx.annotation.MainThread
-import com.xiaocydx.cxrv.internal.runOnMainThread
 import com.xiaocydx.cxrv.list.Disposable
 
 /**
  * 加载状态集合的监听
  */
 fun interface LoadStatesListener {
-
     /**
      * 加载状态集合已更改
      *
@@ -24,16 +21,15 @@ fun interface LoadStatesListener {
  * @param once 为true表示调用一次[handler]后就移除
  * @return 调用[Disposable.dispose]可以移除[handler]
  */
-@MainThread
 fun PagingCollector<*>.doOnLoadStatesChanged(
     once: Boolean = false,
     handler: LoadStatesListener
-): Disposable = LoadStatesObserver(this, handler, once)
+): Disposable = LoadStatesChangedDisposable(this, handler, once)
 
 /**
  * 可废弃的加载状态集合观察者
  */
-private class LoadStatesObserver(
+private class LoadStatesChangedDisposable(
     collector: PagingCollector<*>,
     handler: LoadStatesListener,
     private val once: Boolean
@@ -56,7 +52,7 @@ private class LoadStatesObserver(
         }
     }
 
-    override fun dispose() = runOnMainThread {
+    override fun dispose() {
         collector?.removeLoadStatesListener(this)
         collector = null
         handler = null

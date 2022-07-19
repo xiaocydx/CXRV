@@ -10,13 +10,10 @@ import com.xiaocydx.cxrv.TestActivity
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * [ListAdapter]的单元测试
@@ -37,17 +34,6 @@ class ListAdapterTest {
         changedDisposable.also {
             it.dispose()
             assertDisposed(it)
-        }
-    }
-
-    @Test
-    fun coroutineScope_AutoDispose() {
-        val scope = CoroutineScope(EmptyCoroutineContext)
-        scope.cancel()
-        changedDisposable.also {
-            it.autoDispose(scope)
-            assertDisposed(it)
-            verify(exactly = 1) { it.dispose() }
         }
     }
 

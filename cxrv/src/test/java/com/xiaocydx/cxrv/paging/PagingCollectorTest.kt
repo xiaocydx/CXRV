@@ -13,13 +13,10 @@ import com.xiaocydx.cxrv.list.autoDispose
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * [PagingCollector]的单元测试
@@ -41,17 +38,6 @@ class PagingCollectorTest {
         loadStateDisposable.also {
             it.dispose()
             assertDisposed(it)
-        }
-    }
-
-    @Test
-    fun coroutineScope_AutoDispose() {
-        val scope = CoroutineScope(EmptyCoroutineContext)
-        scope.cancel()
-        loadStateDisposable.also {
-            it.autoDispose(scope)
-            assertDisposed(it)
-            verify(exactly = 1) { it.dispose() }
         }
     }
 

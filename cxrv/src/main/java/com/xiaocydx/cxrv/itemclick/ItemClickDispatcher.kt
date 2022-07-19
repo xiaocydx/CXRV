@@ -3,16 +3,13 @@ package com.xiaocydx.cxrv.itemclick
 import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_DOWN
 import android.view.View
-import android.view.View.*
+import android.view.View.OnClickListener
+import android.view.View.OnLongClickListener
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.SimpleOnItemTouchListener
 import com.xiaocydx.cxrv.R
 import com.xiaocydx.cxrv.internal.accessEach
-import com.xiaocydx.cxrv.internal.assertMainThread
-import com.xiaocydx.cxrv.internal.runOnMainThread
 import com.xiaocydx.cxrv.list.Disposable
-import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  * Item点击分发器，支持`itemView`及其子view的点击、长按
@@ -61,7 +58,7 @@ internal class ItemClickDispatcher(
         intervalMs: Long,
         targetView: (itemView: View, event: MotionEvent) -> View?,
         clickHandler: (itemView: View) -> Unit
-    ): Disposable = DispatchTargetObserver(
+    ): Disposable = DispatchTargetDisposable(
         dispatcher = this,
         target = ClickDispatchTarget(intervalMs, targetView, clickHandler)
     )
@@ -76,7 +73,7 @@ internal class ItemClickDispatcher(
     fun addLongItemClick(
         targetView: (itemView: View, event: MotionEvent) -> View?,
         longClickHandler: (itemView: View) -> Boolean
-    ): Disposable = DispatchTargetObserver(
+    ): Disposable = DispatchTargetDisposable(
         dispatcher = this,
         target = LongClickDispatchTarget(targetView, longClickHandler)
     )
@@ -167,7 +164,7 @@ internal class ItemClickDispatcher(
         pendingLongClickTargets.takeIf { !it.isNullOrEmpty() }?.clear()
     }
 
-    private class DispatchTargetObserver(
+    private class DispatchTargetDisposable(
         target: DispatchTarget,
         dispatcher: ItemClickDispatcher
     ) : Disposable {
@@ -177,12 +174,10 @@ internal class ItemClickDispatcher(
             get() = target == null
 
         init {
-            assertMainThread()
             dispatcher.addDispatchTarget(target)
         }
 
-        override fun dispose() = runOnMainThread {
-            target ?: return@runOnMainThread
+        override fun dispose() {
             dispatcher?.removeDispatchTarget(target!!)
             target = null
             dispatcher = null
