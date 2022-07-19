@@ -8,8 +8,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
-import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
-import com.xiaocydx.cxrv.itemclick.doOnSimpleLongItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.getItem
@@ -72,18 +70,14 @@ class ItemClickActivity : AppCompatActivity() {
         setupAbsoluteItemClickByRecyclerView()
         // setupRelativeItemClickByRecyclerView()
         // setupItemClickByListAdapter()
-        // setupSimpleItemClickByListAdapter()
         // setupItemClickByViewTypeDelegate()
-        // setupSimpleItemClickByViewTypeDelegate()
     }
 
     private fun setupLongItemClick() {
         setupAbsoluteLongItemClickByRecyclerView()
         // setupRelativeLongItemClickByRecyclerView()
         // setupLongItemClickByListAdapter()
-        // setupSimpleLongItemClickByListAdapter()
         // setupLongItemClickByViewTypeDelegate()
-        // setupSimpleLongItemClickByViewTypeDelegate()
     }
 
     //region 设置item点击
@@ -121,19 +115,7 @@ class ItemClickActivity : AppCompatActivity() {
     }
 
     /**
-     * 4.通过[ListAdapter]设置点击，是[setupItemClickByListAdapter]的简化版本
-     */
-    private fun setupSimpleItemClickByListAdapter() {
-        adapter1.doOnSimpleItemClick { item ->
-            showClickToast(prefix = "Adapter1", view = "itemView", item)
-        }
-        adapter2.doOnSimpleItemClick { item ->
-            showClickToast(prefix = "Adapter2", view = "itemView", item)
-        }
-    }
-
-    /**
-     * 5.通过[ViewTypeDelegate]设置点击
+     * 4.通过[ViewTypeDelegate]设置点击
      */
     private fun setupItemClickByViewTypeDelegate() {
         type1Delegate.doOnItemClick { holder, item ->
@@ -152,18 +134,6 @@ class ItemClickActivity : AppCompatActivity() {
             target = { binding.targetView }
         ) { holder, item ->
             showClickToast(prefix = "Type2Delegate", view = "targetView", item, holder.bindingAdapterPosition)
-        }
-    }
-
-    /**
-     * 6.通过[ViewTypeDelegate]设置点击，是[setupItemClickByViewTypeDelegate]的简化版本
-     */
-    private fun setupSimpleItemClickByViewTypeDelegate() {
-        type1Delegate.doOnSimpleItemClick { item ->
-            showClickToast(prefix = "Type1Delegate", view = "itemView", item)
-        }
-        type2Delegate.doOnSimpleItemClick { item ->
-            showClickToast(prefix = "Type2Delegate", view = "itemView", item)
         }
     }
     //endregion
@@ -208,21 +178,7 @@ class ItemClickActivity : AppCompatActivity() {
     }
 
     /**
-     * 4.通过[ListAdapter]设置长按，是[setupLongItemClickByListAdapter]的简化版本
-     */
-    private fun setupSimpleLongItemClickByListAdapter() {
-        adapter1.doOnSimpleLongItemClick { item ->
-            showLongClickToast(prefix = "Adapter1", view = "itemView", item)
-            true
-        }
-        adapter2.doOnSimpleLongItemClick { item ->
-            showLongClickToast(prefix = "Adapter2", view = "itemView", item)
-            true
-        }
-    }
-
-    /**
-     * 5.通过[ViewTypeDelegate]设置长按
+     * 4.通过[ViewTypeDelegate]设置长按
      */
     private fun setupLongItemClickByViewTypeDelegate() {
         type1Delegate.doOnLongItemClick { holder, item ->
@@ -244,20 +200,6 @@ class ItemClickActivity : AppCompatActivity() {
             target = { binding.targetView }
         ) { holder, item ->
             showLongClickToast(prefix = "Type2Delegate", view = "targetView", item, holder.bindingAdapterPosition)
-            true
-        }
-    }
-
-    /**
-     * 6.通过[ViewTypeDelegate]设置长按，是[setupLongItemClickByViewTypeDelegate]的简化版本
-     */
-    private fun setupSimpleLongItemClickByViewTypeDelegate() {
-        type1Delegate.doOnSimpleLongItemClick { item ->
-            showLongClickToast(prefix = "Type1Delegate", view = "itemView", item)
-            true
-        }
-        type2Delegate.doOnSimpleLongItemClick { item ->
-            showLongClickToast(prefix = "Type2Delegate", view = "itemView", item)
             true
         }
     }

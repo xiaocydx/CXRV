@@ -171,7 +171,7 @@ internal class ItemClickDispatcher(
         private var target: DispatchTarget? = target
         private var dispatcher: ItemClickDispatcher? = dispatcher
         override val isDisposed: Boolean
-            get() = target == null
+            get() = target == null && dispatcher == null
 
         init {
             dispatcher.addDispatchTarget(target)

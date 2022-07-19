@@ -23,24 +23,20 @@ class OneToManyFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
         adapter = listAdapter<OneToManyMessage> {
-            register(getTextDelegate()) { it.type == "text" }
-            register(getImageDelegate()) { it.type == "image" }
+            register(OneToManyTextDelegate().apply {
+                typeLinker { it.type == "text" }
+                doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
+            })
+
+            register(OneToManyImageDelegate().apply {
+                typeLinker { it.type == "image" }
+                doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
+            })
         }.initMessages()
+
         linear().fixedSize()
         overScrollNever()
         withLayoutParams(matchParent, matchParent)
-    }
-
-    private fun getTextDelegate(): OneToManyTextDelegate {
-        return OneToManyTextDelegate().doOnSimpleItemClick {
-            showToast("文本类型消息 id = ${it.id}")
-        }
-    }
-
-    private fun getImageDelegate(): OneToManyImageDelegate {
-        return OneToManyImageDelegate().doOnSimpleItemClick {
-            showToast("图片类型消息 id = ${it.id}")
-        }
     }
 
     private fun ListAdapter<OneToManyMessage, *>.initMessages(): RecyclerView.Adapter<*> {

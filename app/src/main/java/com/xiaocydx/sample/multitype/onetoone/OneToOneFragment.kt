@@ -28,24 +28,17 @@ class OneToOneFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
         adapter = listAdapter<OneToOneMessage> {
-            register(getTextDelegate())
-            register(getImageDelegate())
+            register(OneToOneTextDelegate().apply {
+                doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
+            })
+            register(OneToOneImageDelegate().apply {
+                doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
+            })
         }.initMessages()
+
         linear().fixedSize()
         overScrollNever()
         withLayoutParams(matchParent, matchParent)
-    }
-
-    private fun getTextDelegate(): OneToOneTextDelegate {
-        return OneToOneTextDelegate().doOnSimpleItemClick {
-            showToast("文本类型消息 id = ${it.id}")
-        }
-    }
-
-    private fun getImageDelegate(): OneToOneImageDelegate {
-        return OneToOneImageDelegate().doOnSimpleItemClick {
-            showToast("图片类型消息 id = ${it.id}")
-        }
     }
 
     private fun ListAdapter<OneToOneMessage, *>.initMessages(): Adapter<*> {
