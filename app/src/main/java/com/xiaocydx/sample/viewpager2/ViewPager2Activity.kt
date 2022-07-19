@@ -18,9 +18,7 @@ import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.onClick
 import com.xiaocydx.sample.overScrollNever
 import com.xiaocydx.sample.registerOnPageChangeCallback
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 
 /**
@@ -62,23 +60,17 @@ class ViewPager2Activity : AppCompatActivity() {
     }
 
     private fun initCollect() = with(binding) {
-        val state = sharedViewModel
-            .state.flowWithLifecycle(lifecycle)
-
-        state.map { it.list }
-            .distinctUntilChanged()
-            .onEach(adapter::submitList)
-            .onEach { viewPager2.ensureTransform() }
-            .launchIn(lifecycleScope)
-
-        state.map {
-            if (it.pendingItem != NO_ITEM) {
-                sharedViewModel.consumePendingItem()
-                viewPager2.setCurrentItem(it.pendingItem, /*smoothScroll*/false)
-            } else if (it.currentItem != viewPager2.currentItem) {
-                viewPager2.setCurrentItem(it.currentItem, /*smoothScroll*/true)
+        sharedViewModel.state
+            .onEach {
+                if (adapter.submitList(it.list)) {
+                    viewPager2.ensureTransform()
+                }
+                if (it.currentItem != viewPager2.currentItem) {
+                    viewPager2.scrollToCurrentItem(it.currentItem)
+                }
             }
-        }.launchIn(lifecycleScope)
+            .flowWithLifecycle(lifecycle)
+            .launchIn(lifecycleScope)
     }
 
     /**
@@ -90,14 +82,23 @@ class ViewPager2Activity : AppCompatActivity() {
         doOnPreDraw { requestTransform() }
     }
 
+    private fun ViewPager2.scrollToCurrentItem(currentItem: Int) {
+        setCurrentItem(currentItem, /*smoothScroll*/false)
+    }
+
     private class FooCategoryAdapter(
         fragmentActivity: FragmentActivity
     ) : FragmentStateAdapter(fragmentActivity) {
-        private var list: List<FooCategory> = emptyList()
+        private var list: MutableList<FooCategory> = mutableListOf()
 
-        fun submitList(newList: List<FooCategory>) {
-            list = newList
-            notifyDataSetChanged()
+        fun submitList(newList: List<FooCategory>): Boolean {
+            val changed = list != newList
+            if (changed) {
+                list.clear()
+                list.addAll(newList)
+                notifyDataSetChanged()
+            }
+            return changed
         }
 
         fun getItem(position: Int): FooCategory = list[position]
