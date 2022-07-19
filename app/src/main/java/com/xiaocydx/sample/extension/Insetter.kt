@@ -1,3 +1,5 @@
+@file:Suppress("PackageDirectoryMismatch")
+
 package com.xiaocydx.sample
 
 import android.content.res.Resources

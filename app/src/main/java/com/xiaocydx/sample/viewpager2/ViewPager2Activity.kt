@@ -6,19 +6,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.flowWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.MarginPageTransformer
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
+import com.xiaocydx.sample.*
 import com.xiaocydx.sample.databinding.ActivityViewPager2Binding
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.onClick
-import com.xiaocydx.sample.overScrollNever
-import com.xiaocydx.sample.registerOnPageChangeCallback
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
 /**
@@ -69,8 +63,8 @@ class ViewPager2Activity : AppCompatActivity() {
                     viewPager2.scrollToCurrentItem(it.currentItem)
                 }
             }
-            .flowWithLifecycle(lifecycle)
-            .launchIn(lifecycleScope)
+            .repeatOnLifecycle(lifecycle)
+            .launchInLifecycleScope()
     }
 
     /**

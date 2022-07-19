@@ -11,7 +11,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.Lifecycle.State.STARTED
-import androidx.lifecycle.flowWithLifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
@@ -36,7 +35,6 @@ import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.viewpager2.nested.isVp2NestedScrollable
 import com.xiaocydx.sample.viewpager2.shared.findParentViewPager2
 import com.xiaocydx.sample.viewpager2.shared.sharedRecycledViewPool
-import kotlinx.coroutines.flow.launchIn
 
 /**
  * @author xcc
@@ -181,8 +179,8 @@ class FooListFragment : Fragment() {
         ) {
             listViewModel.flow
                 .onEach(fooAdapter.pagingCollector)
-                .flowWithLifecycle(viewLifecycle)
-                .launchIn(viewLifecycleScope)
+                .repeatOnLifecycle(viewLifecycle)
+                .launchInLifecycleScope()
         }
     }
 

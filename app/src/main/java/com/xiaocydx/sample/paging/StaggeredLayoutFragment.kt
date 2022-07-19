@@ -1,6 +1,5 @@
 package com.xiaocydx.sample.paging
 
-import androidx.lifecycle.flowWithLifecycle
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.staggered
@@ -8,9 +7,8 @@ import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.paging.config.pagingSwipeRefresh
+import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.viewLifecycle
-import com.xiaocydx.sample.viewLifecycleScope
-import kotlinx.coroutines.flow.launchIn
 
 /**
  * @author xcc
@@ -38,7 +36,7 @@ class StaggeredLayoutFragment : PagingFragment() {
         listViewModel.enableMultiTypeFoo()
         listViewModel.flow
             .onEach(fooAdapter.pagingCollector)
-            .flowWithLifecycle(viewLifecycle)
-            .launchIn(viewLifecycleScope)
+            .repeatOnLifecycle(viewLifecycle)
+            .launchInLifecycleScope()
     }
 }

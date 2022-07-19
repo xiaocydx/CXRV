@@ -4,8 +4,6 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.updatePadding
-import androidx.lifecycle.flowWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
@@ -20,7 +18,6 @@ import com.xiaocydx.sample.databinding.ItemArticleBinding
 import com.xiaocydx.sample.paging.config.paging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.retrofit.ArticleInfo
-import kotlinx.coroutines.flow.launchIn
 
 /**
  * 分页加载示例代码（网络请求）
@@ -36,7 +33,7 @@ class ArticleListActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         initView()
-        initObserve()
+        initCollect()
         initEdgeToEdge()
     }
 
@@ -64,11 +61,11 @@ class ArticleListActivity : AppCompatActivity() {
         setContentView(rvArticle.withSwipeRefresh(listAdapter))
     }
 
-    private fun initObserve() {
+    private fun initCollect() {
         viewModel.flow
             .onEach(listAdapter.pagingCollector)
-            .flowWithLifecycle(lifecycle)
-            .launchIn(lifecycleScope)
+            .repeatOnLifecycle(lifecycle)
+            .launchInLifecycleScope()
     }
 
     private fun initEdgeToEdge() {
