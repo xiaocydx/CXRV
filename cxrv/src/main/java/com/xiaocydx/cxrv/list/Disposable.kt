@@ -82,6 +82,28 @@ fun Disposable.autoDispose(lifecycle: Lifecycle) {
 fun emptyDisposable(): Disposable = EmptyDisposable
 
 /**
+ * [Disposable]的包装类，可用于执行过程更改为实际[Disposable]的场景
+ */
+class DisposableWrapper : Disposable {
+    private var delegate: Disposable = emptyDisposable()
+    override val isDisposed: Boolean
+        get() = delegate.isDisposed
+
+    fun attach(delegate: Disposable) {
+        this.delegate = delegate
+    }
+
+    fun attachIfEmpty(delegate: Disposable) {
+        if (this.delegate != emptyDisposable()) return
+        attach(delegate)
+    }
+
+    override fun dispose() {
+        delegate.dispose()
+    }
+}
+
+/**
  * [EmptyDisposable]不对外开放，而是提供[emptyDisposable]，
  * 是为了让调用处将[EmptyDisposable]类型推导为[Disposable]，
  * 便于可变属性使用“+=”的合并写法，详细描述请看[Disposable.plus]。
@@ -89,8 +111,7 @@ fun emptyDisposable(): Disposable = EmptyDisposable
 private object EmptyDisposable : Disposable {
     override val isDisposed: Boolean = true
 
-    override fun dispose() {
-    }
+    override fun dispose(): Unit = Unit
 
     override fun plus(other: Disposable): Disposable = other
 }
