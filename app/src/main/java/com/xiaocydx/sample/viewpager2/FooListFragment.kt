@@ -22,6 +22,7 @@ import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.autoDispose
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
@@ -161,7 +162,11 @@ class FooListFragment : Fragment() {
             // 回收进sharedRecycledViewPool的上限，是当前子View数量的2倍，
             // 这是一种简易策略，意图是最多回收2页满数量的View，供重建复用。
             2 * initialState.childCount
-        }
+        }.autoDispose(viewLifecycle)
+        // Activity直接退出的流程，即ActivityThread.handleDestroyActivity()，
+        // 是先更改Lifecycle的状态，再执行视图树的dispatchDetachedFromWindow()。
+        // autoDispose(viewLifecycle)在DESTROYED状态时自动废弃，
+        // 避免Activity直接退出时，执行冗余的视图回收处理。
     }
 
     /**
