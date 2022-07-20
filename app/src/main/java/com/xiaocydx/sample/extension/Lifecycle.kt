@@ -2,6 +2,7 @@
 
 package com.xiaocydx.sample
 
+import androidx.annotation.CheckResult
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.*
 import kotlinx.coroutines.CoroutineScope
@@ -39,9 +40,9 @@ inline fun Lifecycle.doOnTargetState(
 }.also(::addObserver)
 
 /**
- * 通过[Lifecycle.coroutineScope]启动协程，调用[Lifecycle.repeatOnLifecycle]
+ * 将接下来的操作约束为启动协程，调用[Lifecycle.repeatOnLifecycle]
  *
- * 若`flow`的最后一个操作符是[Flow.flowWithLifecycle]，则可以调用该函数进行简化，
+ * 若`flow`的最后一个操作符是[Flow.flowWithLifecycle]，则可以调用该函数进行优化，
  * 避免[Flow.flowWithLifecycle]创建[callbackFlow]，占用不必要的内存资源，例如：
  * ```
  * flow
@@ -55,6 +56,7 @@ inline fun Lifecycle.doOnTargetState(
  *     .launchInLifecycleScope()
  * ```
  */
+@CheckResult
 fun <T> Flow<T>.repeatOnLifecycle(
     lifecycle: Lifecycle,
     state: Lifecycle.State = Lifecycle.State.STARTED
@@ -62,7 +64,7 @@ fun <T> Flow<T>.repeatOnLifecycle(
     return RepeatOnLifecycleBuilder(this, lifecycle, state)
 }
 
-class RepeatOnLifecycleBuilder<T>(
+class RepeatOnLifecycleBuilder<T> internal constructor(
     private val flow: Flow<T>,
     private val lifecycle: Lifecycle,
     private val state: Lifecycle.State
@@ -71,16 +73,7 @@ class RepeatOnLifecycleBuilder<T>(
         return launchIn(lifecycle.coroutineScope)
     }
 
-    fun launchIn(
-        scope: CoroutineScope,
-        safely: Boolean = true
-    ): Job = if (!safely) {
-        scope.launch { repeatOnLifecycle() }
-    } else {
-        scope.launchSafely { repeatOnLifecycle() }
-    }
-
-    private suspend fun repeatOnLifecycle() {
+    fun launchIn(scope: CoroutineScope): Job = scope.launch {
         lifecycle.repeatOnLifecycle(state) { flow.collect() }
     }
 }
