@@ -4,6 +4,7 @@ package com.xiaocydx.cxrv.list
  * 列表已更改的监听
  */
 fun interface ListChangedListener<in T : Any> {
+
     /**
      * 列表已更改，此时列表数据修改完成、列表更新操作执行完成
      *
@@ -22,32 +23,34 @@ fun interface ListChangedListener<in T : Any> {
 fun <T : Any> ListAdapter<T, *>.doOnListChanged(
     once: Boolean = false,
     handler: ListChangedListener<T>
-): Disposable = ListChangedDisposable(this, handler, once)
+): Disposable = ListChangedDisposable<T>(once).attach(this, handler)
 
 /**
  * 可废弃的列表更改观察者
  */
 private class ListChangedDisposable<T : Any>(
-    adapter: ListAdapter<T, *>,
-    handler: ListChangedListener<T>,
     private val once: Boolean
 ) : ListChangedListener<T>, Disposable {
-    private var adapter: ListAdapter<T, *>? = adapter
-    private var handler: ListChangedListener<T>? = handler
+    private var adapter: ListAdapter<T, *>? = null
+    private var handler: ListChangedListener<T>? = null
     override val isDisposed: Boolean
         get() = adapter == null && handler == null
 
-    init {
+    fun attach(
+        adapter: ListAdapter<T, *>,
+        handler: ListChangedListener<T>,
+    ): Disposable {
+        dispose()
+        this.adapter = adapter
+        this.handler = handler
         adapter.addListChangedListener(this)
+        return this
     }
 
     override fun onListChanged(current: List<T>) {
-        handler?.let {
-            if (once) {
-                dispose()
-            }
-            it.onListChanged(current)
-        }
+        val handler = handler ?: return
+        if (once) dispose()
+        handler.onListChanged(current)
     }
 
     override fun dispose() {

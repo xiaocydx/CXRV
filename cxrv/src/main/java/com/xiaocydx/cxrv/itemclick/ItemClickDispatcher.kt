@@ -58,7 +58,7 @@ internal class ItemClickDispatcher(
         intervalMs: Long,
         targetView: (itemView: View, event: MotionEvent) -> View?,
         clickHandler: (itemView: View) -> Unit
-    ): Disposable = DispatchTargetDisposable(
+    ): Disposable = DispatchTargetDisposable().attach(
         dispatcher = this,
         target = ClickDispatchTarget(intervalMs, targetView, clickHandler)
     )
@@ -73,7 +73,7 @@ internal class ItemClickDispatcher(
     fun addLongItemClick(
         targetView: (itemView: View, event: MotionEvent) -> View?,
         longClickHandler: (itemView: View) -> Boolean
-    ): Disposable = DispatchTargetDisposable(
+    ): Disposable = DispatchTargetDisposable().attach(
         dispatcher = this,
         target = LongClickDispatchTarget(targetView, longClickHandler)
     )
@@ -164,17 +164,21 @@ internal class ItemClickDispatcher(
         pendingLongClickTargets.takeIf { !it.isNullOrEmpty() }?.clear()
     }
 
-    private class DispatchTargetDisposable(
-        target: DispatchTarget,
-        dispatcher: ItemClickDispatcher
-    ) : Disposable {
-        private var target: DispatchTarget? = target
-        private var dispatcher: ItemClickDispatcher? = dispatcher
+    private class DispatchTargetDisposable : Disposable {
+        private var target: DispatchTarget? = null
+        private var dispatcher: ItemClickDispatcher? = null
         override val isDisposed: Boolean
             get() = target == null && dispatcher == null
 
-        init {
+        fun attach(
+            target: DispatchTarget,
+            dispatcher: ItemClickDispatcher
+        ): Disposable {
+            dispose()
+            this.target = target
+            this.dispatcher = dispatcher
             dispatcher.addDispatchTarget(target)
+            return this
         }
 
         override fun dispose() {

@@ -6,6 +6,7 @@ import com.xiaocydx.cxrv.list.Disposable
  * 加载状态集合的监听
  */
 fun interface LoadStatesListener {
+
     /**
      * 加载状态集合已更改
      *
@@ -24,32 +25,34 @@ fun interface LoadStatesListener {
 fun PagingCollector<*>.doOnLoadStatesChanged(
     once: Boolean = false,
     handler: LoadStatesListener
-): Disposable = LoadStatesChangedDisposable(this, handler, once)
+): Disposable = LoadStatesChangedDisposable(once).attach(this, handler)
 
 /**
  * 可废弃的加载状态集合观察者
  */
 private class LoadStatesChangedDisposable(
-    collector: PagingCollector<*>,
-    handler: LoadStatesListener,
     private val once: Boolean
 ) : LoadStatesListener, Disposable {
-    private var collector: PagingCollector<*>? = collector
-    private var handler: LoadStatesListener? = handler
+    private var collector: PagingCollector<*>? = null
+    private var handler: LoadStatesListener? = null
     override val isDisposed: Boolean
         get() = collector == null && handler == null
 
-    init {
+    fun attach(
+        collector: PagingCollector<*>,
+        handler: LoadStatesListener,
+    ): Disposable {
+        dispose()
+        this.collector = collector
+        this.handler = handler
         collector.addLoadStatesListener(this)
+        return this
     }
 
     override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
-        handler?.let {
-            if (once) {
-                dispose()
-            }
-            it.onLoadStatesChanged(previous, current)
-        }
+        val handler = handler ?: return
+        if (once) dispose()
+        handler.onLoadStatesChanged(previous, current)
     }
 
     override fun dispose() {

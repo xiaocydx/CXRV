@@ -54,7 +54,7 @@ fun RecyclerView.recycleAllViews(increaseMaxScrap: IncreaseMaxScrap) {
  * @return 调用[Disposable.dispose]可以移除设置的视图回收处理。
  */
 fun RecyclerView.setRecycleAllViewsOnDetach(increaseMaxScrap: IncreaseMaxScrap): Disposable {
-    return RecycleAllViewsOnDetachDisposable(this, increaseMaxScrap)
+    return RecycleAllViewsOnDetachDisposable().attach(this, increaseMaxScrap)
 }
 
 /**
@@ -151,18 +151,22 @@ private class RecycleAllViewsRunner(
     private class Pair(val viewType: Int, val maxScrap: Int)
 }
 
-private class RecycleAllViewsOnDetachDisposable(
-    rv: RecyclerView,
-    increaseMaxScrap: IncreaseMaxScrap
-) : OnAttachStateChangeListener, Disposable {
-    private var rv: RecyclerView? = rv
-    private var increaseMaxScrap: IncreaseMaxScrap? = increaseMaxScrap
+private class RecycleAllViewsOnDetachDisposable : OnAttachStateChangeListener, Disposable {
+    private var rv: RecyclerView? = null
+    private var increaseMaxScrap: IncreaseMaxScrap? = null
     private var pendingSavedState: Parcelable? = null
     override val isDisposed: Boolean
         get() = rv == null && increaseMaxScrap == null
 
-    init {
+    fun attach(
+        rv: RecyclerView,
+        increaseMaxScrap: IncreaseMaxScrap
+    ): Disposable {
+        dispose()
+        this.rv = rv
+        this.increaseMaxScrap = increaseMaxScrap
         rv.addOnAttachStateChangeListener(this)
+        return this
     }
 
     override fun onViewAttachedToWindow(view: View) {

@@ -34,6 +34,7 @@ import androidx.lifecycle.LifecycleOwner
  * @date 2021/9/9
  */
 interface Disposable {
+
     /**
      * 是否已废弃
      */

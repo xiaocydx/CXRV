@@ -21,34 +21,44 @@ interface AdapterAttachCallback {
  */
 inline fun ListAdapter<*, *>.doOnAttach(crossinline handler: (RecyclerView) -> Unit): Disposable {
     recyclerView?.apply(handler)?.let { return emptyDisposable() }
-    return AdapterAttachDisposable(this) { handler(it) }
+    return AdapterAttachDisposable().attach(this) { handler(it) }
 }
 
 /**
  * 在适配器附加到RecyclerView上时，调用一次[handler]
  */
 inline fun ViewTypeDelegate<*, *>.doOnAttach(crossinline handler: (RecyclerView) -> Unit): Disposable {
-    return _adapter?.doOnAttach(handler) ?: AdapterAttachDisposable(this) { handler(it) }
+    return _adapter?.doOnAttach(handler) ?: AdapterAttachDisposable().attach(this) { handler(it) }
 }
 
 @PublishedApi
-internal class AdapterAttachDisposable constructor() : AdapterAttachCallback, Disposable {
+internal class AdapterAttachDisposable : AdapterAttachCallback, Disposable {
     private var adapter: ListAdapter<*, *>? = null
     private var delegate: ViewTypeDelegate<*, *>? = null
     private var handler: ((RecyclerView) -> Unit)? = null
     override val isDisposed: Boolean
         get() = adapter == null && handler == null
 
-    constructor(adapter: ListAdapter<*, *>, handler: (RecyclerView) -> Unit) : this() {
+    fun attach(
+        adapter: ListAdapter<*, *>,
+        handler: (RecyclerView) -> Unit
+    ): Disposable {
+        dispose()
         this.adapter = adapter
         this.handler = handler
         adapter.addAdapterAttachCallback(this)
+        return this
     }
 
-    constructor(delegate: ViewTypeDelegate<*, *>, handler: (RecyclerView) -> Unit) : this() {
+    fun attach(
+        delegate: ViewTypeDelegate<*, *>,
+        handler: (RecyclerView) -> Unit
+    ): Disposable {
+        dispose()
         this.delegate = delegate
         this.handler = handler
         delegate.addAdapterAttachCallback(this)
+        return this
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {

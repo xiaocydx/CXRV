@@ -47,13 +47,23 @@ internal class AppendTrigger(
     private val loadStates: LoadStates
         get() = collector.loadStates
 
-    init {
+    fun attach() {
         adapter.also {
             it.addViewHolderListener(this)
             it.addListChangedListener(this)
             it.addAdapterAttachCallback(this)
         }
         collector.addLoadStatesListener(this)
+    }
+
+    fun detach() {
+        adapter.also {
+            it.removeViewHolderListener(this)
+            it.removeListChangedListener(this)
+            it.removeAdapterAttachCallback(this)
+        }
+        collector.removeLoadStatesListener(this)
+        rv?.let(::onDetachedFromRecyclerView)
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {

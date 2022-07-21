@@ -129,7 +129,7 @@ class PagingCollector<T : Any> internal constructor(
 
     init {
         assertMainThread()
-        AppendTrigger(adapter, this)
+        AppendTrigger(adapter, this).attach()
         addHandleEventListener(RefreshStartScrollToFirst())
         adapter.addListExecuteListener { op ->
             mediator?.asListMediator<T>()?.updateList(op)

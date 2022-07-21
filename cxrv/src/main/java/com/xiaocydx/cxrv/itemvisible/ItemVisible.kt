@@ -5,6 +5,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.xiaocydx.cxrv.itemvisible.VisibleTarget.*
 import com.xiaocydx.cxrv.list.Disposable
 
 /**
@@ -180,7 +181,7 @@ private fun IntArray.maxPosition(): Int {
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
 fun RecyclerView.doOnFirstItemVisible(once: Boolean = false, handler: () -> Unit): Disposable {
-    return ItemVisibleDisposable(this, handler, once, VisibleTarget.FIRST_ITEM)
+    return ItemVisibleDisposable(once, FIRST_ITEM).attach(this, handler)
 }
 
 /**
@@ -192,7 +193,7 @@ fun RecyclerView.doOnFirstItemVisible(once: Boolean = false, handler: () -> Unit
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
 fun RecyclerView.doOnFirstItemCompletelyVisible(once: Boolean = false, handler: () -> Unit): Disposable {
-    return ItemVisibleDisposable(this, handler, once, VisibleTarget.FIRST_ITEM_COMPLETELY)
+    return ItemVisibleDisposable(once, FIRST_ITEM_COMPLETELY).attach(this, handler)
 }
 
 /**
@@ -204,7 +205,7 @@ fun RecyclerView.doOnFirstItemCompletelyVisible(once: Boolean = false, handler: 
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
 fun RecyclerView.doOnLastItemVisible(once: Boolean = false, handler: () -> Unit): Disposable {
-    return ItemVisibleDisposable(this, handler, once, VisibleTarget.LAST_ITEM)
+    return ItemVisibleDisposable(once, LAST_ITEM).attach(this, handler)
 }
 
 /**
@@ -216,40 +217,43 @@ fun RecyclerView.doOnLastItemVisible(once: Boolean = false, handler: () -> Unit)
  * @return 调用[Disposable.dispose]可以移除[handler]。
  */
 fun RecyclerView.doOnLastItemCompletelyVisible(once: Boolean = false, handler: () -> Unit): Disposable {
-    return ItemVisibleDisposable(this, handler, once, VisibleTarget.LAST_ITEM_COMPLETELY)
+    return ItemVisibleDisposable(once, LAST_ITEM_COMPLETELY).attach(this, handler)
 }
 
 /**
  * 可废弃的item可视观察者
  */
 private class ItemVisibleDisposable(
-    recyclerView: RecyclerView,
-    handler: () -> Unit,
     private val once: Boolean,
     private val target: VisibleTarget
 ) : RecyclerView.OnScrollListener(), Disposable {
-    private var handler: (() -> Unit)? = handler
-    private var helper = ItemVisibleHelper(recyclerView)
+    private var helper = ItemVisibleHelper()
+    private var handler: (() -> Unit)? = null
     private var previousVisible = false
     override val isDisposed: Boolean
         get() = helper.recyclerView == null && handler == null
 
-    init {
-        helper.recyclerView?.addOnScrollListener(this)
+    fun attach(
+        rv: RecyclerView,
+        handler: () -> Unit,
+    ): Disposable {
+        dispose()
+        helper.recyclerView = rv
+        this.handler = handler
+        rv.addOnScrollListener(this)
+        return this
     }
 
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
         val visible = when (target) {
-            VisibleTarget.FIRST_ITEM -> helper.isFirstItemVisible
-            VisibleTarget.FIRST_ITEM_COMPLETELY -> helper.isFirstItemCompletelyVisible
-            VisibleTarget.LAST_ITEM -> helper.isLastItemVisible
-            VisibleTarget.LAST_ITEM_COMPLETELY -> helper.isLastItemCompletelyVisible
+            FIRST_ITEM -> helper.isFirstItemVisible
+            FIRST_ITEM_COMPLETELY -> helper.isFirstItemCompletelyVisible
+            LAST_ITEM -> helper.isLastItemVisible
+            LAST_ITEM_COMPLETELY -> helper.isLastItemCompletelyVisible
         }
         if (visible && visible != previousVisible) {
             handler?.let {
-                if (once) {
-                    dispose()
-                }
+                if (once) dispose()
                 it.invoke()
             }
         }
