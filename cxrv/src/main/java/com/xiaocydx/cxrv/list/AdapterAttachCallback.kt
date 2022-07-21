@@ -62,8 +62,9 @@ internal class AdapterAttachDisposable : AdapterAttachCallback, Disposable {
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        handler?.invoke(recyclerView)
+        val handler = handler ?: return
         dispose()
+        handler(recyclerView)
     }
 
     override fun dispose() {

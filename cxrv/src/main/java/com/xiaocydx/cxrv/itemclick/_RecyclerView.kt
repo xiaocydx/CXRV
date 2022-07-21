@@ -126,7 +126,7 @@ internal fun <VH : ViewHolder> View.holder(adapter: Adapter<VH>): VH? {
 @CheckResult
 @PublishedApi
 internal fun ViewHolder.optimizeTarget(targetView: View?, event: MotionEvent): View? = when {
-    targetView == itemView -> targetView
+    targetView === itemView -> targetView
     targetView?.isTouched(event.rawX, event.rawY) == true -> targetView
     else -> null
 }
