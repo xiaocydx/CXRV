@@ -42,7 +42,6 @@ private class LoadStatesChangedDisposable(
         collector: PagingCollector<*>,
         handler: LoadStatesListener,
     ): Disposable {
-        dispose()
         this.collector = collector
         this.handler = handler
         collector.addLoadStatesListener(this)

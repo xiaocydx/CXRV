@@ -237,7 +237,6 @@ private class ItemVisibleDisposable(
         rv: RecyclerView,
         handler: () -> Unit,
     ): Disposable {
-        dispose()
         helper.recyclerView = rv
         this.handler = handler
         rv.addOnScrollListener(this)

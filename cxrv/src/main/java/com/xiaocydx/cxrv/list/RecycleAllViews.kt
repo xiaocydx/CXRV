@@ -162,7 +162,6 @@ private class RecycleAllViewsOnDetachDisposable : OnAttachStateChangeListener, D
         rv: RecyclerView,
         increaseMaxScrap: IncreaseMaxScrap
     ): Disposable {
-        dispose()
         this.rv = rv
         this.increaseMaxScrap = increaseMaxScrap
         rv.addOnAttachStateChangeListener(this)

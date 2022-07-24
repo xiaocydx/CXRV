@@ -174,7 +174,6 @@ internal class ItemClickDispatcher(
             target: DispatchTarget,
             dispatcher: ItemClickDispatcher
         ): Disposable {
-            dispose()
             this.target = target
             this.dispatcher = dispatcher
             dispatcher.addDispatchTarget(target)

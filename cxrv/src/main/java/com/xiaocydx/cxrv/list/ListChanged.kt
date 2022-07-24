@@ -40,7 +40,6 @@ private class ListChangedDisposable<T : Any>(
         adapter: ListAdapter<T, *>,
         handler: ListChangedListener<T>,
     ): Disposable {
-        dispose()
         this.adapter = adapter
         this.handler = handler
         adapter.addListChangedListener(this)
