@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.setRecycleAllViewsOnDetach
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
+import com.xiaocydx.cxrv.binding.BindingHolder
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
@@ -49,8 +50,8 @@ class FooListFragment : Fragment() {
     private val sharedViewModel: FooCategoryViewModel by viewModels(
         ownerProducer = { parentFragment ?: requireActivity() }
     )
-    private lateinit var fooAdapter: ListAdapter<Foo, *>
     private lateinit var listViewModel: FooListViewModel
+    private lateinit var fooAdapter: ListAdapter<Foo, BindingHolder<ItemFooBinding>>
     private val categoryId: Long
         get() = arguments?.getLong(KEY_CATEGORY_ID) ?: 0L
 
@@ -113,30 +114,42 @@ class FooListFragment : Fragment() {
                 context.showToast("doOnItemClick ${TAG}-${item.name}")
             }
 
-            // 当前FooListFragment会复用其它FooListFragment回收进sharedRecycledViewPool的视图，
-            // 由于Glide源码对被复用的视图再次加载图片，未清除上一个RequestManager记录的Target，
-            // 当上一个RequestManager销毁时，通过未清除的Target，对已被复用的视图设置占位图。
-            // 将下面的代码修改为：val requestManager = Glide.with(this@FooListFragment)，
-            // 将ViewPager2从1滚动到6，再滚动回2，就能观察到已被复用的视图设置为占位图的现象。
+            // 当前FooListFragment会复用其它FooListFragment回收进sharedRecycledViewPool的ImageView，
+            // Glide对被共享复用的ImageView再次加载图片时，未及时移除上一个RequestManager记录的Target，
+            // 当上一个RequestManager.onDestroy()被调用时，clear(Target)对已被共享的ImageView设置占位图。
+
+            // 解决方案1：
+            // 将RequestManager跟FooListFragment的父级关联，规避未及时移除Target造成的问题。
+            // 因为此处示例代码比较简单，没有加载GIF、WEBP动图，所以选择解决方案1。
+            // 注意：跟父级关联后，FooListFragment销毁时不会取消请求，而是在onBindView()中，
+            // 对被共享复用的ImageView再次加载图片时，若请求不一致，则取消上一次的请求，
+            // 若业务场景不能接受这一点，则可以选择解决方案2。
+            // val requestManager = Glide.with(this@FooListFragment)
             val requestManager = when (parentFragment) {
                 null -> Glide.with(requireActivity())
                 else -> Glide.with(requireParentFragment())
             }
+            // 将上面的代码修改为：val requestManager = Glide.with(this@FooListFragment)，
+            // 将ViewPager2从1滚动到6，再滚动回2，能观察到已被共享复用的ImageView设置占位图的现象。
 
-            // 解决方案1：将RequestManager跟FooListFragment的父级关联，规避未清除Target造成的影响。
-            // 解决方案2：通过反射替换GlideContext的imageViewTargetFactory，修改Target实现，
-            // 或者不通过反射，而是调用into(Target)，目的都是为了重写Target的equals()、hashCode()，
-            // 让Glide源码能够及时清除上一个RequestManager记录的Target。
-            // https://github.com/bumptech/glide/issues/4598，
-            // Glide官方认为重写Target的equals()、hashCode()是一种可行的方案。
-
-            // 此处示例代码选择是的解决方案1，因为它足够简单，并且从Glide源码角度来看，
-            // 解决方案2在调用into(ImageView)时，仍然会有遍历全局RequestManager的性能损耗。
             onBindView { item ->
-                requestManager.load(item.url)
-                    .placeholder(R.color.placeholder_color)
-                    .centerCrop().into(imageView)
                 textView.text = item.name
+                // 将into(imageView)替换为intoIsolate(imageView, categoryId)，
+                // 能解决调用GifDrawable.stop()、WebpDrawable.stop()停止动图，
+                // 出现相同动图url的ImageView内容绘制混乱的问题。
+                // intoIsolate(imageView, categoryId)做的事：
+                // 1.对缓存键混入附带categoryId的signature。
+                // 2.继承ImageViewTarget，重写equals()和hashCode()。
+                // 因为对缓存键混入了signature，所以对被共享复用的ImageView再次加载图片时，
+                // 即使url跟之前的一致，也不会看作是同一请求, 这在一定程度上降低了资源重用率。
+                // 注意：由于对缓存键混入了signature，并且重写了ImageViewTarget的equals()和hashCode(),
+                // 因此intoIsolate(imageView, categoryId)也能解决上面提到的未及时清除Target造成的问题，
+                // 可作为解决方案2。
+                requestManager
+                    .load(item.url).centerCrop()
+                    .placeholder(R.color.placeholder_color)
+                    .into(imageView)
+                    // .intoIsolate(imageView, categoryId)
             }
         }
 

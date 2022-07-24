@@ -29,24 +29,37 @@ class FooRepository(private val source: FooSource) {
     }
 }
 
+private val urls = arrayOf(
+    "https://cdn.pixabay.com/photo/2022/07/01/14/29/wheat-7295718_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2022/07/10/18/21/allium-7313550_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2022/07/04/23/52/beach-7302072_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2022/07/05/11/06/mountains-7302806_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2022/07/12/11/30/morning-view-7317119_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2022/07/10/21/25/sky-7313775_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2022/07/13/07/10/branch-7318716_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2022/07/09/17/20/mushroom-7311371_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2022/07/06/12/11/spaceship-7304985_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2022/06/19/07/12/mount-kilimanjaro-7271184_960_720.jpg",
+)
+private val gifUrls = arrayOf(
+    "https://alifei05.cfp.cn/creative/vcg/800/new/VCG211168385804.gif",
+    "https://tenfei03.cfp.cn/creative/vcg/800/new/VCG211280897919.gif",
+    "https://alifei03.cfp.cn/creative/vcg/800/new/VCG211280814110.gif",
+    "https://tenfei01.cfp.cn/creative/vcg/800/new/VCG211166346104.gif",
+    "https://alifei02.cfp.cn/creative/vcg/800/new/VCG211151553894.gif",
+    "https://tenfei01.cfp.cn/creative/vcg/800/new/VCG211268665808.gif",
+    "https://tenfei03.cfp.cn/creative/vcg/800/new/VCG211308028815.gif",
+    "https://alifei05.cfp.cn/creative/vcg/800/new/VCG211267313448.gif",
+    "https://alifei02.cfp.cn/creative/vcg/800/new/VCG211332127505.gif",
+    "https://alifei05.cfp.cn/creative/vcg/800/new/VCG211267317119.gif"
+)
+
 class FooSource(
     private val maxKey: Int,
     private val resultType: ResultType,
     private val duration: Duration = 400L.milliseconds,
 ) : PagingSource<Int, Foo> {
     private var multiTypeFoo = false
-    private val urls = arrayOf(
-        "https://cdn.pixabay.com/photo/2022/07/01/14/29/wheat-7295718_960_720.jpg",
-        "https://cdn.pixabay.com/photo/2022/07/10/18/21/allium-7313550_960_720.jpg",
-        "https://cdn.pixabay.com/photo/2022/07/04/23/52/beach-7302072_960_720.jpg",
-        "https://cdn.pixabay.com/photo/2022/07/05/11/06/mountains-7302806_960_720.jpg",
-        "https://cdn.pixabay.com/photo/2022/07/12/11/30/morning-view-7317119_960_720.jpg",
-        "https://cdn.pixabay.com/photo/2022/07/10/21/25/sky-7313775_960_720.jpg",
-        "https://cdn.pixabay.com/photo/2022/07/13/07/10/branch-7318716_960_720.jpg",
-        "https://cdn.pixabay.com/photo/2022/07/09/17/20/mushroom-7311371_960_720.jpg",
-        "https://cdn.pixabay.com/photo/2022/07/06/12/11/spaceship-7304985_960_720.jpg",
-        "https://cdn.pixabay.com/photo/2022/06/19/07/12/mount-kilimanjaro-7271184_960_720.jpg",
-    )
     private var retryCount: Int = when (resultType) {
         is ResultType.RefreshEmpty -> resultType.retryCount
         is ResultType.AppendEmpty -> resultType.retryCount
