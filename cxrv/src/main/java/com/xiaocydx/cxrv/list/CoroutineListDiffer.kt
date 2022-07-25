@@ -184,7 +184,7 @@ class CoroutineListDiffer<T : Any>(
                 updateCallback.onInserted(0, newList.size)
             }
             else -> {
-                // 若无法确保newList是安全的，则提前对其进行copy。
+                // 若无法确保newList是安全的，则提前对其进行copy
                 val safeList = newList.ensureSafeMutable()
                 val result: DiffUtil.DiffResult = withContext(workDispatcher) {
                     oldList.calculateDiff(safeList, diffCallback)
