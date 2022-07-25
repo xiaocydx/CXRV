@@ -25,13 +25,15 @@ import java.security.MessageDigest
  * 即使`url`跟之前的一致，也不会看作是同一请求, 这在一定程度上降低了资源重用率。
  *
  * @param isolateKey 可以是item的id或者分组id，`isolateKey.toString()`的结果必须唯一。
+ * @param apply      [ImageViewTarget.waitForLayout]需要在[apply]中调用。
  */
-fun RequestBuilder<Bitmap>.intoIsolate(
+inline fun RequestBuilder<Bitmap>.intoIsolate(
     imageView: ImageView,
-    isolateKey: Any
+    isolateKey: Any,
+    apply: ImageViewTarget<Bitmap>.() -> Unit = {}
 ): ImageViewTarget<Bitmap> {
     return signature(IsolateKeySignature(signature, isolateKey))
-        .into(TimelyClearedBitmapImageViewTarget(imageView))
+        .into(TimelyClearedBitmapImageViewTarget(imageView).also(apply))
 }
 
 /**
@@ -45,13 +47,15 @@ fun RequestBuilder<Bitmap>.intoIsolate(
  * 即使`url`跟之前的一致，也不会看作是同一请求, 这在一定程度上降低了资源重用率。
  *
  * @param isolateKeys `isolateKey`可以是item的id或者分组id，`isolateKey.toString()`的结果必须唯一。
+ * @param apply       [ImageViewTarget.waitForLayout]需要在[apply]中调用。
  */
-fun RequestBuilder<Bitmap>.intoIsolate(
+inline fun RequestBuilder<Bitmap>.intoIsolate(
     imageView: ImageView,
-    vararg isolateKeys: Any
+    vararg isolateKeys: Any,
+    apply: ImageViewTarget<Bitmap>.() -> Unit = {}
 ): ImageViewTarget<Bitmap> {
     return signature(IsolateKeysSignature(signature, isolateKeys))
-        .into(TimelyClearedBitmapImageViewTarget(imageView))
+        .into(TimelyClearedBitmapImageViewTarget(imageView).also(apply))
 }
 
 /**
@@ -65,14 +69,16 @@ fun RequestBuilder<Bitmap>.intoIsolate(
  * 即使`url`跟之前的一致，也不会看作是同一请求, 这在一定程度上降低了资源重用率。
  *
  * @param isolateKey 可以是item的id或者分组id，`isolateKey.toString()`的结果必须唯一。
+ * @param apply      [ImageViewTarget.waitForLayout]需要在[apply]中调用。
  */
 @JvmName("intoIsolateDrawable")
-fun RequestBuilder<Drawable>.intoIsolate(
+inline fun RequestBuilder<Drawable>.intoIsolate(
     imageView: ImageView,
-    isolateKey: Any
+    isolateKey: Any,
+    apply: ImageViewTarget<Drawable>.() -> Unit = {}
 ): ImageViewTarget<Drawable> {
     return signature(IsolateKeySignature(signature, isolateKey))
-        .into(TimelyClearedDrawableImageViewTarget(imageView))
+        .into(TimelyClearedDrawableImageViewTarget(imageView).also(apply))
 }
 
 /**
@@ -86,20 +92,23 @@ fun RequestBuilder<Drawable>.intoIsolate(
  * 即使`url`跟之前的一致，也不会看作是同一请求, 这在一定程度上降低了资源重用率。
  *
  * @param isolateKeys `isolateKey`可以是item的id或者分组id，`isolateKey.toString()`的结果必须唯一。
+ * @param apply       [ImageViewTarget.waitForLayout]需要在[apply]中调用。
  */
 @JvmName("intoIsolateDrawable")
-fun RequestBuilder<Drawable>.intoIsolate(
+inline fun RequestBuilder<Drawable>.intoIsolate(
     imageView: ImageView,
-    vararg isolateKeys: Any
+    vararg isolateKeys: Any,
+    apply: ImageViewTarget<Drawable>.() -> Unit = {}
 ): ImageViewTarget<Drawable> {
     return signature(IsolateKeysSignature(signature, isolateKeys))
-        .into(TimelyClearedDrawableImageViewTarget(imageView))
+        .into(TimelyClearedDrawableImageViewTarget(imageView).also(apply))
 }
 
 /**
  * data class实现[Key.equals]和[Key.hashCode]
  */
-private data class IsolateKeySignature(
+@PublishedApi
+internal data class IsolateKeySignature(
     private val sourceKey: Key,
     private val isolateKey: Any
 ) : Key {
@@ -110,7 +119,8 @@ private data class IsolateKeySignature(
     }
 }
 
-private class IsolateKeysSignature(
+@PublishedApi
+internal class IsolateKeysSignature(
     private val sourceKey: Key,
     private val isolateKeys: Array<out Any>
 ) : Key {
@@ -142,7 +152,8 @@ private class IsolateKeysSignature(
  * 重写[Object.equals]和[Object.hashCode]的目的，
  * 是让[Glide.removeFromManagers]能及时移除[Target]。
  */
-private data class TimelyClearedBitmapImageViewTarget(
+@PublishedApi
+internal data class TimelyClearedBitmapImageViewTarget(
     private val imageView: ImageView
 ) : BitmapImageViewTarget(imageView)
 
@@ -152,6 +163,7 @@ private data class TimelyClearedBitmapImageViewTarget(
  * 重写[Object.equals]和[Object.hashCode]的目的，
  * 是让[Glide.removeFromManagers]能及时移除[Target]。
  */
-private data class TimelyClearedDrawableImageViewTarget(
+@PublishedApi
+internal data class TimelyClearedDrawableImageViewTarget(
     private val imageView: ImageView
 ) : DrawableImageViewTarget(imageView)
