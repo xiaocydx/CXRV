@@ -1,9 +1,12 @@
 package com.xiaocydx.cxrv.list
 
 import androidx.annotation.MainThread
+import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
+import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.internal.reverseAccessEach
+import com.xiaocydx.cxrv.internal.toUnmodifiableList
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -38,12 +41,22 @@ class CoroutineListDiffer<T : Any>(
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) : Continuation<Any?>, CoroutineScope {
     private val mutex = Mutex()
-    private val sourceList: ArrayList<T> = arrayListOf()
+    private var sourceList: ArrayList<T> = arrayListOf()
     private var executeListeners: ArrayList<ListExecuteListener<T>>? = null
     private var changedListeners: ArrayList<ListChangedListener<T>>? = null
     override val context: CoroutineContext = SupervisorJob() + mainDispatcher.immediate
     override val coroutineContext: CoroutineContext = context
-    val currentList: List<T> = Collections.unmodifiableList(sourceList)
+
+    @Volatile
+    var currentList: List<T> = sourceList.toUnmodifiableList()
+        private set
+
+    constructor(
+        diffCallback: DiffUtil.ItemCallback<T>,
+        adapter: RecyclerView.Adapter<*>,
+        workDispatcher: CoroutineDispatcher = Dispatchers.Default,
+        mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
+    ) : this(diffCallback, AdapterListUpdateCallback(adapter), workDispatcher, mainDispatcher)
 
     /**
      * 更新列表
@@ -144,7 +157,7 @@ class CoroutineListDiffer<T : Any>(
             return false
         }
         // 对应submitList()的快路径
-        val oldList = currentList
+        val oldList = sourceList
         val newList = op.newList
         if (oldList === newList) {
             return false
@@ -157,7 +170,7 @@ class CoroutineListDiffer<T : Any>(
 
     @MainThread
     private suspend fun submitList(newList: List<T>) {
-        val oldList = currentList
+        val oldList = sourceList
         when {
             oldList === newList -> return
             oldList.isEmpty() && newList.isEmpty() -> return
@@ -171,11 +184,13 @@ class CoroutineListDiffer<T : Any>(
                 updateCallback.onInserted(0, newList.size)
             }
             else -> {
+                // 若无法确保newList是安全的，则提前对其进行copy。
+                val safeList = newList.ensureSafeMutable()
                 val result: DiffUtil.DiffResult = withContext(workDispatcher) {
-                    oldList.calculateDiff(newList, diffCallback)
+                    oldList.calculateDiff(safeList, diffCallback)
                 }
-                sourceList.clear()
-                sourceList.addAll(newList)
+                sourceList = safeList
+                currentList = sourceList.toUnmodifiableList()
                 result.dispatchUpdatesTo(updateCallback)
             }
         }
@@ -239,6 +254,10 @@ class CoroutineListDiffer<T : Any>(
         }
         Collections.swap(sourceList, fromPosition, toPosition)
         updateCallback.onMoved(fromPosition, toPosition)
+    }
+
+    private fun List<T>.ensureSafeMutable(): ArrayList<T> {
+        return if (this is SafeMutableList) this else ArrayList(this)
     }
 
     /**

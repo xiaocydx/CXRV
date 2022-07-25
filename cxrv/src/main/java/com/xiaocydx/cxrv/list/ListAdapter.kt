@@ -7,7 +7,6 @@ import androidx.annotation.AnyThread
 import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
 import androidx.annotation.MainThread
-import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.RecyclerView
@@ -30,7 +29,6 @@ import kotlinx.coroutines.Dispatchers
  * @author xcc
  * @date 2021/9/9
  */
-@Suppress("LeakingThis")
 abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     workDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : Adapter<VH>(), ListOwner<ITEM>, SpanSizeProvider {
@@ -39,7 +37,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     private var listeners: ArrayList<ViewHolderListener<in VH>>? = null
     private val differ: CoroutineListDiffer<ITEM> = CoroutineListDiffer(
         diffCallback = InternalDiffItemCallback(),
-        updateCallback = AdapterListUpdateCallback(this),
+        adapter = @Suppress("LeakingThis") this,
         workDispatcher = workDispatcher
     )
     private val scrollHelper = ScrollHelper()

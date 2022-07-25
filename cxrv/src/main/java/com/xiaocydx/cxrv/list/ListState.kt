@@ -1,10 +1,7 @@
 package com.xiaocydx.cxrv.list
 
 import androidx.annotation.MainThread
-import com.xiaocydx.cxrv.internal.assertMainThread
-import com.xiaocydx.cxrv.internal.flowOnMain
-import com.xiaocydx.cxrv.internal.reverseAccessEach
-import com.xiaocydx.cxrv.internal.unsafeFlow
+import com.xiaocydx.cxrv.internal.*
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -46,8 +43,15 @@ import java.util.*
  */
 class ListState<T : Any> : ListOwner<T> {
     private var listeners: ArrayList<(UpdateOp<T>) -> Unit>? = null
-    private val sourceList: ArrayList<T> = arrayListOf()
-    override val currentList: List<T> = Collections.unmodifiableList(sourceList)
+    private var sourceList: ArrayList<T> = arrayListOf()
+    override var currentList: List<T> = sourceList.toUnmodifiableList()
+        private set
+
+    /**
+     * 由于[updateList]在最后才会修改[version]的值，
+     * 因此其它对外开放的可变属性不需要加[Volatile]。
+     */
+    @Volatile
     internal var version: Int = 0
         private set
 
@@ -100,6 +104,11 @@ class ListState<T : Any> : ListOwner<T> {
 
     @MainThread
     private fun submitList(newList: List<T>): Boolean {
+        if (newList is SafeMutableList) {
+            sourceList = newList
+            currentList = sourceList.toUnmodifiableList()
+            return true
+        }
         if (sourceList.isNotEmpty()) {
             sourceList.clear()
         }

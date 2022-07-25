@@ -70,6 +70,7 @@ fun ListOwner<*>.isLastItem(position: Int): Boolean {
  * 通过[submitChange]、[submitTransform]可以方便的更改列表。
  *
  * @param newList 需要是新的列表对象，若传入旧的列表对象，则不会更改。
+ * 若[newList]的类型是[SafeMutableList]，则表示可直接作为内部的可变列表。
  */
 @MainThread
 fun <T : Any> ListOwner<T>.submitList(newList: List<T>) {
@@ -182,10 +183,8 @@ fun ListOwner<*>.clear() {
  * ```
  */
 @MainThread
-inline fun <T : Any> ListOwner<T>.submitChange(
-    change: MutableList<T>.() -> Unit
-) {
-    newList().apply(change).also(::submitList)
+inline fun <T : Any> ListOwner<T>.submitChange(change: MutableList<T>.() -> Unit) {
+    currentList.toSafeMutableList().apply(change).also(::submitList)
 }
 
 /**
@@ -198,10 +197,8 @@ inline fun <T : Any> ListOwner<T>.submitChange(
  * ```
  */
 @MainThread
-inline fun <T : Any> ListOwner<T>.submitTransform(
-    transform: MutableList<T>.() -> List<T>
-) {
-    newList().transform().also(::submitList)
+inline fun <T : Any> ListOwner<T>.submitTransform(transform: MutableList<T>.() -> List<T>) {
+    currentList.toSafeMutableList().transform().also(::submitList)
 }
 
 /**
@@ -233,9 +230,23 @@ inline fun <T : Any> ListOwner<T>.setLastNotNull(block: (item: T) -> T?) {
 }
 
 /**
- * 创建当前列表的可变对象
+ * 返回安全的可变列表
+ *
+ * 这是和调用者之间的约定，返回的列表对[ListOwner.submitList]提交后，
+ * 不会再被其它地方修改，用于[ListOwner]的实现类减少列表copy次数。
  */
-@PublishedApi
-internal fun <T : Any> ListOwner<T>.newList(): MutableList<T> {
-    return currentList.toMutableList()
+fun <T> Collection<T>.toSafeMutableList(): SafeMutableList<T> {
+    return SafeMutableList(this)
+}
+
+/**
+ * 安全的可变列表
+ *
+ * 这是和调用者之间的约定，该列表对[ListOwner.submitList]提交后，
+ * 不会再被其它地方修改，用于[ListOwner]的实现类减少列表copy次数。
+ */
+open class SafeMutableList<T> : ArrayList<T> {
+    constructor() : super()
+    constructor(initialCapacity: Int) : super(initialCapacity)
+    constructor(collection: Collection<T>) : super(collection)
 }

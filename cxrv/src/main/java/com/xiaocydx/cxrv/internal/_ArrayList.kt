@@ -1,5 +1,7 @@
 package com.xiaocydx.cxrv.internal
 
+import java.util.*
+
 /**
  * clone当前ArrayList再遍历
  */
@@ -41,4 +43,11 @@ internal inline fun <T> ArrayList<T>.reverseAccessEach(action: (T) -> Unit) {
     for (index in size - 1 downTo 0) {
         action(get(index))
     }
+}
+
+/**
+ * 返回不可修改的列表
+ */
+internal fun <T> ArrayList<T>.toUnmodifiableList(): List<T> {
+    return Collections.unmodifiableList(this)
 }
