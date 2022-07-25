@@ -53,7 +53,6 @@ internal class AdapterAttachDisposable : AdapterAttachCallback, Disposable {
         delegate: ViewTypeDelegate<*, *>,
         handler: (RecyclerView) -> Unit
     ): Disposable {
-        dispose()
         this.delegate = delegate
         this.handler = handler
         delegate.addAdapterAttachCallback(this)
