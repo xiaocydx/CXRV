@@ -44,14 +44,10 @@ import java.util.*
 class ListState<T : Any> : ListOwner<T> {
     private var listeners: ArrayList<(UpdateOp<T>) -> Unit>? = null
     private var sourceList: ArrayList<T> = arrayListOf()
+
+    @Volatile
     override var currentList: List<T> = sourceList.toUnmodifiableList()
         private set
-
-    /**
-     * 由于[updateList]在最后才会修改[version]的值，
-     * 因此其它对外开放的可变属性不需要加[Volatile]。
-     */
-    @Volatile
     internal var version: Int = 0
         private set
 
