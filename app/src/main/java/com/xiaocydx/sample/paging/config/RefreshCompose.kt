@@ -19,7 +19,7 @@ import kotlinx.coroutines.delay
  * ```
  */
 fun RecyclerView.withSwipeRefresh(adapter: ListAdapter<*, *>): SwipeRefreshLayout {
-    return withSwipeRefresh().apply { setAdapter(adapter) }
+    return addToSwipeRefreshLayout().apply { setAdapter(adapter) }
 }
 
 /**
@@ -31,13 +31,13 @@ fun RecyclerView.withSwipeRefresh(adapter: ListAdapter<*, *>): SwipeRefreshLayou
  * ```
  */
 fun RecyclerView.replaceWithSwipeRefresh(adapter: ListAdapter<*, *>): SwipeRefreshLayout {
-    return replaceWithSwipeRefresh().apply { setAdapter(adapter) }
+    return replaceParentToSwipeRefreshLayout().apply { setAdapter(adapter) }
 }
 
 /**
  * 将RecyclerView的添加到[SwipeRefreshLayout]
  */
-internal fun RecyclerView.withSwipeRefresh(): DefaultSwipeRefreshLayout {
+private fun RecyclerView.addToSwipeRefreshLayout(): DefaultSwipeRefreshLayout {
     require(parent == null) {
         "RecyclerView的父级不为空，无法添加到SwipeRefreshLayout。"
     }
@@ -48,8 +48,7 @@ internal fun RecyclerView.withSwipeRefresh(): DefaultSwipeRefreshLayout {
 /**
  * 将RecyclerView的父级替换为[SwipeRefreshLayout]
  */
-@PublishedApi
-internal fun RecyclerView.replaceWithSwipeRefresh(): DefaultSwipeRefreshLayout {
+private fun RecyclerView.replaceParentToSwipeRefreshLayout(): DefaultSwipeRefreshLayout {
     val oldParent = requireNotNull(parent) {
         "RecyclerView的父级为空，无法进行父级替换，" +
                 "请改为调用`RecyclerView.withSwipeRefresh(ListAdapter<*, *>)`创建刷新容器。"
@@ -66,7 +65,7 @@ internal fun RecyclerView.replaceWithSwipeRefresh(): DefaultSwipeRefreshLayout {
     } else {
         oldParent.removeViewInLayout(this)
     }
-    return withSwipeRefresh().also {
+    return addToSwipeRefreshLayout().also {
         oldParent.addView(it, oldIndex, oldLp)
     }
 }

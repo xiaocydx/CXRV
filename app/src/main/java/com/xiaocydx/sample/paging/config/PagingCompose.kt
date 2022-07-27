@@ -3,95 +3,60 @@ package com.xiaocydx.sample.paging.config
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.CallSuper
+import androidx.annotation.CheckResult
 import androidx.annotation.LayoutRes
-import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.recyclerview.widget.RecyclerView.Adapter
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.doOnAttach
 import com.xiaocydx.cxrv.paging.LoadFooterConfig
 import com.xiaocydx.cxrv.paging.LoadHeaderConfig
 import com.xiaocydx.cxrv.paging.OnCreateView
-import com.xiaocydx.cxrv.paging.PagingScope
+import com.xiaocydx.cxrv.paging.PagingConcatScope
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.dp
 
 /**
- * 分页场景的初始化函数，可用于链式调用场景
+ * 连接加载头部适配器、内容适配器、加载尾部适配器，返回连接后的结果
  *
- * 通过[PagingScope.loadHeader]、[PagingScope.loadFooter]设置加载头尾配置，
- * 详细的加载头尾配置描述[LoadHeaderConfig]、[LoadFooterConfig]。
+ * 1. 通过[PagingConcatScope.loadHeader]设置加载头部的配置，详细配置描述可以看[LoadHeaderConfig]。
+ * 2. 通过[PagingConcatScope.loadFooter]设置加载尾部的配置，详细配置描述可以看[LoadFooterConfig]。
  * ```
- * val adapter: ListAdapter<*, *> = ...
- * recyclerView.paging(
- *     listAdapter = adapter
+ * val listAdapter: ListAdapter<*, *> = ...
+ * val adapter = listAdapter.withPaging {
  *     loadHeader { ... }
  *     loadFooter { ... }
- * )
+ *     enabledItemAnim = false
+ * }
  * ```
  */
-inline fun <T : RecyclerView> T.paging(block: PagingScope.() -> Unit): T {
-    DefaultPagingScope().apply(block).init(this)
-    return this
+@CheckResult
+inline fun ListAdapter<*, *>.withPaging(block: DefaultPagingConcatScope.() -> Unit = {}): Adapter<*> {
+    return DefaultPagingConcatScope().apply(block).complete(this)
 }
 
 /**
- * 分页拖拽刷新场景的初始化函数，可用于链式调用场景
- *
- * 通过[PagingScope.loadHeader]、[PagingScope.loadFooter]设置加载头尾配置，
- * 详细的加载头尾配置描述[LoadHeaderConfig]、[LoadFooterConfig]。
- * ```
- * val adapter: ListAdapter<*, *> = ...
- * recyclerView.pagingSwipeRefresh(
- *     listAdapter = adapter
- *     loadHeader { ... }
- *     loadFooter { ... }
- * )
- * ```
+ * 连接加载头部适配器、内容适配器、加载尾部适配器的分页初始化作用域，
+ * 对加载头部适配器和加载尾部适配器添加了默认配置，以及添加初始化属性。
  */
-inline fun <T : RecyclerView> T.pagingSwipeRefresh(block: SwipeRefreshPagingScope.() -> Unit): T {
-    SwipeRefreshPagingScope(replaceWithSwipeRefresh()).apply(block).init(this)
-    return this
-}
+class DefaultPagingConcatScope
+@PublishedApi internal constructor() : PagingConcatScope() {
 
-/**
- * 分页场景的初始化函数，可用于链式调用场景
- */
-infix fun <T : RecyclerView> T.paging(adapter: ListAdapter<*, *>): T {
-    return paging { listAdapter = adapter }
-}
-
-/**
- * 分页拖拽刷新场景的初始化函数，可用于链式调用场景
- */
-infix fun <T : RecyclerView> T.pagingSwipeRefresh(adapter: ListAdapter<*, *>): T {
-    return pagingSwipeRefresh { listAdapter = adapter }
-}
-
-/**
- * 添加了默认配置的分页拖拽刷新初始化作用域
- */
-class SwipeRefreshPagingScope
-@PublishedApi internal constructor(
-    private val _refreshLayout: DefaultSwipeRefreshLayout
-) : DefaultPagingScope() {
-    val refreshLayout: SwipeRefreshLayout = _refreshLayout
+    /**
+     * 是否启用item动画
+     */
+    var enabledItemAnimator: Boolean = true
+        set(value) {
+            checkComplete()
+            field = value
+        }
 
     @PublishedApi
-    override fun init(rv: RecyclerView) {
-        _refreshLayout.setAdapter(getFinalListAdapter())
-        return super.init(rv)
+    internal fun complete(listAdapter: ListAdapter<*, *>): Adapter<*> {
+        if (!enabledItemAnimator) {
+            listAdapter.doOnAttach { it.itemAnimator = null }
+        }
+        return completeConcat(listAdapter)
     }
-}
-
-/**
- * 添加了默认配置的分页初始化作用域
- */
-open class DefaultPagingScope
-@PublishedApi internal constructor() : PagingScope() {
-
-    @CallSuper
-    @PublishedApi
-    internal open fun init(rv: RecyclerView) = complete(rv)
 
     override fun LoadHeaderConfig.withDefault(): Boolean {
         loadingView(defaultHeaderLoadingView)

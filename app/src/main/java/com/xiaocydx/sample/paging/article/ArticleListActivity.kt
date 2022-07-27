@@ -7,15 +7,12 @@ import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.list.enableBoundCheckCompat
-import com.xiaocydx.cxrv.list.fixedSize
-import com.xiaocydx.cxrv.list.linear
+import com.xiaocydx.cxrv.list.*
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.*
 import com.xiaocydx.sample.databinding.ItemArticleBinding
-import com.xiaocydx.sample.paging.config.paging
+import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.retrofit.ArticleInfo
 
@@ -38,26 +35,28 @@ class ArticleListActivity : AppCompatActivity() {
     }
 
     private fun initView() {
+        listAdapter = bindingAdapter(
+            uniqueId = ArticleInfo::id,
+            inflate = ItemArticleBinding::inflate
+        ) {
+            onBindView {
+                tvTitle.text = it.title ?: ""
+                tvAuthor.text = ("作者：${it.author ?: ""}")
+            }
+        }
+
         rvArticle = RecyclerView(this).apply {
             id = viewModel.rvId
+            overScrollNever()
+            withLayoutParams(matchParent, matchParent)
             linear().fixedSize().divider {
                 width = 10.dp
                 height = 10.dp
                 horizontalEdge = true
                 verticalEdge = true
-            } paging bindingAdapter(
-                uniqueId = ArticleInfo::id,
-                inflate = ItemArticleBinding::inflate
-            ) {
-                listAdapter = this
-                onBindView {
-                    tvTitle.text = it.title ?: ""
-                    tvAuthor.text = ("作者：${it.author ?: ""}")
-                }
-            }
-            overScrollNever()
-            withLayoutParams(matchParent, matchParent)
+            }.adapter(listAdapter.withPaging())
         }
+
         setContentView(rvArticle.withSwipeRefresh(listAdapter))
     }
 

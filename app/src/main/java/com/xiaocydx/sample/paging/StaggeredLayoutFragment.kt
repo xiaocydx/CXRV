@@ -1,12 +1,14 @@
 package com.xiaocydx.sample.paging
 
 import com.xiaocydx.cxrv.divider.divider
+import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.staggered
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.paging.config.pagingSwipeRefresh
+import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
+import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.viewLifecycle
 
@@ -27,8 +29,8 @@ class StaggeredLayoutFragment : PagingFragment() {
                 verticalEdge = true
                 horizontalEdge = true
             }
-            // .paging(fooAdapter) // 无拖拽刷新
-            .pagingSwipeRefresh(fooAdapter)
+            .adapter(fooAdapter.withPaging())
+            .replaceWithSwipeRefresh(fooAdapter)
     }
 
     override fun initCollect() {

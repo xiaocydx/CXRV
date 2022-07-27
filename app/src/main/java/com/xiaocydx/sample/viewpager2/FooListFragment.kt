@@ -31,7 +31,7 @@ import com.xiaocydx.sample.*
 import com.xiaocydx.sample.databinding.ItemFooBinding
 import com.xiaocydx.sample.paging.Foo
 import com.xiaocydx.sample.paging.FooListViewModel
-import com.xiaocydx.sample.paging.config.paging
+import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.viewpager2.nested.isVp2NestedScrollable
 import com.xiaocydx.sample.viewpager2.shared.findParentViewPager2
@@ -154,8 +154,8 @@ class FooListFragment : Fragment() {
         }
 
         // 连接LoadHeaderAdapter、fooAdapter、LoadFooterAdapter，
-        // 将连接后的ConcatAdapter设置给RecyclerView，完成分页初始化。
-        paging(fooAdapter)
+        // 将连接后的ConcatAdapter设置给RecyclerView，完成初始化。
+        adapter = fooAdapter.withPaging()
     }
 
     /**
