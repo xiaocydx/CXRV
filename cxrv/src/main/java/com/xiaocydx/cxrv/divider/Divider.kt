@@ -3,7 +3,6 @@ package com.xiaocydx.cxrv.divider
 import android.content.Context
 import androidx.annotation.Px
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.cxrv.divider.DividerItemDecoration
 
 /**
  * 添加通用间隔，可用于链式调用场景
@@ -36,7 +35,7 @@ fun <T : RecyclerView> T.spacing(
 inline fun <T : RecyclerView> T.divider(
     block: DividerItemDecoration.Config.() -> Unit
 ): T {
-    addItemDecoration(DividerItemDecoration(context, block))
+    setDividerItemDecoration(DividerItemDecoration(context, block))
     return this
 }
 
@@ -58,3 +57,17 @@ inline fun DividerItemDecoration(
     context: Context,
     block: DividerItemDecoration.Config.() -> Unit
 ): DividerItemDecoration = DividerItemDecoration.Config(context).apply(block).build()
+
+@PublishedApi
+internal fun RecyclerView.setDividerItemDecoration(decor: DividerItemDecoration) {
+    ensureWithoutDividerItemDecoration()
+    addItemDecoration(decor)
+}
+
+private fun RecyclerView.ensureWithoutDividerItemDecoration() {
+    for (index in itemDecorationCount - 1 downTo 0) {
+        val decor = getItemDecorationAt(index)
+        if (decor !is DividerItemDecoration) continue
+        removeItemDecorationAt(index)
+    }
+}
