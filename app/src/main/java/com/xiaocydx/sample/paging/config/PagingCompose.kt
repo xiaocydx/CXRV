@@ -25,7 +25,6 @@ import com.xiaocydx.sample.dp
  * val adapter = listAdapter.withPaging {
  *     loadHeader { ... }
  *     loadFooter { ... }
- *     enabledItemAnim = false
  * }
  * ```
  */
@@ -42,7 +41,7 @@ class DefaultPagingConcatScope
 @PublishedApi internal constructor() : PagingConcatScope() {
 
     /**
-     * 是否启用item动画
+     * 是否启用item动画，分页场景是否默认启用item动画，由上层决定
      */
     var enabledItemAnimator: Boolean = true
         set(value) {
