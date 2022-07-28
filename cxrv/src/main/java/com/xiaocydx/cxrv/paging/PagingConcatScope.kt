@@ -127,6 +127,9 @@ open class PagingConcatScope {
         check(!isComplete) { "已完成适配器的连接工作" }
     }
 
+    /**
+     * 完成适配器的连接工作，返回连接后的结果，该函数只能被调用一次
+     */
     protected fun completeConcat(adapter: ListAdapter<*, *>): Adapter<*> {
         checkComplete()
         isComplete = true
