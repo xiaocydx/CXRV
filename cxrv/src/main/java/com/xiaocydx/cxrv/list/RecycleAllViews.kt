@@ -90,6 +90,7 @@ private class RecycleAllViewsRunner(
     }
 
     override fun onViewRecycled(holder: ViewHolder) {
+        holder.clearReference()
         val viewType = holder.itemViewType
         val scrapData = scrap[viewType] ?: return
 
@@ -109,6 +110,13 @@ private class RecycleAllViewsRunner(
             saveMaxScrap(viewType, currentMaxScrap)
         }
         scrapData.mMaxScrap = newMaxScrap
+    }
+
+    private fun ViewHolder.clearReference() {
+        val lp = itemView.layoutParams
+        if (lp !is StaggeredGridLayoutManager.LayoutParams) return
+        // chain：StaggeredGridLayoutManager.mRecyclerView -> Span
+        lp.mSpan = null
     }
 
     private fun containsMaxScrap(viewType: Int): Boolean {
