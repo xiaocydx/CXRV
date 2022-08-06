@@ -100,9 +100,9 @@ class FooListFragment : Fragment() {
         isVp2NestedScrollable = true
         setRecycledViewPool(vp2.sharedRecycledViewPool)
         setRecycleAllViewsOnDetach { _, _, initialState ->
-            // 回收进sharedRecycledViewPool的上限，是当前子View数量的2倍，
-            // 这是一种简易策略，意图是最多回收2页满数量的View，供重建复用。
-            2 * initialState.childCount
+            // 回收进sharedRecycledViewPool的上限，是当前子View数量的3倍，
+            // 这是一种简易策略，意图是最多回收3页满数量的View，供重建复用。
+            3 * initialState.childCount
         }.autoDispose(viewLifecycle)
         // Activity直接退出的流程，即ActivityThread.handleDestroyActivity()，
         // 是先更改Lifecycle的状态，再执行视图树的dispatchDetachedFromWindow()。
