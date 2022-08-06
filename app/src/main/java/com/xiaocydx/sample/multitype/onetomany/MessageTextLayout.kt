@@ -16,10 +16,10 @@ class MessageTextLayout @JvmOverloads constructor(
 ) : MessageLayout(context, attrs, defStyleAttr) {
 
     val tvContent: TextView = AppCompatTextView(context).apply {
+        includeFontPadding = false
         setPadding(12.dp)
         setTextColor(0xFFFFFFFF.toInt())
         setTextSize(TypedValue.COMPLEX_UNIT_PX, 15.sp.toFloat())
         setBackgroundColor(0xFF5998FF.toInt())
-        includeFontPadding = false
     }.also(::setContentView)
 }

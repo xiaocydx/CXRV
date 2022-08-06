@@ -12,6 +12,7 @@ import androidx.core.view.marginStart
 import androidx.core.view.marginTop
 import androidx.core.view.setMargins
 import com.xiaocydx.sample.CustomLayout
+import com.xiaocydx.sample.withLayoutParams
 import kotlin.math.max
 
 /**
@@ -25,20 +26,19 @@ abstract class MessageLayout @JvmOverloads constructor(
     private val maxContentWidth = 254.dp
 
     val ivAvatar: ImageView = AppCompatImageView(context).apply {
-        addView(this, 48.dp, 48.dp)
         scaleType = ImageView.ScaleType.CENTER_CROP
+        addView(this, 48.dp, 48.dp)
     }
 
     val tvUsername: TextView = AppCompatTextView(context).apply {
-        addView(this, wrapContent, wrapContent) { leftMargin = 12.dp }
+        includeFontPadding = false
         setTextColor(0xFF000000.toInt())
         setTextSize(TypedValue.COMPLEX_UNIT_PX, 14.sp.toFloat())
-        includeFontPadding = false
+        addView(this, wrapContent, wrapContent) { leftMargin = 12.dp }
     }
 
     init {
-        layoutParams = LayoutParams(matchParent, wrapContent)
-            .apply { setMargins(16.dp) }
+        withLayoutParams(matchParent, wrapContent) { setMargins(16.dp) }
     }
 
     fun setContentView(view: View) {
