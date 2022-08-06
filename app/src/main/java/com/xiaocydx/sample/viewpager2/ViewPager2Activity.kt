@@ -38,8 +38,8 @@ class ViewPager2Activity : AppCompatActivity() {
         TabLayoutMediator(
             tabLayout,
             viewPager2,
-            /*autoRefresh*/true,
-            /*smoothScroll*/true
+            /* autoRefresh */true,
+            /* smoothScroll */true
         ) { tab, position ->
             tab.text = adapter.getItem(position).title
         }.attach()
@@ -59,8 +59,11 @@ class ViewPager2Activity : AppCompatActivity() {
                 if (adapter.submitList(it.list)) {
                     viewPager2.ensureTransform()
                 }
-                if (it.currentItem != viewPager2.currentItem) {
-                    viewPager2.scrollToCurrentItem(it.currentItem)
+                if (it.hasPendingItem) {
+                    sharedViewModel.consumePendingItem()
+                    viewPager2.setCurrentItem(it.pendingItem, /* smoothScroll */false)
+                } else if (it.currentItem != viewPager2.currentItem) {
+                    viewPager2.setCurrentItem(it.currentItem, /* smoothScroll */true)
                 }
             }
             .repeatOnLifecycle(lifecycle)
@@ -74,10 +77,6 @@ class ViewPager2Activity : AppCompatActivity() {
      */
     private fun ViewPager2.ensureTransform() {
         doOnPreDraw { requestTransform() }
-    }
-
-    private fun ViewPager2.scrollToCurrentItem(currentItem: Int) {
-        setCurrentItem(currentItem, /*smoothScroll*/false)
     }
 
     private class FooCategoryAdapter(

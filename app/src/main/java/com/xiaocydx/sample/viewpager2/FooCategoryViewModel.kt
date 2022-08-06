@@ -39,14 +39,15 @@ class FooCategoryViewModel : ViewModel() {
         }
         val list = list
             .toMutableList().apply { removeAt(currentItem) }
-        copy(list = list, currentItem = newItem)
+        copy(list = list, currentItem = newItem, pendingItem = newItem)
     }
 
     fun moveCurrentItemToFirst() = updateState {
-        if (currentItem == 0) return
+        val newItem = 0
+        if (currentItem == newItem) return
         val list = list.toMutableList()
-        Collections.swap(list, 0, currentItem)
-        copy(list = list, currentItem = 0)
+        Collections.swap(list, newItem, currentItem)
+        copy(list = list, currentItem = newItem, pendingItem = newItem)
     }
 
     fun setCurrentItem(currentItem: Int) = updateState {
@@ -54,17 +55,28 @@ class FooCategoryViewModel : ViewModel() {
         copy(currentItem = currentItem)
     }
 
+    fun consumePendingItem() = updateState {
+        if (pendingItem == NO_ITEM) return
+        copy(pendingItem = NO_ITEM)
+    }
+
     private inline fun updateState(newState: FooCategoryState.() -> FooCategoryState) {
         _state.value = newState(_state.value)
     }
 }
 
+private const val NO_ITEM = -1
+
 data class FooCategoryState(
     val list: List<FooCategory>,
-    val currentItem: Int = 0
+    val currentItem: Int = 0,
+    val pendingItem: Int = NO_ITEM
 )
 
 data class FooCategory(
     val id: Long,
     val title: String = "LIST-${id}"
 )
+
+val FooCategoryState.hasPendingItem: Boolean
+    get() = pendingItem != NO_ITEM
