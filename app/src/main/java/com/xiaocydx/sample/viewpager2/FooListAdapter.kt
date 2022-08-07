@@ -49,7 +49,8 @@ class FooListAdapter(
 
     /**
      * 将上面的代码替换为：`val requestManager = Glide.with(fragment)`，
-     * 将[ViewPager2]从1滚动到6，再滚动回2，能观察到被共享复用的[ImageView]设置占位图的现象
+     * 将[ViewPager2]从1滚动到10，等待每一页加载完，再滚动回9，
+     * 能观察到被共享复用的[ImageView]设置占位图的现象。
      */
     // private val requestManager = Glide.with(fragment)
 

@@ -3,16 +3,16 @@ package com.xiaocydx.sample.viewpager2
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import androidx.viewpager2.widget.MarginPageTransformer
-import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
-import com.xiaocydx.sample.*
 import com.xiaocydx.sample.databinding.ActivityViewPager2Binding
+import com.xiaocydx.sample.onClick
+import com.xiaocydx.sample.overScrollNever
+import com.xiaocydx.sample.registerOnPageChangeCallback
+import com.xiaocydx.sample.repeatOnLifecycle
 import kotlinx.coroutines.flow.onEach
 
 /**
@@ -44,7 +44,7 @@ class ViewPager2Activity : AppCompatActivity() {
             tab.text = adapter.getItem(position).title
         }.attach()
 
-        viewPager2.setPageTransformer(MarginPageTransformer(5.dp))
+        viewPager2.offscreenPageLimit = 1
         viewPager2.registerOnPageChangeCallback(
             onSelected = sharedViewModel::setCurrentItem
         )
@@ -56,9 +56,7 @@ class ViewPager2Activity : AppCompatActivity() {
     private fun initCollect() = with(binding) {
         sharedViewModel.state
             .onEach {
-                if (adapter.submitList(it.list)) {
-                    viewPager2.ensureTransform()
-                }
+                adapter.submitList(it.list)
                 if (it.hasPendingItem) {
                     sharedViewModel.consumePendingItem()
                     viewPager2.setCurrentItem(it.pendingItem, /* smoothScroll */false)
@@ -68,15 +66,6 @@ class ViewPager2Activity : AppCompatActivity() {
             }
             .repeatOnLifecycle(lifecycle)
             .launchInLifecycleScope()
-    }
-
-    /**
-     * 下一帧布局完成后，调用[ViewPager2.requestTransform]，
-     * 用于确保[ViewPager2.PageTransformer]的转换效果正常。
-     * 例如移除页面后，确保[MarginPageTransformer]的间距正常。
-     */
-    private fun ViewPager2.ensureTransform() {
-        doOnPreDraw { requestTransform() }
     }
 
     private class FooCategoryAdapter(
