@@ -60,7 +60,7 @@ fun <VM : ViewModel> RetainedViewModels<VM>.retainForKeys(keys: Set<String>) {
         clear()
         return
     }
-    val existedKeys = keys()
+    val existedKeys = keys().toTypedArray()
     existedKeys.forEach { existedKey ->
         if (!keys.contains(existedKey)) {
             remove(existedKey)
