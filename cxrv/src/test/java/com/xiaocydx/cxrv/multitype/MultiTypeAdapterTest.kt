@@ -93,21 +93,17 @@ class MultiTypeAdapterTest {
             register(typeBDelegate) { it.type == TestType.TYPE_B }
         }
 
-        val typeAItem = TypeTestItem(TestType.TYPE_A)
-        val typeBItem = TypeTestItem(TestType.TYPE_B)
-        adapter.awaitUpdateList(UpdateOp.SubmitList(listOf(typeBItem)))
+        val oldItem = TypeTestItem(TestType.TYPE_A)
+        val newItem = TypeTestItem(TestType.TYPE_B)
+        adapter.awaitUpdateList(UpdateOp.SubmitList(listOf(oldItem)))
         // 首位插入typeAItem
-        adapter.awaitUpdateList(UpdateOp.SubmitList(listOf(typeAItem, typeBItem)))
+        adapter.awaitUpdateList(UpdateOp.SubmitList(listOf(newItem, oldItem)))
 
-        // 验证oldItem和newItem的ViewType类型不相等的情况不会出现
-        verify(exactly = 0) { typeADelegate.areItemsTheSame(typeAItem, typeBItem) }
-        verify(exactly = 0) { typeADelegate.areItemsTheSame(typeBItem, typeAItem) }
-        verify(exactly = 0) { typeBDelegate.areItemsTheSame(typeAItem, typeBItem) }
-        verify(exactly = 0) { typeBDelegate.areItemsTheSame(typeBItem, typeAItem) }
-
-        verify { typeBDelegate.areItemsTheSame(typeBItem, typeBItem) }
-        verify { typeBDelegate.areContentsTheSame(typeBItem, typeBItem) }
-        verify(exactly = 0) { typeBDelegate.getChangePayload(any(), any()) }
+        verify(exactly = 1) { typeADelegate.areItemsTheSame(oldItem, newItem) }
+        verify(atLeast = 1) { typeADelegate.areItemsTheSame(oldItem, oldItem) }
+        verify(exactly = 1) { typeADelegate.areContentsTheSame(oldItem, oldItem) }
+        verify(exactly = 0) { typeADelegate.getChangePayload(any(), any()) }
+        verify(exactly = 0) { typeBDelegate.areItemsTheSame(oldItem, newItem) }
     }
 
     private inline fun <T : Any> multiTypeAdapter(

@@ -94,19 +94,25 @@ internal class MultiTypeAdapter<T : Any>(
 
     @VisibleForTesting(otherwise = PROTECTED)
     public override fun areItemsTheSame(oldItem: T, newItem: T): Boolean = with(multiType) {
-        if (oldItem.javaClass != newItem.javaClass) {
-            // 快路径判断，若两个item的Class不相同，则viewType也不相同
-            return false
-        }
+        // 若两个item的Class不相同，则viewType也不相同
+        if (oldItem.javaClass != newItem.javaClass) return false
         val oldViewType = getItemViewType(oldItem)
         val newViewType = getItemViewType(newItem)
-        oldViewType == newViewType && getViewTypeDelegate(oldViewType).areItemsTheSame(oldItem, newItem)
+
+        // 若两个item的Class相同、viewType相同，则属于一对一关系
+        val oldTheSame = getViewTypeDelegate(oldViewType).areItemsTheSame(oldItem, newItem)
+        if (oldViewType == newViewType) return oldTheSame
+
+        // 若两个item的Class相同、viewType不同，则属于一对多关系，
+        // 对一对多关系，支持不同的ItemCallback.areItemsTheSame()实现。
+        oldTheSame && getViewTypeDelegate(newViewType).areItemsTheSame(oldItem, newItem)
     }
 
     @VisibleForTesting(otherwise = PROTECTED)
     public override fun areContentsTheSame(oldItem: T, newItem: T): Boolean = with(multiType) {
-        val viewType = getItemViewType(oldItem)
-        getViewTypeDelegate(viewType).areContentsTheSame(oldItem, newItem)
+        val oldViewType = getItemViewType(oldItem)
+        val newViewType = getItemViewType(newItem)
+        oldViewType == newViewType && getViewTypeDelegate(oldViewType).areContentsTheSame(oldItem, newItem)
     }
 
     @VisibleForTesting(otherwise = PROTECTED)
