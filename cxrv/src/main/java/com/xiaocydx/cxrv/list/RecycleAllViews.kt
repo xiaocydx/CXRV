@@ -10,7 +10,6 @@ import android.view.View.OnAttachStateChangeListener
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
 import com.xiaocydx.cxrv.list.Disposable
-import com.xiaocydx.cxrv.list.StaggeredGridLayoutManagerCompat
 
 /**
  * 将[RecyclerView]的子View和离屏缓存回收进[RecycledViewPool]

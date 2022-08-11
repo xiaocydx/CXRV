@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Lifecycle.State
 import androidx.recyclerview.widget.ConcatAdapter
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ActivityScenario.launch
@@ -12,7 +13,6 @@ import com.google.common.truth.Truth.assertThat
 import com.xiaocydx.cxrv.TestActivity
 import com.xiaocydx.cxrv.TestAdapter
 import com.xiaocydx.cxrv.itemvisible.findLastCompletelyVisibleItemPosition
-import com.xiaocydx.cxrv.list.linear
 import io.mockk.spyk
 import io.mockk.verifyOrder
 import org.junit.Before
@@ -47,7 +47,7 @@ class HeaderFooterTest {
                 footerView = View(activity)
                 headerAdapter = spyk(headerView.toAdapter())
                 footerAdapter = spyk(footerView.toAdapter())
-                activity.recyclerView.linear()
+                activity.recyclerView.layoutManager = LinearLayoutManager(activity)
             }
     }
 

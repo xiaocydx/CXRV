@@ -15,8 +15,6 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.concat.SpanSizeProvider
 import com.xiaocydx.cxrv.concat.onAttachedToRecyclerView
 import com.xiaocydx.cxrv.concat.spanSizeProvider
-import com.xiaocydx.cxrv.helper.InvalidateHelper
-import com.xiaocydx.cxrv.helper.ScrollHelper
 import com.xiaocydx.cxrv.internal.accessEach
 import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.reverseAccessEach
@@ -40,8 +38,6 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
         adapter = @Suppress("LeakingThis") this,
         workDispatcher = workDispatcher
     )
-    private val scrollHelper = ScrollHelper()
-    private val invalidateHelper = InvalidateHelper()
     var recyclerView: RecyclerView? = null
         private set
     final override val currentList: List<ITEM>
@@ -202,7 +198,6 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     @CallSuper
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         this.recyclerView = recyclerView
-        registerHelper(recyclerView)
         callbacks?.reverseAccessEach { it.onAttachedToRecyclerView(recyclerView) }
         spanSizeProvider.onAttachedToRecyclerView(recyclerView)
     }
@@ -210,7 +205,6 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     @CallSuper
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         this.recyclerView = null
-        unregisterHelper(recyclerView)
         callbacks?.reverseAccessEach { it.onDetachedFromRecyclerView(recyclerView) }
         differ.cancelChildren()
     }
@@ -246,16 +240,6 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
 
     internal suspend fun awaitUpdateList(op: UpdateOp<ITEM>, dispatch: Boolean = true) {
         differ.awaitUpdateList(op, dispatch)
-    }
-
-    private fun registerHelper(recyclerView: RecyclerView) {
-        scrollHelper.register(recyclerView, this)
-        invalidateHelper.register(recyclerView, this)
-    }
-
-    private fun unregisterHelper(recyclerView: RecyclerView) {
-        scrollHelper.unregister(recyclerView, this)
-        invalidateHelper.unregister(recyclerView, this)
     }
 
     private inner class InternalDiffItemCallback : DiffUtil.ItemCallback<ITEM>() {
