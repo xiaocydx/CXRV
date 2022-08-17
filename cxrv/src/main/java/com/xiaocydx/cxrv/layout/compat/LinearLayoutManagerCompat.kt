@@ -13,9 +13,9 @@ import com.xiaocydx.cxrv.layout.callback.CompositeLayoutManagerCallback
  * @date 2022/8/11
  */
 open class LinearLayoutManagerCompat : LinearLayoutManager {
-    private var scrollHelper = ScrollToPositionOnUpdateHelper()
+    private val scrollHelper = ScrollToPositionOnUpdateHelper()
     private val saveStateHelper = SaveInstanceStateOnDetachHelper()
-    private var invalidateHelper = InvalidateItemDecorationsHelper()
+    private val invalidateHelper = InvalidateItemDecorationsHelper()
     private val dispatcher = CompositeLayoutManagerCallback(initialCapacity = 3)
 
     constructor(context: Context) : super(context)
@@ -33,6 +33,9 @@ open class LinearLayoutManagerCompat : LinearLayoutManager {
         defStyleRes: Int
     ) : super(context, attrs, defStyleAttr, defStyleRes)
 
+    /**
+     * 是否在[onDetachedFromWindow]被调用时保存状态
+     */
     var isSaveStateOnDetach: Boolean
         get() = saveStateHelper.isEnabled
         set(value) {
