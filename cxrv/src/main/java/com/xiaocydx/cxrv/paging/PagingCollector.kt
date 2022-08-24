@@ -226,7 +226,10 @@ class PagingCollector<T : Any> internal constructor(
     override suspend fun emit(
         value: PagingData<T>
     ) = withContext(mainDispatcher.immediate) {
-        mediator = value.mediator
+        if (mediator !== value.mediator) {
+            version = 0
+            mediator = value.mediator
+        }
         value.flow.collect(::handleEvent)
     }
 

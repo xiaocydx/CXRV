@@ -98,7 +98,10 @@ class ListCollector<T : Any> internal constructor(
     override suspend fun emit(
         value: ListData<T>
     ): Unit = withContext(mainDispatcher.immediate) {
-        mediator = value.mediator
+        if (mediator !== value.mediator) {
+            version = 0
+            mediator = value.mediator
+        }
         value.flow.collect { event ->
             val newVersion = event.version
             if (newVersion <= version) return@collect
