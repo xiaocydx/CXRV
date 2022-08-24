@@ -71,7 +71,7 @@ internal class LoadHeaderAdapter(
      */
     override fun onListChanged(current: List<Any>) {
         when {
-            !loadStates.isFully -> return
+            !loadStates.isFully -> updateLoadHeader(loadStates.toVisible())
             // 此时EMPTY视图已显示，并且列表不为空
             visible == EMPTY && adapter.hasDisplayItem -> updateLoadHeader(NONE)
             // 此时EMPTY视图未显示，并且列表为空
