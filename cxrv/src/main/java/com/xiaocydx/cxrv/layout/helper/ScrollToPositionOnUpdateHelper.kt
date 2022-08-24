@@ -10,7 +10,7 @@ import com.xiaocydx.cxrv.layout.callback.LayoutManagerCallback
  * @author xcc
  * @date 2022/8/12
  */
-class ScrollToPositionOnUpdateHelper : AdapterDataObserver(), LayoutManagerCallback {
+internal class ScrollToPositionOnUpdateHelper : AdapterDataObserver(), LayoutManagerCallback {
     private var previousItemCount = 0
     private var layout: LayoutManager? = null
     private val view: RecyclerView?
