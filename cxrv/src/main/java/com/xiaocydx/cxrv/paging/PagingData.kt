@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
  * @author xcc
  * @date 2021/9/14
  */
-class PagingData<T : Any>
+class PagingData<out T : Any>
 @PublishedApi internal constructor(
     @PublishedApi
     internal val flow: Flow<PagingEvent<T>>,

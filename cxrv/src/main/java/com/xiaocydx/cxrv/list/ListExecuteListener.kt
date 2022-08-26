@@ -6,7 +6,7 @@ package com.xiaocydx.cxrv.list
  * @author xcc
  * @date 2021/11/29
  */
-fun interface ListExecuteListener<in T : Any> {
+fun interface ListExecuteListener<T : Any> {
 
     /**
      * 开始执行列表更新操作

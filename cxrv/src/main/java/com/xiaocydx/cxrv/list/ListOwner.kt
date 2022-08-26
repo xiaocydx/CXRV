@@ -8,7 +8,7 @@ import androidx.annotation.MainThread
  * @author xcc
  * @date 2021/9/11
  */
-interface ListOwner<T : Any> {
+interface ListOwner<out T : Any> {
     /**
      * 当前列表
      *
@@ -34,19 +34,19 @@ val ListOwner<*>.size: Int
 /**
  * 通过[position]获取item
  */
-fun <T : Any> ListOwner<out T>.getItem(position: Int): T = currentList[position]
+fun <T : Any> ListOwner<T>.getItem(position: Int): T = currentList[position]
 
 /**
  * 通过[position]获取item
  *
  * @param position 取值范围[0, size)，若超过则返回`null`
  */
-fun <T : Any> ListOwner<out T>.getItemOrNull(position: Int): T? = currentList.getOrNull(position)
+fun <T : Any> ListOwner<T>.getItemOrNull(position: Int): T? = currentList.getOrNull(position)
 
 /**
  * 返回与[predicate]匹配的第一个item，如果未找到item，则返回null。
  */
-inline fun <T : Any> ListOwner<out T>.getItemOrNull(
+inline fun <T : Any> ListOwner<T>.getItemOrNull(
     predicate: (T) -> Boolean
 ): T? = currentList.firstOrNull(predicate)
 
