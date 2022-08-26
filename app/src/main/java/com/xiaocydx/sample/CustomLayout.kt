@@ -267,7 +267,7 @@ abstract class CustomLayout @JvmOverloads constructor(
      */
     @CheckResult
     protected fun View.alignCenterY(other: View): Int {
-        return if (other == parent) {
+        return if (other === parent) {
             alignCenterY(top = 0, bottom = requireParentView().height)
         } else {
             alignCenterY(other.top, other.bottom)
