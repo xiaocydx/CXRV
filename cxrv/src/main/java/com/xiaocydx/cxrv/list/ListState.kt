@@ -43,11 +43,8 @@ import java.util.*
  */
 class ListState<T : Any> : ListOwner<T> {
     private var listeners: ArrayList<(UpdateOp<T>) -> Unit>? = null
-    private var sourceList: ArrayList<T> = arrayListOf()
-
-    @Volatile
-    override var currentList: List<T> = sourceList.toUnmodifiableList()
-        private set
+    private val sourceList: ArrayList<T> = arrayListOf()
+    override val currentList: List<T> = sourceList.toUnmodifiableList()
     internal var version: Int = 0
         private set
 
@@ -100,11 +97,6 @@ class ListState<T : Any> : ListOwner<T> {
 
     @MainThread
     private fun submitList(newList: List<T>): Boolean {
-        if (newList is SafeMutableList) {
-            sourceList = newList
-            currentList = sourceList.toUnmodifiableList()
-            return true
-        }
         if (sourceList.isNotEmpty()) {
             sourceList.clear()
         }

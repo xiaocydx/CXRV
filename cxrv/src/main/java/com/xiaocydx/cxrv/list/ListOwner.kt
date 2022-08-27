@@ -70,7 +70,7 @@ fun ListOwner<*>.isLastItem(position: Int): Boolean {
  * 通过[submitChange]、[submitTransform]可以方便的更改列表。
  *
  * @param newList 需要是新的列表对象，若传入旧的列表对象，则不会更改。
- * 若[newList]的类型是[SafeMutableList]，则表示可直接作为内部的可变列表。
+ * 若[newList]的类型是[SafeMutableList]，则表示可作为内部的可变列表。
  */
 @MainThread
 fun <T : Any> ListOwner<T>.submitList(newList: List<T>) {
