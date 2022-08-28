@@ -40,13 +40,14 @@ import kotlinx.coroutines.flow.onStart
  *
  *     override fun onCreate(savedInstanceState: Bundle?) {
  *          super.onCreate(savedInstanceState)
- *          lifecycleScope.launch {
- *              adapter.emitAll(viewModel.flow)
- *          }
+ *          viewModel.flow
+ *                 .onEach(adapter.pagingCollector)
+ *                 .launchIn(lifecycleScope)
+ *
  *          // 或者仅在视图控制器活跃期间内收集viewModel.flow
  *          lifecycleScope.launch {
  *              repeatOnLifecycle(Lifecycle.State.STARTED) {
- *                  adapter.emitAll(viewModel.flow)
+ *                  adapter.pagingCollector.emitAll(viewModel.flow)
  *              }
  *          }
  *     }

@@ -15,7 +15,7 @@ import java.util.*
  * 1.在ViewModel下创建`listState`，对外提供`flow`
  * ```
  * class FooViewModel : ViewModel() {
- *     private val listState = ListState()
+ *     private val listState = ListState<Foo>()
  *     val flow = listState.asFlow()
  * }
  * ```
@@ -28,13 +28,14 @@ import java.util.*
  *
  *     override fun onCreate(savedInstanceState: Bundle?) {
  *          super.onCreate(savedInstanceState)
- *          lifecycleScope.launch {
- *              adapter.emitAll(viewModel.flow)
- *          }
+ *          viewModel.flow
+ *                 .onEach(adapter.listCollector)
+ *                 .launchIn(lifecycleScope)
+ *
  *          // 或者仅在视图控制器活跃期间内收集viewModel.flow
  *          lifecycleScope.launch {
  *              repeatOnLifecycle(Lifecycle.State.STARTED) {
- *                  adapter.emitAll(viewModel.flow)
+ *                  adapter.listCollector.emitAll(viewModel.flow)
  *              }
  *          }
  *     }
