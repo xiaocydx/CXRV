@@ -4,7 +4,6 @@ package com.xiaocydx.cxrv.list
 
 import androidx.recyclerview.widget.*
 import androidx.recyclerview.widget.RecyclerView.*
-import com.xiaocydx.cxrv.internal.ExperimentalFeature
 
 /**
  * 设置[LinearLayoutManagerCompat]，可用于链式调用场景
@@ -61,7 +60,6 @@ fun <T : RecyclerView> T.fixedSize(): T {
  * [LinearLayoutManager.findLastVisibleItemPosition]会去除`recyclerView.paddingBottom`区域进行计算，
  * 导致函数返回结果不是实际的最后一个可视itemView的position。
  */
-@ExperimentalFeature
 fun LayoutManager.enableBoundCheckCompat() {
     isBoundCheckCompatEnabled = true
 }

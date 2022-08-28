@@ -5,6 +5,8 @@ import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.internal.accessEach
 
 /**
+ * [LayoutManagerCallback]的分发调度器
+ *
  * @author xcc
  * @date 2022/8/11
  */
@@ -17,7 +19,8 @@ internal class CompositeLayoutManagerCallback(initialCapacity: Int) : LayoutMana
     }
 
     fun removeLayoutManagerCallback(callback: LayoutManagerCallback) {
-        callbacks.remove(callback)
+        if (!callbacks.remove(callback)) return
+        callback.onCleared()
     }
 
     override fun onAttachedToWindow(view: RecyclerView) {

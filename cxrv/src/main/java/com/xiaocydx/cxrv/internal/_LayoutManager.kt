@@ -3,10 +3,8 @@
 package androidx.recyclerview.widget
 
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
-import com.xiaocydx.cxrv.internal.ExperimentalFeature
 
 @PublishedApi
-@ExperimentalFeature
 internal var LayoutManager.isBoundCheckCompatEnabled: Boolean
     get() = isHorizontalBoundCheckCompatEnabled && isVerticalBoundCheckCompatEnabled
     set(isEnabled) {

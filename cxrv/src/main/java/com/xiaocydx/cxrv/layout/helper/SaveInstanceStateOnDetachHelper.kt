@@ -3,10 +3,14 @@
 package androidx.recyclerview.widget
 
 import android.os.Parcelable
+import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.RecyclerView.Recycler
 import com.xiaocydx.cxrv.layout.callback.LayoutManagerCallback
 
 /**
+ * 在[onDetachedFromWindow]时保存[LayoutManager]的状态，
+ * 在[onAttachedToWindow]时恢复[LayoutManager]的状态。
+ *
  * @author xcc
  * @date 2022/8/11
  */

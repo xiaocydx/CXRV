@@ -7,33 +7,40 @@ import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.layout.callback.LayoutManagerCallback
 
 /**
+ * 往列表首位插入或交换item时，若当前首位完全可见，则滚动到更新后的首位
+ *
  * @author xcc
  * @date 2022/8/12
  */
-internal class ScrollToPositionOnUpdateHelper : AdapterDataObserver(), LayoutManagerCallback {
+internal class ScrollToFirstOnUpdateHelper : AdapterDataObserver(), LayoutManagerCallback {
     private var previousItemCount = 0
+    private var adapter: Adapter<*>? = null
     private var layout: LayoutManager? = null
     private val view: RecyclerView?
         get() = layout?.mRecyclerView
 
+    var isEnabled = true
+
     override fun onAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
-        oldAdapter?.unregisterAdapterDataObserver(this)
-        newAdapter?.registerAdapterDataObserver(this)
+        adapter?.unregisterAdapterDataObserver(this)
+        adapter = newAdapter
+        adapter?.registerAdapterDataObserver(this)
         this.layout = layout
         previousItemCount = layout.itemCount
     }
 
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-        if (positionStart == 0
+        if (isEnabled
+                && positionStart == 0
                 && previousItemCount != 0
                 && view?.isFirstItemCompletelyVisible == true) {
-            // TODO: 2022/6/12 观察对StaggeredGridLayoutManager的影响
             view?.scrollToPosition(0)
         }
     }
 
     override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
-        if ((fromPosition == 0 || toPosition == 0)
+        if (isEnabled
+                && (fromPosition == 0 || toPosition == 0)
                 && view?.isFirstItemCompletelyVisible == true) {
             view?.scrollToPosition(0)
         }
@@ -41,5 +48,11 @@ internal class ScrollToPositionOnUpdateHelper : AdapterDataObserver(), LayoutMan
 
     override fun onLayoutCompleted(layout: LayoutManager, state: State) {
         previousItemCount = state.itemCount
+    }
+
+    override fun onCleared() {
+        adapter?.unregisterAdapterDataObserver(this)
+        adapter = null
+        layout = null
     }
 }

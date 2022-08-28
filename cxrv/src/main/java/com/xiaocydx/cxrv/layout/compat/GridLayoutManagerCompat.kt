@@ -9,13 +9,15 @@ import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.layout.callback.CompositeLayoutManagerCallback
 
 /**
+ * 提供兼容属性的[GridLayoutManager]
+ *
  * @author xcc
  * @date 2022/8/12
  */
 open class GridLayoutManagerCompat : GridLayoutManager {
-    private val scrollHelper = ScrollToPositionOnUpdateHelper()
+    private val scrollHelper = ScrollToFirstOnUpdateHelper()
     private val saveStateHelper = SaveInstanceStateOnDetachHelper()
-    private val invalidateHelper = InvalidateItemDecorationsHelper()
+    private val invalidateHelper = InvalidateItemDecorationsOnUpdateHelper()
     private val dispatcher = CompositeLayoutManagerCallback(initialCapacity = 3)
 
     constructor(context: Context, spanCount: Int) : super(context, spanCount)
@@ -34,8 +36,26 @@ open class GridLayoutManagerCompat : GridLayoutManager {
         defStyleRes: Int
     ) : super(context, attrs, defStyleAttr, defStyleRes)
 
+    init {
+        dispatcher.addLayoutManagerCallback(scrollHelper)
+        dispatcher.addLayoutManagerCallback(saveStateHelper)
+        dispatcher.addLayoutManagerCallback(invalidateHelper)
+    }
+
     /**
-     * 是否在[onDetachedFromWindow]被调用时保存状态
+     * 是否启用兼用（默认启用）：
+     * 往列表首位插入或交换item时，若当前首位完全可见，则滚动到更新后的首位。
+     */
+    var isScrollToFirstOnUpdate: Boolean
+        get() = scrollHelper.isEnabled
+        set(value) {
+            scrollHelper.isEnabled = value
+        }
+
+    /**
+     * 是否启用兼用（默认不启用）：
+     * 在[onDetachedFromWindow]时保存[LayoutManager]的状态，
+     * 在[onAttachedToWindow]时恢复[LayoutManager]的状态。
      */
     var isSaveStateOnDetach: Boolean
         get() = saveStateHelper.isEnabled
@@ -43,11 +63,16 @@ open class GridLayoutManagerCompat : GridLayoutManager {
             saveStateHelper.isEnabled = value
         }
 
-    init {
-        dispatcher.addLayoutManagerCallback(scrollHelper)
-        dispatcher.addLayoutManagerCallback(saveStateHelper)
-        dispatcher.addLayoutManagerCallback(invalidateHelper)
-    }
+    /**
+     * 是否启用兼容（默认启用）：
+     * 列表更新时调用[RecyclerView.invalidateItemDecorations]，
+     * 解决[ItemDecoration.getItemOffsets]调用不完整，导致实现复杂的问题。
+     */
+    var isInvalidateItemDecorationsOnUpdate: Boolean
+        get() = invalidateHelper.isEnabled
+        set(value) {
+            invalidateHelper.isEnabled = value
+        }
 
     @CallSuper
     override fun onAttachedToWindow(view: RecyclerView) {
