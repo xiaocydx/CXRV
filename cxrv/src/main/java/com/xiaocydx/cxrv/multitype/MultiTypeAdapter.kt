@@ -27,9 +27,7 @@ internal class MultiTypeAdapter<T : Any>(
     }
 
     fun setMultiType(multiType: MultiType<T>) {
-        if (multiType == unregistered<T>()) {
-            return
-        }
+        if (multiType === unregistered<T>()) return
         this.multiType = multiType
         multiType.forEach { it.delegate.attachAdapter(this) }
     }
