@@ -25,10 +25,17 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
 
     var isEnabled = true
 
+    override fun onAttachedToWindow(view: RecyclerView) {
+        val layout = view.layoutManager ?: return
+        onAdapterChanged(layout, oldAdapter = adapter, newAdapter = view.adapter)
+    }
+
     override fun onAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
-        adapter?.unregisterAdapterDataObserver(this)
-        adapter = newAdapter
-        adapter?.registerAdapterDataObserver(this)
+        if (adapter !== newAdapter) {
+            adapter?.unregisterAdapterDataObserver(this)
+            adapter = newAdapter
+            adapter?.registerAdapterDataObserver(this)
+        }
         this.layout = layout
         previousItemCount = layout.itemCount
     }
@@ -40,7 +47,6 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
 
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
         if (!isEnabled || previousItemCount == 0) return
-        // TODO: 按最后item进行减少
         invalidateItemDecorations()
     }
 
@@ -64,9 +70,9 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     }
 
     override fun onLayoutCompleted(layout: LayoutManager, state: State) {
-        if (!isEnabled) return
         // TODO: 支持瀑布流滚动更新
-        if (postponeInvalidate) {
+        val count = view?.itemDecorationCount ?: 0
+        if (isEnabled && postponeInvalidate && count > 0) {
             view?.doOnPreDraw { view?.invalidateItemDecorations() }
         }
         postponeInvalidate = false

@@ -38,4 +38,8 @@ internal class CompositeLayoutManagerCallback(initialCapacity: Int) : LayoutMana
     override fun onLayoutCompleted(layout: LayoutManager, state: State) {
         callbacks.accessEach { it.onLayoutCompleted(layout, state) }
     }
+
+    override fun onCleared() {
+        callbacks.accessEach { it.onCleared() }
+    }
 }

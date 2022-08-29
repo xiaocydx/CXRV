@@ -74,6 +74,11 @@ open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager {
             invalidateHelper.isEnabled = value
         }
 
+    @CallSuper
+    override fun setRecyclerView(recyclerView: RecyclerView?) {
+        super.setRecyclerView(recyclerView)
+        if (recyclerView == null) dispatcher.onCleared()
+    }
 
     @CallSuper
     override fun onAttachedToWindow(view: RecyclerView) {
