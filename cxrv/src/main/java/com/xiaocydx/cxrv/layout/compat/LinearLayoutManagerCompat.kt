@@ -42,7 +42,7 @@ open class LinearLayoutManagerCompat : LinearLayoutManager {
     }
 
     /**
-     * 是否启用兼用（默认启用）：
+     * 是否启用兼容（默认启用）：
      * 往列表首位插入或交换item时，若当前首位完全可见，则滚动到更新后的首位。
      */
     var isScrollToFirstOnUpdate: Boolean
@@ -52,7 +52,7 @@ open class LinearLayoutManagerCompat : LinearLayoutManager {
         }
 
     /**
-     * 是否启用兼用（默认不启用）：
+     * 是否启用兼容（默认不启用）：
      * 在[onDetachedFromWindow]时保存[LayoutManager]的状态，
      * 在[onAttachedToWindow]时恢复[LayoutManager]的状态。
      */
