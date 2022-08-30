@@ -18,6 +18,7 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     private var postponeInvalidate = false
     private var adapter: Adapter<*>? = null
     private var layout: LayoutManager? = null
+    private var checker: ScrolledChecker? = null
     private val view: RecyclerView?
         get() = layout?.mRecyclerView
     private val isStaggered: Boolean
@@ -28,6 +29,9 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     override fun onAttachedToWindow(view: RecyclerView) {
         val layout = view.layoutManager ?: return
         onAdapterChanged(layout, oldAdapter = adapter, newAdapter = view.adapter)
+        if (checker == null && ScrolledChecker.support(layout)) {
+            checker = ScrolledChecker(view, ::isEnabled).apply { attach() }
+        }
     }
 
     override fun onAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
@@ -70,7 +74,6 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     }
 
     override fun onLayoutCompleted(layout: LayoutManager, state: State) {
-        // TODO: 支持瀑布流滚动更新
         val count = view?.itemDecorationCount ?: 0
         if (isEnabled && postponeInvalidate && count > 0) {
             view?.doOnPreDraw { view?.invalidateItemDecorations() }
@@ -80,8 +83,43 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     }
 
     override fun onCleared() {
+        checker?.detach()
         adapter?.unregisterAdapterDataObserver(this)
+        checker = null
         adapter = null
         layout = null
+    }
+
+    private class ScrolledChecker(
+        private val view: RecyclerView,
+        private val isEnabled: () -> Boolean
+    ) : OnScrollListener() {
+
+        fun attach() {
+            view.addOnScrollListener(this)
+        }
+
+        fun detach() {
+            view.removeOnScrollListener(this)
+        }
+
+        /**
+         * [RecyclerView.markItemDecorInsetsDirty]的判断条件，
+         * copy自[StaggeredGridLayoutManager.checkForGaps]。
+         */
+        override fun onScrolled(view: RecyclerView, dx: Int, dy: Int) {
+            if (!isEnabled() || view.scrollState == SCROLL_STATE_IDLE) return
+            val lm = view.layoutManager as? StaggeredGridLayoutManager ?: return
+            val minPos = if (lm.mShouldReverseLayout) lm.lastChildPosition else lm.firstChildPosition
+            if (minPos == 0 && lm.hasGapsToFix() != null) {
+                view.markItemDecorInsetsDirty()
+            }
+        }
+
+        companion object {
+            fun support(layout: LayoutManager): Boolean {
+                return layout is StaggeredGridLayoutManager
+            }
+        }
     }
 }
