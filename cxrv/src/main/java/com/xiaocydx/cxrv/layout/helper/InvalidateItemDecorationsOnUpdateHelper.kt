@@ -108,7 +108,7 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
          * copy自[StaggeredGridLayoutManager.checkForGaps]。
          */
         override fun onScrolled(view: RecyclerView, dx: Int, dy: Int) {
-            if (!isEnabled() || view.scrollState == SCROLL_STATE_IDLE) return
+            if (!isEnabled() || view.scrollState == SCROLL_STATE_IDLE || view.itemDecorationCount == 0) return
             val lm = view.layoutManager as? StaggeredGridLayoutManager ?: return
             val minPos = if (lm.mShouldReverseLayout) lm.lastChildPosition else lm.firstChildPosition
             if (minPos == 0 && lm.hasGapsToFix() != null) {
