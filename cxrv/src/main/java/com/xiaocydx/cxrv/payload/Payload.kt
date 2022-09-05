@@ -16,7 +16,7 @@ internal open class Payload {
     }
 
     fun add(@IntRange(from = 1) value: Int) {
-        check(!isComplete) { "已完成添加" }
+        checkComplete()
         if (contains(value)) return
         values = values or value
     }
@@ -30,6 +30,10 @@ internal open class Payload {
     internal open fun complete(): Payload {
         isComplete = true
         return this
+    }
+
+    protected fun checkComplete() {
+        check(!isComplete) { "已完成添加" }
     }
 
     companion object {

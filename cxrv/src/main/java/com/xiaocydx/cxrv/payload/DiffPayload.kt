@@ -6,30 +6,38 @@ import androidx.annotation.IntRange
  * @author xcc
  * @date 2022/9/4
  */
-internal class DiffPayload<T : Any>(
-    private var _oldItem: T? = null,
-    private var _newItem: T? = null
-) : Payload() {
-    @PublishedApi
-    internal val oldItem: T
-        get() = requireNotNull(_newItem) { "已完成添加" }
+internal class DiffPayload<T : Any>(oldItem: T, newItem: T) : Payload() {
+    private var oldItem: T? = oldItem
+    private var newItem: T? = newItem
 
     @PublishedApi
-    internal val newItem: T
-        get() = requireNotNull(_newItem) { "已完成添加" }
+    internal fun oldItem(): T {
+        checkComplete()
+        return oldItem!!
+    }
 
-    /**
-     * 获取不可空的[oldItem]和[newItem]，避免对比基本类型产生装箱开销
-     */
-    inline fun <K> ifNotEquals(key: T.() -> K): IfNotEquals {
-        return IfNotEquals(if (oldItem.key() == newItem.key()) null else this)
+    @PublishedApi
+    internal fun newItem(): T {
+        checkComplete()
+        return newItem!!
     }
 
     override fun complete(): Payload {
-        _oldItem = null
-        _newItem = null
+        oldItem = null
+        newItem = null
         return super.complete()
     }
+}
+
+internal inline fun <T : Any> Payload(oldItem: T, newItem: T, block: DiffPayload<T>.() -> Unit): Payload {
+    return DiffPayload(oldItem, newItem).apply(block).complete()
+}
+
+/**
+ * 获取不可空的[DiffPayload.oldItem]和[DiffPayload.newItem]，避免对比基本类型产生装箱开销
+ */
+internal inline fun <T : Any, K> DiffPayload<T>.ifNotEquals(key: T.() -> K): IfNotEquals {
+    return IfNotEquals(if (oldItem().key() == newItem().key()) null else this)
 }
 
 // TODO: 验证不会创建内联值类对象
@@ -38,8 +46,4 @@ internal value class IfNotEquals(private val payload: Payload?) {
     fun add(@IntRange(from = 1) value: Int) {
         payload?.add(value)
     }
-}
-
-internal inline fun <T : Any> Payload(oldItem: T, newItem: T, block: DiffPayload<T>.() -> Unit): Payload {
-    return DiffPayload(oldItem, newItem).apply(block).complete()
 }
