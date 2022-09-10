@@ -7,13 +7,13 @@ import java.lang.reflect.Type
 import kotlin.reflect.KClass
 
 /**
- * 实现[ContractResponse]的类，是跟服务端约定的响应Body，例如：
+ * 实现[ResponseContract]的类，是跟服务端约定的响应Body，例如：
  * ```
  * data class BaseResponse<T>(
  *     val data: T? = null,
  *     val errorCode: Int = -1,
  *     val errorMsg: String? = null
- * ) : ContractResponse {
+ * ) : ResponseContract {
  *
  *     override fun getOrNull(): Any? = data
  *
@@ -24,7 +24,7 @@ import kotlin.reflect.KClass
  * }
  * ```
  */
-interface ContractResponse {
+interface ResponseContract {
     /**
      * 返回数据，若没有则返回`null`
      */
@@ -55,17 +55,17 @@ interface ContractResponse {
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Transform(val responseClass: KClass<out ContractResponse>)
+annotation class Transform(val responseClass: KClass<out ResponseContract>)
 
 /**
  * 实现[Transform]注解功能的[CallAdapter]工厂类
  *
- * * 若函数没有[Transform]注解，则按[defaultResponseClass]进行转换、解析。
- * * [Callback.onFailure]的异常和[ContractResponse.exceptionOrNull]的异常，
+ * 1. 若函数没有[Transform]注解，则按[defaultResponseClass]进行转换、解析。
+ * 2. [Callback.onFailure]的异常和[ResponseContract.exceptionOrNull]的异常，
  * 会通过[exceptionTransform]进行转换，转换结果可以是自定义HttpException。
  */
 class TransformCallAdapterFactory(
-    private val defaultResponseClass: KClass<out ContractResponse>? = null,
+    private val defaultResponseClass: KClass<out ResponseContract>? = null,
     private val exceptionTransform: ((exception: Throwable) -> Throwable)? = null
 ) : CallAdapter.Factory() {
 
@@ -82,13 +82,13 @@ class TransformCallAdapterFactory(
         }
 
         val dataType = getParameterUpperBound(0, returnType)
-        if (ContractResponse::class.java.isAssignableFrom(getRawType(dataType))) {
+        if (ResponseContract::class.java.isAssignableFrom(getRawType(dataType))) {
             return null
         }
 
         val transform = annotations
             .firstNotNullOfOrNull { it as? Transform }
-        val rawType: Class<out ContractResponse> = when {
+        val rawType: Class<out ResponseContract> = when {
             transform != null -> transform.responseClass.java
             else -> defaultResponseClass?.java
         } ?: return null
@@ -105,11 +105,11 @@ class TransformCallAdapterFactory(
 /**
  * 实现[Transform]注解功能的[CallAdapter]
  *
- * [Callback.onFailure]的异常和[ContractResponse.exceptionOrNull]的异常，
+ * [Callback.onFailure]的异常和[ResponseContract.exceptionOrNull]的异常，
  * 会通过[exceptionTransform]进行转换，转换结果可以是自定义HttpException。
  */
-class TransformCallAdapter(
-    rawType: Class<out ContractResponse>,
+private class TransformCallAdapter(
+    rawType: Class<out ResponseContract>,
     private val dataType: Type,
     private val next: CallAdapter<*, *>,
     private val exceptionTransform: ((exception: Throwable) -> Throwable)? = null
@@ -181,7 +181,7 @@ class TransformCallAdapter(
         @Suppress("UNCHECKED_CAST")
         private fun Response<T>.transform(): Response<T> = when {
             isSuccessful -> {
-                val body = body() as? ContractResponse
+                val body = body() as? ResponseContract
                         ?: throw AssertionError("转换过程出现断言异常")
                 Response.success(body.getOrNull(), raw()) as Response<T>
             }
@@ -203,7 +203,7 @@ class TransformCallAdapter(
                             method.name +
                             " was null but response body type was declared as non-null")
                 }
-                !is ContractResponse -> AssertionError("转换过程出现断言异常")
+                !is ResponseContract -> AssertionError("转换过程出现断言异常")
                 else -> body.exceptionOrNull()
             }
         }

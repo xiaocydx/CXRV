@@ -4,7 +4,7 @@ data class BaseResponse<T>(
     val data: T? = null,
     val errorCode: Int = -1,
     val errorMsg: String? = null
-) : ContractResponse {
+) : ResponseContract {
 
     override fun getOrNull(): Any? = data
 
