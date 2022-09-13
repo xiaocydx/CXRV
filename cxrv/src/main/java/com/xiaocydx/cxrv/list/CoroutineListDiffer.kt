@@ -46,10 +46,7 @@ class CoroutineListDiffer<T : Any>(
     private var changedListeners: ArrayList<ListChangedListener<T>>? = null
     override val context: CoroutineContext = SupervisorJob() + mainDispatcher.immediate
     override val coroutineContext: CoroutineContext = context
-
-    @Volatile
-    var currentList: List<T> = sourceList.toUnmodifiableList()
-        private set
+    @Volatile var currentList: List<T> = sourceList.toUnmodifiableList(); private set
 
     constructor(
         diffCallback: DiffUtil.ItemCallback<T>,

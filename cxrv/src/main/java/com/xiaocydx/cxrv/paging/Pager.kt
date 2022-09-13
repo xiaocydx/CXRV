@@ -62,7 +62,7 @@ class Pager<K : Any, T : Any>(
     private val source: PagingSource<K, T>
 ) {
     private val refreshEvent = ConflatedEvent<Unit>()
-    private var fetcher: PagingFetcher<K, T>? = null
+    @Volatile private var fetcher: PagingFetcher<K, T>? = null
     val loadStates: LoadStates
         get() = fetcher?.loadStates ?: LoadStates.Incomplete
 

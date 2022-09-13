@@ -106,8 +106,7 @@ private open class CancellableFlow<T>(
 ) : Flow<T> {
     private var isCompleted = false
     private var isCollected = false
-    private var collectJob: Job? = null
-    private val completableJob: CompletableJob = Job()
+    @Volatile private var collectJob: Job? = null
     private val channel: Channel<T> = Channel(RENDEZVOUS)
 
     override suspend fun collect(collector: FlowCollector<T>) {
@@ -144,12 +143,6 @@ private open class CancellableFlow<T>(
             return
         }
         collectJob = scope.launch(mainDispatcher.immediate) {
-            val job = coroutineContext.job
-            completableJob.invokeOnCompletion {
-                // AnyThread
-                job.cancel()
-            }
-
             upstream.collect {
                 onReceive(it)
                 if (!isCollected) {
@@ -192,6 +185,6 @@ private open class CancellableFlow<T>(
     protected open fun onInactive(): Unit = Unit
 
     suspend fun cancel() {
-        completableJob.cancelAndJoin()
+        collectJob?.cancelAndJoin()
     }
 }
