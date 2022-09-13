@@ -2,6 +2,7 @@ package com.xiaocydx.cxrv.paging
 
 import androidx.annotation.MainThread
 import com.xiaocydx.cxrv.internal.flowOnMain
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
@@ -67,6 +68,7 @@ internal class PagingFetcher<K : Any, T : Any>(
             loadResult = try {
                 source.load(loadParams(loadType))
             } catch (e: Throwable) {
+                if (e is CancellationException) throw e
                 LoadResult.Failure(e)
             }
 
