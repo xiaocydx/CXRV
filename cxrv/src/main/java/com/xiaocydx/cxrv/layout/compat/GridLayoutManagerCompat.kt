@@ -4,8 +4,13 @@ package androidx.recyclerview.widget
 
 import android.content.Context
 import android.util.AttributeSet
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.annotation.CallSuper
 import androidx.recyclerview.widget.RecyclerView.*
+import com.xiaocydx.cxrv.internal.ExperimentalFeature
 import com.xiaocydx.cxrv.layout.callback.CompositeLayoutManagerCallback
 
 /**
@@ -101,5 +106,57 @@ open class GridLayoutManagerCompat : GridLayoutManager {
     override fun onLayoutCompleted(state: State) {
         dispatcher.onLayoutCompleted(layout = this, state)
         super.onLayoutCompleted(state)
+    }
+
+    override fun generateDefaultLayoutParams(): RecyclerView.LayoutParams {
+        return if (mOrientation == HORIZONTAL) {
+            LayoutParams(WRAP_CONTENT, MATCH_PARENT)
+        } else {
+            LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+        }
+    }
+
+    override fun generateLayoutParams(c: Context, attrs: AttributeSet): RecyclerView.LayoutParams {
+        return LayoutParams(c, attrs)
+    }
+
+    override fun generateLayoutParams(lp: ViewGroup.LayoutParams): RecyclerView.LayoutParams {
+        return if (lp is ViewGroup.MarginLayoutParams) LayoutParams(lp) else LayoutParams(lp)
+    }
+
+    override fun checkLayoutParams(lp: RecyclerView.LayoutParams): Boolean {
+        return lp is LayoutParams
+    }
+
+    @CallSuper
+    override fun layoutDecoratedWithMargins(child: View, left: Int, top: Int, right: Int, bottom: Int) {
+        super.layoutDecoratedWithMargins(child, left, top, right, bottom)
+        val lp = child.layoutParams as? LayoutParams ?: return
+        val rv = lp.mViewHolder?.mOwnerRecyclerView
+        lp.maybeIgnoreConsumedInPreLayout = rv?.isPreLayout == true && !lp.isItemRemoved
+    }
+
+    @ExperimentalFeature
+    internal var hasFixedItemSize = false
+
+    class LayoutParams : GridLayoutManager.LayoutParams {
+        internal var maybeIgnoreConsumedInPreLayout = false
+
+        constructor(c: Context, attrs: AttributeSet) : super(c, attrs)
+        constructor(width: Int, height: Int) : super(width, height)
+        constructor(source: ViewGroup.MarginLayoutParams) : super(source)
+        constructor(source: ViewGroup.LayoutParams) : super(source)
+        constructor(source: RecyclerView.LayoutParams) : super(source)
+
+        override fun isItemChanged(): Boolean {
+            var isItemChanged = super.isItemChanged()
+            if (isItemChanged && maybeIgnoreConsumedInPreLayout) {
+                val rv = mViewHolder?.mOwnerRecyclerView
+                val lm = rv?.layoutManager as? GridLayoutManagerCompat
+                if (rv?.isPreLayout == true && lm?.hasFixedItemSize == true) isItemChanged = false
+            }
+            maybeIgnoreConsumedInPreLayout = false
+            return isItemChanged
+        }
     }
 }
