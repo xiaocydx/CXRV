@@ -115,7 +115,7 @@ class LoadFooterConfig @PublishedApi internal constructor() {
     /**
      * 加载完全视图
      *
-     * 若[block]为null，则表示不需要空结果视图。
+     * 若[block]为null，则表示不需要加载完全视图。
      * ```
      * fullyView { parent -> TextView(parent.context) }
      * ```
