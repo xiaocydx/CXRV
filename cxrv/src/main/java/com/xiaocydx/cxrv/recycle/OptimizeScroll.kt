@@ -14,8 +14,7 @@ import java.lang.reflect.Field
 fun RecyclerView.optimizeNextFrameScroll() {
     // reflect < 1ms
     val original = getViewCacheExtensionOrNull()
-    setViewCacheExtension(GetScrapOrCachedViewForTypeExtension(original))
-    // resume original
+    setViewCacheExtension(GetScrapOrCachedViewForTypeExtension(this, original))
     doOnPreDraw { setViewCacheExtension(original) }
 }
 
@@ -30,42 +29,80 @@ private fun RecyclerView.getViewCacheExtensionOrNull(): ViewCacheExtension? {
 }
 
 private class GetScrapOrCachedViewForTypeExtension(
+    private val recyclerView: RecyclerView,
     private val original: ViewCacheExtension?
 ) : ViewCacheExtension() {
+    /**
+     * 若存在preLayout，则不做处理，避免影响更新流程
+     */
+    private var hasPreLayout = false
 
     override fun getViewForPositionAndType(recycler: Recycler, position: Int, type: Int): View? {
-        val holder = recycler.getScrapOrCachedViewForType(type)
-        if (holder != null && holder.checkLayoutParams()) {
-            holder.ensureNextStepBind()
-            return holder.itemView
-        }
-        return original?.getViewForPositionAndType(recycler, position, type)
+        hasPreLayout = hasPreLayout || recycler.isScrapInPreLayout()
+        val holder = if (!hasPreLayout) recycler.getScrapOrCachedViewForType(type) else null
+        holder?.ensureCallTryBindViewHolderByDeadline()
+        return holder?.itemView ?: original?.getViewForPositionAndType(recycler, position, type)
     }
 
+    /**
+     * scrap是否有存在于preLayout的[ViewHolder]
+     */
+    private fun Recycler.isScrapInPreLayout(): Boolean {
+        val changedScrap = mChangedScrap ?: emptyList<ViewHolder>()
+        for (index in changedScrap.indices) {
+            val holder = changedScrap[index]
+            if (recyclerView.mViewInfoStore.isInPreLayout(holder)) return true
+        }
+
+        val attachedScrap = mAttachedScrap ?: emptyList<ViewHolder>()
+        for (index in attachedScrap.indices) {
+            val holder = attachedScrap[index]
+            if (recyclerView.mViewInfoStore.isInPreLayout(holder)) return true
+        }
+        return false
+    }
+
+    /**
+     * 实现逻辑参考自[Recycler.getScrapOrHiddenOrCachedHolderForPosition]
+     */
     private fun Recycler.getScrapOrCachedViewForType(type: Int): ViewHolder? {
-        for (index in (mAttachedScrap.size - 1) downTo 0) {
-            val holder = mAttachedScrap[index]
-            if (holder.itemViewType == type && !holder.wasReturnedFromScrap()) {
+        val attachedScrap = mAttachedScrap ?: emptyList<ViewHolder>()
+        for (index in attachedScrap.indices) {
+            val holder = attachedScrap[index]
+            if (holder.checkLayoutParams()
+                    && !holder.wasReturnedFromScrap()
+                    && holder.itemViewType == type
+                    && !holder.isInvalid && !holder.isRemoved) {
                 holder.addFlags(ViewHolder.FLAG_RETURNED_FROM_SCRAP)
                 return holder
             }
         }
 
-        for (index in (mCachedViews.size - 1) downTo 0) {
-            val holder = mCachedViews[index]
-            if (holder.itemViewType == type && !holder.isAttachedToTransitionOverlay) {
-                mCachedViews.removeAt(index)
+        val cachedViews = mCachedViews ?: emptyList<ViewHolder>()
+        for (index in cachedViews.indices) {
+            val holder = cachedViews[index]
+            if (holder.checkLayoutParams()
+                    && !holder.isInvalid
+                    && holder.itemViewType == type
+                    && !holder.isAttachedToTransitionOverlay) {
+                mCachedViews?.removeAt(index)
                 return holder
             }
         }
         return null
     }
 
+    /**
+     * 确保有[LayoutParams]，避免后续流程抛出异常
+     */
     private fun ViewHolder.checkLayoutParams(): Boolean {
         return itemView.layoutParams is LayoutParams
     }
 
-    private fun ViewHolder.ensureNextStepBind() {
+    /**
+     * 确保后续流程调用[Recycler.tryBindViewHolderByDeadline]
+     */
+    private fun ViewHolder.ensureCallTryBindViewHolderByDeadline() {
         if (!isBound || needsUpdate() || isInvalid) return
         addFlags(ViewHolder.FLAG_UPDATE)
     }
