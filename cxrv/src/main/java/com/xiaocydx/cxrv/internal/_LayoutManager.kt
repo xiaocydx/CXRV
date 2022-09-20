@@ -13,9 +13,9 @@ internal var LayoutManager.isBoundCheckCompatEnabled: Boolean
     }
 
 private var LayoutManager.isHorizontalBoundCheckCompatEnabled: Boolean
-    get() = mHorizontalBoundCheck.mCallback is HorizontalBoundCheckCallbackCompat
+    get() = mHorizontalBoundCheck?.mCallback is HorizontalBoundCheckCallbackCompat
     set(isEnabled) {
-        val boundsCheck = mHorizontalBoundCheck
+        val boundsCheck = mHorizontalBoundCheck ?: return
         val callback = boundsCheck.mCallback
         val newBoundsCheck = if (isEnabled) {
             if (callback is HorizontalBoundCheckCallbackCompat) return
@@ -29,9 +29,9 @@ private var LayoutManager.isHorizontalBoundCheckCompatEnabled: Boolean
     }
 
 private var LayoutManager.isVerticalBoundCheckCompatEnabled: Boolean
-    get() = mVerticalBoundCheck.mCallback is VerticalBoundCheckCallbackCompat
+    get() = mVerticalBoundCheck?.mCallback is VerticalBoundCheckCallbackCompat
     set(isEnabled) {
-        val boundsCheck = mVerticalBoundCheck
+        val boundsCheck = mVerticalBoundCheck ?: return
         val callback = boundsCheck.mCallback
         val newBoundsCheck = if (isEnabled) {
             if (callback is VerticalBoundCheckCallbackCompat) return

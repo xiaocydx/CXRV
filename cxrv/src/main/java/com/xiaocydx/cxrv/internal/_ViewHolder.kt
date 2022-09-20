@@ -11,13 +11,13 @@ internal val View.holder: ViewHolder?
     get() = (layoutParams as? LayoutParams)?.mViewHolder
 
 internal val ViewHolder.payloads: List<Any>
-    get() = unmodifiedPayloads
+    get() = unmodifiedPayloads ?: emptyList()
 
 internal val RecyclerView.isPreLayout: Boolean
-    get() = mState.isPreLayout
+    get() = mState?.isPreLayout == true
 
 internal val RecyclerView.cacheViews: List<ViewHolder>
-    get() = mRecycler.mCachedViews
+    get() = mRecycler?.mCachedViews ?: emptyList()
 
 internal fun RecyclerView.isHeaderOrFooterOrRemoved(child: View): Boolean {
     val holder = getChildViewHolder(child) ?: return false
