@@ -12,8 +12,9 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.Px
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.*
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ItemDecoration
+import androidx.recyclerview.widget.RecyclerView.State
 import com.xiaocydx.cxrv.R
 import kotlin.math.max
 
@@ -27,25 +28,23 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
     private var outRect: Rect = emptyRect
     private val divider: Drawable? = config.drawable
     private var state: State = emptyState
+    private val isSpacing = when (divider) {
+        null -> true
+        !is ColorDrawable -> false
+        else -> divider.color == Color.TRANSPARENT
+    }
+
     internal val drawEdge = DrawEdge()
     internal val leftEdge = config.leftEdge
     internal val topEdge = config.topEdge
     internal val rightEdge = config.rightEdge
     internal val bottomEdge = config.bottomEdge
-
     @Px internal val leftMargin = config.leftMargin
     @Px internal val topMargin = config.topMargin
     @Px internal val rightMargin = config.rightMargin
     @Px internal val bottomMargin = config.bottomMargin
-
     @Px internal val width = config.width
     @Px internal val height = config.height
-    internal val isGrid = width > 0 && height > 0
-    internal val isSpacing = when (divider) {
-        null -> true
-        !is ColorDrawable -> false
-        else -> divider.color == Color.TRANSPARENT
-    }
 
     override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: State) {
         resetThen(state, outRect) {
@@ -54,9 +53,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
     }
 
     override fun onDraw(canvas: Canvas, parent: RecyclerView, state: State) {
-        if (isSpacing) {
-            return
-        }
+        if (isSpacing) return
         resetThen(state) {
             DividerStrategy.get(parent).onDraw(canvas, parent, this)
         }
@@ -78,7 +75,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
     internal inline fun withSave(
         canvas: Canvas,
         block: DividerItemDecoration.() -> Unit
-    )  {
+    ) {
         val checkpoint = canvas.save()
         try {
             this@DividerItemDecoration.block()

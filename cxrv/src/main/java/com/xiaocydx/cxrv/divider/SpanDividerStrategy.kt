@@ -3,7 +3,8 @@ package com.xiaocydx.cxrv.divider
 import android.graphics.Canvas
 import android.view.View
 import androidx.recyclerview.widget.*
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
+import androidx.recyclerview.widget.RecyclerView.VERTICAL
 import com.xiaocydx.cxrv.R
 import com.xiaocydx.cxrv.internal.childEach
 import com.xiaocydx.cxrv.list.isHeaderOrFooter
@@ -65,21 +66,16 @@ internal object SpanDividerStrategy : DividerStrategy {
     ) {
         var left = 0
         var right = 0
-        if (!isGrid) {
-            left = if (leftEdge && span.isFirstSpan) width else 0
-            right = if (rightEdge && span.isLastSpan) width else 0
-        } else {
-            when {
-                leftEdge && !rightEdge -> left = width
-                !leftEdge && rightEdge -> right = width
-                leftEdge && rightEdge -> span.apply {
-                    left = width - spanIndex * width / span.spanCount
-                    right = (spanIndex + spanSize) * width / spanCount
-                }
-                !leftEdge && !rightEdge -> span.apply {
-                    left = spanIndex * width / spanCount
-                    right = width - (spanIndex + spanSize) * width / spanCount
-                }
+        when {
+            leftEdge && !rightEdge -> left = width
+            !leftEdge && rightEdge -> right = width
+            leftEdge && rightEdge -> span.apply {
+                left = width - spanIndex * width / span.spanCount
+                right = (spanIndex + spanSize) * width / spanCount
+            }
+            !leftEdge && !rightEdge -> span.apply {
+                left = spanIndex * width / spanCount
+                right = width - (spanIndex + spanSize) * width / spanCount
             }
         }
 
@@ -98,21 +94,16 @@ internal object SpanDividerStrategy : DividerStrategy {
     ) {
         var top = 0
         var bottom = 0
-        if (!isGrid) {
-            top = if (topEdge && span.isFirstSpan) height else 0
-            bottom = if (bottomEdge && span.isLastSpan) height else 0
-        } else {
-            when {
-                topEdge && !bottomEdge -> top = height
-                !topEdge && bottomEdge -> bottom = height
-                topEdge && bottomEdge -> span.apply {
-                    top = height - spanIndex * height / spanCount
-                    bottom = (spanIndex + spanSize) * height / spanCount
-                }
-                !topEdge && !bottomEdge -> span.apply {
-                    top = spanIndex * height / spanCount
-                    bottom = height - (spanIndex + spanSize) * height / spanCount
-                }
+        when {
+            topEdge && !bottomEdge -> top = height
+            !topEdge && bottomEdge -> bottom = height
+            topEdge && bottomEdge -> span.apply {
+                top = height - spanIndex * height / spanCount
+                bottom = (spanIndex + spanSize) * height / spanCount
+            }
+            !topEdge && !bottomEdge -> span.apply {
+                top = spanIndex * height / spanCount
+                bottom = height - (spanIndex + spanSize) * height / spanCount
             }
         }
 
@@ -217,26 +208,21 @@ internal object SpanDividerStrategy : DividerStrategy {
     private fun DividerItemDecoration.setVerticalDrawEdge(parent: RecyclerView, span: SpanParams) {
         var left = false
         var right = false
-        if (!isGrid) {
-            left = leftEdge && span.isFirstSpan
-            right = rightEdge && span.isLastSpan
-        } else {
-            when {
-                leftEdge && rightEdge -> {
-                    left = span.isFirstSpan
-                    right = true
-                }
-                leftEdge && !rightEdge -> left = true
-                !leftEdge && rightEdge -> right = true
-                !leftEdge && !rightEdge -> right = !span.isLastSpan
+        when {
+            leftEdge && rightEdge -> {
+                left = span.isFirstSpan
+                right = true
             }
-            // 填充瀑布流布局最后一组的左部和右部
-            if (parent.isStaggered && !left) {
-                left = span.isLastGroup
-            }
-            if (parent.isStaggered && !right) {
-                right = span.isLastGroup
-            }
+            leftEdge && !rightEdge -> left = true
+            !leftEdge && rightEdge -> right = true
+            !leftEdge && !rightEdge -> right = !span.isLastSpan
+        }
+        // 填充瀑布流布局最后一组的左部和右部
+        if (parent.isStaggered && !left) {
+            left = span.isLastGroup
+        }
+        if (parent.isStaggered && !right) {
+            right = span.isLastGroup
         }
 
         var top = topEdge && span.isFirstGroup
@@ -250,26 +236,21 @@ internal object SpanDividerStrategy : DividerStrategy {
     private fun DividerItemDecoration.setHorizontalDrawEdge(parent: RecyclerView, span: SpanParams) {
         var top = false
         var bottom = false
-        if (!isGrid) {
-            top = topEdge && span.isFirstSpan
-            bottom = bottomEdge && span.isLastSpan
-        } else {
-            when {
-                topEdge && bottomEdge -> {
-                    top = span.isFirstSpan
-                    bottom = true
-                }
-                topEdge && !bottomEdge -> top = true
-                !topEdge && bottomEdge -> bottom = true
-                !topEdge && !bottomEdge -> bottom = !span.isLastSpan
+        when {
+            topEdge && bottomEdge -> {
+                top = span.isFirstSpan
+                bottom = true
             }
-            // 填充瀑布流布局最后一组的顶部和底部
-            if (parent.isStaggered && !top) {
-                top = span.isLastGroup
-            }
-            if (parent.isStaggered && !bottom) {
-                bottom = span.isLastGroup
-            }
+            topEdge && !bottomEdge -> top = true
+            !topEdge && bottomEdge -> bottom = true
+            !topEdge && !bottomEdge -> bottom = !span.isLastSpan
+        }
+        // 填充瀑布流布局最后一组的顶部和底部
+        if (parent.isStaggered && !top) {
+            top = span.isLastGroup
+        }
+        if (parent.isStaggered && !bottom) {
+            bottom = span.isLastGroup
         }
 
         var left = leftEdge && span.isFirstGroup
