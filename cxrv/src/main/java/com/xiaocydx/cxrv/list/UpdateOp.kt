@@ -11,6 +11,8 @@ sealed class UpdateOp<in T : Any> {
 
     internal data class SetItem<T : Any>(val position: Int, val item: T) : UpdateOp<T>()
 
+    internal data class SetItems<T : Any>(val position: Int, val items: List<T>) : UpdateOp<T>()
+
     internal data class AddItem<T : Any>(val position: Int, val item: T) : UpdateOp<T>()
 
     internal data class AddItems<T : Any>(val position: Int, val items: List<T>) : UpdateOp<T>()

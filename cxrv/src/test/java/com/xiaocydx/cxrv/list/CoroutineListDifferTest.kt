@@ -75,6 +75,27 @@ class CoroutineListDifferTest {
     }
 
     @Test
+    fun execute_UpdateOp_SetItems() {
+        val count = CountDownLatch(2)
+        val initList = listOf("A", "B")
+        val setItems = fun() {
+            differ.updateList(UpdateOp.SetItems(0, listOf("C", "D", "E"))) {
+                assertThat(differ.currentList).isEqualTo(listOf("C", "D"))
+                verify(exactly = 1) { diffCallback.areItemsTheSame("A", "C") }
+                verify(exactly = 1) { diffCallback.areItemsTheSame("B", "D") }
+                verify(exactly = 1) { updateCallback.onChanged(0, 2, null) }
+                count.countDown()
+            }
+        }
+
+        differ.updateList(UpdateOp.SubmitList(initList)) {
+            setItems()
+            count.countDown()
+        }
+        count.await()
+    }
+
+    @Test
     fun execute_UpdateOp_AddItem() {
         val count = CountDownLatch(2)
         val initList = listOf("A")
@@ -179,6 +200,17 @@ class CoroutineListDifferTest {
     }
 
     @Test
+    fun execute_UpdateOp_SetItems_Await(): Unit = runBlocking {
+        val initList = listOf("A", "B")
+        differ.awaitUpdateList(UpdateOp.SubmitList(initList))
+        differ.awaitUpdateList(UpdateOp.SetItems(0, listOf("C", "D", "E")))
+        assertThat(differ.currentList).isEqualTo(listOf("C", "D"))
+        verify(exactly = 1) { diffCallback.areItemsTheSame("A", "C") }
+        verify(exactly = 1) { diffCallback.areItemsTheSame("B", "D") }
+        verify(exactly = 1) { updateCallback.onChanged(0, 2, null) }
+    }
+
+    @Test
     fun execute_UpdateOp_AddItem_Await(): Unit = runBlocking {
         val initList = listOf("A")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
@@ -225,6 +257,10 @@ class CoroutineListDifferTest {
 
         override fun areContentsTheSame(oldItem: String, newItem: String): Boolean {
             return oldItem == newItem
+        }
+
+        override fun getChangePayload(oldItem: String, newItem: String): Any? {
+            return null
         }
     }
 }

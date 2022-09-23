@@ -134,14 +134,16 @@ class CoroutineListDiffer<T : Any>(
         if (dispatch) {
             executeListeners?.reverseAccessEach { it.onExecute(op) }
         }
-        when (op) {
+        val succeed = when (op) {
             is UpdateOp.SubmitList -> submitList(op.newList)
             is UpdateOp.SetItem -> setItem(op.position, op.item)
+            is UpdateOp.SetItems -> setItems(op.position, op.items)
             is UpdateOp.AddItem -> addItem(op.position, op.item)
             is UpdateOp.AddItems -> addItems(op.position, op.items)
             is UpdateOp.RemoveItems -> removeItems(op.position, op.itemCount)
             is UpdateOp.SwapItem -> swapItem(op.fromPosition, op.toPosition)
         }
+        if (!succeed) return
         changedListeners?.reverseAccessEach { it.onListChanged(currentList) }
     }
 
@@ -166,11 +168,11 @@ class CoroutineListDiffer<T : Any>(
     }
 
     @MainThread
-    private suspend fun submitList(newList: List<T>) {
+    private suspend fun submitList(newList: List<T>): Boolean {
         val oldList = sourceList
         when {
-            oldList === newList -> return
-            oldList.isEmpty() && newList.isEmpty() -> return
+            oldList === newList -> return false
+            oldList.isEmpty() && newList.isEmpty() -> return false
             oldList.isNotEmpty() && newList.isEmpty() -> {
                 val count = oldList.size
                 sourceList.clear()
@@ -191,66 +193,116 @@ class CoroutineListDiffer<T : Any>(
                 result.dispatchUpdatesTo(updateCallback)
             }
         }
+        return true
     }
 
     @MainThread
-    private fun setItem(position: Int, item: T) {
-        val oldItem = sourceList.getOrNull(position) ?: return
-        sourceList[position] = item
-        var payload: Any? = null
-        if (oldItem !== item && diffCallback.areItemsTheSame(oldItem, item)) {
-            if (diffCallback.areContentsTheSame(oldItem, item)) return
-            payload = diffCallback.getChangePayload(oldItem, item)
+    private fun setItem(position: Int, newItem: T): Boolean {
+        val oldItem = sourceList.getOrNull(position) ?: return false
+        sourceList[position] = newItem
+        val payload = getChangePayload(oldItem, newItem)
+        if (payload !== Symbol) {
+            updateCallback.onChanged(position, 1, payload)
         }
-        updateCallback.onChanged(position, 1, payload)
+        return true
     }
 
     @MainThread
-    private fun addItem(position: Int, item: T) {
-        if (position !in 0..sourceList.size) {
-            return
+    @Suppress("SuspiciousEqualsCombination")
+    private fun setItems(position: Int, newItems: List<T>): Boolean {
+        if (position !in sourceList.indices) return false
+        val end = (position + newItems.size - 1).coerceAtMost(sourceList.lastIndex)
+        var index = position
+        var start = index
+        var count = 0
+        var payload: Any? = Symbol
+        while (index <= end) {
+            val oldItem = sourceList[index]
+            val newItem = newItems[index - position]
+            sourceList[index] = newItem
+
+            val newPayload = getChangePayload(oldItem, newItem)
+            if (newPayload === Symbol) {
+                index++
+                continue
+            }
+
+            if (payload !== Symbol && payload != newPayload) {
+                // payload不等于初始值和newPayload，将之前累积的更新合并为一次更新
+                updateCallback.onChanged(start, count, payload)
+                count = 0
+                start = index
+            }
+
+            count++
+            index++
+            payload = newPayload
         }
+
+        if (payload !== Symbol) {
+            // 该分支处理两种情况：
+            // 1. oldItems和newItems的payload都一致，做一次完整更新
+            // 2. oldItems和newItems的payload不一致，做最后一次更新
+            updateCallback.onChanged(start, count, payload)
+            return true
+        }
+        return position <= end
+    }
+
+    @MainThread
+    private fun addItem(position: Int, item: T): Boolean {
+        if (position !in 0..sourceList.size) return false
         sourceList.add(position, item)
         updateCallback.onInserted(position, 1)
+        return true
     }
 
     @MainThread
-    private fun addItems(position: Int, items: List<T>) {
-        if (position !in 0..sourceList.size) {
-            return
-        }
+    private fun addItems(position: Int, items: List<T>): Boolean {
+        if (position !in 0..sourceList.size) return false
         sourceList.addAll(position, items)
         updateCallback.onInserted(position, items.size)
+        return true
     }
 
     @MainThread
     @Suppress("UnnecessaryVariable")
-    private fun removeItems(position: Int, itemCount: Int) {
-        if (position !in sourceList.indices || itemCount <= 0) {
-            return
-        }
+    private fun removeItems(position: Int, itemCount: Int): Boolean {
+        if (position !in sourceList.indices || itemCount <= 0) return false
         if (itemCount == 1) {
             // ArrayList.removeAt()相比于ArrayList.removeRange()，
             // 移除的是最后一位元素时，不会调用System.arraycopy()。
             sourceList.removeAt(position)
             updateCallback.onRemoved(position, 1)
-            return
+            return true
         }
         val fromIndex = position
         val toIndex = (fromIndex + itemCount).coerceAtMost(sourceList.size)
         // 调用链SubList.clear() -> ArrayList.removeRange()
         sourceList.subList(fromIndex, toIndex).clear()
         updateCallback.onRemoved(position, toIndex - fromIndex)
+        return true
     }
 
     @MainThread
-    private fun swapItem(fromPosition: Int, toPosition: Int) {
+    private fun swapItem(fromPosition: Int, toPosition: Int): Boolean {
         if (fromPosition !in sourceList.indices
                 || toPosition !in sourceList.indices) {
-            return
+            return false
         }
         Collections.swap(sourceList, fromPosition, toPosition)
         updateCallback.onMoved(fromPosition, toPosition)
+        return true
+    }
+
+    @MainThread
+    private fun getChangePayload(oldItem: T, newItem: T): Any? {
+        if (oldItem !== newItem && diffCallback.areItemsTheSame(oldItem, newItem)) {
+            if (diffCallback.areContentsTheSame(oldItem, newItem)) return Symbol
+            return diffCallback.getChangePayload(oldItem, newItem)
+        }
+        // oldItem和newItem为同一个对象，返回null确保更新
+        return null
     }
 
     private fun List<T>.ensureSafeMutable(): ArrayList<T> {
@@ -329,7 +381,7 @@ class CoroutineListDiffer<T : Any>(
         }
     }
 
-    private companion object {
+    private companion object Symbol {
         @Suppress("UNCHECKED_CAST")
         private val execute =
                 CoroutineListDiffer<Any>::execute as Function4<Any, UpdateOp<Any>, Boolean, Continuation<Unit>, Any?>

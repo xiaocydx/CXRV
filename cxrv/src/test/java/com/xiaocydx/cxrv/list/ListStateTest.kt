@@ -43,6 +43,14 @@ class ListStateTest {
     }
 
     @Test
+    fun execute_UpdateOp_SetItems() {
+        val initList = listOf("A", "B")
+        listState.updateList(UpdateOp.SubmitList(initList))
+        listState.updateList(UpdateOp.SetItems(0, listOf("C", "D", "E")))
+        assertThat(listState.currentList).isEqualTo(listOf("C", "D"))
+    }
+
+    @Test
     fun execute_UpdateOp_AddItem() {
         val initList = listOf("A")
         listState.updateList(UpdateOp.SubmitList(initList))

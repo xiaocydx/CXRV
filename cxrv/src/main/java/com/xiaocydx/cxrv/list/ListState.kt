@@ -65,14 +65,13 @@ class ListState<T : Any> : ListOwner<T> {
         val succeed = when (op) {
             is UpdateOp.SubmitList -> submitList(op.newList)
             is UpdateOp.SetItem -> setItem(op.position, op.item)
+            is UpdateOp.SetItems -> setItems(op.position, op.items)
             is UpdateOp.AddItem -> addItem(op.position, op.item)
             is UpdateOp.AddItems -> addItems(op.position, op.items)
             is UpdateOp.RemoveItems -> removeItems(op.position, op.itemCount)
             is UpdateOp.SwapItem -> swapItem(op.fromPosition, op.toPosition)
         }
-        if (!succeed) {
-            return
-        }
+        if (!succeed) return
         version++
         if (dispatch) {
             listeners?.reverseAccessEach { it(op) }
@@ -101,44 +100,46 @@ class ListState<T : Any> : ListOwner<T> {
         if (sourceList.isNotEmpty()) {
             sourceList.clear()
         }
-        if (newList.isEmpty()) {
-            return true
-        }
+        if (newList.isEmpty()) return true
         return sourceList.addAll(newList)
     }
 
     @MainThread
-    private fun setItem(position: Int, item: T): Boolean {
-        if (position !in sourceList.indices) {
-            return false
+    private fun setItem(position: Int, newItem: T): Boolean {
+        if (position !in sourceList.indices) return false
+        sourceList[position] = newItem
+        return true
+    }
+
+    @MainThread
+    private fun setItems(position: Int, newItems: List<T>): Boolean {
+        if (position !in sourceList.indices) return false
+        val end = (position + newItems.size - 1).coerceAtMost(sourceList.lastIndex)
+        var index = position
+        while (index <= end) {
+            sourceList[index] = newItems[index - position]
+            index++
         }
-        sourceList[position] = item
         return true
     }
 
     @MainThread
     private fun addItem(position: Int, item: T): Boolean {
-        if (position !in 0..sourceList.size) {
-            return false
-        }
+        if (position !in 0..sourceList.size) return false
         sourceList.add(position, item)
         return true
     }
 
     @MainThread
     private fun addItems(position: Int, items: List<T>): Boolean {
-        if (position !in 0..sourceList.size) {
-            return false
-        }
+        if (position !in 0..sourceList.size) return false
         return sourceList.addAll(position, items)
     }
 
     @MainThread
     @Suppress("UnnecessaryVariable")
     private fun removeItems(position: Int, itemCount: Int): Boolean {
-        if (position !in sourceList.indices || itemCount <= 0) {
-            return false
-        }
+        if (position !in sourceList.indices || itemCount <= 0) return false
         if (itemCount == 1) {
             // ArrayList.removeAt()相比于ArrayList.removeRange()，
             // 移除的是最后一位元素时，不会调用System.arraycopy()。

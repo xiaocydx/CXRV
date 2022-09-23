@@ -82,11 +82,24 @@ fun <T : Any> ListOwner<T>.submitList(newList: List<T>) {
  *
  * **注意**：当[item]为新对象时，才能跟旧对象进行内容对比。
  *
- * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作
+ * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作.
  */
 @MainThread
 fun <T : Any> ListOwner<T>.setItem(position: Int, item: T) {
     updateList(UpdateOp.SetItem(position, item))
+}
+
+/**
+ * 设置items，该函数必须在主线程调用
+ *
+ * **注意**：当[items]的元素为新对象时，才能跟旧对象进行内容对比。
+ *
+ * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
+ * @param items    设置范围[position, size)，元素越界时不会抛出异常。
+ */
+@MainThread
+fun <T : Any> ListOwner<T>.setItems(position: Int, items: List<T>) {
+    updateList(UpdateOp.SetItems(position, items))
 }
 
 /**
