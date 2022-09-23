@@ -206,7 +206,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         this.recyclerView = null
         callbacks?.reverseAccessEach { it.onDetachedFromRecyclerView(recyclerView) }
-        differ.cancelChildren()
+        differ.cancel()
     }
 
     @MainThread

@@ -7,7 +7,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
-import java.util.*
 
 /**
  * 列表状态，和视图控制器建立基于[ListOwner]的双向通信
@@ -159,7 +158,7 @@ class ListState<T : Any> : ListOwner<T> {
                 || toPosition !in sourceList.indices) {
             return false
         }
-        Collections.swap(sourceList, fromPosition, toPosition)
+        sourceList.swap(fromPosition, toPosition)
         return true
     }
 }

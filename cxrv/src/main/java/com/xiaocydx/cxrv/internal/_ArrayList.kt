@@ -45,9 +45,10 @@ internal inline fun <T> ArrayList<T>.reverseAccessEach(action: (T) -> Unit) {
     }
 }
 
-/**
- * 返回不可修改的列表
- */
 internal fun <T> ArrayList<T>.toUnmodifiableList(): List<T> {
     return Collections.unmodifiableList(this)
+}
+
+internal fun <T> ArrayList<T>.swap(from: Int, to: Int) {
+    Collections.swap(this, from, to)
 }

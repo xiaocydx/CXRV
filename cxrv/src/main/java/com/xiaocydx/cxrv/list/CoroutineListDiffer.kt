@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.internal.reverseAccessEach
+import com.xiaocydx.cxrv.internal.swap
 import com.xiaocydx.cxrv.internal.toUnmodifiableList
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -22,8 +23,8 @@ import kotlin.coroutines.*
  * [awaitUpdateList]会响应调用处协程的取消，抛出[CancellationException]，但不会取消更新操作。
  *
  * ### 更新取消
- * 调用[CoroutineListDiffer.cancel]或者[CoroutineListDiffer.cancelChildren]，
- * 会取消挂起中的更新操作，不会停止正在执行的[UpdateOp.SubmitList]，但在执行完之后不会更新列表。
+ * 调用[CoroutineListDiffer.cancel]会取消挂起中的更新操作，
+ * 不会停止正在执行的[UpdateOp.SubmitList]，但在执行完之后不会更新列表。
  *
  * ### 更新回调
  * 1.调用[addListChangedListener]，可以添加列表已更改的[ListChangedListener]，
@@ -39,13 +40,12 @@ class CoroutineListDiffer<T : Any>(
     private val updateCallback: ListUpdateCallback,
     private val workDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
-) : Continuation<Any?>, CoroutineScope {
+) {
     private val mutex = Mutex()
+    private val scope = CoroutineScope(SupervisorJob() + mainDispatcher.immediate)
     private var sourceList: ArrayList<T> = arrayListOf()
     private var executeListeners: ArrayList<ListExecuteListener<T>>? = null
     private var changedListeners: ArrayList<ListChangedListener<T>>? = null
-    override val context: CoroutineContext = SupervisorJob() + mainDispatcher.immediate
-    override val coroutineContext: CoroutineContext = context
     @Volatile var currentList: List<T> = sourceList.toUnmodifiableList(); private set
 
     constructor(
@@ -71,23 +71,21 @@ class CoroutineListDiffer<T : Any>(
      * ```
      * @param dispatch 是否将更新操作分发给[ListExecuteListener]
      */
-    @Suppress("UNCHECKED_CAST")
     fun updateList(
         op: UpdateOp<T>,
         dispatch: Boolean = true,
         complete: ((exception: Throwable?) -> Unit)? = null
     ) = runOnMainThread {
         if (isLockNeeded(op)) {
-            val job = launch {
+            val job = scope.launch {
                 mutex.withLock { execute(op, dispatch) }
             }
-            if (complete != null) {
-                job.invokeOnCompletion { complete.invoke(it) }
-            }
+            complete?.let(job::invokeOnCompletion)
         } else {
             // 该分支下调用execute()不会产生挂起，
             // 因此直接执行execute()的状态机逻辑。
-            execute(this, op as UpdateOp<Any>, dispatch, this)
+            @Suppress("UNCHECKED_CAST")
+            execute(this, op as UpdateOp<Any>, dispatch, NopSymbol)
             complete?.invoke(null)
         }
     }
@@ -95,9 +93,9 @@ class CoroutineListDiffer<T : Any>(
     /**
      * 更新列表并等待完成
      *
-     * **注意**：该函数会响应调用处协程的取消，抛出[CancellationException]，但不会取消更新操作，
-     * 调用[CoroutineListDiffer.cancel]或者[CoroutineListDiffer.cancelChildren]，
-     * 会取消挂起中的更新操作，不会停止正在执行的[UpdateOp.SubmitList]，但在执行完之后不会更新列表。
+     * **注意**：该函数会响应调用处协程的取消，抛出[CancellationException]，
+     * 但不会取消更新操作，调用[CoroutineListDiffer.cancel]，会取消挂起中的更新操作，
+     * 不会停止正在执行的[UpdateOp.SubmitList]，但在执行完之后不会更新列表。
      *
      * ```
      * val differ: CoroutineListDiffer<Any> = ...
@@ -114,7 +112,6 @@ class CoroutineListDiffer<T : Any>(
         dispatch: Boolean = true
     ) = withMainDispatcher {
         if (isLockNeeded(op)) {
-            val scope: CoroutineScope = this
             scope.launch {
                 mutex.withLock { execute(op, dispatch) }
             }.join()
@@ -123,10 +120,6 @@ class CoroutineListDiffer<T : Any>(
             // 因此直接执行execute()的状态机逻辑。
             execute(op, dispatch)
         }
-    }
-
-    override fun resumeWith(result: Result<Any?>) {
-        // 不做任何处理
     }
 
     @MainThread
@@ -201,7 +194,7 @@ class CoroutineListDiffer<T : Any>(
         val oldItem = sourceList.getOrNull(position) ?: return false
         sourceList[position] = newItem
         val payload = getChangePayload(oldItem, newItem)
-        if (payload !== Symbol) {
+        if (payload !== NopSymbol) {
             updateCallback.onChanged(position, 1, payload)
         }
         return true
@@ -215,19 +208,19 @@ class CoroutineListDiffer<T : Any>(
         var index = position
         var start = index
         var count = 0
-        var payload: Any? = Symbol
+        var payload: Any? = NopSymbol
         while (index <= end) {
             val oldItem = sourceList[index]
             val newItem = newItems[index - position]
             sourceList[index] = newItem
 
             val newPayload = getChangePayload(oldItem, newItem)
-            if (newPayload === Symbol) {
+            if (newPayload === NopSymbol) {
                 index++
                 continue
             }
 
-            if (payload !== Symbol && payload != newPayload) {
+            if (payload !== NopSymbol && payload != newPayload) {
                 // payload不等于初始值和newPayload，将之前累积的更新合并为一次更新
                 updateCallback.onChanged(start, count, payload)
                 count = 0
@@ -239,7 +232,7 @@ class CoroutineListDiffer<T : Any>(
             payload = newPayload
         }
 
-        if (payload !== Symbol) {
+        if (payload !== NopSymbol) {
             // 该分支处理两种情况：
             // 1. oldItems和newItems的payload都一致，做一次完整更新
             // 2. oldItems和newItems的payload不一致，做最后一次更新
@@ -290,7 +283,7 @@ class CoroutineListDiffer<T : Any>(
                 || toPosition !in sourceList.indices) {
             return false
         }
-        Collections.swap(sourceList, fromPosition, toPosition)
+        sourceList.swap(fromPosition, toPosition)
         updateCallback.onMoved(fromPosition, toPosition)
         return true
     }
@@ -298,7 +291,7 @@ class CoroutineListDiffer<T : Any>(
     @MainThread
     private fun getChangePayload(oldItem: T, newItem: T): Any? {
         if (oldItem !== newItem && diffCallback.areItemsTheSame(oldItem, newItem)) {
-            if (diffCallback.areContentsTheSame(oldItem, newItem)) return Symbol
+            if (diffCallback.areContentsTheSame(oldItem, newItem)) return NopSymbol
             return diffCallback.getChangePayload(oldItem, newItem)
         }
         // oldItem和newItem为同一个对象，返回null确保更新
@@ -359,8 +352,9 @@ class CoroutineListDiffer<T : Any>(
         executeListeners?.remove(listener)
     }
 
-    fun cancelChildren() {
-        coroutineContext.cancelChildren()
+    fun cancel() {
+        // 允许调用处多次cancel
+        scope.coroutineContext.cancelChildren()
     }
 
     private inline fun runOnMainThread(crossinline block: () -> Unit) {
@@ -381,9 +375,11 @@ class CoroutineListDiffer<T : Any>(
         }
     }
 
-    private companion object Symbol {
+    private companion object NopSymbol : Continuation<Any?> {
         @Suppress("UNCHECKED_CAST")
         private val execute =
                 CoroutineListDiffer<Any>::execute as Function4<Any, UpdateOp<Any>, Boolean, Continuation<Unit>, Any?>
+        override val context: CoroutineContext = EmptyCoroutineContext
+        override fun resumeWith(result: Result<Any?>): Unit = Unit
     }
 }
