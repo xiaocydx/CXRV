@@ -6,12 +6,13 @@ import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.xiaocydx.cxrv.itemvisible.VisibleTarget.*
+import com.xiaocydx.cxrv.layout.runExtensionsPrimitive
 import com.xiaocydx.cxrv.list.Disposable
 
 /**
  * 第一个item是否可视
  *
- * 1. 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 1. 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  * 2. 监听RecyclerView滚动，频繁判断item是否可视的场景，
  * 可以使用[ItemVisibleHelper]，或者使用[doOnFirstItemVisible]。
  */
@@ -21,7 +22,7 @@ val RecyclerView.isFirstItemVisible: Boolean
 /**
  * 第一个item是否完全可视
  *
- * 1. 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 1. 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  * 2. 监听RecyclerView滚动，频繁判断item是否可视的场景，
  * 可以使用[ItemVisibleHelper]，或者使用[doOnFirstItemCompletelyVisible]。
  */
@@ -31,7 +32,7 @@ val RecyclerView.isFirstItemCompletelyVisible: Boolean
 /**
  * 最后一个item是否可视
  *
- * 1. 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 1. 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  * 2. 监听RecyclerView滚动，频繁判断item是否可视的场景，
  * 可以使用[ItemVisibleHelper]，或者使用[doOnLastItemVisible]。
  */
@@ -44,7 +45,7 @@ val RecyclerView.isLastItemVisible: Boolean
 /**
  * 最后一个item是否完全可视
  *
- * 1. 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 1. 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  * 2. 监听RecyclerView滚动，频繁判断item是否可视的场景，
  * 可以使用[ItemVisibleHelper]，或者使用[doOnLastItemCompletelyVisible]。
  */
@@ -57,54 +58,54 @@ val RecyclerView.isLastItemCompletelyVisible: Boolean
 /**
  * 查找第一个可视item的position
  *
- * 1. 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 1. 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  * 2. 监听RecyclerView滚动，频繁获取可视item位置的场景，可以使用[ItemVisibleHelper]。
  */
-fun RecyclerView.findFirstVisibleItemPosition(): Int =
-        when (val lm: LayoutManager? = layoutManager) {
-            is LinearLayoutManager -> lm.findFirstVisibleItemPosition()
-            is StaggeredGridLayoutManager -> lm.findFirstVisibleItemPosition()
-            else -> NO_POSITION
-        }
+fun RecyclerView.findFirstVisibleItemPosition(): Int = when (val lm: LayoutManager? = layoutManager) {
+    null -> NO_POSITION
+    is LinearLayoutManager -> lm.findFirstVisibleItemPosition()
+    is StaggeredGridLayoutManager -> lm.findFirstVisibleItemPosition()
+    else -> lm.runExtensionsPrimitive(NO_POSITION) { findFirstVisibleItemPosition(lm) }
+}
 
 /**
  * 查找第一个完全可视item的position
  *
- * 1. 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 1. 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  * 2. 监听RecyclerView滚动，频繁获取可视item位置的场景，可以使用[ItemVisibleHelper]。
  */
-fun RecyclerView.findFirstCompletelyVisibleItemPosition(): Int =
-        when (val lm: LayoutManager? = layoutManager) {
-            is LinearLayoutManager -> lm.findFirstCompletelyVisibleItemPosition()
-            is StaggeredGridLayoutManager -> lm.findFirstCompletelyVisibleItemPosition()
-            else -> NO_POSITION
-        }
+fun RecyclerView.findFirstCompletelyVisibleItemPosition(): Int = when (val lm: LayoutManager? = layoutManager) {
+    null -> NO_POSITION
+    is LinearLayoutManager -> lm.findFirstCompletelyVisibleItemPosition()
+    is StaggeredGridLayoutManager -> lm.findFirstCompletelyVisibleItemPosition()
+    else -> lm.runExtensionsPrimitive(NO_POSITION) { findFirstCompletelyVisibleItemPosition(lm) }
+}
 
 /**
  * 查找最后一个可视item的position
  *
- * 1. 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 1. 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  * 2. 监听RecyclerView滚动，频繁获取可视item位置的场景，可以使用[ItemVisibleHelper]。
  */
-fun RecyclerView.findLastVisibleItemPosition(): Int =
-        when (val lm: LayoutManager? = layoutManager) {
-            is LinearLayoutManager -> lm.findLastVisibleItemPosition()
-            is StaggeredGridLayoutManager -> lm.findLastVisibleItemPosition()
-            else -> NO_POSITION
-        }
+fun RecyclerView.findLastVisibleItemPosition(): Int = when (val lm: LayoutManager? = layoutManager) {
+    null -> NO_POSITION
+    is LinearLayoutManager -> lm.findLastVisibleItemPosition()
+    is StaggeredGridLayoutManager -> lm.findLastVisibleItemPosition()
+    else -> lm.runExtensionsPrimitive(NO_POSITION) { findLastVisibleItemPosition(lm) }
+}
 
 /**
  * 查找最后一个完全可视item的position
  *
- * 1. 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 1. 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  * 2. 监听RecyclerView滚动，频繁获取可视item位置的场景，可以使用[ItemVisibleHelper]。
  */
-fun RecyclerView.findLastCompletelyVisibleItemPosition(): Int =
-        when (val lm: LayoutManager? = layoutManager) {
-            is LinearLayoutManager -> lm.findLastCompletelyVisibleItemPosition()
-            is StaggeredGridLayoutManager -> lm.findLastCompletelyVisibleItemPosition()
-            else -> NO_POSITION
-        }
+fun RecyclerView.findLastCompletelyVisibleItemPosition(): Int = when (val lm: LayoutManager? = layoutManager) {
+    null -> NO_POSITION
+    is LinearLayoutManager -> lm.findLastCompletelyVisibleItemPosition()
+    is StaggeredGridLayoutManager -> lm.findLastCompletelyVisibleItemPosition()
+    else -> lm.runExtensionsPrimitive(NO_POSITION) { findLastCompletelyVisibleItemPosition(lm) }
+}
 
 /**
  * 查找第一个可视item的position
@@ -175,7 +176,7 @@ private fun IntArray.maxPosition(): Int {
 /**
  * 添加第一个item可视时的处理程序
  *
- * 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  *
  * @param once 为true表示调用一次[handler]后就移除。
  * @return 调用[Disposable.dispose]可以移除[handler]。
@@ -187,7 +188,7 @@ fun RecyclerView.doOnFirstItemVisible(once: Boolean = false, handler: () -> Unit
 /**
  * 添加第一个item完全可视时的处理程序
  *
- * 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  *
  * @param once 为true表示调用一次[handler]后就移除。
  * @return 调用[Disposable.dispose]可以移除[handler]。
@@ -199,7 +200,7 @@ fun RecyclerView.doOnFirstItemCompletelyVisible(once: Boolean = false, handler: 
 /**
  * 添加最后一个item可视时的处理程序
  *
- * 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  *
  * @param once 为true表示调用一次[handler]后就移除。
  * @return 调用[Disposable.dispose]可以移除[handler]。
@@ -211,7 +212,7 @@ fun RecyclerView.doOnLastItemVisible(once: Boolean = false, handler: () -> Unit)
 /**
  * 添加最后一个item完全可视时的处理程序
  *
- * 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  *
  * @param once 为true表示调用一次[handler]后就移除。
  * @return 调用[Disposable.dispose]可以移除[handler]。

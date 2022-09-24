@@ -3,12 +3,14 @@ package com.xiaocydx.cxrv.itemvisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.xiaocydx.cxrv.layout.runExtensionsPrimitive
 
 /**
  * item可视帮助类
  *
- * 1. 仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
+ * 1. 默认仅支持[LinearLayoutManager]、[StaggeredGridLayoutManager]。
  * 2. 适用于监听RecyclerView滚动，频繁判断item是否可视、获取可视item位置的场景，
  * 可减少判断[StaggeredGridLayoutManager]的item是否可视的position数组创建。
  *
@@ -61,9 +63,10 @@ class ItemVisibleHelper(var recyclerView: RecyclerView? = null) {
      */
     val firstVisibleItemPosition: Int
         get() = when (val lm: LayoutManager? = layoutManager) {
+            null -> NO_POSITION
             is LinearLayoutManager -> lm.findFirstVisibleItemPosition()
             is StaggeredGridLayoutManager -> lm.findFirstVisibleItemPosition(getInto(lm))
-            else -> RecyclerView.NO_POSITION
+            else -> lm.runExtensionsPrimitive(NO_POSITION) { findFirstVisibleItemPosition(lm) }
         }
 
     /**
@@ -71,9 +74,10 @@ class ItemVisibleHelper(var recyclerView: RecyclerView? = null) {
      */
     val firstCompletelyVisibleItemPosition: Int
         get() = when (val lm: LayoutManager? = layoutManager) {
+            null -> NO_POSITION
             is LinearLayoutManager -> lm.findFirstCompletelyVisibleItemPosition()
             is StaggeredGridLayoutManager -> lm.findFirstCompletelyVisibleItemPosition(getInto(lm))
-            else -> RecyclerView.NO_POSITION
+            else -> lm.runExtensionsPrimitive(NO_POSITION) { findFirstCompletelyVisibleItemPosition(lm) }
         }
 
     /**
@@ -81,9 +85,10 @@ class ItemVisibleHelper(var recyclerView: RecyclerView? = null) {
      */
     val lastVisibleItemPosition: Int
         get() = when (val lm: LayoutManager? = layoutManager) {
+            null -> NO_POSITION
             is LinearLayoutManager -> lm.findLastVisibleItemPosition()
             is StaggeredGridLayoutManager -> lm.findLastVisibleItemPosition(getInto(lm))
-            else -> RecyclerView.NO_POSITION
+            else -> lm.runExtensionsPrimitive(NO_POSITION) { findLastVisibleItemPosition(lm) }
         }
 
     /**
@@ -91,9 +96,10 @@ class ItemVisibleHelper(var recyclerView: RecyclerView? = null) {
      */
     val lastCompletelyVisibleItemPosition: Int
         get() = when (val lm: LayoutManager? = layoutManager) {
+            null -> NO_POSITION
             is LinearLayoutManager -> lm.findLastCompletelyVisibleItemPosition()
             is StaggeredGridLayoutManager -> lm.findLastCompletelyVisibleItemPosition(getInto(lm))
-            else -> RecyclerView.NO_POSITION
+            else -> lm.runExtensionsPrimitive(NO_POSITION) { findLastCompletelyVisibleItemPosition(lm) }
         }
 
     private fun getInto(lm: StaggeredGridLayoutManager): IntArray {

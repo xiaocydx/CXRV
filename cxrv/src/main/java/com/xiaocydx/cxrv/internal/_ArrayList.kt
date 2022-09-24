@@ -52,3 +52,7 @@ internal fun <T> ArrayList<T>.toUnmodifiableList(): List<T> {
 internal fun <T> ArrayList<T>.swap(from: Int, to: Int) {
     Collections.swap(this, from, to)
 }
+
+internal fun <T> Sequence<T>.toArrayList(): ArrayList<T> {
+    return ArrayList<T>().also(::toCollection)
+}
