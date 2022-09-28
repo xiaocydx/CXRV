@@ -10,8 +10,8 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.annotation.CallSuper
 import androidx.recyclerview.widget.RecyclerView.*
-import com.xiaocydx.cxrv.internal.ExperimentalFeature
 import com.xiaocydx.cxrv.layout.callback.CompositeLayoutManagerCallback
+import com.xiaocydx.cxrv.layout.compat.ItemHasFixedSize
 
 /**
  * 提供兼容属性的[GridLayoutManager]
@@ -24,6 +24,7 @@ open class GridLayoutManagerCompat : GridLayoutManager {
     private val saveStateHelper = SaveInstanceStateOnDetachHelper()
     private val invalidateHelper = InvalidateItemDecorationsOnUpdateHelper()
     private val dispatcher = CompositeLayoutManagerCallback(initialCapacity = 3)
+    private var itemHasFixedSize: ItemHasFixedSize? = null
 
     constructor(context: Context, spanCount: Int) : super(context, spanCount)
 
@@ -79,6 +80,16 @@ open class GridLayoutManagerCompat : GridLayoutManager {
             invalidateHelper.isEnabled = value
         }
 
+    /**
+     * 设置item是否为固定尺寸
+     *
+     * 当需要item动画(add/remove/move动画)，并且频繁做Change更新时，
+     * 若item为固定尺寸，则[func]返回true，表示启用Change更新的优化方案。
+     */
+    fun setItemHasFixedSize(func: ItemHasFixedSize?) {
+        itemHasFixedSize = func
+    }
+
     @CallSuper
     override fun setRecyclerView(recyclerView: RecyclerView?) {
         super.setRecyclerView(recyclerView)
@@ -131,16 +142,11 @@ open class GridLayoutManagerCompat : GridLayoutManager {
     @CallSuper
     override fun layoutDecoratedWithMargins(child: View, left: Int, top: Int, right: Int, bottom: Int) {
         super.layoutDecoratedWithMargins(child, left, top, right, bottom)
-        val lp = child.layoutParams as? LayoutParams ?: return
-        val rv = lp.mViewHolder?.mOwnerRecyclerView
-        lp.maybeIgnoreConsumedInPreLayout = rv?.isPreLayout == true && !lp.isItemRemoved
+        (child.layoutParams as? LayoutParams)?.maybeIgnoreConsumedInPreLayout()
     }
 
-    @ExperimentalFeature
-    internal var hasFixedItemSize = false
-
-    class LayoutParams : GridLayoutManager.LayoutParams {
-        internal var maybeIgnoreConsumedInPreLayout = false
+    open class LayoutParams : GridLayoutManager.LayoutParams {
+        private var maybeIgnoreConsumedInPreLayout = false
 
         constructor(c: Context, attrs: AttributeSet) : super(c, attrs)
         constructor(width: Int, height: Int) : super(width, height)
@@ -148,15 +154,29 @@ open class GridLayoutManagerCompat : GridLayoutManager {
         constructor(source: ViewGroup.LayoutParams) : super(source)
         constructor(source: RecyclerView.LayoutParams) : super(source)
 
+        internal fun maybeIgnoreConsumedInPreLayout() {
+            maybeIgnoreConsumedInPreLayout = isPreLayout() && !isItemRemoved
+        }
+
         override fun isItemChanged(): Boolean {
-            var isItemChanged = super.isItemChanged()
-            if (isItemChanged && maybeIgnoreConsumedInPreLayout) {
-                val rv = mViewHolder?.mOwnerRecyclerView
-                val lm = rv?.layoutManager as? GridLayoutManagerCompat
-                if (rv?.isPreLayout == true && lm?.hasFixedItemSize == true) isItemChanged = false
+            var changed = super.isItemChanged()
+            if (changed && maybeIgnoreConsumedInPreLayout
+                    && isPreLayout() && itemHasFixedSize()) {
+                changed = false
             }
             maybeIgnoreConsumedInPreLayout = false
-            return isItemChanged
+            return changed
+        }
+
+        private fun isPreLayout(): Boolean {
+            return mViewHolder?.mOwnerRecyclerView?.isPreLayout == true
+        }
+
+        private fun itemHasFixedSize(): Boolean {
+            val holder = mViewHolder ?: return false
+            val lm = holder.mOwnerRecyclerView
+                ?.layoutManager as? GridLayoutManagerCompat ?: return false
+            return lm.itemHasFixedSize?.invoke(holder) == true
         }
     }
 }
