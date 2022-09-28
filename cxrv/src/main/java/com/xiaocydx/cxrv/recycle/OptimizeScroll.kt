@@ -36,9 +36,13 @@ private class GetScrapOrCachedViewForTypeExtension(
      * 若存在preLayout，则不做处理，避免影响更新流程
      */
     private var hasPreLayout = false
+    private var checkPreLayout = false
 
     override fun getViewForPositionAndType(recycler: Recycler, position: Int, type: Int): View? {
-        hasPreLayout = hasPreLayout || recycler.isScrapInPreLayout()
+        if (!checkPreLayout) {
+            checkPreLayout = true
+            hasPreLayout = recycler.isScrapInPreLayout()
+        }
         val holder = if (!hasPreLayout) recycler.getScrapOrCachedViewForType(type) else null
         holder?.ensureCallTryBindViewHolderByDeadline()
         return holder?.itemView ?: original?.getViewForPositionAndType(recycler, position, type)
