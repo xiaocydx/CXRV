@@ -281,9 +281,7 @@ class PagingCollector<T : Any> internal constructor(
 
     @MainThread
     private fun setLoadStates(newStates: LoadStates) {
-        if (loadStates == newStates) {
-            return
-        }
+        if (loadStates == newStates) return
         val previous = loadStates
         loadStates = newStates
         loadStatesListeners?.reverseAccessEach {
@@ -294,9 +292,7 @@ class PagingCollector<T : Any> internal constructor(
     @MainThread
     @VisibleForTesting
     internal fun setLoadState(loadType: LoadType, newState: LoadState) {
-        if (getLoadState(loadType) == newState) {
-            return
-        }
+        if (getLoadState(loadType) == newState) return
         val previous = loadStates
         loadStates = loadStates.modifyState(loadType, newState)
         loadStatesListeners?.reverseAccessEach {
@@ -314,10 +310,8 @@ class PagingCollector<T : Any> internal constructor(
         override suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<Any>) {
             val loadType = event.loadType
             val loadState = event.loadStates.refresh
-            if (loadType != LoadType.REFRESH || !loadState.isLoading) {
-                return
-            }
-            if (rv.childCount == 0 || rv.isFirstItemCompletelyVisible) {
+            if (loadType != LoadType.REFRESH || !loadState.isLoading
+                    || rv.childCount == 0 || rv.isFirstItemCompletelyVisible) {
                 return
             }
             rv.scrollToPosition(0)
