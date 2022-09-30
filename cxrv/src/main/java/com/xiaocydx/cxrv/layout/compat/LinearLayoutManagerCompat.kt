@@ -153,6 +153,7 @@ open class LinearLayoutManagerCompat : LinearLayoutManager {
             maybeIgnoreConsumedInPreLayout = isPreLayout() && !isItemRemoved
         }
 
+        @CallSuper
         override fun isItemChanged(): Boolean {
             var changed = super.isItemChanged()
             if (changed && maybeIgnoreConsumedInPreLayout

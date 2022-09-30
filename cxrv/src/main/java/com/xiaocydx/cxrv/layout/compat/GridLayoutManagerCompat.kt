@@ -158,6 +158,7 @@ open class GridLayoutManagerCompat : GridLayoutManager {
             maybeIgnoreConsumedInPreLayout = isPreLayout() && !isItemRemoved
         }
 
+        @CallSuper
         override fun isItemChanged(): Boolean {
             var changed = super.isItemChanged()
             if (changed && maybeIgnoreConsumedInPreLayout
