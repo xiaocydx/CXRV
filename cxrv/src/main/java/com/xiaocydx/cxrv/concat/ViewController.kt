@@ -8,6 +8,7 @@ import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
 import androidx.recyclerview.widget.ViewController.Tracker
+import java.lang.ref.WeakReference
 
 /**
  * 从[Recycler]中清除ViewHolder的控制器
@@ -138,6 +139,7 @@ internal class ViewController {
          * 由于[ViewHolder.setIsRecyclable]是计数逻辑，因此用该属性确保逻辑对称
          */
         private var isDetachedRecyclable = false
+        private var viewHolderRef: WeakReference<ViewHolder>? = null
 
         /**
          * 当[ConcatAdapter]使用隔离ViewType配置时，[Adapter.getItemViewType]获取到的是本地ViewType，
@@ -145,22 +147,22 @@ internal class ViewController {
          */
         var viewType = INVALID_TYPE
             private set
-        var viewHolder: ViewHolder? = null
-            private set
         var recyclerView: RecyclerView? = null
             private set
         val isAttached: Boolean
             get() = recyclerView != null
+        val viewHolder: ViewHolder?
+            get() = viewHolderRef?.get()
 
         fun track(holder: ViewHolder) {
             viewType = holder.itemViewType
-            viewHolder = holder
+            viewHolderRef = WeakReference(holder)
         }
 
         fun untrack(holder: ViewHolder) {
             // 保留viewType，用于后续清除Scrap
             viewType = holder.itemViewType
-            viewHolder = null
+            viewHolderRef = null
         }
 
         fun track(recyclerView: RecyclerView) {
