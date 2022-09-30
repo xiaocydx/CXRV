@@ -3,6 +3,7 @@ package com.xiaocydx.cxrv.paging
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
 import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.awaitPreDraw
 import com.xiaocydx.cxrv.internal.reverseAccessEach
@@ -260,8 +261,8 @@ class PagingCollector<T : Any> internal constructor(
             return
         }
 
-        if (rv.isComputingLayout) {
-            // 此时可能是onBindViewHolder()触发了末尾加载，
+        if (rv.isComputingLayout || rv.scrollState != SCROLL_STATE_IDLE) {
+            // 此时可能是onBindViewHolder()或者滚动过程触发了末尾加载，
             // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成。
             // 若此时将加载状态同步分发给listener，则listener可能会调用notifyXXX()函数，
             // 导致RecyclerView内部抛出异常，因此在下一个异步消息中分发加载状态。
