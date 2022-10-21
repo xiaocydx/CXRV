@@ -29,7 +29,8 @@ class FooListAdapter(
      * [Glide]对被共享复用的[ImageView]再次加载图片时，未及时移除上一个[RequestManager]记录的[Target]，
      * 当上一个[RequestManager.onDestroy]被调用时，`clear(Target)`对被共享复用的[ImageView]设置占位图。
      */
-    private val fragment: FooListFragment
+    private val fragment: FooListFragment,
+    private val categoryId: Long
 ) : ListAdapter<Foo, RecyclerView.ViewHolder>() {
 
     /**

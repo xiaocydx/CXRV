@@ -82,7 +82,7 @@ class FooListFragment : Fragment() {
      * 2. 若使用[Glide]对[ImageView]加载图片，则需要和父级关联或者做另外处理。
      */
     private fun RecyclerView.initFooAdapter() {
-        listAdapter = FooListAdapter(this@FooListFragment)
+        listAdapter = FooListAdapter(this@FooListFragment, categoryId)
         // 连接LoadHeaderAdapter、fooAdapter、LoadFooterAdapter，
         // 将连接后的ConcatAdapter设置给RecyclerView，完成初始化。
         adapter = listAdapter.withPaging()
