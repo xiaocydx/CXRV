@@ -1,7 +1,7 @@
 package com.xiaocydx.sample.extension
 
 import androidx.collection.LongSparseArray
-import androidx.collection.size
+import androidx.collection.keyIterator
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import java.lang.reflect.Field
 
@@ -16,10 +16,17 @@ fun FragmentStateAdapter.gcSavedStates() {
     val mSavedStates =
             mSavedStatesField.get(this) as? LongSparseArray<*> ?: return
 
-    for (index in 0 until mSavedStates.size) {
-        val itemId = mSavedStates.keyAt(index)
-        if (!containsItem(itemId)) {
-            mSavedStates.remove(itemId)
-        }
+    for (itemId in mSavedStates.keys()) {
+        if (!containsItem(itemId)) mSavedStates.remove(itemId)
     }
+}
+
+private fun LongSparseArray<*>.keys(): LongArray {
+    var index = 0
+    val keys = LongArray(size())
+    for (key in keyIterator()) {
+        keys[index] = key
+        index++
+    }
+    return keys
 }
