@@ -127,7 +127,7 @@ class CoroutineListDiffer<T : Any>(
         if (dispatch) {
             executeListeners?.reverseAccessEach { it.onExecute(op) }
         }
-        val succeed = when (op) {
+        when (op) {
             is UpdateOp.SubmitList -> submitList(op.newList)
             is UpdateOp.SetItem -> setItem(op.position, op.item)
             is UpdateOp.SetItems -> setItems(op.position, op.items)
@@ -136,7 +136,6 @@ class CoroutineListDiffer<T : Any>(
             is UpdateOp.RemoveItems -> removeItems(op.position, op.itemCount)
             is UpdateOp.SwapItem -> swapItem(op.fromPosition, op.toPosition)
         }
-        if (!succeed) return
         changedListeners?.reverseAccessEach { it.onListChanged(currentList) }
     }
 
