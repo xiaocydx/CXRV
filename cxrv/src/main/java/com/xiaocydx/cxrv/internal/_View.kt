@@ -26,9 +26,7 @@ internal inline var View.isGone: Boolean
     }
 
 internal fun View.isTouched(rawX: Float, rawY: Float): Boolean {
-    if (!isVisible) {
-        return false
-    }
+    if (!isVisible) return false
     val location = IntArray(2)
     this.getLocationOnScreen(location)
     val left = location[0]
@@ -65,7 +63,7 @@ internal inline fun View.doOnAttach(crossinline action: (view: View) -> Unit) {
                 action(view)
             }
 
-            override fun onViewDetachedFromWindow(view: View) {}
+            override fun onViewDetachedFromWindow(view: View): Unit = Unit
         })
     }
 }
@@ -75,7 +73,7 @@ internal inline fun View.doOnDetach(crossinline action: (view: View) -> Unit) {
         action(this)
     } else {
         addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(view: View) {}
+            override fun onViewAttachedToWindow(view: View): Unit = Unit
 
             override fun onViewDetachedFromWindow(view: View) {
                 removeOnAttachStateChangeListener(this)
@@ -83,6 +81,32 @@ internal inline fun View.doOnDetach(crossinline action: (view: View) -> Unit) {
             }
         })
     }
+}
+
+internal suspend fun View.awaitNextLayout() = suspendCancellableCoroutine<Unit> { cont ->
+    val listener = object : View.OnLayoutChangeListener {
+        override fun onLayoutChange(
+            view: View, left: Int, top: Int, right: Int, bottom: Int,
+            oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int
+        ) {
+            view.removeOnLayoutChangeListener(this)
+            cont.resume(Unit)
+        }
+    }
+    addOnLayoutChangeListener(listener)
+    cont.invokeOnCancellation { removeOnLayoutChangeListener(listener) }
+}
+
+internal inline fun View.doOnNextLayout(crossinline action: (View) -> Unit) {
+    addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
+        override fun onLayoutChange(
+            view: View, left: Int, top: Int, right: Int, bottom: Int,
+            oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int
+        ) {
+            view.removeOnLayoutChangeListener(this)
+            action(view)
+        }
+    })
 }
 
 /**

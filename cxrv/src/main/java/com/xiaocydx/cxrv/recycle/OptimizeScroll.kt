@@ -14,6 +14,7 @@ import java.lang.reflect.Field
 fun RecyclerView.optimizeNextFrameScroll() {
     // reflect < 1ms
     val original = getViewCacheExtensionOrNull()
+    if (original is GetScrapOrCachedViewForTypeExtension) return
     setViewCacheExtension(GetScrapOrCachedViewForTypeExtension(this, original))
     doOnPreDraw { setViewCacheExtension(original) }
 }

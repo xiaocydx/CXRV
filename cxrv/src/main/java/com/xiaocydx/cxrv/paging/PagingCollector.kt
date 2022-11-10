@@ -5,7 +5,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
 import com.xiaocydx.cxrv.internal.assertMainThread
-import com.xiaocydx.cxrv.internal.awaitPreDraw
+import com.xiaocydx.cxrv.internal.awaitNextLayout
 import com.xiaocydx.cxrv.internal.reverseAccessEach
 import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -317,7 +317,7 @@ class PagingCollector<T : Any> internal constructor(
             }
             rv.scrollToPosition(0)
             // 等待下一帧rv布局完成，确保滚动不受影响
-            rv.awaitPreDraw()
+            rv.awaitNextLayout()
         }
     }
 }
