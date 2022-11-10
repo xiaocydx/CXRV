@@ -4,7 +4,9 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.annotation.Px
+import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.cxrv.internal.RvDslMarker
+import com.xiaocydx.cxrv.list.ListAdapter
 
 /**
  * 加载尾部配置
@@ -170,3 +172,14 @@ class LoadFooterConfig @PublishedApi internal constructor() {
         check(!isComplete) { "已完成加载尾部配置" }
     }
 }
+
+/**
+ * 构建加载尾部适配器
+ *
+ * 详细的加载头部配置描述[LoadFooterConfig]。
+ */
+@Suppress("FunctionName")
+inline fun LoadFooterAdapter(
+    adapter: ListAdapter<*, *>,
+    block: LoadFooterConfig.() -> Unit
+): ViewAdapter<*> = LoadFooterAdapter(LoadFooterConfig().apply(block), adapter)

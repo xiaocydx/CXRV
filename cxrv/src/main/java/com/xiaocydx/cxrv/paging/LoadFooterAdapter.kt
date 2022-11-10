@@ -19,6 +19,7 @@ import com.xiaocydx.cxrv.paging.LoadFooterAdapter.Visible.*
  * @author xcc
  * @date 2021/9/17
  */
+@PublishedApi
 internal class LoadFooterAdapter(
     private val config: LoadFooterConfig,
     private val adapter: ListAdapter<*, *>
@@ -29,15 +30,18 @@ internal class LoadFooterAdapter(
     private var loadStates: LoadStates = LoadStates.Incomplete
     private var preDrawListener: PreDrawListenerImpl? = null
 
-    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        super.onAttachedToRecyclerView(recyclerView)
+    init {
         val collector = adapter.pagingCollector
         config.complete(
             retry = collector::retry,
             exception = { collector.loadStates.exception }
         )
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
         adapter.addListChangedListener(this)
-        collector.addLoadStatesListener(this)
+        adapter.pagingCollector.addLoadStatesListener(this)
         preDrawListener = PreDrawListenerImpl(recyclerView)
     }
 

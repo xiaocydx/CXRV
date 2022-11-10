@@ -3,7 +3,9 @@ package com.xiaocydx.cxrv.paging
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.annotation.Px
+import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.cxrv.internal.RvDslMarker
+import com.xiaocydx.cxrv.list.ListAdapter
 
 /**
  * 加载头部配置
@@ -160,3 +162,14 @@ class LoadHeaderConfig @PublishedApi internal constructor() {
         check(!isComplete) { "已完成加载头部配置" }
     }
 }
+
+/**
+ * 构建加载头部适配器
+ *
+ * 详细的加载头部配置描述[LoadHeaderConfig]。
+ */
+@Suppress("FunctionName")
+inline fun LoadHeaderAdapter(
+    adapter: ListAdapter<*, *>,
+    block: LoadHeaderConfig.() -> Unit
+): ViewAdapter<*> = LoadHeaderAdapter(LoadHeaderConfig().apply(block), adapter)

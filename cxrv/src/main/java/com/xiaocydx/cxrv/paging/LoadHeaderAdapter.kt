@@ -16,6 +16,7 @@ import com.xiaocydx.cxrv.paging.LoadHeaderAdapter.Visible.*
  * @author xcc
  * @date 2021/9/17
  */
+@PublishedApi
 internal class LoadHeaderAdapter(
     private val config: LoadHeaderConfig,
     private val adapter: ListAdapter<*, *>
@@ -23,15 +24,18 @@ internal class LoadHeaderAdapter(
     private var visible: Visible = NONE
     private var loadStates: LoadStates = LoadStates.Incomplete
 
-    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        super.onAttachedToRecyclerView(recyclerView)
+    init {
         val collector = adapter.pagingCollector
         config.complete(
             retry = collector::retry,
             exception = { collector.loadStates.exception }
         )
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
         adapter.addListChangedListener(this)
-        collector.addLoadStatesListener(this)
+        adapter.pagingCollector.addLoadStatesListener(this)
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
