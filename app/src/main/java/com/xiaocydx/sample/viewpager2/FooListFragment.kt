@@ -18,15 +18,21 @@ import androidx.recyclerview.widget.setRecycleAllViewsOnDetach
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.xiaocydx.cxrv.divider.divider
+import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.autoDispose
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.*
+import com.xiaocydx.sample.paging.Foo
 import com.xiaocydx.sample.paging.FooListViewModel
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
+import com.xiaocydx.sample.viewpager2.animatable.controlledByParentViewPager2
+import com.xiaocydx.sample.viewpager2.animatable.controlledByScroll
+import com.xiaocydx.sample.viewpager2.animatable.registerImageView
+import com.xiaocydx.sample.viewpager2.animatable.setAnimatableMediator
 import com.xiaocydx.sample.viewpager2.nested.isVp2NestedScrollable
 import com.xiaocydx.sample.viewpager2.shared.findParentViewPager2
 import com.xiaocydx.sample.viewpager2.shared.sharedRecycledViewPool
@@ -44,8 +50,8 @@ class FooListFragment : Fragment() {
     private val sharedViewModel: FooCategoryViewModel by viewModels(
         ownerProducer = { parentFragment ?: requireActivity() }
     )
-    private lateinit var listViewModel: FooListViewModel
-    private lateinit var listAdapter: FooListAdapter
+    private lateinit var fooAdapter: ListAdapter<Foo, FooViewHolder>
+    private lateinit var fooViewModel: FooListViewModel
     private val categoryId: Long
         get() = arguments?.getLong(KEY_CATEGORY_ID) ?: 0L
 
@@ -59,9 +65,8 @@ class FooListFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
-        listViewModel = sharedViewModel
-            .getListViewModel(categoryId)
-        id = listViewModel.rvId
+        fooViewModel = sharedViewModel.getFooViewModel(categoryId)
+        id = fooViewModel.rvId
         linear().fixedSize().divider {
             width = 10.dp
             height = 10.dp
@@ -72,20 +77,25 @@ class FooListFragment : Fragment() {
         overScrollNever()
         withLayoutParams(matchParent, matchParent)
         doOnAttachToViewPager2()
-    }.withSwipeRefresh(listAdapter)
+    }.withSwipeRefresh(fooAdapter)
 
     /**
      * 初始化适配器
      *
-     * [FooListAdapter]中讲述了`sharedRecycledViewPool`场景的一些注意事项：
+     * [FooListAdapterFixed]中讲述了`sharedRecycledViewPool`场景的一些注意事项：
      * 1. 除了有视图设置逻辑，还要有视图重置逻辑，逻辑对称才能避免内存泄漏问题。
      * 2. 若使用[Glide]对[ImageView]加载图片，则需要和父级关联或者做另外处理。
      */
     private fun RecyclerView.initFooAdapter() {
-        listAdapter = FooListAdapter(this@FooListFragment, categoryId)
+        // FooListAdapterError列举了问题点
+        // fooAdapter = FooListAdapterError(this@FooListFragment)
+
+        // FooListAdapterFixed修复FooListAdapterError列举的问题
+        fooAdapter = FooListAdapterFixed(this@FooListFragment, categoryId)
+
         // 连接LoadHeaderAdapter、fooAdapter、LoadFooterAdapter，
         // 将连接后的ConcatAdapter设置给RecyclerView，完成初始化。
-        adapter = listAdapter.withPaging()
+        adapter = fooAdapter.withPaging()
     }
 
     /**
@@ -94,20 +104,30 @@ class FooListFragment : Fragment() {
      * 2. 对[RecyclerView]设置[ViewPager2.sharedRecycledViewPool]。
      * 3. 当[RecyclerView]从Window上分离时，保存[LayoutManager]的状态，
      * 将子View和离屏缓存回收进[ViewPager2.sharedRecycledViewPool]。
+     * 4. 设置动图受[RecyclerView]滚动、父级[ViewPager2]控制。
      */
     private fun RecyclerView.doOnAttachToViewPager2() = doOnAttach {
         val vp2 = findParentViewPager2() ?: return@doOnAttach
         isVp2NestedScrollable = true
         setRecycledViewPool(vp2.sharedRecycledViewPool)
+
+        // Activity直接退出的流程，即ActivityThread.handleDestroyActivity()，
+        // 是先更改Lifecycle的状态，再执行视图树的dispatchDetachedFromWindow()。
+        // autoDispose(viewLifecycle)在DESTROYED状态时自动废弃，
+        // 避免Activity直接退出时，执行冗余的视图回收处理。
         setRecycleAllViewsOnDetach { _, _, initialState ->
             // 回收进sharedRecycledViewPool的上限，是当前子View数量的3倍，
             // 这是一种简易策略，意图是最多回收3页满数量的View，供重建复用。
             3 * initialState.childCount
         }.autoDispose(viewLifecycle)
-        // Activity直接退出的流程，即ActivityThread.handleDestroyActivity()，
-        // 是先更改Lifecycle的状态，再执行视图树的dispatchDetachedFromWindow()。
-        // autoDispose(viewLifecycle)在DESTROYED状态时自动废弃，
-        // 避免Activity直接退出时，执行冗余的视图回收处理。
+
+        setAnimatableMediator {
+            controlledByScroll()
+            controlledByParentViewPager2(vp2)
+            // 若跳转至透明主题的Activity，则可以启用该函数，动图受RESUMED状态控制
+            // controlledByLifecycle(viewLifecycle, RESUMED)
+            registerImageView(fooAdapter) { view.imageView }
+        }
     }
 
     /**
@@ -117,9 +137,9 @@ class FooListFragment : Fragment() {
      * 确保[ViewPager2]的滚动过程能及时对[RecyclerView]添加`itemView`。
      */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        viewLifecycle.doOnTargetState(if (listViewModel.isLoaded) STARTED else RESUMED) {
-            listViewModel.flow
-                .onEach(listAdapter.pagingCollector)
+        viewLifecycle.doOnTargetState(if (fooViewModel.isLoaded) STARTED else RESUMED) {
+            fooViewModel.flow
+                .onEach(fooAdapter.pagingCollector)
                 .repeatOnLifecycle(viewLifecycle)
                 .launchInLifecycleScope()
         }

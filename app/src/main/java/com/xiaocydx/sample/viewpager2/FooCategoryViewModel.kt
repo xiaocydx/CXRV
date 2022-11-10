@@ -13,15 +13,14 @@ import java.util.*
  * @date 2022/7/12
  */
 class FooCategoryViewModel : ViewModel() {
-    private val viewModels =
-            RetainedViewModels<FooListViewModel>(host = this)
-    private val _state = MutableStateFlow(
-        FooCategoryState(list = (1L..10L).map { FooCategory(id = it) })
-    )
+    private val viewModels = RetainedViewModels<FooListViewModel>(host = this)
+    private val _state = MutableStateFlow(FooCategoryState(
+        list = (1L..10L).map { FooCategory(id = it) }
+    ))
 
     val state = _state.asStateFlow()
 
-    fun getListViewModel(categoryId: Long): FooListViewModel {
+    fun getFooViewModel(categoryId: Long): FooListViewModel {
         return viewModels.getOrPut(categoryId.toString()) { FooListViewModel() }
     }
 

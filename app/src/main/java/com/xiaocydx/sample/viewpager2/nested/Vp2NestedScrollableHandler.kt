@@ -19,8 +19,8 @@ import kotlin.math.sign
  */
 class Vp2NestedScrollableHandler constructor() {
     @ViewPager2.Orientation
-    private var orientation = ORIENTATION_HORIZONTAL
-    private var touchSlop = 0
+    private var vp2Orientation = ORIENTATION_HORIZONTAL
+    private var vp2TouchSlop = 0
     private var initialTouchX = 0
     private var initialTouchY = 0
     private var host: ViewGroup? = null
@@ -51,7 +51,7 @@ class Vp2NestedScrollableHandler constructor() {
         when (e.action) {
             MotionEvent.ACTION_DOWN -> {
                 nestedScrollableHandled = false
-                if (!ensureOrientation(child) || !ensureTouchSlop(child)) {
+                if (!ensureVp2Orientation(child) || !ensureVp2TouchSlop(child)) {
                     nestedScrollableHandled = true
                     return
                 }
@@ -63,23 +63,23 @@ class Vp2NestedScrollableHandler constructor() {
             MotionEvent.ACTION_MOVE -> {
                 val dx = e.x.toRoundPx() - initialTouchX
                 val dy = e.y.toRoundPx() - initialTouchY
-                val isVp2Horizontal = orientation == ORIENTATION_HORIZONTAL
+                val isVp2Horizontal = vp2Orientation == ORIENTATION_HORIZONTAL
                 val xDiff = if (isVp2Horizontal) dx.absoluteValue else 0
                 val yDiff = if (isVp2Horizontal) 0 else dy.absoluteValue
-                if (xDiff > touchSlop || yDiff > touchSlop) {
+                if (xDiff > vp2TouchSlop || yDiff > vp2TouchSlop) {
                     val disallowIntercept = if (isVp2Horizontal) {
-                        if (child.canScrollVertically()) {
-                            2 * dy.absoluteValue > dx.absoluteValue
+                        if (child.canScrollHorizontally(dx.toDirection())) {
+                            // child能和ViewPager2平行滚动，不允许ViewPager2拦截触摸事件
+                            true
                         } else {
-                            // 若child不能和ViewPager2平行滚动，则允许ViewPager2拦截触摸事件
-                            child.canScrollHorizontally(dx.toDirection())
+                            2 * dy.absoluteValue > dx.absoluteValue
                         }
                     } else {
-                        if (child.canScrollHorizontally()) {
-                            2 * dx.absoluteValue > dy.absoluteValue
+                        if (child.canScrollVertically(dy.toDirection())) {
+                            // child能和ViewPager2平行滚动，不允许ViewPager2拦截触摸事件
+                            true
                         } else {
-                            // 若child不能和ViewPager2平行滚动，则允许ViewPager2拦截触摸事件
-                            child.canScrollVertically(dy.toDirection())
+                            2 * dx.absoluteValue > dy.absoluteValue
                         }
                     }
                     child.requestDisallowInterceptTouchEvent(disallowIntercept)
@@ -89,38 +89,26 @@ class Vp2NestedScrollableHandler constructor() {
         }
     }
 
-    private fun ensureOrientation(child: View): Boolean {
+    private fun ensureVp2Orientation(child: View): Boolean {
         var parent: View? = child.parent as? View
         while (parent != null && parent !is ViewPager2) {
             parent = parent.parent as? View
         }
         val viewPager2 = parent as? ViewPager2 ?: return false
-        orientation = viewPager2.orientation
+        vp2Orientation = viewPager2.orientation
         return true
     }
 
-    private fun ensureTouchSlop(child: View): Boolean {
-        if (touchSlop <= 0) {
-            touchSlop = ViewConfiguration.get(child.context).scaledTouchSlop
+    private fun ensureVp2TouchSlop(child: View): Boolean {
+        if (vp2TouchSlop <= 0) {
+            vp2TouchSlop = ViewConfiguration.get(child.context).scaledPagingTouchSlop
         }
-        return touchSlop > 0
+        return vp2TouchSlop > 0
     }
 
-    private fun Int.toDirection(): Int {
-        return -this.sign
-    }
+    private fun Int.toDirection() = -this.sign
 
-    private fun Float.toRoundPx(): Int {
-        return (this + 0.5f).toInt()
-    }
-
-    private fun View.canScrollHorizontally(): Boolean {
-        return canScrollHorizontally(-1) || canScrollHorizontally(1)
-    }
-
-    private fun View.canScrollVertically(): Boolean {
-        return canScrollVertically(-1) || canScrollVertically(1)
-    }
+    private fun Float.toRoundPx() = (this + 0.5f).toInt()
 
     private fun View.requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
         var parent: ViewParent? = parent

@@ -1,6 +1,4 @@
-@file:Suppress("PackageDirectoryMismatch")
-
-package com.xiaocydx.sample
+package com.xiaocydx.sample.viewpager2.animatable
 
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
