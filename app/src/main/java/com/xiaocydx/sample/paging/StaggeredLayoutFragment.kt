@@ -35,8 +35,8 @@ class StaggeredLayoutFragment : PagingFragment() {
 
     override fun initCollect() {
         super.initCollect()
-        listViewModel.enableMultiTypeFoo()
-        listViewModel.flow
+        fooViewModel.enableMultiTypeFoo()
+        fooViewModel.flow
             .onEach(fooAdapter.pagingCollector)
             .repeatOnLifecycle(viewLifecycle)
             .launchInLifecycleScope()

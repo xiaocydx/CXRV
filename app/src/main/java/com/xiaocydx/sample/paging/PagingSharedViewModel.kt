@@ -13,8 +13,7 @@ import kotlinx.coroutines.flow.asSharedFlow
  * @date 2022/2/17
  */
 class PagingSharedViewModel : ViewModel() {
-    private val viewModels =
-            RetainedViewModels<FooListViewModel>(host = this)
+    private val viewModels = RetainedViewModels<FooListViewModel>(host = this)
     private val _menuAction: MutableSharedFlow<MenuAction> = MutableSharedFlow(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST

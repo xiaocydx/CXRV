@@ -35,7 +35,7 @@ class LinearLayoutFragment : PagingFragment() {
 
     override fun initCollect() {
         super.initCollect()
-        listViewModel.flow
+        fooViewModel.flow
             .onEach(fooAdapter.pagingCollector)
             .repeatOnLifecycle(viewLifecycle)
             .launchInLifecycleScope()

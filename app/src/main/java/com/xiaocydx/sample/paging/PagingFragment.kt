@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.onEach
 abstract class PagingFragment : Fragment() {
     private val sharedViewModel: PagingSharedViewModel by activityViewModels()
     protected val fooAdapter = FooAdapter()
-    protected lateinit var listViewModel: FooListViewModel
+    protected lateinit var fooViewModel: FooListViewModel
         private set
     protected lateinit var rvPaging: RecyclerView
         private set
@@ -38,10 +38,10 @@ abstract class PagingFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = FrameLayout(requireContext()).also {
-        listViewModel = sharedViewModel
+        fooViewModel = sharedViewModel
             .getListViewModel(key = this.javaClass.simpleName)
         rvPaging = RecyclerView(requireContext()).apply {
-            id = listViewModel.rvId
+            id = fooViewModel.rvId
             overScrollNever()
             withLayoutParams(matchParent, matchParent)
         }
@@ -118,7 +118,7 @@ abstract class PagingFragment : Fragment() {
     }
 
     private fun adapterInsertItem() {
-        val item = listViewModel.createFoo(
+        val item = fooViewModel.createFoo(
             tag = "Adapter",
             num = fooAdapter.currentList.size
         )
@@ -130,11 +130,11 @@ abstract class PagingFragment : Fragment() {
     }
 
     private fun listStateInsertItem() {
-        listViewModel.insertItem()
+        fooViewModel.insertItem()
     }
 
     private fun listStateDeleteItem() {
-        listViewModel.deleteItem()
+        fooViewModel.deleteItem()
     }
 
     private fun clearOddItem() {
