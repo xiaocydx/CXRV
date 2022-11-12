@@ -22,7 +22,7 @@ import kotlin.coroutines.resume
  * @param prepareCount      预创建的ViewHolder数量
  * @param prepareAdapter    调用[Adapter.createViewHolder]创建ViewHolder
  * @param prepareDispatcher 用于预创建的协程调度器，默认为[DefaultIoDispatcher]
- * @param prepareViewType   预创建的ViewType类型
+ * @param prepareViewType   预创建的ViewType类型，仅支持单类型
  *
  * @return 收集返回的`Flow<ViewHolder>`，才开始执行预创建流程，
  * 预创建执行过程发射创建成功的ViewHolder，供收集处统计或测试。
