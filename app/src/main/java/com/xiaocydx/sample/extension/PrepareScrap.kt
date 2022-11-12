@@ -31,12 +31,12 @@ fun RecyclerView.prepareScrap(
     prepareCount: Int,
     prepareAdapter: Adapter<*>,
     prepareDispatcher: CoroutineDispatcher = DefaultIoDispatcher,
-    prepareViewType: () -> Int
+    prepareViewType: Int,
 ): Flow<ViewHolder> {
     require(adapter != null) { "请先对RecyclerView设置Adapter" }
     require(parent != null) { "请先将RecyclerView添加到父级中" }
     return unsafeFlow<ViewHolder> {
-        val scrapData = getScrapDataForType(prepareViewType())
+        val scrapData = getScrapDataForType(prepareViewType)
         val finalPrepareCount = prepareCount - scrapData.mScrapHeap.size
         if (finalPrepareCount <= 0) {
             // RecyclerViewPool中的ViewHolder数量已满足，结束预创建流程。
@@ -60,7 +60,7 @@ fun RecyclerView.prepareScrap(
                     // 因此emit()没有检查Job已取消的处理，需要补充判断以响应Job取消。
                     ensureActive()
                     count--
-                    val scrap = prepareAdapter.createViewHolder(recyclerView, prepareViewType())
+                    val scrap = prepareAdapter.createViewHolder(recyclerView, prepareViewType)
                     // 虽然协程主线程调度器默认发送异步消息，不受同步屏障影响，
                     // 但是异步消息可能会被首帧的doFrame消息按时间顺序插队，
                     // 也就导致处理完首帧doFrame消息后，才往RecycledViewPool添加scrap，
