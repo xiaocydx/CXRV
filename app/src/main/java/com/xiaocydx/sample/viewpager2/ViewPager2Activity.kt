@@ -11,6 +11,8 @@ import com.xiaocydx.sample.repeatOnLifecycle
 import kotlinx.coroutines.flow.onEach
 
 /**
+ * ViewPager2共享池示例代码
+ *
  * @author xcc
  * @date 2022/2/21
  */

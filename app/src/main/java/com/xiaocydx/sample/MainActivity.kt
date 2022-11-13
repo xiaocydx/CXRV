@@ -17,6 +17,7 @@ import com.xiaocydx.sample.multitype.MultiTypeActivity
 import com.xiaocydx.sample.nested.NestedListActivity
 import com.xiaocydx.sample.paging.PagingActivity
 import com.xiaocydx.sample.paging.article.ArticleListActivity
+import com.xiaocydx.sample.payload.PayloadActivity
 import com.xiaocydx.sample.viewpager2.ViewPager2Activity
 
 /**
@@ -54,7 +55,8 @@ class MainActivity : AppCompatActivity() {
             StartItem<PagingActivity>("分页加载示例（本地测试）"),
             StartItem<ArticleListActivity>("分页加载示例（网络请求）"),
             StartItem<ViewPager2Activity>("ViewPager2共享池示例"),
-            StartItem<NestedListActivity>("嵌套列表示例")
+            StartItem<NestedListActivity>("嵌套列表示例"),
+            StartItem<PayloadActivity>("Payload更新示例")
         ))
     }
 

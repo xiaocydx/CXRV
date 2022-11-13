@@ -9,6 +9,8 @@ import com.xiaocydx.sample.multitype.onetomany.OneToManyFragment
 import com.xiaocydx.sample.multitype.onetoone.OneToOneFragment
 
 /**
+ * item多类型示例代码
+ *
  * @author xcc
  * @date 2022/2/17
  */

@@ -44,5 +44,8 @@
         <activity
             android:name=".nested.NestedListActivity"
             android:exported="false" />
+        <activity
+            android:name=".payload.PayloadActivity"
+            android:exported="false" />
     </application>
 </manifest>

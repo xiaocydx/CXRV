@@ -106,7 +106,7 @@ private class DeadlineNsObserver(
     private val cont: CancellableContinuation<Long>
 ) : AdapterDataObserver() {
     private var isRegister = false
-    private var isResumed = false
+    private var isResume = false
 
     fun attach() {
         if (adapter.itemCount > 0) return tryResume()
@@ -120,8 +120,8 @@ private class DeadlineNsObserver(
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = tryResume()
 
     private fun tryResume() {
-        if (isResumed) return
-        isResumed = true
+        if (isResume) return
+        isResume = true
         Choreographer.getInstance().postFrameCallback(::resume)
     }
 
