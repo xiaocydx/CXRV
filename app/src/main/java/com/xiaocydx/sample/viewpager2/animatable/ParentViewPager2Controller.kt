@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.xiaocydx.cxrv.list.Disposable
+import java.lang.ref.WeakReference
 
 /**
  * 添加受父级[viewPager2]控制的[AnimatableController]
@@ -21,21 +22,21 @@ fun AnimatableMediator.controlledByParentViewPager2(viewPager2: ViewPager2): Dis
 private class ParentViewPager2Controller : OnPageChangeCallback(),
         OnAttachStateChangeListener, AnimatableController {
     private var mediator: AnimatableMediator? = null
-    private var viewPager2: ViewPager2? = null
-    private var realParent: RecyclerView? = null
+    private var viewPager2Ref: WeakReference<ViewPager2>? = null
     private var isRegisteredCallback = false
+    private val viewPager2: ViewPager2?
+        get() = viewPager2Ref?.get()
     override val isDisposed: Boolean
         get() = mediator == null && viewPager2 == null
     override val isAllowStart: Boolean
-        get() = viewPager2 != null && viewPager2!!.scrollState == SCROLL_STATE_IDLE
+        get() = viewPager2?.let { it.scrollState == SCROLL_STATE_IDLE } ?: true
 
     fun attach(
         mediator: AnimatableMediator,
         viewPager2: ViewPager2
     ): Disposable {
         this.mediator = mediator
-        this.viewPager2 = viewPager2
-        realParent = viewPager2.getChildAt(0) as? RecyclerView
+        this.viewPager2Ref = WeakReference(viewPager2)
         mediator.also {
             it.addController(this)
             it.recyclerView.addOnAttachStateChangeListener(this)
@@ -55,7 +56,7 @@ private class ParentViewPager2Controller : OnPageChangeCallback(),
     private fun startCurrentItem() {
         val rvChild = mediator?.recyclerView ?: return
         val viewPager2 = viewPager2 ?: return
-        val realParent = realParent ?: return
+        val realParent = viewPager2.getChildAt(0) as? RecyclerView ?: return
         val holder: ViewHolder = realParent.findContainingViewHolder(rvChild) ?: return
         if (holder.layoutPosition == viewPager2.currentItem) {
             mediator?.startAll()
@@ -90,7 +91,6 @@ private class ParentViewPager2Controller : OnPageChangeCallback(),
         }
         unregisterOnPageChangeCallback()
         mediator = null
-        viewPager2 = null
-        realParent = null
+        viewPager2Ref = null
     }
 }
