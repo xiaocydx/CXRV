@@ -5,7 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.*
 import androidx.annotation.IntRange
-import androidx.recyclerview.widget.DiffUtil.ItemCallback
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.concat.SpanSizeProvider
@@ -88,12 +88,12 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      *
      * 若[ITEM]是data class，则通过`oldItem.copy()`返回`newItem`：
      * ```
-     * holder.setItem { it.copy(name = "newName") }
+     * holder.setItem { copy(name = "newName") }
      * ```
      */
     @MainThread
-    inline fun VH.setItem(newItem: (oldItem: ITEM) -> ITEM) {
-        setItem(newItem(item))
+    inline fun VH.setItem(newItem: ITEM.() -> ITEM) {
+        setItem(item.newItem())
     }
 
     /**
@@ -164,13 +164,13 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
     }
 
     /**
-     * 对应[ItemCallback.areItemsTheSame]
+     * 对应[DiffUtil.ItemCallback.areItemsTheSame]
      */
     @AnyThread
     abstract fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean
 
     /**
-     * 对应[ItemCallback.areContentsTheSame]
+     * 对应[DiffUtil.ItemCallback.areContentsTheSame]
      *
      * 仅当[areItemsTheSame]返回true时才调用此函数。
      */
@@ -178,7 +178,7 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
     open fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean = oldItem == newItem
 
     /**
-     * 对应[ItemCallback.getChangePayload]
+     * 对应[DiffUtil.ItemCallback.getChangePayload]
      *
      * 仅当[areItemsTheSame]返回true、[areContentsTheSame]返回false时才调用此函数。
      */

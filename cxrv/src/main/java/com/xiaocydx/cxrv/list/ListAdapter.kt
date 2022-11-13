@@ -8,7 +8,6 @@ import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
@@ -77,12 +76,12 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
      *
      * 若[ITEM]是data class，则通过`oldItem.copy()`返回`newItem`：
      * ```
-     * holder.setItem { it.copy(name = "newName") }
+     * holder.setItem { copy(name = "newName") }
      * ```
      */
     @MainThread
-    inline fun VH.setItem(newItem: (oldItem: ITEM) -> ITEM) {
-        setItem(newItem(item))
+    inline fun VH.setItem(newItem: ITEM.() -> ITEM) {
+        setItem(item.newItem())
     }
 
     /**
@@ -94,13 +93,13 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     }
 
     /**
-     * 对应[ItemCallback.areItemsTheSame]
+     * 对应[DiffUtil.ItemCallback.areItemsTheSame]
      */
     @AnyThread
     protected abstract fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean
 
     /**
-     * 对应[ItemCallback.areContentsTheSame]
+     * 对应[DiffUtil.ItemCallback.areContentsTheSame]
      *
      * 仅当[areItemsTheSame]返回true时才调用此函数。
      */
@@ -108,7 +107,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     protected open fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean = oldItem == newItem
 
     /**
-     * 对应[ItemCallback.getChangePayload]
+     * 对应[DiffUtil.ItemCallback.getChangePayload]
      *
      * 仅当[areItemsTheSame]返回true、[areContentsTheSame]返回false时才调用此函数。
      */
