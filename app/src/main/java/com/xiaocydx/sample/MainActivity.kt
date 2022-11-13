@@ -1,10 +1,15 @@
 package com.xiaocydx.sample
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.cxrv.binding.bindingAdapter
+import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.sample.databinding.ItemStartBinding
 import com.xiaocydx.sample.itemclick.ItemClickActivity
 import com.xiaocydx.sample.itemselect.MultiSelectionActivity
 import com.xiaocydx.sample.itemselect.SingleSelectionActivity
@@ -22,42 +27,44 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(RecyclerView(this).apply {
+            linear()
+            fixedSize()
+            adapter(bindingAdapter(
+                uniqueId = StartItem::text,
+                inflate = ItemStartBinding::inflate
+            ) {
+                submitStartList()
+                doOnItemClick(
+                    target = { binding.btnStart }
+                ) { _, item -> item.start(context) }
+                onBindView { btnStart.text = it.text }
+            })
+            overScrollNever()
+            withLayoutParams(matchParent, matchParent)
+        })
     }
 
-    fun startItemClickActivity(view: View) {
-        startActivity<ItemClickActivity>()
+    private fun ListAdapter<StartItem, *>.submitStartList() {
+        submitList(listOf(
+            StartItem<ItemClickActivity>("item点击、长按示例"),
+            StartItem<SingleSelectionActivity>("item单项选择示例"),
+            StartItem<MultiSelectionActivity>("item多项选择示例"),
+            StartItem<MultiTypeActivity>("item多类型示例"),
+            StartItem<PagingActivity>("分页加载示例（本地测试）"),
+            StartItem<ArticleListActivity>("分页加载示例（网络请求）"),
+            StartItem<ViewPager2Activity>("ViewPager2共享池示例"),
+            StartItem<NestedListActivity>("嵌套列表示例")
+        ))
     }
 
-    fun startSingleSelectionActivity(view: View) {
-        startActivity<SingleSelectionActivity>()
+    private inline fun <reified T : Activity> StartItem(text: String): StartItem {
+        return StartItem(text, T::class.java)
     }
 
-    fun startMultiSelectionActivity(view: View) {
-        startActivity<MultiSelectionActivity>()
-    }
-
-    fun startMultiTypeActivity(view: View) {
-        startActivity<MultiTypeActivity>()
-    }
-
-    fun startPagingActivity(view: View) {
-        startActivity<PagingActivity>()
-    }
-
-    fun startArticleActivity(view: View) {
-        startActivity<ArticleListActivity>()
-    }
-
-    fun startViewPager2Activity(view: View) {
-        startActivity<ViewPager2Activity>()
-    }
-
-    fun startNestedListActivity(view: View) {
-        startActivity<NestedListActivity>()
-    }
-
-    private inline fun <reified T : Activity> startActivity() {
-        startActivity(Intent(this, T::class.java))
+    private data class StartItem(val text: String, val clazz: Class<out Activity>) {
+        fun start(context: Context) {
+            context.startActivity(Intent(context, clazz))
+        }
     }
 }
