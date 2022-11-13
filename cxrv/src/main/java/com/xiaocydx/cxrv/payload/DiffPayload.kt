@@ -3,25 +3,35 @@ package com.xiaocydx.cxrv.payload
 import androidx.annotation.IntRange
 
 /**
+ * 比较[oldItem]和[newItem]，保存多个`value`的Payload对象
+ *
  * @author xcc
  * @date 2022/9/4
  */
-internal class DiffPayload<T : Any>(oldItem: T, newItem: T) : Payload() {
+class DiffPayload<T : Any>
+@PublishedApi internal constructor(oldItem: T, newItem: T) : Payload() {
     private var oldItem: T? = oldItem
     private var newItem: T? = newItem
 
+    /**
+     * 获取不可空的`oldItem`，避免比较基本类型产生装箱开销
+     */
     @PublishedApi
     internal fun oldItem(): T {
         checkComplete()
         return oldItem!!
     }
 
+    /**
+     * 获取不可空的`newItem`，避免比较基本类型产生装箱开销
+     */
     @PublishedApi
     internal fun newItem(): T {
         checkComplete()
         return newItem!!
     }
 
+    @PublishedApi
     override fun complete(): Payload {
         oldItem = null
         newItem = null
@@ -29,20 +39,12 @@ internal class DiffPayload<T : Any>(oldItem: T, newItem: T) : Payload() {
     }
 }
 
-internal inline fun <T : Any> Payload(oldItem: T, newItem: T, block: DiffPayload<T>.() -> Unit): Payload {
-    return DiffPayload(oldItem, newItem).apply(block).complete()
-}
-
 /**
- * 获取不可空的[DiffPayload.oldItem]和[DiffPayload.newItem]，避免对比基本类型产生装箱开销
+ * 若`oldItem`和`newItem`的指定属性不相等，则调用[Payload.add]添加`value`
  */
-internal inline fun <T : Any, K> DiffPayload<T>.ifNotEquals(key: T.() -> K): IfNotEquals {
-    return IfNotEquals(if (oldItem().key() == newItem().key()) null else this)
-}
-
-// TODO: 验证不会创建内联值类对象
 @JvmInline
-internal value class IfNotEquals(private val payload: Payload?) {
+value class IfNotEquals
+@PublishedApi internal constructor(private val payload: Payload?) {
     fun add(@IntRange(from = 1) value: Int) {
         payload?.add(value)
     }
