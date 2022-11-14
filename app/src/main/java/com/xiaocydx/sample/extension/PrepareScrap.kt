@@ -2,10 +2,12 @@
 
 package androidx.recyclerview.widget
 
+import android.os.Looper
 import android.view.Choreographer
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool.ScrapData
+import com.xiaocydx.sample.extension.LooperElement
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
@@ -53,6 +55,7 @@ fun RecyclerView.prepareScrap(
             // MainThread -> Choreographer
             val choreographer = Choreographer.getInstance()
             val recyclerView = this@prepareScrap
+            val prepareContent = LooperElement(Looper.myLooper()!!) + prepareDispatcher
             val prepareFlow = unsafeFlow<ViewHolder> {
                 var count = finalPrepareCount
                 while (count > 0 && System.nanoTime() < deadlineNs.get()) {
@@ -60,7 +63,9 @@ fun RecyclerView.prepareScrap(
                     // 因此emit()没有检查Job已取消的处理，需要补充判断以响应Job取消。
                     ensureActive()
                     count--
-                    val scrap = prepareAdapter.createViewHolder(recyclerView, prepareViewType)
+                    val scrap = runCatching {
+                        prepareAdapter.createViewHolder(recyclerView, prepareViewType)
+                    }.getOrNull() ?: continue
                     // 虽然协程主线程调度器默认发送异步消息，不受同步屏障影响，
                     // 但是异步消息可能会被首帧的doFrame消息按时间顺序插队，
                     // 也就导致处理完首帧doFrame消息后，才往RecycledViewPool添加scrap，
@@ -69,7 +74,7 @@ fun RecyclerView.prepareScrap(
                     choreographer.postFrameCallback { scrapData.mScrapHeap.add(scrap) }
                     emit(scrap)
                 }
-            }.flowOn(prepareDispatcher)
+            }.flowOn(prepareContent)
 
             emitAll(prepareFlow)
             deadlineJob.cancel()
