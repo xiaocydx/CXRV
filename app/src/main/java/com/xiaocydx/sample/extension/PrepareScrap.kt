@@ -23,8 +23,9 @@ import kotlin.coroutines.resume
  *
  * @param prepareCount      预创建的ViewHolder数量
  * @param prepareAdapter    调用[Adapter.createViewHolder]创建ViewHolder
- * @param prepareDispatcher 用于预创建的协程调度器，默认为[DefaultIoDispatcher]
  * @param prepareViewType   预创建的ViewType类型，仅支持单类型
+ * @param prepareDeadline   预创建的截止时间，默认为[PrepareDeadline.FOREVER_NS]
+ * @param prepareDispatcher 用于预创建的协程调度器，默认为[DefaultIoDispatcher]
  *
  * @return 收集返回的`Flow<ViewHolder>`，才开始执行预创建流程，
  * 预创建执行过程发射创建成功的ViewHolder，供收集处统计或测试。
@@ -32,8 +33,9 @@ import kotlin.coroutines.resume
 fun RecyclerView.prepareScrap(
     prepareCount: Int,
     prepareAdapter: Adapter<*>,
-    prepareDispatcher: CoroutineDispatcher = DefaultIoDispatcher,
     prepareViewType: Int,
+    prepareDeadline: PrepareDeadline = PrepareDeadline.FOREVER_NS,
+    prepareDispatcher: CoroutineDispatcher = DefaultIoDispatcher,
 ): Flow<ViewHolder> {
     require(adapter != null) { "请先对RecyclerView设置Adapter" }
     require(parent != null) { "请先将RecyclerView添加到父级中" }
@@ -47,15 +49,18 @@ fun RecyclerView.prepareScrap(
 
         coroutineScope {
             val deadlineNs = AtomicLong(Long.MAX_VALUE)
-            val deadlineJob = launch(start = UNDISPATCHED) {
-                // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
-                deadlineNs.set(prepareAdapter.awaitDeadlineNs())
+            val deadlineJob = when (prepareDeadline) {
+                PrepareDeadline.FOREVER_NS -> null
+                PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
+                    // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
+                    deadlineNs.set(prepareAdapter.awaitDeadlineNs())
+                }
             }
 
             // MainThread -> Choreographer
             val choreographer = Choreographer.getInstance()
             val recyclerView = this@prepareScrap
-            val prepareContent = LooperElement(Looper.myLooper()!!) + prepareDispatcher
+            val prepareContext = LooperElement(Looper.myLooper()!!) + prepareDispatcher
             val prepareFlow = unsafeFlow<ViewHolder> {
                 var count = finalPrepareCount
                 while (count > 0 && System.nanoTime() < deadlineNs.get()) {
@@ -74,12 +79,27 @@ fun RecyclerView.prepareScrap(
                     choreographer.postFrameCallback { scrapData.mScrapHeap.add(scrap) }
                     emit(scrap)
                 }
-            }.flowOn(prepareContent)
+            }.flowOn(prepareContext)
 
             emitAll(prepareFlow)
-            deadlineJob.cancel()
+            deadlineJob?.cancel()
         }
     }.flowOn(Dispatchers.Main.immediate)
+}
+
+/**
+ * 预创建的截止时间
+ */
+enum class PrepareDeadline {
+    /**
+     * 没有截止时间
+     */
+    FOREVER_NS,
+
+    /**
+     * 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
+     */
+    FRAME_NS
 }
 
 /**
