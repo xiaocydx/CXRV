@@ -29,7 +29,7 @@ import androidx.annotation.IntRange
  *         holder: ViewHolder,
  *         position: Int,
  *         payloads: List<Any>
- *     ) = Payload.take(payloads) { value ->
+ *     ) = Payload.takeOrEmpty(payloads) { value ->
  *         when(value) {
  *             AVATAR -> updateAvatar()
  *             USERNAME -> updateUsername()
@@ -71,7 +71,7 @@ inline fun Payload(block: Payload.() -> Unit): Payload {
  *         holder: ViewHolder,
  *         position: Int,
  *         payloads: List<Any>
- *     ) = Payload.take(payloads) { value ->
+ *     ) = Payload.takeOrEmpty(payloads) { value ->
  *         when(value) {
  *             AVATAR -> updateAvatar()
  *             USERNAME -> updateUsername()
@@ -120,7 +120,7 @@ fun Payload.Companion.value(@IntRange(from = 1, to = 31) bitCount: Int) = BASE s
  * 若没有提取出[Payload]，或者提取的[Payload]都为空，
  * 则按[Payload.EMPTY]执行一次兜底[action]。
  */
-inline fun Payload.Companion.take(payload: Any, action: (value: Int) -> Unit) {
+inline fun Payload.Companion.takeOrEmpty(payload: Any, action: (value: Int) -> Unit) {
     if (payload !is Payload || payload.isEmpty()) return action(EMPTY)
     payload.forEach(action)
 }
@@ -130,7 +130,7 @@ inline fun Payload.Companion.take(payload: Any, action: (value: Int) -> Unit) {
  * 若没有提取出[Payload]，或者提取的[Payload]都为空，
  * 则按[Payload.EMPTY]执行一次兜底[action]。
  */
-inline fun Payload.Companion.take(payloads: List<Any>, action: (value: Int) -> Unit) {
+inline fun Payload.Companion.takeOrEmpty(payloads: List<Any>, action: (value: Int) -> Unit) {
     var hasValue = false
     payloads.forEach action@{
         if (it !is Payload || it.isEmpty()) return@action
@@ -138,4 +138,16 @@ inline fun Payload.Companion.take(payloads: List<Any>, action: (value: Int) -> U
         it.forEach(action)
     }
     if (!hasValue) action(EMPTY)
+}
+
+/**
+ * 对每个`value`执行[action]
+ */
+inline fun Payload.forEach(action: (value: Int) -> Unit) {
+    var value = takeHighestValue()
+    val endValue = takeLowestValue()
+    while (value != Payload.EMPTY && value >= endValue) {
+        if (contains(value)) action(value)
+        value = value ushr 1
+    }
 }

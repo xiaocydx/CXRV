@@ -74,16 +74,3 @@ open class Payload
         internal const val BASE = 1
     }
 }
-
-/**
- * 对每个`value`执行[action]
- */
-@PublishedApi
-internal inline fun Payload.forEach(action: (value: Int) -> Unit) {
-    var value = takeHighestValue()
-    val endValue = takeLowestValue()
-    while (value != Payload.EMPTY && value >= endValue) {
-        if (contains(value)) action(value)
-        value = value ushr 1
-    }
-}

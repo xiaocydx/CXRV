@@ -3,10 +3,7 @@ package com.xiaocydx.sample.payload
 import android.annotation.SuppressLint
 import com.xiaocydx.cxrv.binding.BindingAdapter
 import com.xiaocydx.cxrv.binding.Inflate
-import com.xiaocydx.cxrv.payload.Payload
-import com.xiaocydx.cxrv.payload.ifNotEquals
-import com.xiaocydx.cxrv.payload.take
-import com.xiaocydx.cxrv.payload.value
+import com.xiaocydx.cxrv.payload.*
 import com.xiaocydx.sample.databinding.ItemCountBinding
 
 /**
@@ -40,7 +37,7 @@ class CountAdapter : BindingAdapter<CountItem, ItemCountBinding>() {
     override fun ItemCountBinding.onBindView(
         item: CountItem,
         payloads: List<Any>
-    ) = Payload.take(payloads) { value ->
+    ) = Payload.takeOrEmpty(payloads) { value ->
         when (value) {
             COUNT1 -> updateCount1()
             COUNT2 -> updateCount2()
