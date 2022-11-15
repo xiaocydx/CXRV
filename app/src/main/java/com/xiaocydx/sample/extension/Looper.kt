@@ -27,15 +27,15 @@ private fun initializeLooperThreadLocalOrNull(): ThreadLocal<Looper>? = try {
 }
 
 /**
- * 协程的Looper上下文元素，用于临时替换协程所处线程的[Looper]对象
+ * 协程的[Looper]上下文元素，用于临时替换协程所处线程的[Looper]对象
  */
-class LooperElement(private val newState: Looper) : ThreadContextElement<Looper?> {
+internal class LooperElement(private val newState: Looper) : ThreadContextElement<Looper?> {
     companion object Key : CoroutineContext.Key<LooperElement>
 
     override val key: CoroutineContext.Key<*> = Key
 
     /**
-     * 启动或恢复协程之前被调用，修改协程所处线程的[Looper]对象
+     * 启动或恢复协程时被调用，修改协程所处线程的[Looper]对象
      */
     override fun updateThreadContext(context: CoroutineContext): Looper? {
         val oldState = Looper.myLooper()
@@ -44,7 +44,7 @@ class LooperElement(private val newState: Looper) : ThreadContextElement<Looper?
     }
 
     /**
-     * 完成或挂起协程之前被调用，恢复协程所处线程的[Looper]对象
+     * 完成或挂起协程时被调用，恢复协程所处线程的[Looper]对象
      */
     override fun restoreThreadContext(context: CoroutineContext, oldState: Looper?) {
         if (oldState !== Looper.myLooper()) looperThreadLocal?.set(oldState)
