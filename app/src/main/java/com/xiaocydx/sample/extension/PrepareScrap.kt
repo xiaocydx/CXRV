@@ -39,56 +39,70 @@ import kotlin.coroutines.resume
  * @return 收集返回的`Flow<ViewHolder>`，才开始执行预创建流程，
  * 预创建执行过程发射创建成功的ViewHolder，供收集处统计或测试。
  */
+@MainThread
 fun RecyclerView.prepareScrap(
     prepareAdapter: Adapter<*>,
     prepareDeadline: PrepareDeadline = PrepareDeadline.FOREVER_NS,
     prepareDispatcher: CoroutineDispatcher = DefaultIoDispatcher,
     block: PrepareScrapPairs.() -> Unit
-): Flow<ViewHolder> = unsafeFlow<ViewHolder> {
+): Flow<ViewHolder> {
     require(adapter != null) { "请先对RecyclerView设置Adapter" }
     require(parent != null) { "请先将RecyclerView添加到父级中" }
-    val pairs = PrepareScrapPairs().apply(block).complete()
-
-    coroutineScope {
-        val deadlineNs = AtomicLong(Long.MAX_VALUE)
-        val deadlineJob = when (prepareDeadline) {
-            PrepareDeadline.FOREVER_NS -> null
-            PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
-                // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
-                deadlineNs.set(prepareAdapter.awaitDeadlineNs())
-            }
-        }
-
-        // MainThread -> Choreographer
-        val choreographer = Choreographer.getInstance()
-        val recyclerView = this@prepareScrap
-        val prepareContext = LooperElement(Looper.myLooper()!!) + prepareDispatcher
-        val prepareFlow = unsafeFlow<ViewHolder> {
-            pairs.forEach { prepareViewType, prepareCount ->
-                var count = prepareCount
-                while (count > 0 && System.nanoTime() < deadlineNs.get()) {
-                    // 由于使用unsafeFlow不检测执行上下文、异常透明性（提高发射性能），
-                    // 因此emit()没有检查Job已取消的处理，需要补充判断以响应Job取消。
-                    ensureActive()
-                    count--
-                    val scrap = runCatching {
-                        prepareAdapter.createViewHolder(recyclerView, prepareViewType)
-                    }.getOrNull() ?: continue
-                    // 虽然协程主线程调度器默认发送异步消息，不受同步屏障影响，
-                    // 但是异步消息可能会被首帧的doFrame消息按时间顺序插队，
-                    // 也就导致处理完首帧doFrame消息后，才往RecycledViewPool添加scrap，
-                    // 因此调整为在doFrame消息的Animation回调下往RecycledViewPool添加scrap。
-                    // MainThread -> scrapData.mScrapHeap.add(scrap)
-                    choreographer.postFrameCallback { recyclerView.putPrepareScrap(scrap) }
-                    emit(scrap)
+    val recyclerView = this
+    val preparePairs = PrepareScrapPairs().apply(block).complete()
+    return unsafeFlow<ViewHolder> {
+        coroutineScope {
+            val deadlineNs = AtomicLong(Long.MAX_VALUE)
+            val deadlineJob = when (prepareDeadline) {
+                PrepareDeadline.FOREVER_NS -> null
+                PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
+                    // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
+                    deadlineNs.set(prepareAdapter.awaitDeadlineNs())
                 }
             }
-        }.flowOn(prepareContext)
 
-        emitAll(prepareFlow)
-        deadlineJob?.cancel()
-    }
-}.flowOn(Dispatchers.Main.immediate)
+            val choreographer = Choreographer.getInstance()
+            val prepareContext = LooperElement(Looper.myLooper()!!) + prepareDispatcher
+            val prepareFlow = unsafeFlow<ViewHolder> {
+                preparePairs.forEach { prepareViewType, prepareCount ->
+                    var count = prepareCount
+                    while (count > 0 && System.nanoTime() < deadlineNs.get()) {
+                        // 由于使用unsafeFlow不检测执行上下文、异常透明性（提高发射性能），
+                        // 因此emit()没有检查Job已取消的处理，需要补充判断以响应Job取消。
+                        ensureActive()
+                        count--
+                        val scrap = runCatching {
+                            prepareAdapter.createViewHolder(recyclerView, prepareViewType)
+                        }.getOrNull() ?: continue
+                        // 通过Handler发送的消息可能会被首帧的doFrame消息按时间顺序插队，
+                        // 也就导致处理完首帧doFrame消息后，才往RecycledViewPool放入scrap，
+                        // 因此调整为在doFrame消息的Animation回调下往RecycledViewPool放入scrap。
+                        choreographer.postFrameCallback { recyclerView.putPrepareScrap(scrap) }
+                        emit(scrap)
+                    }
+                }
+            }.flowOn(prepareContext)
+
+            emitAll(prepareFlow)
+            deadlineJob?.cancel()
+        }
+    }.flowOn(Dispatchers.Main.immediate)
+}
+
+/**
+ * 预创建的截止时间
+ */
+enum class PrepareDeadline {
+    /**
+     * 没有截止时间
+     */
+    FOREVER_NS,
+
+    /**
+     * 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
+     */
+    FRAME_NS
+}
 
 /**
  * 调用[PrepareScrapPairs.add]，添加预创建的键值对
@@ -118,21 +132,6 @@ class PrepareScrapPairs @PublishedApi internal constructor() {
 }
 
 /**
- * 预创建的截止时间
- */
-enum class PrepareDeadline {
-    /**
-     * 没有截止时间
-     */
-    FOREVER_NS,
-
-    /**
-     * 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
-     */
-    FRAME_NS
-}
-
-/**
  * 默认串行创建ViewHolder
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -158,6 +157,7 @@ private suspend fun Adapter<*>.awaitDeadlineNs(): Long {
     }
 }
 
+@MainThread
 private class DeadlineNsObserver(
     private val adapter: Adapter<*>,
     private val cont: CancellableContinuation<Long>
