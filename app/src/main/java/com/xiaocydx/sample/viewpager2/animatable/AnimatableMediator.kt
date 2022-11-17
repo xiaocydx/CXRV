@@ -89,14 +89,14 @@ interface AnimatableMediator : Disposable {
     fun removeProvider(provider: AnimatableProvider)
 
     /**
-     * 添加[AnimatableProvider]
+     * 添加[AnimatableController]
      *
      * 添加的[controller]根据具体实现，调用[start]、[stop]、[startAll]、[stopAll]。
      */
     fun addController(controller: AnimatableController)
 
     /**
-     * 移除[AnimatableProvider]
+     * 移除[AnimatableController]
      */
     fun removeController(controller: AnimatableController)
 
