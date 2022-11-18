@@ -22,7 +22,7 @@ open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager {
 
     constructor(
         spanCount: Int,
-        @RecyclerView.Orientation orientation: Int
+        @Orientation orientation: Int
     ) : super(spanCount, orientation)
 
     constructor(

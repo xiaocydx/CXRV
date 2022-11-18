@@ -31,7 +31,7 @@ open class GridLayoutManagerCompat : GridLayoutManager {
     constructor(
         context: Context,
         spanCount: Int,
-        @RecyclerView.Orientation orientation: Int,
+        @Orientation orientation: Int,
         reverseLayout: Boolean
     ) : super(context, spanCount, orientation, reverseLayout)
 
