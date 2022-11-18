@@ -10,11 +10,8 @@ import kotlin.coroutines.CoroutineContext
 private val looperThreadLocal: ThreadLocal<Looper>? = initializeLooperThreadLocalOrNull()
 
 /**
- * 还未找到反射`Looper.sThreadLocal`失败的常规替代方案
- *
- * 有一种思路是反射访问当前线程的ThreadLocalMap，遍历ThreadLocalMap.Entry数组，
- * 用当前线程的Looper对象匹配`Entry.value`，匹配到的`Entry.key`就是Looper.sThreadLocal，
- * 但是Android禁止反射访问ThreadLocalMap的成员函数和成员属性，该思路无法作为常规替代方案。
+ * 若后续Android版本反射`sThreadLocal`失败，则可以考虑使用：
+ * [AndroidHiddenApiBypass](https://github.com/LSPosed/AndroidHiddenApiBypass)
  */
 private fun initializeLooperThreadLocalOrNull(): ThreadLocal<Looper>? = try {
     @Suppress("DiscouragedPrivateApi")
