@@ -6,6 +6,7 @@ import android.os.Looper
 import android.view.Choreographer
 import androidx.annotation.IntRange
 import androidx.annotation.MainThread
+import androidx.core.os.HandlerCompat
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.sample.extension.LooperElement
 import kotlinx.coroutines.*
@@ -166,25 +167,41 @@ private class DeadlineNsObserver(
     private var isResume = false
 
     fun attach() {
-        if (adapter.itemCount > 0) return tryResume()
+        if (adapter.itemCount > 0) return resume()
+        registerAdapterDataObserver()
+        cont.invokeOnCancellation { runOnMainThread(::unregisterAdapterDataObserver) }
+    }
+
+    override fun onChanged() = resume()
+
+    override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = resume()
+
+    private fun registerAdapterDataObserver() {
         isRegister = true
         adapter.registerAdapterDataObserver(this)
-        cont.invokeOnCancellation { adapter.unregisterAdapterDataObserver(this) }
     }
 
-    override fun onChanged() = tryResume()
+    private fun unregisterAdapterDataObserver() {
+        if (!isRegister) return
+        isRegister = false
+        adapter.unregisterAdapterDataObserver(this)
+    }
 
-    override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = tryResume()
-
-    private fun tryResume() {
+    private fun resume() {
         if (isResume) return
         isResume = true
-        Choreographer.getInstance().postFrameCallback(::resume)
+        Choreographer.getInstance().postFrameCallback { frameTimeNs ->
+            unregisterAdapterDataObserver()
+            cont.resume(frameTimeNs)
+        }
     }
 
-    private fun resume(deadlineNs: Long) {
-        if (isRegister) adapter.unregisterAdapterDataObserver(this)
-        cont.resume(deadlineNs)
+    private inline fun runOnMainThread(crossinline action: () -> Unit) {
+        if (Thread.currentThread() === Looper.getMainLooper().thread) {
+            action()
+        } else {
+            HandlerCompat.createAsync(Looper.getMainLooper()).post { action() }
+        }
     }
 }
 
