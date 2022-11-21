@@ -94,6 +94,13 @@ interface AnimatableMediator : Disposable {
 }
 
 /**
+ * 查找父类或者自身等于`T::class.java`的[AnimatableController]
+ */
+inline fun <reified T : AnimatableController> AnimatableMediator.findAnimatableController(): T? {
+    return findAnimatableController(T::class.java)
+}
+
+/**
  * [Animatable]的提供者
  *
  * 常见的动图加载场景，其实现类提供的[Animatable]就是[ImageView.getDrawable]，

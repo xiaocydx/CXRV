@@ -15,7 +15,7 @@ import java.lang.ref.WeakReference
  */
 @Suppress("SpellCheckingInspection")
 fun AnimatableMediator.controlledByParentViewPager2(viewPager2: ViewPager2): Disposable {
-    findAnimatableController(ParentViewPager2Controller::class.java)?.dispose()
+    findAnimatableController<ParentViewPager2Controller>()?.dispose()
     return ParentViewPager2Controller().attach(this, viewPager2)
 }
 

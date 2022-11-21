@@ -12,7 +12,7 @@ import com.xiaocydx.cxrv.list.Disposable
  */
 @Suppress("SpellCheckingInspection")
 fun AnimatableMediator.controlledByLifecycle(lifecycle: Lifecycle, state: Lifecycle.State): Disposable {
-    findAnimatableController(RecyclerViewLifecycleController::class.java)?.dispose()
+    findAnimatableController<RecyclerViewLifecycleController>()?.dispose()
     return RecyclerViewLifecycleController(state).attach(this, lifecycle)
 }
 

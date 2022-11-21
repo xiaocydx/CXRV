@@ -10,7 +10,7 @@ import com.xiaocydx.cxrv.list.Disposable
  */
 @Suppress("SpellCheckingInspection")
 fun AnimatableMediator.controlledByScroll(): Disposable {
-    findAnimatableController(RecyclerViewScrollController::class.java)?.dispose()
+    findAnimatableController<RecyclerViewScrollController>()?.dispose()
     return RecyclerViewScrollController().attach(this)
 }
 
