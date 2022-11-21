@@ -21,9 +21,9 @@ internal class AnimatableMediatorImpl(
     private var controllers: ArrayList<AnimatableController>? = null
     private var preDrawListener: PreDrawListener? = null
     override var isDisposed: Boolean = false
-    override val isAllowStart: Boolean
+    override val canStartAnimatable: Boolean
         get() {
-            controllers?.accessEach { if (!it.isAllowStart) return false }
+            controllers?.accessEach { if (!it.canStartAnimatable) return false }
             return true
         }
 
@@ -35,37 +35,32 @@ internal class AnimatableMediatorImpl(
 
     // checkOnPreDraw()
     override fun invoke() {
-        if (!isAllowStart) stopAll()
-    }
-
-    override fun start(child: View) {
-        if (isAllowStart) startActual(child)
-    }
-
-    override fun stop(child: View) {
-        val holder = recyclerView.getChildViewHolder(child) ?: return
-        providers?.accessEach action@{
-            val animatable = it.getAnimatable(holder) ?: return@action
-            if (animatable.isRunning) animatable.stop()
+        if (!canStartAnimatable) {
+            stopAllAnimatable()
+        } else {
+            val childCount = recyclerView.childCount
+            for (index in 0 until childCount) {
+                stopAnimatableOnPreDraw(recyclerView.getChildAt(index))
+            }
         }
     }
 
-    override fun startAll() {
-        if (!isAllowStart) return
+    override fun startAllAnimatable() {
+        if (!canStartAnimatable) return
         val childCount = recyclerView.childCount
         for (index in 0 until childCount) {
-            startActual(recyclerView.getChildAt(index))
+            startAnimatable(recyclerView.getChildAt(index))
         }
     }
 
-    override fun stopAll() {
+    override fun stopAllAnimatable() {
         val childCount = recyclerView.childCount
         for (index in 0 until childCount) {
-            stop(recyclerView.getChildAt(index))
+            stopAnimatable(recyclerView.getChildAt(index))
         }
     }
 
-    override fun addProvider(provider: AnimatableProvider) {
+    override fun addAnimatableProvider(provider: AnimatableProvider) {
         if (providers == null) {
             providers = ArrayList(2)
         }
@@ -74,11 +69,11 @@ internal class AnimatableMediatorImpl(
         }
     }
 
-    override fun removeProvider(provider: AnimatableProvider) {
+    override fun removeAnimatableProvider(provider: AnimatableProvider) {
         providers?.remove(provider)
     }
 
-    override fun addController(controller: AnimatableController) {
+    override fun addAnimatableController(controller: AnimatableController) {
         if (controllers == null) {
             controllers = ArrayList(2)
         }
@@ -87,21 +82,39 @@ internal class AnimatableMediatorImpl(
         }
     }
 
-    override fun removeController(controller: AnimatableController) {
+    override fun removeAnimatableController(controller: AnimatableController) {
         controllers?.remove(controller)
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : AnimatableController> findController(clazz: Class<T>): T? {
+    override fun <T : AnimatableController> findAnimatableController(clazz: Class<T>): T? {
         controllers?.accessEach { if (clazz.isAssignableFrom(it.javaClass)) return it as T }
         return null
     }
 
-    private fun startActual(child: View) {
+    private fun startAnimatable(child: View) {
         val holder = recyclerView.getChildViewHolder(child) ?: return
         providers?.accessEach action@{
-            val animatable = it.getAnimatable(holder) ?: return@action
-            if (!animatable.isRunning) animatable.start()
+            val animatable = it.getAnimatableOrNull(holder) ?: return@action
+            if (animatable.isRunning || !it.canStartAnimatable(holder, animatable)) return@action
+            animatable.start()
+        }
+    }
+
+    private fun stopAnimatable(child: View) {
+        val holder = recyclerView.getChildViewHolder(child) ?: return
+        providers?.accessEach action@{
+            val animatable = it.getAnimatableOrNull(holder) ?: return@action
+            if (animatable.isRunning) animatable.stop()
+        }
+    }
+
+    private fun stopAnimatableOnPreDraw(child: View) {
+        val holder = recyclerView.getChildViewHolder(child) ?: return
+        providers?.accessEach action@{
+            val animatable = it.getAnimatableOrNull(holder) ?: return@action
+            if (!animatable.isRunning || it.canStartAnimatable(holder, animatable)) return@action
+            animatable.stop()
         }
     }
 

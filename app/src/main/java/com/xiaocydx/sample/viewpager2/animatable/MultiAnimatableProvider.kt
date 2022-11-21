@@ -2,8 +2,10 @@
 
 package com.xiaocydx.sample.viewpager2.animatable
 
+import android.graphics.Rect
 import android.graphics.drawable.Animatable
 import android.widget.ImageView
+import androidx.annotation.FloatRange
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.list.Disposable
@@ -13,13 +15,17 @@ import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
  * 添加[ImageView]的[AnimatableProvider]
  *
  * 当[ViewHolder.getBindingAdapter]等于[adapter]时，才调用[provider]。
+ *
+ * @param visiableRatio [provider]返回的[ImageView]，其可视比例大于或等于该值才开始动图。
  */
-inline fun <VH : ViewHolder> AnimatableMediator.registerImageView(
+fun <VH : ViewHolder> AnimatableMediator.registerImageView(
     adapter: Adapter<VH>,
-    crossinline provider: VH.() -> ImageView?
-): Disposable = registerProvider(adapter) {
-    this.provider()?.drawable as? Animatable
-}
+    @FloatRange(from = 0.0, to = 1.0) visiableRatio: Float = 0f,
+    provider: VH.() -> ImageView?
+): Disposable = AnimatableProviderDisposable().attach(
+    mediator = this,
+    provider = AdapterProvider(adapter, visiableRatio, provider)
+)
 
 /**
  * 添加[ImageView]的[AnimatableProvider]
@@ -27,52 +33,40 @@ inline fun <VH : ViewHolder> AnimatableMediator.registerImageView(
  * 当[ViewHolder.getBindingAdapter]等于`delegate.adapter`，
  * 并且[ViewHolder.getItemViewType]等于`delegate.viewType`时，
  * 才调用[provider]。
- */
-inline fun <VH : ViewHolder> AnimatableMediator.registerImageView(
-    delegate: ViewTypeDelegate<*, VH>,
-    crossinline provider: VH.() -> ImageView?
-): Disposable = registerProvider(delegate) {
-    this.provider()?.drawable as? Animatable
-}
-
-/**
- * 添加[AnimatableProvider]，[adapter]帮助类型推导[VH]
  *
- * 当[ViewHolder.getBindingAdapter]等于[adapter]时，才调用[provider]。
+ * @param visiableRatio [provider]返回的[ImageView]，其可视比例大于或等于该值才开始动图。
  */
-fun <VH : ViewHolder> AnimatableMediator.registerProvider(
-    adapter: Adapter<VH>,
-    provider: VH.() -> Animatable?
+fun <VH : ViewHolder> AnimatableMediator.registerImageView(
+    delegate: ViewTypeDelegate<*, VH>,
+    @FloatRange(from = 0.0, to = 1.0) visiableRatio: Float = 0f,
+    provider: VH.() -> ImageView?
 ): Disposable = AnimatableProviderDisposable().attach(
     mediator = this,
-    provider = AdapterProvider(adapter, provider)
-)
-
-/**
- * 添加[AnimatableProvider]，[delegate]帮助类型推导[VH]
- *
- * 当[ViewHolder.getBindingAdapter]等于`delegate.adapter`，
- * 并且[ViewHolder.getItemViewType]等于`delegate.viewType`时，
- * 才调用[provider]。
- */
-fun <VH : ViewHolder> AnimatableMediator.registerProvider(
-    delegate: ViewTypeDelegate<*, VH>,
-    provider: VH.() -> Animatable?
-): Disposable = AnimatableProviderDisposable().attach(
-    mediator = this,
-    provider = ViewTypeDelegateProvider(delegate, provider)
+    provider = ViewTypeDelegateProvider(delegate, visiableRatio, provider)
 )
 
 private class AdapterProvider<VH : ViewHolder>(
     private val adapter: Adapter<VH>,
-    private val provider: VH.() -> Animatable?
+    private val visiableRatio: Float,
+    private val provider: VH.() -> ImageView?
 ) : AnimatableProvider {
+    private val visibleRect = Rect()
     override var isDisposed: Boolean = false
 
     @Suppress("UNCHECKED_CAST")
-    override fun getAnimatable(holder: ViewHolder): Animatable? {
-        if (holder.bindingAdapter != adapter) return null
-        return provider(holder as VH)
+    override fun getAnimatableOrNull(holder: ViewHolder): Animatable? {
+        if (holder.bindingAdapter !== adapter) return null
+        return provider(holder as VH)?.drawable as? Animatable
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun canStartAnimatable(holder: ViewHolder, animatable: Animatable): Boolean {
+        if (visiableRatio <= 0f) return true
+        val view = provider(holder as VH) ?: return true
+        view.getLocalVisibleRect(visibleRect)
+        val visibleArea = visibleRect.width() * visibleRect.height()
+        val totalAre = view.width * view.height
+        return (visibleArea.toFloat() / totalAre) >= visiableRatio
     }
 
     override fun dispose() {
@@ -82,15 +76,27 @@ private class AdapterProvider<VH : ViewHolder>(
 
 private class ViewTypeDelegateProvider<VH : ViewHolder>(
     private val delegate: ViewTypeDelegate<*, VH>,
-    private val provider: VH.() -> Animatable?
+    private val visiableRatio: Float,
+    private val provider: VH.() -> ImageView?
 ) : AnimatableProvider {
+    private val visibleRect = Rect()
     override var isDisposed: Boolean = false
 
     @Suppress("UNCHECKED_CAST")
-    override fun getAnimatable(holder: ViewHolder): Animatable? {
-        if (holder.bindingAdapter != delegate.adapter) return null
+    override fun getAnimatableOrNull(holder: ViewHolder): Animatable? {
+        if (holder.bindingAdapter !== delegate.adapter) return null
         if (holder.itemViewType != delegate.viewType) return null
-        return provider(holder as VH)
+        return provider(holder as VH)?.drawable as? Animatable
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun canStartAnimatable(holder: ViewHolder, animatable: Animatable): Boolean {
+        if (visiableRatio <= 0f) return true
+        val view = provider(holder as VH) ?: return true
+        view.getLocalVisibleRect(visibleRect)
+        val visibleArea = visibleRect.width() * visibleRect.height()
+        val totalAre = view.width * view.height
+        return (visibleArea.toFloat() / totalAre) >= visiableRatio
     }
 
     override fun dispose() {
@@ -98,7 +104,10 @@ private class ViewTypeDelegateProvider<VH : ViewHolder>(
     }
 }
 
-private class AnimatableProviderDisposable : AnimatableProvider {
+/**
+ * 可废弃的[AnimatableProvider]
+ */
+class AnimatableProviderDisposable : AnimatableProvider {
     private var mediator: AnimatableMediator? = null
     private var provider: AnimatableProvider? = null
     override val isDisposed: Boolean
@@ -110,16 +119,20 @@ private class AnimatableProviderDisposable : AnimatableProvider {
     ): Disposable {
         this.mediator = mediator
         this.provider = provider
-        mediator.addProvider(this)
+        mediator.addAnimatableProvider(this)
         return this
     }
 
-    override fun getAnimatable(holder: ViewHolder): Animatable? {
-        return provider?.getAnimatable(holder)
+    override fun getAnimatableOrNull(holder: ViewHolder): Animatable? {
+        return provider?.getAnimatableOrNull(holder)
+    }
+
+    override fun canStartAnimatable(holder: ViewHolder, animatable: Animatable): Boolean {
+        return provider?.canStartAnimatable(holder, animatable) ?: true
     }
 
     override fun dispose() {
-        mediator?.removeProvider(this)
+        mediator?.removeAnimatableProvider(this)
         provider?.dispose()
         mediator = null
         provider = null

@@ -10,7 +10,7 @@ import com.xiaocydx.cxrv.list.Disposable
  */
 @Suppress("SpellCheckingInspection")
 fun AnimatableMediator.controlledByScroll(): Disposable {
-    findController(RecyclerViewScrollController::class.java)?.dispose()
+    findAnimatableController(RecyclerViewScrollController::class.java)?.dispose()
     return RecyclerViewScrollController().attach(this)
 }
 
@@ -18,13 +18,13 @@ private class RecyclerViewScrollController : OnScrollListener(), AnimatableContr
     private var mediator: AnimatableMediator? = null
     override val isDisposed: Boolean
         get() = mediator == null
-    override val isAllowStart: Boolean
+    override val canStartAnimatable: Boolean
         get() = mediator != null && mediator!!.recyclerView.scrollState == SCROLL_STATE_IDLE
 
     fun attach(mediator: AnimatableMediator): Disposable {
         this.mediator = mediator
         mediator.also {
-            it.addController(this)
+            it.addAnimatableController(this)
             it.recyclerView.addOnScrollListener(this)
         }
         return this
@@ -32,15 +32,15 @@ private class RecyclerViewScrollController : OnScrollListener(), AnimatableContr
 
     override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
         if (newState == SCROLL_STATE_IDLE) {
-            mediator?.startAll()
+            mediator?.startAllAnimatable()
         } else {
-            mediator?.stopAll()
+            mediator?.stopAllAnimatable()
         }
     }
 
     override fun dispose() {
         mediator?.also {
-            it.removeController(this)
+            it.removeAnimatableController(this)
             it.recyclerView.removeOnScrollListener(this)
         }
         mediator = null

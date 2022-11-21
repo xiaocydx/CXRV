@@ -126,7 +126,7 @@ class FooListFragment : Fragment() {
             controlledByParentViewPager2(vp2)
             // 若跳转至透明主题的Activity，则可以启用该函数，动图受RESUMED状态控制
             // controlledByLifecycle(viewLifecycle, RESUMED)
-            registerImageView(fooAdapter) { view.imageView }
+            registerImageView(fooAdapter, visiableRatio = 0.5f) { view.imageView }
         }
     }
 

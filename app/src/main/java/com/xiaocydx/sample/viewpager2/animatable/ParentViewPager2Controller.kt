@@ -15,7 +15,7 @@ import java.lang.ref.WeakReference
  */
 @Suppress("SpellCheckingInspection")
 fun AnimatableMediator.controlledByParentViewPager2(viewPager2: ViewPager2): Disposable {
-    findController(ParentViewPager2Controller::class.java)?.dispose()
+    findAnimatableController(ParentViewPager2Controller::class.java)?.dispose()
     return ParentViewPager2Controller().attach(this, viewPager2)
 }
 
@@ -28,7 +28,7 @@ private class ParentViewPager2Controller : OnPageChangeCallback(),
         get() = viewPager2Ref?.get()
     override val isDisposed: Boolean
         get() = mediator == null && viewPager2 == null
-    override val isAllowStart: Boolean
+    override val canStartAnimatable: Boolean
         get() = viewPager2?.let { it.scrollState == SCROLL_STATE_IDLE } ?: true
 
     fun attach(
@@ -38,7 +38,7 @@ private class ParentViewPager2Controller : OnPageChangeCallback(),
         this.mediator = mediator
         this.viewPager2Ref = WeakReference(viewPager2)
         mediator.also {
-            it.addController(this)
+            it.addAnimatableController(this)
             it.recyclerView.addOnAttachStateChangeListener(this)
         }
         registerOnPageChangeCallback()
@@ -49,7 +49,7 @@ private class ParentViewPager2Controller : OnPageChangeCallback(),
         if (state == SCROLL_STATE_IDLE) {
             startCurrentItem()
         } else {
-            mediator?.stopAll()
+            mediator?.stopAllAnimatable()
         }
     }
 
@@ -59,7 +59,7 @@ private class ParentViewPager2Controller : OnPageChangeCallback(),
         val realParent = viewPager2.getChildAt(0) as? RecyclerView ?: return
         val holder: ViewHolder = realParent.findContainingViewHolder(rvChild) ?: return
         if (holder.layoutPosition == viewPager2.currentItem) {
-            mediator?.startAll()
+            mediator?.startAllAnimatable()
         }
     }
 
@@ -86,7 +86,7 @@ private class ParentViewPager2Controller : OnPageChangeCallback(),
 
     override fun dispose() {
         mediator?.also {
-            it.removeController(this)
+            it.removeAnimatableController(this)
             it.recyclerView.removeOnAttachStateChangeListener(this)
         }
         unregisterOnPageChangeCallback()

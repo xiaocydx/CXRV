@@ -8,11 +8,11 @@ import com.xiaocydx.cxrv.list.Disposable
 /**
  * 添加受父级[lifecycle]控制的[AnimatableController]
  *
- * @param state 当[lifecycle]的状态小于[state]时，调用[AnimatableMediator.stopAll]
+ * @param state 当[lifecycle]的状态小于[state]时，调用[AnimatableMediator.stopAllAnimatable]
  */
 @Suppress("SpellCheckingInspection")
 fun AnimatableMediator.controlledByLifecycle(lifecycle: Lifecycle, state: Lifecycle.State): Disposable {
-    findController(RecyclerViewLifecycleController::class.java)?.dispose()
+    findAnimatableController(RecyclerViewLifecycleController::class.java)?.dispose()
     return RecyclerViewLifecycleController(state).attach(this, lifecycle)
 }
 
@@ -23,7 +23,7 @@ private class RecyclerViewLifecycleController(
     private var lifecycle: Lifecycle? = null
     override val isDisposed: Boolean
         get() = mediator == null && lifecycle == null
-    override val isAllowStart: Boolean
+    override val canStartAnimatable: Boolean
         get() = lifecycle != null && lifecycle!!.currentState.isAtLeast(state)
 
     fun attach(
@@ -32,7 +32,7 @@ private class RecyclerViewLifecycleController(
     ): Disposable {
         this.mediator = mediator
         this.lifecycle = lifecycle
-        mediator.addController(this)
+        mediator.addAnimatableController(this)
         lifecycle.addObserver(this)
         return this
     }
@@ -42,14 +42,14 @@ private class RecyclerViewLifecycleController(
         val stopEvent = Lifecycle.Event.downFrom(state)
         when (event) {
             Lifecycle.Event.ON_DESTROY -> dispose()
-            startEvent -> mediator?.startAll()
-            stopEvent -> mediator?.stopAll()
+            startEvent -> mediator?.startAllAnimatable()
+            stopEvent -> mediator?.stopAllAnimatable()
             else -> return
         }
     }
 
     override fun dispose() {
-        mediator?.removeController(this)
+        mediator?.removeAnimatableController(this)
         lifecycle?.removeObserver(this)
         mediator = null
         lifecycle = null
