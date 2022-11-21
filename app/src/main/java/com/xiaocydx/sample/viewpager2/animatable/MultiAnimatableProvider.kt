@@ -48,41 +48,22 @@ fun <VH : ViewHolder> AnimatableMediator.registerImageView(
 
 private class AdapterProvider<VH : ViewHolder>(
     private val adapter: Adapter<VH>,
-    private val visiableRatio: Float,
-    private val provider: VH.() -> ImageView?
-) : AnimatableProvider {
-    private val visibleRect = Rect()
-    override var isDisposed: Boolean = false
+    visiableRatio: Float,
+    provider: VH.() -> ImageView?
+) : ImageViewProvider<VH>(visiableRatio, provider) {
 
     @Suppress("UNCHECKED_CAST")
     override fun getAnimatableOrNull(holder: ViewHolder): Animatable? {
         if (holder.bindingAdapter !== adapter) return null
         return provider(holder as VH)?.drawable as? Animatable
     }
-
-    @Suppress("UNCHECKED_CAST")
-    override fun canStartAnimatable(holder: ViewHolder, animatable: Animatable): Boolean {
-        if (visiableRatio <= 0f) return true
-        val view = provider(holder as VH)
-        if (view == null || !view.isAttachedToWindow || !view.isVisible) return false
-        view.getLocalVisibleRect(visibleRect)
-        val visibleArea = visibleRect.width() * visibleRect.height()
-        val totalAre = view.width * view.height
-        return (visibleArea.toFloat() / totalAre) >= visiableRatio
-    }
-
-    override fun dispose() {
-        isDisposed = true
-    }
 }
 
 private class ViewTypeDelegateProvider<VH : ViewHolder>(
     private val delegate: ViewTypeDelegate<*, VH>,
-    private val visiableRatio: Float,
-    private val provider: VH.() -> ImageView?
-) : AnimatableProvider {
-    private val visibleRect = Rect()
-    override var isDisposed: Boolean = false
+    visiableRatio: Float,
+    provider: VH.() -> ImageView?
+) : ImageViewProvider<VH>(visiableRatio, provider) {
 
     @Suppress("UNCHECKED_CAST")
     override fun getAnimatableOrNull(holder: ViewHolder): Animatable? {
@@ -90,6 +71,14 @@ private class ViewTypeDelegateProvider<VH : ViewHolder>(
         if (holder.itemViewType != delegate.viewType) return null
         return provider(holder as VH)?.drawable as? Animatable
     }
+}
+
+private abstract class ImageViewProvider<VH : ViewHolder>(
+    private val visiableRatio: Float,
+    protected val provider: VH.() -> ImageView?
+) : AnimatableProvider {
+    private val visibleRect = Rect()
+    override var isDisposed: Boolean = false
 
     @Suppress("UNCHECKED_CAST")
     override fun canStartAnimatable(holder: ViewHolder, animatable: Animatable): Boolean {
