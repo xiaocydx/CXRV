@@ -6,6 +6,7 @@ import android.graphics.Rect
 import android.graphics.drawable.Animatable
 import android.widget.ImageView
 import androidx.annotation.FloatRange
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.list.Disposable
@@ -62,7 +63,8 @@ private class AdapterProvider<VH : ViewHolder>(
     @Suppress("UNCHECKED_CAST")
     override fun canStartAnimatable(holder: ViewHolder, animatable: Animatable): Boolean {
         if (visiableRatio <= 0f) return true
-        val view = provider(holder as VH) ?: return true
+        val view = provider(holder as VH)
+        if (view == null || !view.isAttachedToWindow || !view.isVisible) return false
         view.getLocalVisibleRect(visibleRect)
         val visibleArea = visibleRect.width() * visibleRect.height()
         val totalAre = view.width * view.height
@@ -92,7 +94,8 @@ private class ViewTypeDelegateProvider<VH : ViewHolder>(
     @Suppress("UNCHECKED_CAST")
     override fun canStartAnimatable(holder: ViewHolder, animatable: Animatable): Boolean {
         if (visiableRatio <= 0f) return true
-        val view = provider(holder as VH) ?: return true
+        val view = provider(holder as VH)
+        if (view == null || !view.isAttachedToWindow || !view.isVisible) return false
         view.getLocalVisibleRect(visibleRect)
         val visibleArea = visibleRect.width() * visibleRect.height()
         val totalAre = view.width * view.height
