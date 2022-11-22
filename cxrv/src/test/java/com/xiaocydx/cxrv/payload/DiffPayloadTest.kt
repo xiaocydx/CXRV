@@ -26,8 +26,9 @@ class DiffPayloadTest {
                 ifNotEquals { count2 }.add(COUNT2)
             }
         }
+
         val outcome = arrayListOf<Int>()
-        Payload.takeOrEmpty(payload, outcome::add)
+        Payload.takeOrEmpty(listOf(payload), outcome::add)
         Truth.assertThat(outcome).hasSize(2)
         Truth.assertThat(outcome).contains(COUNT1)
         Truth.assertThat(outcome).contains(COUNT2)

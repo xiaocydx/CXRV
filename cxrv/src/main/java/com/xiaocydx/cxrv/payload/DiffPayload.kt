@@ -8,13 +8,20 @@ import androidx.annotation.IntRange
  * @author xcc
  * @date 2022/9/4
  */
-class DiffPayload<T : Any>
-@PublishedApi internal constructor(oldItem: T, newItem: T) : Payload() {
-    private var oldItem: T? = oldItem
-    private var newItem: T? = newItem
+class DiffPayload<T : Any> internal constructor() : Payload() {
+    private var oldItem: T? = null
+    private var newItem: T? = null
+
+    @PublishedApi
+    internal fun init(oldItem: T, newItem: T): DiffPayload<T> {
+        checkComplete()
+        this.oldItem = oldItem
+        this.newItem = newItem
+        return this
+    }
 
     /**
-     * 获取不可空的`oldItem`，避免比较基本类型产生装箱开销
+     * 获取不可空的`oldItem`，避免比较基本类型的属性产生装箱开销
      */
     @PublishedApi
     internal fun oldItem(): T {
@@ -23,7 +30,7 @@ class DiffPayload<T : Any>
     }
 
     /**
-     * 获取不可空的`newItem`，避免比较基本类型产生装箱开销
+     * 获取不可空的`newItem`，避免比较基本类型的属性产生装箱开销
      */
     @PublishedApi
     internal fun newItem(): T {
@@ -36,6 +43,13 @@ class DiffPayload<T : Any>
         oldItem = null
         newItem = null
         return super.complete()
+    }
+
+    @PublishedApi
+    override fun reset(): Payload {
+        oldItem = null
+        newItem = null
+        return super.reset()
     }
 }
 

@@ -40,7 +40,7 @@ import androidx.annotation.IntRange
  * ```
  */
 inline fun Payload(block: Payload.() -> Unit): Payload {
-    return Payload().apply(block).complete()
+    return Payload.obtain().apply(block).complete()
 }
 
 /**
@@ -82,7 +82,7 @@ inline fun Payload(block: Payload.() -> Unit): Payload {
  * ```
  */
 inline fun <T : Any> Payload(oldItem: T, newItem: T, block: DiffPayload<T>.() -> Unit): Payload {
-    return DiffPayload(oldItem, newItem).apply(block).complete()
+    return Payload.obtainDiff(oldItem, newItem).apply(block).complete()
 }
 
 /**
@@ -100,7 +100,7 @@ inline fun <T : Any> Payload(oldItem: T, newItem: T, block: DiffPayload<T>.() ->
  *
  * **注意**：按照注释说明调用该函数，[IfNotEquals]不会产生装箱开销。
  */
-inline fun <T : Any, K> DiffPayload<T>.ifNotEquals(property: T.() -> K): IfNotEquals {
+inline fun <T : Any, P> DiffPayload<T>.ifNotEquals(property: T.() -> P): IfNotEquals {
     return IfNotEquals(if (oldItem().property() != newItem().property()) this else null)
 }
 
@@ -116,38 +116,11 @@ inline fun <T : Any, K> DiffPayload<T>.ifNotEquals(property: T.() -> K): IfNotEq
 fun Payload.Companion.value(@IntRange(from = 1, to = 31) bitCount: Int) = BASE shl bitCount
 
 /**
- * 对[payload]提取出[Payload]，对每个`value`执行[action]，
- * 若没有提取出[Payload]，或者提取的[Payload]都为空，
- * 则按[Payload.EMPTY]执行一次兜底[action]。
- */
-inline fun Payload.Companion.takeOrEmpty(payload: Any, action: (value: Int) -> Unit) {
-    if (payload !is Payload || payload.isEmpty()) return action(EMPTY)
-    payload.forEach(action)
-}
-
-/**
- * 对[payloads]提取出[Payload]，对每个`value`执行[action]，
- * 若没有提取出[Payload]，或者提取的[Payload]都为空，
- * 则按[Payload.EMPTY]执行一次兜底[action]。
+ * 提取[payloads]中的[Payload]，对每个`value`执行[action]，
+ * 若没有提取出[Payload]，或者提取的[Payload]都为空，则按[Payload.EMPTY]执行一次[action]。
+ *
+ * **注意**：调用该函数后，[payloads]中的[Payload]会被回收，因此[payloads]不能再作为该函数的实参。
  */
 inline fun Payload.Companion.takeOrEmpty(payloads: List<Any>, action: (value: Int) -> Unit) {
-    var hasValue = false
-    payloads.forEach action@{
-        if (it !is Payload || it.isEmpty()) return@action
-        hasValue = true
-        it.forEach(action)
-    }
-    if (!hasValue) action(EMPTY)
-}
-
-/**
- * 对每个`value`执行[action]
- */
-inline fun Payload.forEach(action: (value: Int) -> Unit) {
-    var value = takeHighestValue()
-    val endValue = takeLowestValue()
-    while (value != Payload.EMPTY && value >= endValue) {
-        if (contains(value)) action(value)
-        value = value ushr 1
-    }
+    merge(payloads).apply { if (isEmpty()) action(EMPTY) else forEach(action) }.recycle()
 }
