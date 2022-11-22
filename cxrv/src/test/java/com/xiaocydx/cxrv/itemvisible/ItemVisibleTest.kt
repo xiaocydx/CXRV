@@ -61,9 +61,20 @@ class ItemVisibleTest {
         }
     }
 
-    private inline fun recyclerView_ItemVisible(
-        crossinline layout: RecyclerView.() -> LayoutManager
-    ) {
+    @Test
+    fun recyclerView_TestLayoutManager_ItemVisible() {
+        scenario.onActivity { activity ->
+            val rv = activity.recyclerView
+            val fakePosition = 100
+            rv.layoutManager = TestLayoutManager(fakePosition)
+            assertThat(rv.findFirstVisibleItemPosition()).isEqualTo(fakePosition)
+            assertThat(rv.findFirstCompletelyVisibleItemPosition()).isEqualTo(fakePosition)
+            assertThat(rv.findLastVisibleItemPosition()).isEqualTo(fakePosition)
+            assertThat(rv.findLastCompletelyVisibleItemPosition()).isEqualTo(fakePosition)
+        }
+    }
+
+    private inline fun recyclerView_ItemVisible(crossinline layout: RecyclerView.() -> LayoutManager) {
         scenario.onActivity { activity ->
             activity.recyclerView.apply {
                 layoutManager = layout()
