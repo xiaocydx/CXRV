@@ -42,13 +42,13 @@ sealed class Payload {
     internal fun isEmpty() = values == EMPTY
 
     /**
-     * 取[values]的最高位，可作为遍历的起始值
+     * 取[values]的最高位1，可作为遍历的起始值
      */
     @PublishedApi
     internal fun takeHighestValue() = values.takeHighestOneBit()
 
     /**
-     * 取[values]的最高位，可作为遍历的结束值
+     * 取[values]的最低位1，可作为遍历的结束值
      */
     @PublishedApi
     internal fun takeLowestValue() = values.takeLowestOneBit()
