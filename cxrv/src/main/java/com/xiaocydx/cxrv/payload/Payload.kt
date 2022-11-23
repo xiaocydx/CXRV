@@ -125,9 +125,10 @@ sealed class Payload {
 }
 
 /**
- * 从[payloads]提取出[Payload]，去除重复的`value`，合并为一个[Payload]
+ * 提取[payloads]的[Payload]，去除重复的`value`，合并为一个[Payload]
  */
 @PublishedApi
+@CheckResult
 internal fun Payload.Companion.merge(payloads: List<Any>): Payload {
     var outcome: Payload? = null
     payloads.forEach action@{
@@ -141,11 +142,12 @@ internal fun Payload.Companion.merge(payloads: List<Any>): Payload {
  * 对每个`value`执行[action]
  */
 @PublishedApi
-internal inline fun Payload.forEach(action: (value: Int) -> Unit) {
+internal inline fun Payload.forEach(action: (value: Int) -> Unit): Payload {
     var value = takeHighestValue()
     val endValue = takeLowestValue()
     while (value != Payload.EMPTY && value >= endValue) {
         if (contains(value)) action(value)
         value = value ushr 1
     }
+    return this
 }

@@ -117,6 +117,16 @@ fun Payload.Companion.value(@IntRange(from = 1, to = 31) bitCount: Int) = BASE s
 
 /**
  * 提取[payloads]中的[Payload]，对每个`value`执行[action]，
+ * 若没有提取出[Payload]，则按[Payload.EMPTY]执行一次[action]。
+ *
+ * **注意**：调用该函数后，[payloads]中的[Payload]会被回收，因此[payloads]不能再作为该函数的实参。
+ */
+inline fun Payload.Companion.take(payloads: List<Any>, action: (value: Int) -> Unit) {
+    if (payloads.isEmpty()) action(EMPTY) else merge(payloads).forEach(action).recycle()
+}
+
+/**
+ * 提取[payloads]中的[Payload]，对每个`value`执行[action]，
  * 若没有提取出[Payload]，或者提取的[Payload]都为空，则按[Payload.EMPTY]执行一次[action]。
  *
  * **注意**：调用该函数后，[payloads]中的[Payload]会被回收，因此[payloads]不能再作为该函数的实参。

@@ -22,12 +22,12 @@ class PayloadTest {
     }
 
     @Test
-    fun add_Value_Success() {
+    fun validate_Value_Success() {
         val payload = Payload {
             repeat(2) { (1..5).forEach(::add) }
         }
         val outcome = arrayListOf<Int>()
-        Payload.takeOrEmpty(listOf(payload), outcome::add)
+        Payload.take(listOf(payload), outcome::add)
         assertThat(outcome).hasSize(3)
         assertThat(outcome).contains(1)
         assertThat(outcome).contains(2)
@@ -36,27 +36,20 @@ class PayloadTest {
 
     @Test
     @Suppress("LocalVariableName")
-    fun take_Payloads_Value_Success() {
+    fun take_Payloads_ForEach_Success() {
         val VALUE1 = Payload.value(1)
+        val VALUE2 = Payload.value(2)
         val payloads = listOf(
             "notTake",
             Payload { add(VALUE1) },
-            Payload { add(VALUE1) }
+            Payload { add(VALUE2) }
         )
 
         val outcome = arrayListOf<Int>()
-        Payload.takeOrEmpty(payloads, outcome::add)
-        assertThat(outcome).hasSize(1)
-        assertThat(outcome[0]).isEqualTo(VALUE1)
-    }
-
-    @Test
-    fun take_Payloads_Empty_Value() {
-        val payloads = listOf("notTake")
-        val outcome = arrayListOf<Int>()
-        Payload.takeOrEmpty(payloads, outcome::add)
-        assertThat(outcome).hasSize(1)
-        assertThat(outcome).contains(Payload.EMPTY)
+        Payload.take(payloads, outcome::add)
+        assertThat(outcome).hasSize(2)
+        assertThat(outcome).contains(VALUE1)
+        assertThat(outcome).contains(VALUE2)
     }
 
     @Test
@@ -67,8 +60,10 @@ class PayloadTest {
             recycled = Payload.pool.acquire()
         } while (recycled != null)
 
-        val payload = Payload { add(1) }
-        Payload.takeOrEmpty(listOf(payload)) {}
+        val payload = Payload {
+            add(Payload.value(1))
+        }
+        Payload.take(listOf(payload)) {}
 
         recycled = Payload.pool.acquire()
         assertThat(recycled).isNotNull()
@@ -91,11 +86,36 @@ class PayloadTest {
 
         val payloads = listOf(payloadA, payloadB, payloadC, payloadD)
         val outcome = arrayListOf<Int>()
-        Payload.takeOrEmpty(payloads, outcome::add)
+        Payload.take(payloads, outcome::add)
         assertThat(outcome).hasSize(4)
         assertThat(outcome).contains(VALUE1)
         assertThat(outcome).contains(VALUE2)
         assertThat(outcome).contains(VALUE3)
         assertThat(outcome).contains(VALUE4)
+    }
+
+    @Test
+    fun take_Payloads_Empty() {
+        val outcome = arrayListOf<Int>()
+        Payload.take(listOf(), outcome::add)
+        assertThat(outcome).hasSize(1)
+        assertThat(outcome).contains(Payload.EMPTY)
+    }
+
+    @Test
+    fun takeOrEmpty_Payloads_Empty() {
+        val outcome = arrayListOf<Int>()
+        Payload.takeOrEmpty(listOf(), outcome::add)
+        assertThat(outcome).hasSize(1)
+        assertThat(outcome).contains(Payload.EMPTY)
+    }
+
+    @Test
+    fun takeOrEmpty_Payloads_Empty_Value() {
+        val outcome = arrayListOf<Int>()
+        val payload = Payload { }
+        Payload.takeOrEmpty(listOf(payload), outcome::add)
+        assertThat(outcome).hasSize(1)
+        assertThat(outcome).contains(Payload.EMPTY)
     }
 }
