@@ -63,7 +63,7 @@ internal inline fun View.doOnAttach(crossinline action: (view: View) -> Unit) {
                 action(view)
             }
 
-            override fun onViewDetachedFromWindow(view: View): Unit = Unit
+            override fun onViewDetachedFromWindow(view: View) = Unit
         })
     }
 }
@@ -73,7 +73,7 @@ internal inline fun View.doOnDetach(crossinline action: (view: View) -> Unit) {
         action(this)
     } else {
         addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(view: View): Unit = Unit
+            override fun onViewAttachedToWindow(view: View) = Unit
 
             override fun onViewDetachedFromWindow(view: View) {
                 removeOnAttachStateChangeListener(this)

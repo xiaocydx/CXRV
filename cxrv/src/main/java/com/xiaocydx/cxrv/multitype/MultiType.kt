@@ -35,9 +35,7 @@ interface MultiType<T : Any> {
  * 访问每个类型并执行指定操作
  */
 inline fun <T : Any> MultiType<T>.forEach(action: (Type<out T>) -> Unit) {
-    for (index in 0 until size) {
-        action(valueAt(index))
-    }
+    for (index in 0 until size) action(valueAt(index))
 }
 
 /**

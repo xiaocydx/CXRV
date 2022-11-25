@@ -99,11 +99,11 @@ private class ReflectConcatAdapterHolder(
         reflectSucceed = wrappers != null
     }
 
-    override fun getAdapterSize(): Int = wrappers.size
+    override fun getAdapterSize() = wrappers.size
 
     override fun getAdapter(index: Int): Adapter<*> = wrappers[index].adapter
 
-    override fun dispose(): Unit = Unit
+    override fun dispose() = Unit
 
     private companion object {
         /**
@@ -111,7 +111,8 @@ private class ReflectConcatAdapterHolder(
          */
         val mControllerField: Field? = try {
             ConcatAdapter::class.java
-                .getDeclaredField("mController").apply { isAccessible = true }
+                .getDeclaredField("mController")
+                .apply { isAccessible = true }
         } catch (e: NoSuchFieldException) {
             null
         }
@@ -121,7 +122,8 @@ private class ReflectConcatAdapterHolder(
          */
         val mWrappersField: Field? = try {
             ConcatAdapterController::class.java
-                .getDeclaredField("mWrappers").apply { isAccessible = true }
+                .getDeclaredField("mWrappers")
+                .apply { isAccessible = true }
         } catch (e: NoSuchFieldException) {
             null
         }
@@ -131,8 +133,7 @@ private class ReflectConcatAdapterHolder(
          */
         @Suppress("UNCHECKED_CAST", "KDocUnresolvedReference")
         fun ConcatAdapter.getWrappers(): List<NestedAdapterWrapper>? {
-            val controller =
-                    mControllerField?.get(this) as? ConcatAdapterController ?: return null
+            val controller = mControllerField?.get(this) as? ConcatAdapterController ?: return null
             return mWrappersField?.get(controller) as? List<NestedAdapterWrapper>
         }
     }
@@ -156,7 +157,7 @@ private class ObserveConcatAdapterHolder(
         concatAdapter.registerAdapterDataObserver(this)
     }
 
-    override fun getAdapterSize(): Int = adapters.size
+    override fun getAdapterSize() = adapters.size
 
     override fun getAdapter(index: Int): Adapter<*> = adapters[index]
 

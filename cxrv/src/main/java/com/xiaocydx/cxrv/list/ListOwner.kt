@@ -80,7 +80,7 @@ fun <T : Any> ListOwner<T>.submitList(newList: List<T>) {
 /**
  * 设置item，该函数必须在主线程调用
  *
- * **注意**：当[item]为新对象时，才能跟旧对象进行内容对比。
+ * **注意**：当[item]为新对象时，才能跟旧对象进行差异对比。
  *
  * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作.
  */
@@ -92,7 +92,7 @@ fun <T : Any> ListOwner<T>.setItem(position: Int, item: T) {
 /**
  * 设置items，该函数必须在主线程调用
  *
- * **注意**：当[items]的元素为新对象时，才能跟旧对象进行内容对比。
+ * **注意**：当[items]的元素为新对象时，才能跟旧对象进行差异对比。
  *
  * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  * @param items    设置范围[position, size)，元素越界时不会抛出异常。
@@ -148,17 +148,13 @@ fun ListOwner<*>.swapItem(fromPosition: Int, toPosition: Int) {
  * 往首位插入item，该函数必须在主线程调用
  */
 @MainThread
-fun <T : Any> ListOwner<T>.insertItem(item: T) {
-    addItem(0, item)
-}
+fun <T : Any> ListOwner<T>.insertItem(item: T) = addItem(0, item)
 
 /**
  * 往首位插入items，该函数必须在主线程调用
  */
 @MainThread
-fun <T : Any> ListOwner<T>.insertItems(items: List<T>) {
-    addItems(0, items)
-}
+fun <T : Any> ListOwner<T>.insertItems(items: List<T>) = addItems(0, items)
 
 /**
  * 移除下标为[position]的item，该函数必须在主线程调用
@@ -166,25 +162,19 @@ fun <T : Any> ListOwner<T>.insertItems(items: List<T>) {
  * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  */
 @MainThread
-fun ListOwner<*>.removeItemAt(position: Int) {
-    removeItems(position, itemCount = 1)
-}
+fun ListOwner<*>.removeItemAt(position: Int) = removeItems(position, itemCount = 1)
 
 /**
  * 移除item，该函数必须在主线程调用
  */
 @MainThread
-fun <T : Any> ListOwner<T>.removeItem(item: T) {
-    removeItemAt(currentList.indexOfFirst { it === item })
-}
+fun <T : Any> ListOwner<T>.removeItem(item: T) = removeItemAt(currentList.indexOfFirst { it === item })
 
 /**
  * 清空列表，该函数必须在主线程调用
  */
 @MainThread
-fun ListOwner<*>.clear() {
-    submitList(emptyList())
-}
+fun ListOwner<*>.clear() = submitList(emptyList())
 
 /**
  * 提交更改的列表，该函数必须在主线程调用
@@ -221,10 +211,7 @@ inline fun <T : Any> ListOwner<T>.submitTransform(transform: MutableList<T>.() -
 inline fun <T : Any> ListOwner<T>.setFirstNotNull(block: (item: T) -> T?) {
     for (position in currentList.indices) {
         val item = block(getItem(position))
-        if (item != null) {
-            setItem(position, item)
-            return
-        }
+        if (item != null) return setItem(position, item)
     }
 }
 
@@ -233,12 +220,9 @@ inline fun <T : Any> ListOwner<T>.setFirstNotNull(block: (item: T) -> T?) {
  */
 @MainThread
 inline fun <T : Any> ListOwner<T>.setLastNotNull(block: (item: T) -> T?) {
-    for (position in currentList.size - 1 downTo 0) {
+    for (position in currentList.indices.reversed()) {
         val item = block(getItem(position))
-        if (item != null) {
-            setItem(position, item)
-            return
-        }
+        if (item != null) return setItem(position, item)
     }
 }
 
@@ -248,9 +232,7 @@ inline fun <T : Any> ListOwner<T>.setLastNotNull(block: (item: T) -> T?) {
  * 这是和调用者之间的约定，返回的列表对[ListOwner.submitList]提交后，
  * 不会再被其它地方修改，用于[ListOwner]的实现类减少列表copy次数。
  */
-fun <T> Collection<T>.toSafeMutableList(): SafeMutableList<T> {
-    return SafeMutableList(this)
-}
+fun <T> Collection<T>.toSafeMutableList() = SafeMutableList(this)
 
 /**
  * 安全的可变列表

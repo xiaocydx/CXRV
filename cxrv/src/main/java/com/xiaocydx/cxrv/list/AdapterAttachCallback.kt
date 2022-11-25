@@ -11,9 +11,9 @@ import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
  */
 interface AdapterAttachCallback {
 
-    fun onAttachedToRecyclerView(recyclerView: RecyclerView): Unit = Unit
+    fun onAttachedToRecyclerView(recyclerView: RecyclerView) = Unit
 
-    fun onDetachedFromRecyclerView(recyclerView: RecyclerView): Unit = Unit
+    fun onDetachedFromRecyclerView(recyclerView: RecyclerView) = Unit
 }
 
 /**

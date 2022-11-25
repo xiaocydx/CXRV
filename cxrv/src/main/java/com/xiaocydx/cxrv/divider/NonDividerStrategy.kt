@@ -16,11 +16,11 @@ internal object NonDividerStrategy : DividerStrategy {
         view: View,
         parent: RecyclerView,
         decoration: DividerItemDecoration
-    ): Unit = Unit
+    ) = Unit
 
     override fun onDraw(
         canvas: Canvas,
         parent: RecyclerView,
         decoration: DividerItemDecoration
-    ): Unit = Unit
+    ) = Unit
 }

@@ -179,10 +179,10 @@ private open class CancellableFlow<T>(
     protected open fun onActive(): T? = null
 
     @MainThread
-    protected open fun onReceive(value: T): Unit = Unit
+    protected open fun onReceive(value: T) = Unit
 
     @MainThread
-    protected open fun onInactive(): Unit = Unit
+    protected open fun onInactive() = Unit
 
     suspend fun cancel() {
         collectJob?.cancelAndJoin()

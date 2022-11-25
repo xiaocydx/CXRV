@@ -50,7 +50,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
         onBindViewHolder(holder)
     }
 
-    protected open fun onBindViewHolder(holder: VH): Unit = Unit
+    protected open fun onBindViewHolder(holder: VH) = Unit
 
     /**
      * 返回唯一的ViewType值，例如[View.hashCode]

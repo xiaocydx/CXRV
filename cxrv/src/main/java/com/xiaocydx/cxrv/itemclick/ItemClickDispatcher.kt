@@ -82,17 +82,13 @@ internal class ItemClickDispatcher(
      * 找到可能触发点击或者长按的[DispatchTarget]，对其设置点击、长按监听，并添加到待处理集合中
      */
     override fun onInterceptTouchEvent(rv: RecyclerView, event: MotionEvent): Boolean {
-        if (event.actionMasked != ACTION_DOWN) {
-            return false
-        }
+        if (event.actionMasked != ACTION_DOWN) return false
         clearPendingClickTargets()
         clearPendingLongClickTargets()
 
         val itemView = rv.findChildViewUnder(event.x, event.y) ?: return false
         dispatchTargets?.accessEach action@{
-            if (!it.setCurrentTargetView(itemView, event)) {
-                return@action
-            }
+            if (!it.setCurrentTargetView(itemView, event)) return@action
             when {
                 it is ClickDispatchTarget && it.setOnClickListener(this) -> {
                     addPendingClickTarget(it)

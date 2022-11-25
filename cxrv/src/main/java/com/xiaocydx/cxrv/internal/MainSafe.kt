@@ -18,11 +18,7 @@ internal val isMainThread: Boolean
  * 若当前不为主线程，则将[action]post到主线程中执行
  */
 internal inline fun runOnMainThread(crossinline action: () -> Unit) {
-    if (!isMainThread) {
-        asyncHandler.post { action() }
-    } else {
-        action()
-    }
+    if (isMainThread) action() else asyncHandler.post { action() }
 }
 
 /**

@@ -85,7 +85,7 @@ private fun RecyclerView.initSpanSizeLookup() {
                     lp.isFullSpan = adapter.fullSpan(holder.bindingAdapterPosition, holder)
                 }
 
-                override fun onChildViewDetachedFromWindow(view: View): Unit = Unit
+                override fun onChildViewDetachedFromWindow(view: View) = Unit
             })
         }
         is GridLayoutManager -> if (lm.spanSizeLookup !is ConcatSpanSizeLookup) {

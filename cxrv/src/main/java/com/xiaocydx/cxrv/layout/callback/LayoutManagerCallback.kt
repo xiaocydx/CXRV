@@ -16,27 +16,27 @@ internal interface LayoutManagerCallback {
      *
      * 该函数应当在`super.onAttachedToWindow(view)`之前被调用。
      */
-    fun onAttachedToWindow(view: RecyclerView): Unit = Unit
+    fun onAttachedToWindow(view: RecyclerView) = Unit
 
     /**
      * 对应[LayoutManager.onDetachedFromWindow]
      *
      * 该函数在`super.onDetachedFromWindow(view, recycler)`之前被调用。
      */
-    fun onDetachedFromWindow(view: RecyclerView, recycler: Recycler): Unit = Unit
+    fun onDetachedFromWindow(view: RecyclerView, recycler: Recycler) = Unit
 
     /**
      * 对应[LayoutManager.onAdapterChanged]
      */
-    fun onAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?): Unit = Unit
+    fun onAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) = Unit
 
     /**
      * 对应[LayoutManager.onLayoutCompleted]
      */
-    fun onLayoutCompleted(layout: LayoutManager, state: State): Unit = Unit
+    fun onLayoutCompleted(layout: LayoutManager, state: State) = Unit
 
     /**
      * 从[CompositeLayoutManagerCallback]移除时，该函数会被调用
      */
-    fun onCleared(): Unit = Unit
+    fun onCleared() = Unit
 }

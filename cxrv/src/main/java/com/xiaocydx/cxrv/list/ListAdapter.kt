@@ -67,9 +67,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
      * **注意**：当[item]为新对象时，才能跟旧对象进行内容对比。
      */
     @MainThread
-    fun VH.setItem(item: ITEM) {
-        setItem(bindingAdapterPosition, item)
-    }
+    fun VH.setItem(item: ITEM) = setItem(bindingAdapterPosition, item)
 
     /**
      * 通过[VH]设置item，该函数必须在主线程调用
@@ -80,20 +78,18 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
      * ```
      */
     @MainThread
-    inline fun VH.setItem(newItem: ITEM.() -> ITEM) {
-        setItem(item.newItem())
-    }
+    inline fun VH.setItem(newItem: ITEM.() -> ITEM) = setItem(item.newItem())
 
     /**
      * 通过[VH]移除item，该函数必须在主线程调用
      */
     @MainThread
-    fun VH.removeItem() {
-        removeItemAt(bindingAdapterPosition)
-    }
+    fun VH.removeItem() = removeItemAt(bindingAdapterPosition)
 
     /**
      * 对应[DiffUtil.ItemCallback.areItemsTheSame]
+     *
+     * [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      */
     @AnyThread
     protected abstract fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean
@@ -101,7 +97,8 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     /**
      * 对应[DiffUtil.ItemCallback.areContentsTheSame]
      *
-     * 仅当[areItemsTheSame]返回true时才调用此函数。
+     * 1. [areItemsTheSame]返回true -> 调用[areContentsTheSame]。
+     * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      */
     @AnyThread
     protected open fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean = oldItem == newItem
@@ -109,7 +106,8 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
     /**
      * 对应[DiffUtil.ItemCallback.getChangePayload]
      *
-     * 仅当[areItemsTheSame]返回true、[areContentsTheSame]返回false时才调用此函数。
+     * 1. [areItemsTheSame]返回true -> [areContentsTheSame]返回false -> 调用[getChangePayload]。
+     * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      */
     @MainThread
     protected open fun getChangePayload(oldItem: ITEM, newItem: ITEM): Any? = null
@@ -128,11 +126,9 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>(
         onBindViewHolder(holder, item)
     }
 
-    protected open fun onBindViewHolder(holder: VH, item: ITEM): Unit = Unit
+    protected open fun onBindViewHolder(holder: VH, item: ITEM) = Unit
 
-    override fun getItemCount(): Int {
-        return differ.currentList.size
-    }
+    override fun getItemCount() = differ.currentList.size
 
     @MainThread
     final override fun updateList(op: UpdateOp<ITEM>) {

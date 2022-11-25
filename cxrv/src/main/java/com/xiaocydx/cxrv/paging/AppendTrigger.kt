@@ -172,7 +172,7 @@ internal class AppendTrigger(
             append()
         }
 
-        override fun onChildViewDetachedFromWindow(view: View): Unit = Unit
+        override fun onChildViewDetachedFromWindow(view: View) = Unit
 
         fun removeListener() {
             rv.removeOnChildAttachStateChangeListener(this)

@@ -43,24 +43,22 @@ abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> :
      *
      * 可以在该函数中完成初始化工作，例如设置点击监听。
      */
-    protected open fun VB.onCreateView(): Unit = Unit
+    protected open fun VB.onCreateView() = Unit
 
     /**
      * 对应Adapter.onBindViewHolder(holder, position, payloads)
      */
-    protected open fun VB.onBindView(item: ITEM, payloads: List<Any>) {
-        onBindView(item)
-    }
+    protected open fun VB.onBindView(item: ITEM, payloads: List<Any>) = onBindView(item)
 
     /**
      * 对应[Adapter.onBindViewHolder]
      */
-    protected open fun VB.onBindView(item: ITEM): Unit = Unit
+    protected open fun VB.onBindView(item: ITEM) = Unit
 
     /**
      * 对应[Adapter.onViewRecycled]
      */
-    protected open fun VB.onViewRecycled(): Unit = Unit
+    protected open fun VB.onViewRecycled() = Unit
 
     /**
      * 对应[Adapter.onFailedToRecycleView]
@@ -70,12 +68,12 @@ abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> :
     /**
      * 对应[Adapter.onViewAttachedToWindow]
      */
-    protected open fun VB.onViewAttachedToWindow(): Unit = Unit
+    protected open fun VB.onViewAttachedToWindow() = Unit
 
     /**
      * 对应[Adapter.onViewDetachedFromWindow]
      */
-    protected open fun VB.onViewDetachedFromWindow(): Unit = Unit
+    protected open fun VB.onViewDetachedFromWindow() = Unit
 
     final override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
         if (inflate == null) {

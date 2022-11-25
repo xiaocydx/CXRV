@@ -112,7 +112,7 @@ class DisposableWrapper : Disposable {
 private object EmptyDisposable : Disposable {
     override val isDisposed: Boolean = true
 
-    override fun dispose(): Unit = Unit
+    override fun dispose() = Unit
 
     override fun plus(other: Disposable): Disposable = other
 }

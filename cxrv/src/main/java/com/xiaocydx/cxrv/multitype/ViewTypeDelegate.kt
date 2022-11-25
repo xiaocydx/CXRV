@@ -79,9 +79,7 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      * **注意**：当[item]为新对象时，才能跟旧对象进行内容对比。
      */
     @MainThread
-    fun VH.setItem(item: ITEM) {
-        adapter.setItem(bindingAdapterPosition, item)
-    }
+    fun VH.setItem(item: ITEM) = adapter.setItem(bindingAdapterPosition, item)
 
     /**
      * 通过[VH]设置item，该函数必须在主线程调用
@@ -92,17 +90,13 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      * ```
      */
     @MainThread
-    inline fun VH.setItem(newItem: ITEM.() -> ITEM) {
-        setItem(item.newItem())
-    }
+    inline fun VH.setItem(newItem: ITEM.() -> ITEM) = setItem(item.newItem())
 
     /**
      * 通过[VH]移除item，该函数必须在主线程调用
      */
     @MainThread
-    fun VH.removeItem() {
-        adapter.removeItemAt(bindingAdapterPosition)
-    }
+    fun VH.removeItem() = adapter.removeItemAt(bindingAdapterPosition)
 
     @CallSuper
     @Suppress("UNCHECKED_CAST")
@@ -165,6 +159,8 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
 
     /**
      * 对应[DiffUtil.ItemCallback.areItemsTheSame]
+     *
+     * [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      */
     @AnyThread
     abstract fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean
@@ -172,7 +168,8 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
     /**
      * 对应[DiffUtil.ItemCallback.areContentsTheSame]
      *
-     * 仅当[areItemsTheSame]返回true时才调用此函数。
+     * 1. [areItemsTheSame]返回true -> 调用[areContentsTheSame]。
+     * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      */
     @AnyThread
     open fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean = oldItem == newItem
@@ -180,7 +177,8 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
     /**
      * 对应[DiffUtil.ItemCallback.getChangePayload]
      *
-     * 仅当[areItemsTheSame]返回true、[areContentsTheSame]返回false时才调用此函数。
+     * 1. [areItemsTheSame]返回true -> [areContentsTheSame]返回false -> 调用[getChangePayload]。
+     * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      */
     @MainThread
     open fun getChangePayload(oldItem: ITEM, newItem: ITEM): Any? = null
@@ -200,12 +198,12 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
     /**
      * 对应[Adapter.onBindViewHolder]
      */
-    open fun onBindViewHolder(holder: VH, item: ITEM): Unit = Unit
+    open fun onBindViewHolder(holder: VH, item: ITEM) = Unit
 
     /**
      * 对应[Adapter.onViewRecycled]
      */
-    open fun onViewRecycled(holder: VH): Unit = Unit
+    open fun onViewRecycled(holder: VH) = Unit
 
     /**
      * 对应[Adapter.onFailedToRecycleView]
@@ -215,20 +213,20 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
     /**
      * 对应[Adapter.onViewAttachedToWindow]
      */
-    open fun onViewAttachedToWindow(holder: VH): Unit = Unit
+    open fun onViewAttachedToWindow(holder: VH) = Unit
 
     /**
      * 对应[Adapter.onViewDetachedFromWindow]
      */
-    open fun onViewDetachedFromWindow(holder: VH): Unit = Unit
+    open fun onViewDetachedFromWindow(holder: VH) = Unit
 
     /**
      * 对应[Adapter.onAttachedToRecyclerView]
      */
-    open fun onAttachedToRecyclerView(recyclerView: RecyclerView): Unit = Unit
+    open fun onAttachedToRecyclerView(recyclerView: RecyclerView) = Unit
 
     /**
      * 对应[Adapter.onDetachedFromRecyclerView]
      */
-    open fun onDetachedFromRecyclerView(recyclerView: RecyclerView): Unit = Unit
+    open fun onDetachedFromRecyclerView(recyclerView: RecyclerView) = Unit
 }

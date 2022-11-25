@@ -94,14 +94,14 @@ abstract class ItemTouchCallback {
     /**
      * 对应[Callback.onSwiped]，当[onIntercept]返回`true`时才被调用
      */
-    open fun onSwipe(holder: ViewHolder, direction: Int): Unit = Unit
+    open fun onSwipe(holder: ViewHolder, direction: Int) = Unit
 
     /**
      * 选中回调
      *
      * 对应[Callback.onSelectedChanged]，可以看作是触摸开始，当[onIntercept]返回`true`时才被调用。
      */
-    open fun onSelected(holder: ViewHolder): Unit = Unit
+    open fun onSelected(holder: ViewHolder) = Unit
 
     /**
      * 绘制回调，在itemView之下绘制内容
@@ -111,7 +111,7 @@ abstract class ItemTouchCallback {
     open fun onDraw(
         canvas: Canvas, holder: ViewHolder,
         dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
-    ): Unit = Unit
+    ) = Unit
 
     /**
      * 绘制回调，在itemView之上绘制内容
@@ -121,14 +121,14 @@ abstract class ItemTouchCallback {
     open fun onDrawOver(
         canvas: Canvas, holder: ViewHolder,
         dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
-    ): Unit = Unit
+    ) = Unit
 
     /**
      * 恢复在[onSelected]、[onDraw]、[onDrawOver]修改的视图状态
      *
      * 对应[Callback.clearView]，可以看作是触摸结束，当[onIntercept]返回`true`时才被调用。
      */
-    open fun clearView(holder: ViewHolder): Unit = Unit
+    open fun clearView(holder: ViewHolder) = Unit
 
     internal fun attach(
         touchHelper: ItemTouchHelper,

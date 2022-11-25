@@ -29,7 +29,7 @@ internal sealed class DispatchTarget(
         return targetView != null
     }
 
-    override fun onViewAttachedToWindow(v: View?): Unit = Unit
+    override fun onViewAttachedToWindow(v: View?) = Unit
 
     /**
      * 当[currentTargetView]从Window上分离时，清除监听，

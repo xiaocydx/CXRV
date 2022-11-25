@@ -379,6 +379,6 @@ class CoroutineListDiffer<T : Any>(
         private val execute =
                 CoroutineListDiffer<Any>::execute as Function4<Any, UpdateOp<Any>, Boolean, Continuation<Unit>, Any?>
         override val context: CoroutineContext = EmptyCoroutineContext
-        override fun resumeWith(result: Result<Any?>): Unit = Unit
+        override fun resumeWith(result: Result<Any?>) = Unit
     }
 }
