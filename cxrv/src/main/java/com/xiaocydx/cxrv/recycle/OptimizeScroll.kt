@@ -44,9 +44,8 @@ private class GetScrapOrCachedViewForTypeExtension(
             checkPreLayout = true
             hasPreLayout = recycler.isScrapInPreLayout()
         }
-        val holder = if (!hasPreLayout) recycler.getScrapOrCachedViewForType(type) else null
-        holder?.ensureCallTryBindViewHolderByDeadline()
-        return holder?.itemView ?: original?.getViewForPositionAndType(recycler, position, type)
+        if (!hasPreLayout && recycler.recycleScrapOrCachedViewForType(type)) return null
+        return original?.getViewForPositionAndType(recycler, position, type)
     }
 
     /**
@@ -68,47 +67,42 @@ private class GetScrapOrCachedViewForTypeExtension(
     }
 
     /**
-     * 实现逻辑参考自[Recycler.getScrapOrHiddenOrCachedHolderForPosition]
+     * 判断逻辑参考自[Recycler.getScrapOrHiddenOrCachedHolderForPosition]
      */
-    private fun Recycler.getScrapOrCachedViewForType(type: Int): ViewHolder? {
+    private fun Recycler.recycleScrapOrCachedViewForType(type: Int): Boolean {
         val attachedScrap = mAttachedScrap ?: emptyList<ViewHolder>()
         for (index in attachedScrap.indices) {
             val holder = attachedScrap[index]
-            if (holder.checkLayoutParams()
-                    && !holder.wasReturnedFromScrap()
+            if (!holder.wasReturnedFromScrap()
                     && holder.itemViewType == type
                     && !holder.isInvalid && !holder.isRemoved) {
-                holder.addFlags(ViewHolder.FLAG_RETURNED_FROM_SCRAP)
-                return holder
+                recycleViewHolderToRecycledViewPool(holder)
+                return true
             }
         }
 
         val cachedViews = mCachedViews ?: emptyList<ViewHolder>()
         for (index in cachedViews.indices) {
             val holder = cachedViews[index]
-            if (holder.checkLayoutParams()
-                    && !holder.isInvalid
+            if (!holder.isInvalid
                     && holder.itemViewType == type
                     && !holder.isAttachedToTransitionOverlay) {
-                mCachedViews?.removeAt(index)
-                return holder
+                recycleViewHolderToRecycledViewPool(holder)
+                return true
             }
         }
-        return null
+        return false
     }
 
-    /**
-     * 确保有[LayoutParams]，避免后续流程抛出异常
-     */
-    private fun ViewHolder.checkLayoutParams(): Boolean {
-        return itemView.layoutParams is LayoutParams
-    }
-
-    /**
-     * 确保后续流程调用[Recycler.tryBindViewHolderByDeadline]
-     */
-    private fun ViewHolder.ensureCallTryBindViewHolderByDeadline() {
-        if (!isBound || needsUpdate() || isInvalid) return
-        addFlags(ViewHolder.FLAG_UPDATE)
+    private fun Recycler.recycleViewHolderToRecycledViewPool(holder: ViewHolder) {
+        if (!holder.isInvalid) {
+            // 对holder添加FLAG_INVALID，将无法回收进离屏缓存，
+            // 确保holder在下面第3步只回收进RecycledViewPool。
+            holder.addFlags(ViewHolder.FLAG_INVALID)
+        }
+        // 1. 清除FLAG_TMP_DETACHED
+        // 2. 从mAttachedScrap中移除
+        // 3. 回收进RecycledViewPool
+        recycleView(holder.itemView)
     }
 }
