@@ -87,6 +87,7 @@ private class GetScrapOrCachedViewForTypeExtension(
             if (!holder.isInvalid
                     && holder.itemViewType == type
                     && !holder.isAttachedToTransitionOverlay) {
+                mCachedViews?.removeAt(index)
                 recycleViewHolderToRecycledViewPool(holder)
                 return true
             }
