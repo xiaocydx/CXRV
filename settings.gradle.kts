@@ -10,8 +10,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://jitpack.io")
     }
 }
 rootProject.name = "CXRV"
-include ':app'
-include ':cxrv'
+include(":app")
+include(":cxrv")
