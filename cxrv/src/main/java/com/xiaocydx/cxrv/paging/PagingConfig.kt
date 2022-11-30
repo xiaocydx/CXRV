@@ -31,7 +31,17 @@ data class PagingConfig(
      * 自动重试的含义是不需要点击重试，时机是再次满足[APPEND]加载的条件，
      * 例如滑动列表，若最后一个item再次可视，则自动重试。
      */
-    val appendFailureAutToRetry: Boolean = true
+    val appendFailureAutToRetry: Boolean = true,
+
+    /**
+     * [APPEND]加载的预取策略
+     *
+     * 1. [PagingPrefetch.None]，不需要预取分页数据。
+     * 2. [PagingPrefetch.Default]，依靠RecyclerView的预取机制预取分页数据。
+     * 3. [PagingPrefetch.ItemCount]，在[PagingPrefetch.Default]的基础上，
+     * 提前`value`个item预取分页数据。
+     */
+    val appendPrefetch: PagingPrefetch = PagingPrefetch.Default
 ) {
 
     companion object {

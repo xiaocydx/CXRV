@@ -13,6 +13,11 @@ interface PagingMediator {
     val loadStates: LoadStates
 
     /**
+     * 末尾加载的预取策略
+     */
+    val appendPrefetch: PagingPrefetch
+
+    /**
      * 刷新加载，获取新的[PagingData]
      */
     fun refresh()
