@@ -123,6 +123,7 @@ class PagingCollector<T : Any> internal constructor(
 ) : FlowCollector<PagingData<T>> {
     private var version = 0
     private var mediator: PagingMediator? = null
+    private var appendTrigger: AppendTrigger? = null
     private var loadStatesListeners: ArrayList<LoadStatesListener>? = null
     private var handleEventListeners: ArrayList<HandleEventListener<in T>>? = null
     var loadStates: LoadStates = LoadStates.Incomplete
@@ -130,7 +131,6 @@ class PagingCollector<T : Any> internal constructor(
 
     init {
         assertMainThread()
-        AppendTrigger(adapter, this).attach()
         addHandleEventListener(RefreshStartScrollToFirst())
         adapter.addListExecuteListener { op ->
             mediator?.asListMediator<T>()?.updateList(op)
@@ -230,8 +230,28 @@ class PagingCollector<T : Any> internal constructor(
         if (mediator !== value.mediator) {
             version = 0
             mediator = value.mediator
+            setAppendTrigger(value.mediator)
         }
         value.flow.collect(::handleEvent)
+    }
+
+    @MainThread
+    private fun setAppendTrigger(mediator: PagingMediator) {
+        val prefetch = mediator.appendPrefetch
+        val trigger = appendTrigger
+        if (trigger != null
+                && trigger.prefetchEnabled == prefetch.enabled
+                && trigger.prefetchItemCount == prefetch.itemCount) {
+            return
+        }
+        appendTrigger?.detach()
+        appendTrigger = AppendTrigger(
+            prefetchEnabled = prefetch.enabled,
+            prefetchItemCount = prefetch.itemCount,
+            adapter = adapter,
+            collector = this
+        )
+        appendTrigger?.attach()
     }
 
     @MainThread
