@@ -3,7 +3,6 @@ package com.xiaocydx.cxrv.paging
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
 import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.awaitNextLayout
 import com.xiaocydx.cxrv.internal.reverseAccessEach
@@ -256,9 +255,7 @@ class PagingCollector<T : Any> internal constructor(
 
     @MainThread
     private suspend fun handleEvent(event: PagingEvent<T>) {
-        val rv = requireNotNull(adapter.recyclerView) {
-            "ListAdapter已从RecyclerView上分离"
-        }
+        val rv = requireNotNull(adapter.recyclerView) { "ListAdapter已从RecyclerView上分离" }
         handleEventListeners?.reverseAccessEach { it.handleEvent(rv, event) }
 
         val op: UpdateOp<T>? = when (event) {
@@ -277,18 +274,17 @@ class PagingCollector<T : Any> internal constructor(
             version = newVersion
         }
 
-        if (loadStates == event.loadStates) {
-            return
-        }
-
-        if (rv.isComputingLayout || rv.scrollState != SCROLL_STATE_IDLE) {
-            // 此时可能是onBindViewHolder()或者滚动过程触发了末尾加载，
-            // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成。
-            // 若此时将加载状态同步分发给listener，则listener可能会调用notifyXXX()函数，
-            // 导致RecyclerView内部抛出异常，因此在下一个异步消息中分发加载状态。
-            yield()
-        }
-
+        if (loadStates == event.loadStates) return
+        // 执行onBindViewHolder()或者滚动过程中可能触发末尾加载，
+        // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成。
+        // 若此时将加载状态同步分发给listener，则listener可能会调用notifyXXX()函数，
+        // 导致RecyclerView内部逻辑判断为异常情况，异常情况的判断条件为以下几点：
+        // 1. rv.isComputingLayout == true
+        // 2. rv.mDispatchScrollCounter > 0
+        // 3. rv.scrollState != SCROLL_STATE_IDLE
+        // 第2点的rv.mDispatchScrollCounter需要反射访问，
+        // 为了避免不必要的开销，统一在下一个异步消息中分发加载状态。
+        yield()
         setLoadStates(event.loadStates)
     }
 
