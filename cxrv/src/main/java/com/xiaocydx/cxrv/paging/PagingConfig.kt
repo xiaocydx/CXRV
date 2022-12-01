@@ -37,9 +37,10 @@ data class PagingConfig(
      * [APPEND]加载的预取策略
      *
      * 1. [PagingPrefetch.None]，不需要预取分页数据。
-     * 2. [PagingPrefetch.Default]，依靠RecyclerView的预取机制预取分页数据。
+     * 2. [PagingPrefetch.Default]，依靠RecyclerView的预取机制预取分页数据，
+     * 对RecyclerView禁用预取机制（默认启用），该策略会无效。
      * 3. [PagingPrefetch.ItemCount]，在[PagingPrefetch.Default]的基础上，
-     * 提前`value`个item预取分页数据。
+     * 提前`value`个item预取分页数据，对RecyclerView禁用预取机制（默认启用），该策略仍有效。
      */
     val appendPrefetch: PagingPrefetch = PagingPrefetch.Default
 ) {

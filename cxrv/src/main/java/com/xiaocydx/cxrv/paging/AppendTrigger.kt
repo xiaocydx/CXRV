@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.isPreLayout
 import com.xiaocydx.cxrv.internal.PreDrawListener
 import com.xiaocydx.cxrv.internal.hasDisplayItem
+import com.xiaocydx.cxrv.internal.log
 import com.xiaocydx.cxrv.list.*
 
 /**
@@ -110,10 +111,14 @@ internal class AppendTrigger(
      * 该函数的计算逻辑基于`layoutPosition`而不是`bindingAdapterPosition`，因此会存在一定偏差，
      * 例如最后一个item可能是loadFooter或者[adapter]的最后一个item，不过对于替补方案而言已经足够。
      */
-    private fun appendIfTargetItemVisible() {
+    private fun appendIfTargetItemVisible(from: String) {
         // 当append.isFailure = true时，由AppendRetryListener处理
         if (!loadStates.isAllowAppend || loadStates.append.isFailure) return
-        if (!adapter.hasDisplayItem) return append()
+        if (!adapter.hasDisplayItem) {
+            log { "$from trigger append, displayItem = 0" }
+            append()
+            return
+        }
 
         val rv = rv
         val lm = rv?.layoutManager
@@ -129,9 +134,14 @@ internal class AppendTrigger(
         if (minPosition > maxPosition) {
             minPosition = maxPosition.also { maxPosition = minPosition }
         }
-        if (startPosition in minPosition..maxPosition
-                || endPosition in minPosition..maxPosition) {
-            // (startPosition..endPosition)和(minPosition..maxPosition)相交
+
+        val layoutPosition = when {
+            startPosition in minPosition..maxPosition -> startPosition
+            endPosition in minPosition..maxPosition -> endPosition
+            else -> -1
+        }
+        if (layoutPosition != -1) {
+            log { "$from trigger append, layoutPosition = $layoutPosition" }
             append()
         }
     }
@@ -154,6 +164,7 @@ internal class AppendTrigger(
             val lm = rv.layoutManager ?: return
             val holder = rv.getChildViewHolder(view) ?: return
             if (holder.layoutPosition != lm.itemCount - 1) return
+            log { "AppendRetryListener trigger append, layoutPosition = ${holder.layoutPosition}" }
             append()
         }
 
@@ -187,6 +198,7 @@ internal class AppendTrigger(
                 scrollListener?.isEnabled = true
                 return
             }
+            log { "AppendBindListener trigger append, bindingAdapterPosition = $position" }
             append()
         }
 
@@ -206,7 +218,7 @@ internal class AppendTrigger(
         }
 
         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-            if (isEnabled) appendIfTargetItemVisible()
+            if (isEnabled) appendIfTargetItemVisible(from = "AppendScrollListener")
         }
 
         fun removeListener() {
@@ -221,7 +233,7 @@ internal class AppendTrigger(
         var isEnabled = false
 
         override fun onPreDraw(): Boolean {
-            if (isEnabled) appendIfTargetItemVisible()
+            if (isEnabled) appendIfTargetItemVisible(from = "AppendPreDrawListener")
             return super.onPreDraw()
         }
 
