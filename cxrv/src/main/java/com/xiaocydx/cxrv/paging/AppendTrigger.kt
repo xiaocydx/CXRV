@@ -192,14 +192,14 @@ internal class AppendTrigger(
             if (position !in startPosition..endPosition) return
 
             if (rv?.isPreLayout == true) {
-                // 此时处于预测性布局流程，额外调用了onBindViewHolder()，
+                // 此时处于预测布局，填充子View时调用了onBindViewHolder()，
                 // 例如列表全选功能，调用notifyItemRangeChanged()做全选更新，
                 // 这种情况不启用滚动绑定触发方案，而是启用滚动监听触发方案。
-                scrollListener?.isEnabled = true
-                return
+                preAppend()
+            } else {
+                log { "AppendBindListener trigger append, bindingAdapterPosition = $position" }
+                append()
             }
-            log { "AppendBindListener trigger append, bindingAdapterPosition = $position" }
-            append()
         }
 
         fun removeListener() {
