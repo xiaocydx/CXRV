@@ -268,10 +268,10 @@ class PagingCollector<T : Any> internal constructor(
         val listMediator = mediator?.asListMediator<T>()
         val newVersion = event.getVersionOrZero()
 
-        var updateStartTime = 0L
+        var latestFrameVsyncMs = -1L
         // 若mediator的类型是ListMediator，则version < newVersion时才更新列表
         if (op != null && (listMediator == null || version < newVersion)) {
-            updateStartTime = SystemClock.uptimeMillis()
+            latestFrameVsyncMs = rv.drawingTime.coerceAtLeast(0L)
             adapter.awaitUpdateList(op, dispatch = false)
             // 更新列表完成后才保存版本号
             version = newVersion
@@ -287,14 +287,14 @@ class PagingCollector<T : Any> internal constructor(
         // 3. rv.scrollState != SCROLL_STATE_IDLE
 
         // 第2点的rv.mDispatchScrollCounter需要反射访问，为了避免不必要的开销，统一做以下处理：
-        if (updateStartTime <= 0L) {
+        if (latestFrameVsyncMs == -1L) {
             // 快路径，在下一个异步消息中分发加载状态
             yield()
         } else {
-            // 假设下一帧布局流程在Animation回调下执行，添加负延迟的Animation回调进行插队，
+            // 假设下一帧布局流程在Animation回调下执行，添加负延时的Animation回调进行插队，
             // 确保下一帧执行布局流程之前，先分发加载状态，让listener完成状态的处理逻辑。
             // 异步消息无法确保这种插队行为，因为异步消息可能被doFrame消息按vsync时间插队。
-            val beforeNextRvLayoutDelay = updateStartTime - SystemClock.uptimeMillis()
+            val beforeNextRvLayoutDelay = -(SystemClock.uptimeMillis() - latestFrameVsyncMs)
             Choreographer.getInstance().awaitFrame(beforeNextRvLayoutDelay)
         }
 
