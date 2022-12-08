@@ -7,7 +7,6 @@ import com.xiaocydx.cxrv.layout.LayoutManagerExtensions
  * @date 2022/11/22
  */
 class TestLayoutManagerExtensions : LayoutManagerExtensions<TestLayoutManager> {
-    override val layoutClass: Class<out TestLayoutManager> = TestLayoutManager::class.java
 
     override fun findFirstVisibleItemPosition(layout: TestLayoutManager): Int {
         return layout.findFirstVisibleItemPosition()

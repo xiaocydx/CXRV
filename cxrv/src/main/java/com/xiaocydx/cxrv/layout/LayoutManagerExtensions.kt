@@ -7,6 +7,7 @@ import com.xiaocydx.cxrv.itemvisible.findFirstCompletelyVisibleItemPosition
 import com.xiaocydx.cxrv.itemvisible.findFirstVisibleItemPosition
 import com.xiaocydx.cxrv.itemvisible.findLastCompletelyVisibleItemPosition
 import com.xiaocydx.cxrv.itemvisible.findLastVisibleItemPosition
+import java.lang.reflect.ParameterizedType
 
 /**
  * [LayoutManager]扩展接口
@@ -23,6 +24,16 @@ interface LayoutManagerExtensions<T : LayoutManager> {
      * 需要匹配的[LayoutManager]类型
      */
     val layoutClass: Class<out T>
+        get() {
+            val type = javaClass.genericInterfaces.firstOrNull {
+                if (it !is ParameterizedType) return@firstOrNull false
+                it.rawType === LayoutManagerExtensions::class.java
+            }
+            @Suppress("UNCHECKED_CAST")
+            val layoutClass = (type as? ParameterizedType)
+                ?.actualTypeArguments?.get(0) as? Class<T>
+            return requireNotNull(layoutClass) { "获取类型失败，请实现layoutClass属性" }
+        }
 
     /**
      * 对应[RecyclerView.findFirstVisibleItemPosition]

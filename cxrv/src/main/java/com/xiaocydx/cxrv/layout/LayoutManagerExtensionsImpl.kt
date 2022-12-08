@@ -5,18 +5,13 @@ import com.xiaocydx.cxrv.internal.accessEach
 import com.xiaocydx.cxrv.internal.toArrayList
 import java.util.*
 
-private val extensions: ArrayList<LayoutManagerExtensions<*>> = ServiceLoader.load(
+private val extensions: ArrayList<ExtensionsHolder> = ServiceLoader.load(
     LayoutManagerExtensions::class.java,
     LayoutManagerExtensions::class.java.classLoader
-).iterator().asSequence().toArrayList()
+).iterator().asSequence().map(::ExtensionsHolder).toArrayList()
 
 internal fun LayoutManager.extensionsImpl(): LayoutManagerExtensions<LayoutManager>? {
-    val clazz = javaClass
-    extensions.accessEach { extensions ->
-        if (!extensions.layoutClass.isAssignableFrom(clazz)) return@accessEach
-        @Suppress("UNCHECKED_CAST")
-        return extensions as LayoutManagerExtensions<LayoutManager>
-    }
+    extensions.accessEach { extensions -> extensions.get(javaClass)?.let { return it } }
     return null
 }
 
@@ -41,3 +36,13 @@ internal inline fun <R : Number> LayoutManager.runExtensionsPrimitive(
 }
 
 internal class LayoutManagerExtensionsException(cause: Throwable) : RuntimeException(cause)
+
+private class ExtensionsHolder(private val extensions: LayoutManagerExtensions<*>) {
+    private val layoutClass = runCatching { extensions.layoutClass }.getOrNull()
+
+    fun get(clazz: Class<out LayoutManager>): LayoutManagerExtensions<LayoutManager>? {
+        if (layoutClass == null || !layoutClass.isAssignableFrom(clazz)) return null
+        @Suppress("UNCHECKED_CAST")
+        return extensions as LayoutManagerExtensions<LayoutManager>
+    }
+}
