@@ -44,17 +44,23 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     }
 
     override fun requestSimpleAnimationsInNextLayout() {
-        if (invalidateOnNextLayout) return
-        // 兼容StaggeredGridLayoutManager强制执行简单动画的场景，
-        // 例如滚动过程或者滚动状态更改为IDLE需要重新对齐的场景。
-        invalidateOnNextLayout = layout is StaggeredGridLayoutManager
+        if (!isEnabled || invalidateOnNextLayout || layout !is StaggeredGridLayoutManager) return
+        // 兼容调用StaggeredGridLayoutManager.onLayoutChildren(recycler, state, false)的场景
+        markItemDecorInsetsDirty()
         super.requestSimpleAnimationsInNextLayout()
     }
 
-    private fun checkPreLayout(state: State) {
+    private fun checkRunAnimations(state: State) {
         if (invalidateOnNextLayout) return
-        // 兼容局部更新执行预测动画的场景
-        invalidateOnNextLayout = state.isPreLayout
+        if (layout is StaggeredGridLayoutManager) {
+            // 兼容StaggeredGridLayoutManager强制执行简单动画的场景，
+            // 例如滚动过程或者滚动状态更改为IDLE需要重新对齐的场景。
+            invalidateOnNextLayout = state.willRunSimpleAnimations()
+        }
+        if (!invalidateOnNextLayout) {
+            // 兼容局部更新执行预测动画的场景
+            invalidateOnNextLayout = state.willRunPredictiveAnimations()
+        }
     }
 
     private fun checkRecalculateAnchor(state: State) {
@@ -66,7 +72,7 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     }
 
     override fun onLayoutChildren(recycler: Recycler, state: State) {
-        checkPreLayout(state)
+        checkRunAnimations(state)
         checkRecalculateAnchor(state)
         if (!isEnabled) invalidateOnNextLayout = false
         if (invalidateOnNextLayout) {
