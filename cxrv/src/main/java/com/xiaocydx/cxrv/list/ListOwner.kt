@@ -8,7 +8,7 @@ import androidx.annotation.MainThread
  * @author xcc
  * @date 2021/9/11
  */
-interface ListOwner<out T : Any> {
+interface ListOwner<T : Any> {
     /**
      * 当前列表
      *
@@ -129,7 +129,7 @@ fun <T : Any> ListOwner<T>.addItems(position: Int, items: List<T>) {
  * @param itemCount 小于1不会抛出异常，仅作为无效操作。
  */
 @MainThread
-fun <T : Any> ListOwner<T>.removeItems(position: Int, itemCount: Int) {
+fun ListOwner<*>.removeItems(position: Int, itemCount: Int) {
     updateList(UpdateOp.RemoveItems(position, itemCount))
 }
 
