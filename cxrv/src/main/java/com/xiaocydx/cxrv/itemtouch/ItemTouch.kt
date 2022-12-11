@@ -4,10 +4,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.list.doOnAttach
-import com.xiaocydx.cxrv.list.removeItemAt
-import com.xiaocydx.cxrv.list.swapItem
+import com.xiaocydx.cxrv.list.*
 
 /**
  * 设置item触摸回调
@@ -16,17 +13,15 @@ import com.xiaocydx.cxrv.list.swapItem
  * 仅用于简化一般业务场景的模板代码，若对item触摸效果有更精细的要求，
  * 则自行创建[ItemTouchHelper]，完成[ItemTouchHelper.Callback]的配置。
  */
-fun <T : RecyclerView> T.addItemTouchCallback(callback: ItemTouchCallback): T {
+fun RecyclerView.addItemTouchCallback(callback: ItemTouchCallback) {
     itemTouchDispatcher.addItemTouchCallback(callback)
-    return this
 }
 
 /**
  * 移除item触摸回调
  */
-fun <T : RecyclerView> T.removeItemTouchCallback(callback: ItemTouchCallback): T {
+fun RecyclerView.removeItemTouchCallback(callback: ItemTouchCallback) {
     itemTouchDispatcher.removeItemTouchCallback(callback)
-    return this
 }
 
 /**
@@ -53,13 +48,13 @@ fun <T : RecyclerView> T.removeItemTouchCallback(callback: ItemTouchCallback): T
  * }
  * ```
  */
-inline fun <AdapterT, VH, RV> RV.itemTouch(
+inline fun <AdapterT : Adapter<out VH>, VH : ViewHolder> RecyclerView.itemTouch(
     adapter: AdapterT,
     block: ItemTouchScope<AdapterT, VH>.() -> Unit
-): RV
-    where AdapterT : Adapter<out VH>, VH : ViewHolder, RV : RecyclerView {
-    return addItemTouchCallback(ItemTouchScope(adapter, this).apply(block))
-}
+): Disposable = ItemTouchDisposable().attach(
+    rv = this,
+    callback = ItemTouchScope(adapter, this).apply(block)
+)
 
 /**
  * item触摸，详细的属性及函数描述[ItemTouchScope]
@@ -81,12 +76,12 @@ inline fun <AdapterT, VH, RV> RV.itemTouch(
  * }
  * ```
  */
-inline fun <AdapterT, ITEM, VH> AdapterT.itemTouch(
+inline fun <AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder> AdapterT.itemTouch(
     crossinline block: ItemTouchScope<AdapterT, VH>.() -> Unit
-): AdapterT
-    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
-    doOnAttach { rv -> rv.itemTouch(this, block) }
-    return this
+): Disposable = DisposableWrapper().also { wrapper ->
+    doOnAttach { rv ->
+        rv.itemTouch(this, block).also(wrapper::attach)
+    }.also(wrapper::attachIfEmpty)
 }
 
 /**
@@ -120,4 +115,28 @@ fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onDragSwapItem()
 fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onSwipeRemoveItem()
     where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     onSwipe { position, _ -> removeItemAt(position) }
+}
+
+@PublishedApi
+internal class ItemTouchDisposable : Disposable {
+    private var dispatcher: ItemTouchDispatcher? = null
+    private var callback: ItemTouchCallback? = null
+    override val isDisposed: Boolean
+        get() = dispatcher == null && callback == null
+
+    fun attach(
+        rv: RecyclerView,
+        callback: ItemTouchCallback
+    ): Disposable {
+        this.dispatcher = rv.itemTouchDispatcher
+        this.callback = callback
+        rv.itemTouchDispatcher.addItemTouchCallback(callback)
+        return this
+    }
+
+    override fun dispose() {
+        dispatcher?.removeItemTouchCallback(callback!!)
+        dispatcher = null
+        callback = null
+    }
 }

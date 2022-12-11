@@ -55,17 +55,13 @@ internal class ItemTouchDispatcher(
     }
 
     override fun onSelectedChanged(holder: ViewHolder?, actionState: Int) {
-        super.onSelectedChanged(holder, actionState)
-        if (holder != null) {
-            intercepting?.onSelected(holder)
-        }
+        if (holder != null) intercepting?.onSelected(holder)
     }
 
     override fun onChildDraw(
         canvas: Canvas, rv: RecyclerView, holder: ViewHolder,
         dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
     ) {
-        super.onChildDraw(canvas, rv, holder, dX, dY, actionState, isCurrentlyActive)
         intercepting?.onDraw(canvas, holder, dX, dY, actionState, isCurrentlyActive)
     }
 
@@ -73,12 +69,10 @@ internal class ItemTouchDispatcher(
         canvas: Canvas, rv: RecyclerView, holder: ViewHolder,
         dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
     ) {
-        super.onChildDrawOver(canvas, rv, holder, dX, dY, actionState, isCurrentlyActive)
         intercepting?.onDrawOver(canvas, holder, dX, dY, actionState, isCurrentlyActive)
     }
 
     override fun clearView(rv: RecyclerView, holder: ViewHolder) {
-        super.clearView(rv, holder)
         intercepting?.clearView(holder)
     }
 
@@ -99,7 +93,7 @@ internal class ItemTouchDispatcher(
 
     fun removeItemTouchCallback(callback: ItemTouchCallback) {
         callbacks?.remove(callback)
-        if (this.intercepting == callback) {
+        if (this.intercepting === callback) {
             this.intercepting = null
         }
     }

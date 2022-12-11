@@ -148,17 +148,13 @@ class ItemTouchScope<AdapterT : Adapter<out VH>, VH : ViewHolder>
 
     @SinceKotlin(RV_HIDE_MARKER)
     override fun getDragFlags(holder: ViewHolder): Int {
-        if (onMove == null) {
-            return disallowFlags
-        }
+        if (onMove == null) return disallowFlags
         return dragFlags?.invoke(adapter, holder as VH) ?: defaultFlags
     }
 
     @SinceKotlin(RV_HIDE_MARKER)
     override fun getSwipeFlags(holder: ViewHolder): Int {
-        if (onSwiped == null) {
-            return disallowFlags
-        }
+        if (onSwiped == null) return disallowFlags
         return swipeFlags?.invoke(adapter, holder as VH) ?: defaultFlags
     }
 
@@ -176,6 +172,7 @@ class ItemTouchScope<AdapterT : Adapter<out VH>, VH : ViewHolder>
 
     @SinceKotlin(RV_HIDE_MARKER)
     override fun onSelected(holder: ViewHolder) {
+        super.onSelected(holder)
         onSelected?.invoke(adapter, holder as VH)
     }
 
@@ -184,6 +181,7 @@ class ItemTouchScope<AdapterT : Adapter<out VH>, VH : ViewHolder>
         canvas: Canvas, holder: ViewHolder,
         dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
     ) {
+        super.onDraw(canvas, holder, dX, dY, actionState, isCurrentlyActive)
         onDraw?.invoke(adapter, canvas, holder as VH, dX, dY, actionState, isCurrentlyActive)
     }
 
@@ -192,11 +190,13 @@ class ItemTouchScope<AdapterT : Adapter<out VH>, VH : ViewHolder>
         canvas: Canvas, holder: ViewHolder,
         dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
     ) {
+        super.onDrawOver(canvas, holder, dX, dY, actionState, isCurrentlyActive)
         onDrawOver?.invoke(adapter, canvas, holder as VH, dX, dY, actionState, isCurrentlyActive)
     }
 
     @SinceKotlin(RV_HIDE_MARKER)
     override fun clearView(holder: ViewHolder) {
+        super.clearView(holder)
         clearView?.invoke(adapter, holder as VH)
     }
 
