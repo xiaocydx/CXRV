@@ -2,6 +2,7 @@ package com.xiaocydx.cxrv.paging
 
 import androidx.annotation.MainThread
 import com.xiaocydx.cxrv.internal.flowOnMain
+import com.xiaocydx.cxrv.internal.log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.channels.SendChannel
@@ -60,6 +61,13 @@ internal class PagingFetcher<K : Any, T : Any>(
 
     @MainThread
     private suspend fun SendChannel<PagingEvent<T>>.doLoad(loadType: LoadType) {
+        log {
+            when(loadType) {
+                LoadType.REFRESH -> "PagingFetcher refresh load"
+                LoadType.APPEND -> "PagingFetcher append load"
+            }
+        }
+
         setLoadState(loadType, LoadState.Loading)
         send(PagingEvent.LoadStateUpdate(loadType, loadStates))
 

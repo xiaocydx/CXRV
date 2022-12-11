@@ -76,7 +76,7 @@ class Pager<K : Any, T : Any>(
                 fetcher = PagingFetcher(initKey, config, source)
                 emit(PagingData(
                     flow = fetcher!!.flow,
-                    mediator = PagingMediatorImpl(fetcher!!, refreshEvent)
+                    mediator = PagingMediatorImpl(config, fetcher!!, refreshEvent)
                 ))
             }
     }.conflate().flowOnMain()
@@ -86,11 +86,15 @@ class Pager<K : Any, T : Any>(
     }
 
     private class PagingMediatorImpl<K : Any, T : Any>(
+        private val config: PagingConfig,
         private val fetcher: PagingFetcher<K, T>,
         private val refreshEvent: ConflatedEvent<Unit>
     ) : PagingMediator {
         override val loadStates: LoadStates
             get() = fetcher.loadStates
+
+        override val appendPrefetch: PagingPrefetch
+            get() = config.appendPrefetch
 
         override fun refresh() {
             refreshEvent.send(Unit)

@@ -1,12 +1,11 @@
 package com.xiaocydx.cxrv.paging
 
+import android.os.SystemClock
+import android.view.Choreographer
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
-import com.xiaocydx.cxrv.internal.assertMainThread
-import com.xiaocydx.cxrv.internal.awaitNextLayout
-import com.xiaocydx.cxrv.internal.reverseAccessEach
+import com.xiaocydx.cxrv.internal.*
 import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.UpdateOp
@@ -123,6 +122,7 @@ class PagingCollector<T : Any> internal constructor(
 ) : FlowCollector<PagingData<T>> {
     private var version = 0
     private var mediator: PagingMediator? = null
+    private var appendTrigger: AppendTrigger? = null
     private var loadStatesListeners: ArrayList<LoadStatesListener>? = null
     private var handleEventListeners: ArrayList<HandleEventListener<in T>>? = null
     var loadStates: LoadStates = LoadStates.Incomplete
@@ -130,7 +130,6 @@ class PagingCollector<T : Any> internal constructor(
 
     init {
         assertMainThread()
-        AppendTrigger(adapter, this).attach()
         addHandleEventListener(RefreshStartScrollToFirst())
         adapter.addListExecuteListener { op ->
             mediator?.asListMediator<T>()?.updateList(op)
@@ -195,8 +194,9 @@ class PagingCollector<T : Any> internal constructor(
     /**
      * 添加加载状态集合已更改的监听
      *
-     * * [LoadStatesListener.onLoadStatesChanged]中可以调用[removeLoadStatesListener]。
-     * * [LoadStatesListener.onLoadStatesChanged]在列表更改后才会被触发。
+     * 1. [LoadStatesListener.onLoadStatesChanged]在列表更改后才会被触发。
+     * 2. [LoadStatesListener.onLoadStatesChanged]在下一帧执行布局流程前被触发。
+     * 3. [LoadStatesListener.onLoadStatesChanged]中可以调用[removeLoadStatesListener]。
      */
     @MainThread
     fun addLoadStatesListener(listener: LoadStatesListener) {
@@ -221,8 +221,8 @@ class PagingCollector<T : Any> internal constructor(
     /**
      * 处理[PagingData]
      *
-     * * 确保在主线程中设置[mediator]和收集[PagingData.flow]。
-     * * 恢复流程先执行恢复任务，再重新收集[PagingData.flow]。
+     * 1. 确保在主线程中设置[mediator]和收集[PagingData.flow]。
+     * 2. 恢复流程先执行恢复任务，再重新收集[PagingData.flow]。
      */
     override suspend fun emit(
         value: PagingData<T>
@@ -230,15 +230,33 @@ class PagingCollector<T : Any> internal constructor(
         if (mediator !== value.mediator) {
             version = 0
             mediator = value.mediator
+            setAppendTrigger(value.mediator)
         }
         value.flow.collect(::handleEvent)
     }
 
     @MainThread
-    private suspend fun handleEvent(event: PagingEvent<T>) {
-        val rv = requireNotNull(adapter.recyclerView) {
-            "ListAdapter已从RecyclerView上分离"
+    private fun setAppendTrigger(mediator: PagingMediator) {
+        val prefetch = mediator.appendPrefetch
+        val trigger = appendTrigger
+        if (trigger != null
+                && trigger.prefetchEnabled == prefetch.enabled
+                && trigger.prefetchItemCount == prefetch.itemCount) {
+            return
         }
+        appendTrigger?.detach()
+        appendTrigger = AppendTrigger(
+            prefetchEnabled = prefetch.enabled,
+            prefetchItemCount = prefetch.itemCount,
+            adapter = adapter,
+            collector = this
+        )
+        appendTrigger?.attach()
+    }
+
+    @MainThread
+    private suspend fun handleEvent(event: PagingEvent<T>) {
+        val rv = requireNotNull(adapter.recyclerView) { "ListAdapter已从RecyclerView上分离" }
         handleEventListeners?.reverseAccessEach { it.handleEvent(rv, event) }
 
         val op: UpdateOp<T>? = when (event) {
@@ -250,26 +268,37 @@ class PagingCollector<T : Any> internal constructor(
         val listMediator = mediator?.asListMediator<T>()
         val newVersion = event.getVersionOrZero()
 
+        var latestFrameVsyncMs = -1L
         // 若mediator的类型是ListMediator，则version < newVersion时才更新列表
         if (op != null && (listMediator == null || version < newVersion)) {
+            latestFrameVsyncMs = rv.drawingTime.coerceAtLeast(0L)
             adapter.awaitUpdateList(op, dispatch = false)
             // 更新列表完成后才保存版本号
             version = newVersion
         }
 
-        if (loadStates == event.loadStates) {
-            return
-        }
+        if (loadStates == event.loadStates) return
+        // 执行onBindViewHolder()或者滚动过程中可能触发末尾加载，
+        // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成。
+        // 若此时将加载状态同步分发给listener，则会因为listener调用notifyXXX()函数，
+        // 导致RecyclerView内部逻辑判断为异常情况，异常情况的判断条件为以下几点：
+        // 1. rv.isComputingLayout == true
+        // 2. rv.mDispatchScrollCounter > 0
+        // 3. rv.scrollState != SCROLL_STATE_IDLE
 
-        if (rv.isComputingLayout || rv.scrollState != SCROLL_STATE_IDLE) {
-            // 此时可能是onBindViewHolder()或者滚动过程触发了末尾加载，
-            // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成。
-            // 若此时将加载状态同步分发给listener，则listener可能会调用notifyXXX()函数，
-            // 导致RecyclerView内部抛出异常，因此在下一个异步消息中分发加载状态。
+        // 第2点的rv.mDispatchScrollCounter需要反射访问，为了避免不必要的开销，统一做以下处理：
+        if (latestFrameVsyncMs == -1L) {
+            // 快路径，在下一个异步消息中分发加载状态
             yield()
+        } else {
+            // 假设下一帧布局流程在Animation回调下执行，添加负延时的Animation回调进行插队，
+            // 确保下一帧执行布局流程之前，先分发加载状态，让listener完成状态的处理逻辑。
+            // 异步消息无法确保这种插队行为，因为异步消息可能被doFrame消息按vsync时间插队。
+            val beforeNextRvLayoutDelay = -(SystemClock.uptimeMillis() - latestFrameVsyncMs)
+            Choreographer.getInstance().awaitFrame(beforeNextRvLayoutDelay)
         }
 
-        setLoadStates(event.loadStates)
+        trace(TRACE_DISPATCH_LOAD_STATES_TAG) { setLoadStates(event.loadStates) }
     }
 
     @MainThread
@@ -293,17 +322,12 @@ class PagingCollector<T : Any> internal constructor(
     @MainThread
     @VisibleForTesting
     internal fun setLoadState(loadType: LoadType, newState: LoadState) {
-        if (getLoadState(loadType) == newState) return
+        if (loadStates.getState(loadType) == newState) return
         val previous = loadStates
         loadStates = loadStates.modifyState(loadType, newState)
         loadStatesListeners?.reverseAccessEach {
             it.onLoadStatesChanged(previous, loadStates)
         }
-    }
-
-    @MainThread
-    private fun getLoadState(loadType: LoadType): LoadState {
-        return loadStates.getState(loadType)
     }
 
     private class RefreshStartScrollToFirst : HandleEventListener<Any> {
@@ -319,5 +343,9 @@ class PagingCollector<T : Any> internal constructor(
             // 等待下一帧rv布局完成，确保滚动不受影响
             rv.awaitNextLayout()
         }
+    }
+
+    private companion object {
+        const val TRACE_DISPATCH_LOAD_STATES_TAG = "PagingCollector Dispatch LoadStates"
     }
 }
