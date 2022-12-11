@@ -31,6 +31,20 @@ internal interface LayoutManagerCallback {
     fun onAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) = Unit
 
     /**
+     * 对应[LayoutManager.onLayoutChildren]
+     *
+     * 该函数在`super.onLayoutChildren(recycler, state)`之前被调用。
+     */
+    fun onLayoutChildren(recycler: Recycler, state: State) = Unit
+
+    /**
+     * 对应[LayoutManager.requestSimpleAnimationsInNextLayout]
+     *
+     * 该函数在`super.requestSimpleAnimationsInNextLayout()`之前被调用。
+     */
+    fun requestSimpleAnimationsInNextLayout() = Unit
+
+    /**
      * 对应[LayoutManager.onLayoutCompleted]
      */
     fun onLayoutCompleted(layout: LayoutManager, state: State) = Unit

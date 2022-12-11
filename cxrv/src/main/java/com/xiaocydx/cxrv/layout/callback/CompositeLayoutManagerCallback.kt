@@ -35,6 +35,14 @@ internal class CompositeLayoutManagerCallback(initialCapacity: Int) : LayoutMana
         callbacks.accessEach { it.onAdapterChanged(layout, oldAdapter, newAdapter) }
     }
 
+    override fun onLayoutChildren(recycler: Recycler, state: State) {
+        callbacks.accessEach { it.onLayoutChildren(recycler, state) }
+    }
+
+    override fun requestSimpleAnimationsInNextLayout() {
+        callbacks.accessEach { it.requestSimpleAnimationsInNextLayout() }
+    }
+
     override fun onLayoutCompleted(layout: LayoutManager, state: State) {
         callbacks.accessEach { it.onLayoutCompleted(layout, state) }
     }

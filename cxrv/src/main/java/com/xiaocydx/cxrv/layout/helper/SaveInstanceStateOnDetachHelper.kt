@@ -34,5 +34,6 @@ internal class SaveInstanceStateOnDetachHelper : LayoutManagerCallback {
         // 这是一种取巧的做法，对LayoutManager实现类的mPendingSavedState赋值，
         // 确保Fragment销毁时能保存状态，Fragment重建时恢复RecyclerView的滚动位置。
         pendingSavedState?.let { lm?.onRestoreInstanceState(it) }
+        super.onDetachedFromWindow(view, recycler)
     }
 }

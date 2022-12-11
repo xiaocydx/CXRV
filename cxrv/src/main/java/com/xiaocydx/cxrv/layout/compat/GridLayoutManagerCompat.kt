@@ -114,6 +114,18 @@ open class GridLayoutManagerCompat : GridLayoutManager {
     }
 
     @CallSuper
+    override fun onLayoutChildren(recycler: Recycler, state: State) {
+        dispatcher.onLayoutChildren(recycler, state)
+        super.onLayoutChildren(recycler, state)
+    }
+
+    @CallSuper
+    override fun requestSimpleAnimationsInNextLayout() {
+        dispatcher.requestSimpleAnimationsInNextLayout()
+        super.requestSimpleAnimationsInNextLayout()
+    }
+
+    @CallSuper
     override fun onLayoutCompleted(state: State) {
         dispatcher.onLayoutCompleted(layout = this, state)
         super.onLayoutCompleted(state)
