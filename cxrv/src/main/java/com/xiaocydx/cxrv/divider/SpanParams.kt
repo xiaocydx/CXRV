@@ -54,24 +54,14 @@ internal class SpanParams {
             else -> NOT_SUPPORT
         }
 
-    private fun RecyclerView.getSpanSize(
-        child: View
-    ): Int = when (val lm: RecyclerView.LayoutManager? = layoutManager) {
-        is GridLayoutManager -> {
-            lm.spanSizeLookup.getSpanSize(getChildAdapterPosition(child))
-        }
+    private fun RecyclerView.getSpanSize(child: View): Int = when (layoutManager) {
+        is GridLayoutManager -> (child.layoutParams as GridLayoutManager.LayoutParams).spanSize
         else -> 1
     }
 
-    private fun RecyclerView.getSpanIndex(
-        child: View
-    ): Int = when (val lm: RecyclerView.LayoutManager? = layoutManager) {
-        is GridLayoutManager -> {
-            lm.spanSizeLookup.getSpanIndex(getChildAdapterPosition(child), lm.spanCount)
-        }
-        is StaggeredGridLayoutManager -> {
-            (child.layoutParams as StaggeredGridLayoutManager.LayoutParams).spanIndex
-        }
+    private fun RecyclerView.getSpanIndex(child: View): Int = when (layoutManager) {
+        is GridLayoutManager -> (child.layoutParams as GridLayoutManager.LayoutParams).spanIndex
+        is StaggeredGridLayoutManager -> (child.layoutParams as StaggeredGridLayoutManager.LayoutParams).spanIndex
         else -> NOT_SUPPORT
     }
 
@@ -81,9 +71,7 @@ internal class SpanParams {
     private fun RecyclerView.getSpanGroupIndex(
         globalPosition: Int
     ): Int = when (val lm: RecyclerView.LayoutManager? = layoutManager) {
-        is GridLayoutManager -> {
-            lm.spanSizeLookup.getSpanGroupIndex(globalPosition, lm.spanCount)
-        }
+        is GridLayoutManager -> lm.spanSizeLookup.getSpanGroupIndex(globalPosition, lm.spanCount)
         else -> NOT_SUPPORT
     }
 
