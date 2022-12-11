@@ -33,37 +33,11 @@ private class GetScrapOrCachedViewForTypeExtension(
     private val recyclerView: RecyclerView,
     private val original: ViewCacheExtension?
 ) : ViewCacheExtension() {
-    /**
-     * 若存在preLayout，则不做处理，避免影响更新流程
-     */
-    private var hasPreLayout = false
-    private var checkPreLayout = false
 
     override fun getViewForPositionAndType(recycler: Recycler, position: Int, type: Int): View? {
-        if (!checkPreLayout) {
-            checkPreLayout = true
-            hasPreLayout = recycler.isScrapInPreLayout()
-        }
-        if (!hasPreLayout && recycler.recycleScrapOrCachedViewForType(type)) return null
+        val runAnimations = recyclerView.mState.willRunSimpleAnimations()
+        if (!runAnimations && recycler.recycleScrapOrCachedViewForType(type)) return null
         return original?.getViewForPositionAndType(recycler, position, type)
-    }
-
-    /**
-     * scrap是否有存在于preLayout的[ViewHolder]
-     */
-    private fun Recycler.isScrapInPreLayout(): Boolean {
-        val changedScrap = mChangedScrap ?: emptyList<ViewHolder>()
-        for (index in changedScrap.indices) {
-            val holder = changedScrap[index]
-            if (recyclerView.mViewInfoStore.isInPreLayout(holder)) return true
-        }
-
-        val attachedScrap = mAttachedScrap ?: emptyList<ViewHolder>()
-        for (index in attachedScrap.indices) {
-            val holder = attachedScrap[index]
-            if (recyclerView.mViewInfoStore.isInPreLayout(holder)) return true
-        }
-        return false
     }
 
     /**
