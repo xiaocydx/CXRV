@@ -238,19 +238,16 @@ class PagingCollector<T : Any> internal constructor(
     @MainThread
     private fun setAppendTrigger(mediator: PagingMediator) {
         val prefetch = mediator.appendPrefetch
-        val trigger = appendTrigger
-        if (trigger != null
-                && trigger.prefetchEnabled == prefetch.enabled
-                && trigger.prefetchItemCount == prefetch.itemCount) {
+        val previousTrigger = appendTrigger
+        val prefetchEnabled = prefetch !is PagingPrefetch.None
+        val prefetchItemCount = (prefetch as? PagingPrefetch.ItemCount)?.value ?: 0
+        if (previousTrigger != null
+                && previousTrigger.prefetchEnabled == prefetchEnabled
+                && previousTrigger.prefetchItemCount == prefetchItemCount) {
             return
         }
         appendTrigger?.detach()
-        appendTrigger = AppendTrigger(
-            prefetchEnabled = prefetch.enabled,
-            prefetchItemCount = prefetch.itemCount,
-            adapter = adapter,
-            collector = this
-        )
+        appendTrigger = AppendTrigger(prefetchEnabled, prefetchItemCount, adapter, this)
         appendTrigger?.attach()
     }
 

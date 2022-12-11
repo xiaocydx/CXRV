@@ -28,9 +28,3 @@ sealed class PagingPrefetch {
      */
     class ItemCount(@IntRange(from = 1) val value: Int) : PagingPrefetch()
 }
-
-internal val PagingPrefetch.enabled: Boolean
-    get() = this !is PagingPrefetch.None
-
-internal val PagingPrefetch.itemCount: Int
-    get() = (this as? PagingPrefetch.ItemCount)?.value ?: 0
