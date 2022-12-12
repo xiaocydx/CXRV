@@ -16,7 +16,7 @@ import com.xiaocydx.sample.viewLifecycle
  * @author xcc
  * @date 2022/2/17
  */
-class StaggeredLayoutFragment : PagingFragment() {
+class StaggeredGridLayoutFragment : PagingFragment() {
 
     override fun initView() {
         rvPaging

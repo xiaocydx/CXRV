@@ -63,7 +63,7 @@ class PagingActivity : AppCompatActivity() {
         when (action) {
             LINEAR_LAYOUT -> initLinearLayout()
             GIRD_LAYOUT -> initGridLayout()
-            STAGGERED_LAYOUT -> initStaggeredLayout()
+            STAGGERED_GRID_LAYOUT -> initStaggeredGridLayout()
             else -> sharedViewModel.submitMenuAction(action)
         }
         binding.root.closeDrawer(binding.rvMenu)
@@ -87,8 +87,8 @@ class PagingActivity : AppCompatActivity() {
         replaceFragment(GridLayoutFragment())
     }
 
-    private fun initStaggeredLayout() {
-        replaceFragment(StaggeredLayoutFragment())
+    private fun initStaggeredGridLayout() {
+        replaceFragment(StaggeredGridLayoutFragment())
     }
 
     private fun replaceFragment(fragment: Fragment) {

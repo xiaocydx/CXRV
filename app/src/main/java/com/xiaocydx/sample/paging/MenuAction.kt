@@ -7,7 +7,7 @@ package com.xiaocydx.sample.paging
 enum class MenuAction(val text: String) {
     LINEAR_LAYOUT("LinearLayout"),
     GIRD_LAYOUT("GridLayout"),
-    STAGGERED_LAYOUT("StaggeredLayout"),
+    STAGGERED_GRID_LAYOUT("StaggeredGridLayout"),
     INCREASE_SPAN_COUNT("增加SpanCount"),
     DECREASE_SPAN_COUNT("减少SpanCount"),
     REVERSE_LAYOUT("反转Layout"),
