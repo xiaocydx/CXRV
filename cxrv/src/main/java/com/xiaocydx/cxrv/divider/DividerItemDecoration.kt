@@ -13,9 +13,10 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.Px
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.ItemDecoration
-import androidx.recyclerview.widget.RecyclerView.State
+import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.R
+import com.xiaocydx.cxrv.layout.compat.LayoutManagerCompat
+import java.lang.ref.WeakReference
 import kotlin.math.max
 
 /**
@@ -28,6 +29,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
     private var outRect: Rect = emptyRect
     private val divider: Drawable? = config.drawable
     private var state: State = emptyState
+    private var layoutRef: WeakReference<LayoutManager>? = null
     private val isSpacing = when (divider) {
         null -> true
         !is ColorDrawable -> false
@@ -47,6 +49,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
     @Px internal val height = config.height
 
     override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: State) {
+        warn(parent.layoutManager)
         resetThen(state, outRect) {
             DividerStrategy.get(parent).getItemOffsets(view, parent, this)
         }
@@ -57,6 +60,16 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         resetThen(state) {
             DividerStrategy.get(parent).onDraw(canvas, parent, this)
         }
+    }
+
+    private fun warn(layout: LayoutManager?) {
+        if (layout == null) {
+            layoutRef = null
+            return
+        }
+        if (layoutRef?.get() === layout) return
+        layoutRef = WeakReference(layout)
+        LayoutManagerCompat.warn(layout) { "确保DividerItemDecoration的绘制结果正常" }
     }
 
     private inline fun resetThen(
