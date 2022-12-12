@@ -19,7 +19,7 @@ import com.xiaocydx.cxrv.layout.compat.ItemHasFixedSize
  * @author xcc
  * @date 2022/8/11
  */
-open class LinearLayoutManagerCompat : LinearLayoutManager {
+open class LinearLayoutManagerCompat : LinearLayoutManager, LayoutManagerCompat {
     private val scrollHelper = ScrollToFirstOnUpdateHelper()
     private val saveStateHelper = SaveInstanceStateOnDetachHelper()
     private val invalidateHelper = InvalidateItemDecorationsOnUpdateHelper()

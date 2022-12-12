@@ -12,10 +12,11 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.Px
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LayoutManagerCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.warn
 import com.xiaocydx.cxrv.R
-import com.xiaocydx.cxrv.layout.compat.LayoutManagerCompat
 import java.lang.ref.WeakReference
 import kotlin.math.max
 

@@ -14,7 +14,7 @@ import com.xiaocydx.cxrv.layout.callback.CompositeLayoutManagerCallback
  * @author xcc
  * @date 2022/8/11
  */
-open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager {
+open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager, LayoutManagerCompat {
     private val scrollHelper = ScrollToFirstOnUpdateHelper()
     private val saveStateHelper = SaveInstanceStateOnDetachHelper()
     private val invalidateHelper = InvalidateItemDecorationsOnUpdateHelper()

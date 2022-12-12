@@ -19,7 +19,7 @@ import com.xiaocydx.cxrv.layout.compat.ItemHasFixedSize
  * @author xcc
  * @date 2022/8/12
  */
-open class GridLayoutManagerCompat : GridLayoutManager {
+open class GridLayoutManagerCompat : GridLayoutManager, LayoutManagerCompat {
     private val scrollHelper = ScrollToFirstOnUpdateHelper()
     private val saveStateHelper = SaveInstanceStateOnDetachHelper()
     private val invalidateHelper = InvalidateItemDecorationsOnUpdateHelper()
