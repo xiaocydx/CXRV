@@ -1,6 +1,7 @@
 package com.xiaocydx.sample.paging
 
 import androidx.lifecycle.ViewModel
+import com.xiaocydx.sample.foo.FooListViewModel
 import com.xiaocydx.sample.viewpager2.shared.RetainedViewModels
 import com.xiaocydx.sample.viewpager2.shared.getOrPut
 import kotlinx.coroutines.channels.BufferOverflow

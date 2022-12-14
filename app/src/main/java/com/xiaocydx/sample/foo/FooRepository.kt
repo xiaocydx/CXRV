@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.paging
+package com.xiaocydx.sample.foo
 
 import com.xiaocydx.cxrv.paging.*
 import kotlinx.coroutines.delay

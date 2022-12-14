@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.paging
+package com.xiaocydx.sample.foo
 
 import android.view.View
 import android.view.ViewGroup
@@ -12,7 +12,7 @@ import com.xiaocydx.sample.R
  * @author xcc
  * @date 2022/2/17
  */
-class FooAdapter : ListAdapter<Foo, FooAdapter.ViewHolder>() {
+class FooListAdapter : ListAdapter<Foo, FooListAdapter.ViewHolder>() {
 
     override fun areItemsTheSame(oldItem: Foo, newItem: Foo): Boolean {
         return oldItem.id == newItem.id
@@ -32,10 +32,14 @@ class FooAdapter : ListAdapter<Foo, FooAdapter.ViewHolder>() {
     }
 
     override fun getItemViewType(position: Int): Int {
-        return getItem(position).type.ordinal
+        return toViewType(getItem(position).type)
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvFoo: TextView = itemView.findViewById(R.id.tvFoo)
+    }
+
+    companion object {
+        fun toViewType(type: FooType) = type.ordinal
     }
 }

@@ -1,4 +1,4 @@
-package com.xiaocydx.sample
+package com.xiaocydx.sample.extension
 
 import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate

@@ -10,7 +10,7 @@ import com.bumptech.glide.request.target.Target
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.sample.*
-import com.xiaocydx.sample.paging.Foo
+import com.xiaocydx.sample.foo.Foo
 import com.xiaocydx.sample.viewpager2.animatable.intoIsolate
 
 /**

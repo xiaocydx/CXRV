@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.paging
+package com.xiaocydx.sample.foo
 
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel

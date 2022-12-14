@@ -15,9 +15,16 @@ import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
-import com.xiaocydx.sample.*
 import com.xiaocydx.sample.databinding.ItemTextType1Binding
 import com.xiaocydx.sample.databinding.ItemTextType2Binding
+import com.xiaocydx.sample.extension.TextItem
+import com.xiaocydx.sample.extension.getTextType1Delegate
+import com.xiaocydx.sample.extension.getTextType2Delegate
+import com.xiaocydx.sample.extension.initMultiTypeTextItems
+import com.xiaocydx.sample.matchParent
+import com.xiaocydx.sample.overScrollNever
+import com.xiaocydx.sample.showToast
+import com.xiaocydx.sample.withLayoutParams
 
 /**
  * ItemClick示例代码

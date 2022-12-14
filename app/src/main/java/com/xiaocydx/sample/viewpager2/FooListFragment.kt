@@ -25,8 +25,8 @@ import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.*
-import com.xiaocydx.sample.paging.Foo
-import com.xiaocydx.sample.paging.FooListViewModel
+import com.xiaocydx.sample.foo.Foo
+import com.xiaocydx.sample.foo.FooListViewModel
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.viewpager2.animatable.controlledByParentViewPager2

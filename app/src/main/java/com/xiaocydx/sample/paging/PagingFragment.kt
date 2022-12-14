@@ -17,6 +17,8 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.xiaocydx.cxrv.list.*
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.*
+import com.xiaocydx.sample.foo.FooListAdapter
+import com.xiaocydx.sample.foo.FooListViewModel
 import com.xiaocydx.sample.paging.MenuAction.*
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -27,7 +29,7 @@ import kotlinx.coroutines.flow.onEach
  */
 abstract class PagingFragment : Fragment() {
     private val sharedViewModel: PagingSharedViewModel by activityViewModels()
-    protected val fooAdapter = FooAdapter()
+    protected val fooAdapter = FooListAdapter()
     protected lateinit var fooViewModel: FooListViewModel
         private set
     protected lateinit var rvPaging: RecyclerView

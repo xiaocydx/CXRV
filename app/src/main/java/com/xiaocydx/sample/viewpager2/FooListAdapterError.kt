@@ -9,7 +9,7 @@ import com.bumptech.glide.RequestManager
 import com.bumptech.glide.request.target.Target
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.sample.*
-import com.xiaocydx.sample.paging.Foo
+import com.xiaocydx.sample.foo.Foo
 
 /**
  * 讲述`sharedRecycledViewPool`场景的一些注意事项：
