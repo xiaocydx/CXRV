@@ -8,67 +8,73 @@ import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.SimpleViewHolder
-import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 
 /**
  * 添加[header]
  *
- * * 添加[header]之前，若未对RecyclerView设置Adapter，则抛出[IllegalArgumentException]异常。
- * * 若在初始化RecyclerView时不添加[header]，而是之后根据情况动态添加[header]，
+ * 1. 添加[header]之前，若未对RecyclerView设置Adapter，则抛出[IllegalArgumentException]异常。
+ * 2. 若在初始化RecyclerView时不添加[header]，而是之后根据情况动态添加[header]，
  * 则可以将Adapter设置为[HeaderFooterConcatAdapter]，之后动态添加[header]的性能更高。
  * ```
  * val contentAdapter: RecyclerView.Adapter<*> = ...
  * recyclerView.adapter = HeaderFooterConcatAdapter(contentAdapter)
  * ```
+ *
+ * @return 返回[header]转换后的[ViewAdapter]。
  */
-fun <T : RecyclerView> T.addHeader(header: View): T {
+fun RecyclerView.addHeader(header: View): ViewAdapter<*> {
     val adapter: Adapter<*> = requireNotNull(adapter) {
         "请先对RecyclerView设置Adapter，然后再添加Header。"
     }
+    val headerAdapter: ViewAdapter<*>
     if (adapter is ConcatAdapter) {
         adapter.adapters.firstOrNull {
             it.containView(header)
-        }?.let { return this }
-        adapter.addAdapter(0, header.toAdapter())
-        if (isFirstItemCompletelyVisible) {
-            scrollToPosition(0)
-        }
+        }?.let { return it as ViewAdapter<*> }
+        headerAdapter = header.toAdapter()
+        adapter.addAdapter(0, headerAdapter)
     } else {
+        headerAdapter = header.toAdapter()
         swapAdapter(
-            HeaderFooterConcatAdapter(adapter, header = header.toAdapter()),
-            true
+            HeaderFooterConcatAdapter(adapter, header = headerAdapter),
+            /* removeAndRecycleExistingViews */true
         )
     }
-    return this
+    return headerAdapter
 }
 
 /**
  * 添加[footer]
  *
- * * 添加[footer]之前，若未对RecyclerView设置Adapter，则抛出[IllegalArgumentException]异常。
- * * 若在初始化RecyclerView时不添加[footer]，而是之后根据情况动态添加[footer]，
+ * 1. 添加[footer]之前，若未对RecyclerView设置Adapter，则抛出[IllegalArgumentException]异常。
+ * 2. 若在初始化RecyclerView时不添加[footer]，而是之后根据情况动态添加[footer]，
  * 则可以将Adapter设置为[HeaderFooterConcatAdapter]，之后动态添加[footer]的性能更高。
  * ```
  * val contentAdapter: RecyclerView.Adapter<*> = ...
  * recyclerView.adapter = HeaderFooterConcatAdapter(contentAdapter)
  * ```
+ *
+ * @return 返回[footer]转换后的[ViewAdapter]。
  */
-fun <T : RecyclerView> T.addFooter(footer: View): T {
+fun <T : RecyclerView> T.addFooter(footer: View): ViewAdapter<*> {
     val adapter: Adapter<*> = requireNotNull(adapter) {
         "请先对RecyclerView设置Adapter，然后再添加Footer。"
     }
+    val footerAdapter: ViewAdapter<*>
     if (adapter is ConcatAdapter) {
         adapter.adapters.lastOrNull {
             it.containView(footer)
-        }?.let { return this }
-        adapter.addAdapter(footer.toAdapter())
+        }?.let { return it as ViewAdapter<*> }
+        footerAdapter = footer.toAdapter()
+        adapter.addAdapter(footerAdapter)
     } else {
+        footerAdapter = footer.toAdapter()
         swapAdapter(
-            HeaderFooterConcatAdapter(adapter, footer = footer.toAdapter()),
-            true
+            HeaderFooterConcatAdapter(adapter, footer = footerAdapter),
+            /* removeAndRecycleExistingViews */true
         )
     }
-    return this
+    return footerAdapter
 }
 
 /**
@@ -166,9 +172,7 @@ private fun Adapter<*>.containView(view: View): Boolean {
 }
 
 @VisibleForTesting
-internal class SimpleViewAdapter(
-    val view: View
-) : ViewAdapter<ViewHolder>(currentAsItem = true) {
+internal class SimpleViewAdapter(val view: View) : ViewAdapter<ViewHolder>(currentAsItem = true) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return SimpleViewHolder(view)
