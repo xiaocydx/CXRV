@@ -33,6 +33,12 @@
             android:name=".multitype.MultiTypeActivity"
             android:exported="false" />
         <activity
+            android:name=".payload.PayloadActivity"
+            android:exported="false" />
+        <activity
+            android:name=".concat.HeaderFooterActivity"
+            android:exported="false" />
+        <activity
             android:name=".paging.PagingActivity"
             android:exported="false" />
         <activity
@@ -43,9 +49,6 @@
             android:exported="false" />
         <activity
             android:name=".nested.NestedListActivity"
-            android:exported="false" />
-        <activity
-            android:name=".payload.PayloadActivity"
             android:exported="false" />
     </application>
 </manifest>
