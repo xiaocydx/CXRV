@@ -6,7 +6,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.internal.reverseAccessEach
-import com.xiaocydx.cxrv.internal.swap
 import com.xiaocydx.cxrv.internal.toUnmodifiableList
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -134,7 +133,7 @@ class CoroutineListDiffer<T : Any>(
             is UpdateOp.AddItem -> addItem(op.position, op.item)
             is UpdateOp.AddItems -> addItems(op.position, op.items)
             is UpdateOp.RemoveItems -> removeItems(op.position, op.itemCount)
-            is UpdateOp.SwapItem -> swapItem(op.fromPosition, op.toPosition)
+            is UpdateOp.MoveItem -> moveItem(op.fromPosition, op.toPosition)
         }
         changedListeners?.reverseAccessEach { it.onListChanged(currentList) }
     }
@@ -277,12 +276,13 @@ class CoroutineListDiffer<T : Any>(
     }
 
     @MainThread
-    private fun swapItem(fromPosition: Int, toPosition: Int): Boolean {
+    private fun moveItem(fromPosition: Int, toPosition: Int): Boolean {
         if (fromPosition !in sourceList.indices
                 || toPosition !in sourceList.indices) {
             return false
         }
-        sourceList.swap(fromPosition, toPosition)
+        val item = sourceList.removeAt(fromPosition)
+        sourceList.add(toPosition, item)
         updateCallback.onMoved(fromPosition, toPosition)
         return true
     }

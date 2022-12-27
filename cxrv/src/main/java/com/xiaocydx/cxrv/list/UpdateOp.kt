@@ -19,5 +19,5 @@ sealed class UpdateOp<in T : Any> {
 
     internal data class RemoveItems<T : Any>(val position: Int, val itemCount: Int) : UpdateOp<T>()
 
-    internal data class SwapItem<T : Any>(val fromPosition: Int, val toPosition: Int) : UpdateOp<T>()
+    internal data class MoveItem<T : Any>(val fromPosition: Int, val toPosition: Int) : UpdateOp<T>()
 }

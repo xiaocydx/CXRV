@@ -68,7 +68,7 @@ class ListState<T : Any> : ListOwner<T> {
             is UpdateOp.AddItem -> addItem(op.position, op.item)
             is UpdateOp.AddItems -> addItems(op.position, op.items)
             is UpdateOp.RemoveItems -> removeItems(op.position, op.itemCount)
-            is UpdateOp.SwapItem -> swapItem(op.fromPosition, op.toPosition)
+            is UpdateOp.MoveItem -> moveItem(op.fromPosition, op.toPosition)
         }
         if (!succeed) return
         version++
@@ -153,12 +153,13 @@ class ListState<T : Any> : ListOwner<T> {
     }
 
     @MainThread
-    private fun swapItem(fromPosition: Int, toPosition: Int): Boolean {
+    private fun moveItem(fromPosition: Int, toPosition: Int): Boolean {
         if (fromPosition !in sourceList.indices
                 || toPosition !in sourceList.indices) {
             return false
         }
-        sourceList.swap(fromPosition, toPosition)
+        val item = sourceList.removeAt(fromPosition)
+        sourceList.add(toPosition, item)
         return true
     }
 }

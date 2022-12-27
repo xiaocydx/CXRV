@@ -40,7 +40,7 @@ open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager, Layout
 
     /**
      * 是否启用兼容（默认启用）：
-     * 往列表首位插入或交换item时，若当前首位完全可见，则滚动到更新后的首位。
+     * 往列表首位插入或移动item时，若当前首位完全可见，则滚动到更新后的首位。
      */
     var isScrollToFirstOnUpdate: Boolean
         get() = scrollHelper.isEnabled

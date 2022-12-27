@@ -7,7 +7,7 @@ import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.layout.callback.LayoutManagerCallback
 
 /**
- * 往列表首位插入或交换item时，若当前首位完全可见，则滚动到更新后的首位
+ * 往列表首位插入或移动item时，若当前首位完全可见，则滚动到更新后的首位
  *
  * @author xcc
  * @date 2022/8/12

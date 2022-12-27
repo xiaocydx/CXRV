@@ -30,9 +30,9 @@ fun RecyclerView.removeItemTouchCallback(callback: ItemTouchCallback) {
  * ```
  * val adapter: ListAdapter<*, *> = ...
  * recyclerView.itemTouch(adapter) {
- *     // 拖动时交换item
+ *     // 拖动时移动item
  *     onDrag { from, to ->
- *         swapItem(from, to)
+ *         moveItem(from, to)
  *         true
  *     }
  *     // 拖动开始时放大itemView
@@ -61,8 +61,8 @@ inline fun <AdapterT : Adapter<out VH>, VH : ViewHolder> RecyclerView.itemTouch(
  *
  * ```
  * adapter.itemTouch {
- *     // 拖动时交换item
- *     onDragSwapItem()
+ *     // 拖动时移动item
+ *     onDragMoveItem()
  *     // 拖动开始时放大itemView
  *     onSelected { holder ->
  *         holder.itemView.scaleX = 1.1f
@@ -85,19 +85,19 @@ inline fun <AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolde
 }
 
 /**
- * 拖动时交换item
+ * 拖动时移动item
  *
  * ```
  * val adapter: ListAdapter<*, *> = ...
  * recyclerView.itemTouch(adapter) {
- *     onDragSwapItem()
+ *     onDragMoveItem()
  * }
  * ```
  */
-fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onDragSwapItem()
+fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onDragMoveItem()
     where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     onDrag { from, to ->
-        swapItem(from, to)
+        moveItem(from, to)
         true
     }
 }
@@ -115,6 +115,25 @@ fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onDragSwapItem()
 fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onSwipeRemoveItem()
     where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
     onSwipe { position, _ -> removeItemAt(position) }
+}
+
+/**
+ * 拖动时交换item
+ *
+ * ```
+ * val adapter: ListAdapter<*, *> = ...
+ * recyclerView.itemTouch(adapter) {
+ *     onDragSwapItem()
+ * }
+ * ```
+ */
+@Deprecated(
+    message = "早期理解错误，以为局部更新的move等同于swap",
+    replaceWith = ReplaceWith("onDragMoveItem()")
+)
+fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onDragSwapItem()
+    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
+    onDragMoveItem()
 }
 
 @PublishedApi

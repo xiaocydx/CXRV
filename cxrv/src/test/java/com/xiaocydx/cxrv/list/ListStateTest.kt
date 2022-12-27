@@ -75,11 +75,11 @@ class ListStateTest {
     }
 
     @Test
-    fun execute_UpdateOp_SwapItem() {
-        val initList = listOf("A", "B")
+    fun execute_UpdateOp_MoveItem() {
+        val initList = listOf("A", "B", "C")
         listState.updateList(UpdateOp.SubmitList(initList))
-        listState.updateList(UpdateOp.SwapItem(0, 1))
-        assertThat(listState.currentList).isEqualTo(listOf("B", "A"))
+        listState.updateList(UpdateOp.MoveItem(0, 2))
+        assertThat(listState.currentList).isEqualTo(listOf("B", "C", "A"))
     }
 
     @Test

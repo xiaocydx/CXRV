@@ -156,20 +156,20 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_SwapItem() {
+    fun execute_UpdateOp_MoveItem() {
         val count = CountDownLatch(2)
-        val initList = listOf("A", "B")
-        val swapItem = fun() {
-            differ.updateList(UpdateOp.SwapItem(0, 1)) {
-                assertThat(differ.currentList).isEqualTo(listOf("B", "A"))
+        val initList = listOf("A", "B", "C")
+        val moveItem = fun() {
+            differ.updateList(UpdateOp.MoveItem(0, 2)) {
+                assertThat(differ.currentList).isEqualTo(listOf("B", "C", "A"))
                 verify(exactly = 0) { diffCallback.areItemsTheSame(any(), any()) }
-                verify(exactly = 1) { updateCallback.onMoved(0, 1) }
+                verify(exactly = 1) { updateCallback.onMoved(0, 2) }
             }
             count.countDown()
         }
 
         differ.updateList(UpdateOp.SubmitList(initList)) {
-            swapItem()
+            moveItem()
             count.countDown()
         }
         count.await()
@@ -241,13 +241,13 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_SwapItem_Await(): Unit = runBlocking {
-        val initList = listOf("A", "B")
+    fun execute_UpdateOp_MoveItem_Await(): Unit = runBlocking {
+        val initList = listOf("A", "B", "C")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
-        differ.awaitUpdateList(UpdateOp.SwapItem(0, 1))
-        assertThat(differ.currentList).isEqualTo(listOf("B", "A"))
+        differ.awaitUpdateList(UpdateOp.MoveItem(0, 2))
+        assertThat(differ.currentList).isEqualTo(listOf("B", "C", "A"))
         verify(exactly = 0) { diffCallback.areItemsTheSame(any(), any()) }
-        verify(exactly = 1) { updateCallback.onMoved(0, 1) }
+        verify(exactly = 1) { updateCallback.onMoved(0, 2) }
     }
 
     private class TestDiffCallback : DiffUtil.ItemCallback<String>() {

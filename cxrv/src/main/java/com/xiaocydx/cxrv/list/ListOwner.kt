@@ -134,14 +134,29 @@ fun ListOwner<*>.removeItems(position: Int, itemCount: Int) {
 }
 
 /**
+ * 下标为[fromPosition]的item移动至[toPosition]，该函数必须在主线程调用
+ *
+ * @param fromPosition 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
+ * @param toPosition   取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
+ */
+@MainThread
+fun ListOwner<*>.moveItem(fromPosition: Int, toPosition: Int) {
+    updateList(UpdateOp.MoveItem(fromPosition, toPosition))
+}
+
+/**
  * 交换下标为[fromPosition]和[toPosition]的item，该函数必须在主线程调用
  *
  * @param fromPosition 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  * @param toPosition   取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  */
 @MainThread
+@Deprecated(
+    message = "早期理解错误，以为局部更新的move等同于swap",
+    replaceWith = ReplaceWith("moveItem(fromPosition, toPosition)")
+)
 fun ListOwner<*>.swapItem(fromPosition: Int, toPosition: Int) {
-    updateList(UpdateOp.SwapItem(fromPosition, toPosition))
+    moveItem(fromPosition, toPosition)
 }
 
 /**
