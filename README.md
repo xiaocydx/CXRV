@@ -1,4 +1,4 @@
-CXRV是一个基于RecyclerView 1.2.0，提供常用功能的组件，全称是Coroutine and Extensions for RecyclerView。
+CXRV是一个基于RecyclerView 1.2.0，提供常用功能的组件，全称是Coroutine and Extensions for RecyclerView
 <br><br>
 [CXRV（一）概述](https://www.yuque.com/u12192380/khwdgb/fe9gsu)
 
