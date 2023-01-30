@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.CallSuper
-import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.GridLayoutManager
@@ -14,7 +13,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.list.addItem
+import com.xiaocydx.cxrv.list.clear
+import com.xiaocydx.cxrv.list.removeItemAt
+import com.xiaocydx.cxrv.list.submitTransform
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.*
 import com.xiaocydx.sample.foo.FooListAdapter
@@ -46,6 +48,7 @@ abstract class PagingFragment : Fragment() {
             id = fooViewModel.rvId
             overScrollNever()
             withLayoutParams(matchParent, matchParent)
+            enableGestureNavBarEdgeToEdge()
         }
         it.addView(rvPaging)
     }
@@ -54,7 +57,6 @@ abstract class PagingFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         initView()
         initCollect()
-        initEdgeToEdge()
     }
 
     protected abstract fun initView()
@@ -77,14 +79,6 @@ abstract class PagingFragment : Fragment() {
                 else -> return@onEach
             }
         }.launchIn(viewLifecycleScope)
-    }
-
-    private fun initEdgeToEdge() {
-        rvPaging.clipToPadding = false
-        rvPaging.layoutManager?.enableBoundCheckCompat()
-        rvPaging.doOnApplyWindowInsetsCompat { view, insets, initialState ->
-            view.updatePadding(bottom = insets.getNavigationBarHeight() + initialState.paddings.bottom)
-        }
     }
 
     private fun increaseSpanCount() {

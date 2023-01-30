@@ -3,11 +3,13 @@ package com.xiaocydx.sample.paging.article
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.adapter
+import com.xiaocydx.cxrv.list.fixedSize
+import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.*
@@ -68,12 +70,7 @@ class ArticleListActivity : AppCompatActivity() {
     }
 
     private fun initEdgeToEdge() {
-        window.navigationBarEdgeToEdge()
-        rvArticle.clipToPadding = false
-        rvArticle.layoutManager?.enableBoundCheckCompat()
-        rvArticle.doOnApplyWindowInsetsCompat { view, insets, initialState ->
-            val paddingBottom = initialState.paddings.bottom
-            view.updatePadding(bottom = insets.getNavigationBarHeight() + paddingBottom)
-        }
+        window.enableGestureNavBarEdgeToEdge()
+        rvArticle.enableGestureNavBarEdgeToEdge()
     }
 }
