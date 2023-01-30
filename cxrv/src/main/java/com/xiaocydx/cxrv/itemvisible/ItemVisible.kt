@@ -148,13 +148,14 @@ fun StaggeredGridLayoutManager.findLastCompletelyVisibleItemPosition(into: IntAr
  * 因为返回值是可空类型，调用处会对返回值执行装箱操作。
  */
 private fun IntArray.minPosition(): Int {
-    if (isEmpty()) return NO_POSITION
-    var minPosition = this[0]
-    if (minPosition == 0) return minPosition
-    for (i in 1..lastIndex) {
-        val spanPosition = this[i]
-        if (spanPosition == 0) return spanPosition
-        minPosition = spanPosition.coerceAtMost(minPosition)
+    var minPosition = NO_POSITION
+    for (index in indices) {
+        val spanPosition = this[index]
+        minPosition = when {
+            spanPosition <= NO_POSITION -> continue
+            minPosition == NO_POSITION -> spanPosition
+            else -> spanPosition.coerceAtMost(minPosition)
+        }
     }
     return minPosition
 }
@@ -164,9 +165,8 @@ private fun IntArray.minPosition(): Int {
  * 因为返回值是可空类型，调用处会对返回值执行装箱操作。
  */
 private fun IntArray.maxPosition(): Int {
-    if (isEmpty()) return NO_POSITION
-    var maxPosition = this[0]
-    for (index in 1..lastIndex) {
+    var maxPosition = NO_POSITION
+    for (index in indices) {
         val spanPosition = this[index]
         maxPosition = spanPosition.coerceAtLeast(maxPosition)
     }
