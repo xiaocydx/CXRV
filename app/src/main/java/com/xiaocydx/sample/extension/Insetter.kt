@@ -14,13 +14,15 @@ import androidx.core.view.WindowInsetsCompat.Type.navigationBars
 import androidx.core.view.WindowInsetsCompat.Type.statusBars
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.list.enableBoundCheckCompat
+import java.lang.ref.WeakReference
 
 /**
  * 启用手势导航栏边到边的示例代码
  */
 fun Window.enableGestureNavBarEdgeToEdge() {
+    val contentRef = (decorView as ViewGroup).children
+        .firstOrNull { it is ViewGroup }?.let(::WeakReference)
     WindowCompat.setDecorFitsSystemWindows(this, false)
-    val content = (decorView as ViewGroup).children.first { it is ViewGroup }
     ViewCompat.setOnApplyWindowInsetsListener(decorView) { v, insets ->
         var decorInsets = insets
         var applyInsets = insets
@@ -30,7 +32,7 @@ fun Window.enableGestureNavBarEdgeToEdge() {
             applyInsets = insets.consume(navigationBars())
         }
         ViewCompat.onApplyWindowInsets(v, decorInsets)
-        content.updateMargins(
+        contentRef?.get()?.updateMargins(
             top = decorInsets.getInsets(statusBars()).top,
             bottom = decorInsets.getInsets(navigationBars()).bottom
         )
