@@ -25,18 +25,15 @@ fun Window.enableGestureNavBarEdgeToEdge() {
     WindowCompat.setDecorFitsSystemWindows(this, false)
     ViewCompat.setOnApplyWindowInsetsListener(decorView) { v, insets ->
         var decorInsets = insets
-        var applyInsets = insets
-        if (insets.isGestureNavigationBar(v.resources)) {
-            decorInsets = insets.consume(navigationBars())
-        } else {
-            applyInsets = insets.consume(navigationBars())
+        if (decorInsets.isGestureNavigationBar(v.resources)) {
+            decorInsets = decorInsets.consume(navigationBars())
         }
         ViewCompat.onApplyWindowInsets(v, decorInsets)
         contentRef?.get()?.updateMargins(
             top = decorInsets.getInsets(statusBars()).top,
             bottom = decorInsets.getInsets(navigationBars()).bottom
         )
-        applyInsets
+        insets
     }
     decorView.doOnAttach(ViewCompat::requestApplyInsets)
 }
@@ -44,9 +41,14 @@ fun Window.enableGestureNavBarEdgeToEdge() {
 fun RecyclerView.enableGestureNavBarEdgeToEdge() {
     clipToPadding = false
     layoutManager?.enableBoundCheckCompat()
-    doOnApplyWindowInsets { view, insets, initialState ->
-        val navigationBars = insets.getInsets(navigationBars())
-        view.updatePadding(bottom = navigationBars.bottom + initialState.paddings.bottom)
+    doOnApplyWindowInsets { v, insets, initialState ->
+        v.updatePadding(bottom = when {
+            insets.isGestureNavigationBar(v.resources) -> {
+                val navigationBars = insets.getInsets(navigationBars())
+                navigationBars.bottom + initialState.paddings.bottom
+            }
+            else -> initialState.paddings.bottom
+        })
     }
 }
 
