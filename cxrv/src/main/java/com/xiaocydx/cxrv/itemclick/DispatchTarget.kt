@@ -20,7 +20,7 @@ internal sealed class DispatchTarget(
 
     fun setCurrentTargetView(itemView: View, event: MotionEvent): Boolean {
         val targetView = targetView(itemView, event)
-        if (targetView != currentTargetView) {
+        if (targetView !== currentTargetView) {
             // 当前目标视图改变，清除之前目标视图的全部监听
             clearCurrentTargetViewListeners()
             targetView?.addOnAttachStateChangeListener(this)
@@ -69,7 +69,7 @@ internal class ClickDispatchTarget(
      * 若[view]等于[currentTargetView]且满足执行间隔，则执行[clickHandler]
      */
     fun tryPerformClickHandler(view: View, itemView: View) {
-        if (view == currentTargetView && checkPerformInterval()) {
+        if (view === currentTargetView && checkPerformInterval()) {
             clickHandler.invoke(itemView)
         }
     }
@@ -102,7 +102,7 @@ internal class LongClickDispatchTarget(
      * 返回`false`表示未执行[longClickHandler]，或者执行了但不消费长按。
      */
     fun tryPerformLongClickHandler(view: View, itemView: View): Boolean {
-        if (view == currentTargetView) {
+        if (view === currentTargetView) {
             return longClickHandler.invoke(itemView)
         }
         return false
