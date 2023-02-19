@@ -5,14 +5,26 @@ import androidx.annotation.MainThread
 /**
  * 列表所有者
  *
+ * [ListOwner]的主要实现类有[ListState]和[ListAdapter]，
+ * [ListState]和[ListAdapter]可以建立基于[ListOwner]的双向通信，
+ * 通常[ListState]位于ViewModel，[ListAdapter]位于视图控制器。
+ *
+ * **注意**：虽然支持[ListState]和[ListAdapter]之间的双向通信，
+ * 但是建议以单向数据流的方式更新列表，即仅通过[ListState]更新列表，
+ * 这会提高代码的可读性和可维护性。
+ *
  * @author xcc
  * @date 2021/9/11
  */
 interface ListOwner<T : Any> {
+
     /**
      * 当前列表
      *
      * 通过[getItem]、[getItemOrNull]等扩展函数可以访问列表。
+     *
+     * **注意**：需要确保item对象不可变，item对象不可变才能确保视图控制器恢复活跃状态时，
+     * 支持[UpdateOp.SubmitList]进行差异计算的实现类（例如[ListAdapter]）能正确更新列表。
      */
     val currentList: List<T>
 
@@ -20,13 +32,20 @@ interface ListOwner<T : Any> {
      * 更新列表，该函数必须在主线程调用
      *
      * 通过[submitList]、[setItem]等扩展函数可以更新列表。
+     *
+     * 1. 当实现类是[ListState]时，会立即执行[op]更新列表，
+     * [updateList]执行完成后，[currentList]就是最新列表。
+     *
+     * 2. 当实现类是[ListAdapter]时，若当前没有[UpdateOp.SubmitList]进行差异计算，
+     * 则立即执行[op]更新列表，否则需要等待[UpdateOp.SubmitList]完成后再执行[op]，
+     * [updateList]执行完成后，[currentList]不一定是最新列表。
      */
     @MainThread
     fun updateList(op: UpdateOp<T>)
 }
 
 /**
- * item数量
+ * 当前列表的item数量
  */
 val ListOwner<*>.size: Int
     get() = currentList.size
@@ -70,7 +89,8 @@ fun ListOwner<*>.isLastItem(position: Int): Boolean {
  * 通过[submitChange]、[submitTransform]可以方便的更改列表。
  *
  * @param newList 需要是新的列表对象，若传入旧的列表对象，则不会更改。
- * 若[newList]的类型是[SafeMutableList]，则表示可作为内部的可变列表。
+ * 若[newList]的类型是[SafeMutableList]，则表示可作为内部的可变列表，
+ * 当[ListOwner]的实现类是[ListAdapter]时，该函数会进行差异计算。
  */
 @MainThread
 fun <T : Any> ListOwner<T>.submitList(newList: List<T>) {
@@ -80,9 +100,8 @@ fun <T : Any> ListOwner<T>.submitList(newList: List<T>) {
 /**
  * 设置item，该函数必须在主线程调用
  *
- * **注意**：当[item]为新对象时，才能跟旧对象进行差异对比。
- *
- * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作.
+ * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作，
+ * @param item     若是新的对象，则跟旧对象进行差异对比，否则是全量更新。
  */
 @MainThread
 fun <T : Any> ListOwner<T>.setItem(position: Int, item: T) {
@@ -92,10 +111,9 @@ fun <T : Any> ListOwner<T>.setItem(position: Int, item: T) {
 /**
  * 设置items，该函数必须在主线程调用
  *
- * **注意**：当[items]的元素为新对象时，才能跟旧对象进行差异对比。
- *
  * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
- * @param items    设置范围[position, size)，元素越界时不会抛出异常。
+ * @param items    设置范围[position, size)，item数量越界时不会抛出异常，
+ * 若item是新的对象，则跟旧对象进行差异对比，否则是全量更新。
  */
 @MainThread
 fun <T : Any> ListOwner<T>.setItems(position: Int, items: List<T>) {
@@ -199,6 +217,7 @@ fun ListOwner<*>.clear() = submitList(emptyList())
  *     removeFirst()
  * }
  * ```
+ * 当[ListOwner]的实现类是[ListAdapter]时，该函数会进行差异计算。
  */
 @MainThread
 inline fun <T : Any> ListOwner<T>.submitChange(change: MutableList<T>.() -> Unit) {
@@ -213,6 +232,7 @@ inline fun <T : Any> ListOwner<T>.submitChange(change: MutableList<T>.() -> Unit
  *     filter{...}.map{...}
  * }
  * ```
+ * 当[ListOwner]的实现类是[ListAdapter]时，该函数会进行差异计算。
  */
 @MainThread
 inline fun <T : Any> ListOwner<T>.submitTransform(transform: MutableList<T>.() -> List<T>) {
@@ -221,6 +241,8 @@ inline fun <T : Any> ListOwner<T>.submitTransform(transform: MutableList<T>.() -
 
 /**
  * 遍历[ListOwner.currentList]，设置[block]返回的第一个不空的item，该函数必须在主线程调用
+ *
+ * @param block 若返回新的对象，则跟旧对象进行差异对比，否则是全量更新。
  */
 @MainThread
 inline fun <T : Any> ListOwner<T>.setFirstNotNull(block: (item: T) -> T?) {
@@ -232,6 +254,8 @@ inline fun <T : Any> ListOwner<T>.setFirstNotNull(block: (item: T) -> T?) {
 
 /**
  * 反向遍历[ListOwner.currentList]，设置[block]返回的最后一个不空的item，该函数必须在主线程调用
+ *
+ * @param block 若返回新的对象，则跟旧对象进行差异对比，否则是全量更新。
  */
 @MainThread
 inline fun <T : Any> ListOwner<T>.setLastNotNull(block: (item: T) -> T?) {
