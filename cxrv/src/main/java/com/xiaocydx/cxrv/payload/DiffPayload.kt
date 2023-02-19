@@ -44,13 +44,6 @@ class DiffPayload<T : Any> internal constructor() : Payload() {
         newItem = null
         return super.complete()
     }
-
-    @PublishedApi
-    override fun reset(): Payload {
-        oldItem = null
-        newItem = null
-        return super.reset()
-    }
 }
 
 /**

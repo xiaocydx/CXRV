@@ -22,7 +22,7 @@ class PayloadTest {
     }
 
     @Test
-    fun validate_Value_Success() {
+    fun check_Value_Success() {
         val payload = Payload {
             repeat(2) { (1..5).forEach(::add) }
         }
@@ -32,6 +32,36 @@ class PayloadTest {
         assertThat(outcome).contains(1)
         assertThat(outcome).contains(2)
         assertThat(outcome).contains(4)
+    }
+
+    @Test
+    @Suppress("LocalVariableName")
+    fun check_Payload_Equals() {
+        val VALUE1 = Payload.value(1)
+        val VALUE2 = Payload.value(2)
+        val VALUE3 = Payload.value(3)
+
+        val payloadA = Payload { add(VALUE1);add(VALUE2) }
+        val payloadB = Payload { add(VALUE1);add(VALUE2) }
+        val payloadC = Payload { add(VALUE2);add(VALUE3) }
+        assertThat(payloadA).isEqualTo(payloadB)
+        assertThat(payloadA).isNotEqualTo(payloadC)
+        assertThat(payloadB).isNotEqualTo(payloadC)
+    }
+
+    @Test
+    @Suppress("LocalVariableName")
+    fun check_Payload_HashCode() {
+        val VALUE1 = Payload.value(1)
+        val VALUE2 = Payload.value(2)
+        val VALUE3 = Payload.value(3)
+
+        val payloadA = Payload { add(VALUE1);add(VALUE2) }
+        val payloadB = Payload { add(VALUE1);add(VALUE2) }
+        val payloadC = Payload { add(VALUE2);add(VALUE3) }
+        assertThat(payloadA.hashCode()).isEqualTo(payloadB.hashCode())
+        assertThat(payloadA.hashCode()).isNotEqualTo(payloadC.hashCode())
+        assertThat(payloadB.hashCode()).isNotEqualTo(payloadC.hashCode())
     }
 
     @Test
@@ -50,25 +80,6 @@ class PayloadTest {
         assertThat(outcome).hasSize(2)
         assertThat(outcome).contains(VALUE1)
         assertThat(outcome).contains(VALUE2)
-    }
-
-    @Test
-    fun take_Payloads_Recycle_Success() {
-        // 清空对象池
-        var recycled: Payload?
-        do {
-            recycled = Payload.pool.acquire()
-        } while (recycled != null)
-
-        val payload = Payload {
-            add(Payload.value(1))
-        }
-        Payload.take(listOf(payload)) {}
-
-        recycled = Payload.pool.acquire()
-        assertThat(recycled).isNotNull()
-        assertThat(recycled!!.isEmpty()).isTrue()
-        assertThat(recycled).isSameInstanceAs(payload)
     }
 
     @Test

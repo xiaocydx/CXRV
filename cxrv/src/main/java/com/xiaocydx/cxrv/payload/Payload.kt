@@ -3,9 +3,6 @@ package com.xiaocydx.cxrv.payload
 import androidx.annotation.CallSuper
 import androidx.annotation.CheckResult
 import androidx.annotation.IntRange
-import androidx.annotation.VisibleForTesting
-import androidx.annotation.VisibleForTesting.PRIVATE
-import androidx.core.util.Pools
 
 /**
  * 保存多个`value`的Payload对象
@@ -29,7 +26,7 @@ sealed class Payload {
      */
     fun add(@IntRange(from = 1) value: Int) {
         checkComplete()
-        if (!validate(value)) return
+        if (!check(value)) return
         values = values or value
     }
 
@@ -54,10 +51,10 @@ sealed class Payload {
     internal fun takeLowestValue() = values.takeLowestOneBit()
 
     /**
-     * 验证[value]是否为2的幂次方
+     * 检查[value]是否为2的幂次方
      */
     @PublishedApi
-    internal fun validate(@IntRange(from = 1) value: Int) = (value and (value - 1)) == 0
+    internal fun check(@IntRange(from = 1) value: Int) = (value and (value - 1)) == 0
 
     /**
      * [values]是否包含[value]
@@ -66,15 +63,19 @@ sealed class Payload {
     internal fun contains(@IntRange(from = 1) value: Int) = (values and value) == value
 
     /**
-     * 去除重复的`value`，合并为一个[Payload]
+     * 去除重复的`value`，合并为一个`values`，[values]已通过检查
      */
     @CheckResult
-    internal fun merge(other: Payload): Payload {
-        val outcome = obtain()
-        outcome.values = this.values or other.values
-        this.recycle()
-        other.recycle()
-        return outcome.complete()
+    internal fun mergeValuesChecked(values: Int): Int {
+        return this.values or values
+    }
+
+    /**
+     * 设置`values`，[values]已通过检查
+     */
+    internal fun setValuesChecked(values: Int) {
+        checkComplete()
+        this.values = values
     }
 
     @PublishedApi
@@ -84,26 +85,22 @@ sealed class Payload {
         return this
     }
 
-    @PublishedApi
-    @CallSuper
-    internal open fun reset(): Payload {
-        values = EMPTY
-        isComplete = false
-        return this
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as Payload
+        if (values != other.values) return false
+        if (isComplete != other.isComplete) return false
+        return true
     }
 
-    @PublishedApi
-    internal fun recycle() {
-        reset()
-        pool.release(this)
+    override fun hashCode(): Int {
+        var result = values
+        result = 31 * result + isComplete.hashCode()
+        return result
     }
 
     companion object {
-        private const val POOL_SIZE = 30
-
-        @VisibleForTesting(otherwise = PRIVATE)
-        internal val pool = Pools.SynchronizedPool<Payload>(POOL_SIZE)
-
         @PublishedApi
         internal const val EMPTY = 0
 
@@ -111,9 +108,7 @@ sealed class Payload {
         internal const val BASE = 1
 
         @PublishedApi
-        internal fun obtain(): Payload {
-            return pool.acquire()?.reset() ?: DiffPayload<Any>()
-        }
+        internal fun obtain(): Payload = DiffPayload<Any>()
 
         @PublishedApi
         internal fun <T : Any> obtainDiff(oldItem: T, newItem: T): DiffPayload<T> {
@@ -130,12 +125,12 @@ sealed class Payload {
 @PublishedApi
 @CheckResult
 internal fun Payload.Companion.merge(payloads: List<Any>): Payload {
-    var outcome: Payload? = null
+    var values = EMPTY
     payloads.forEach action@{
         if (it !is Payload) return@action
-        outcome = if (outcome == null) it else outcome!!.merge(it)
+        values = it.mergeValuesChecked(values)
     }
-    return outcome ?: obtain().complete()
+    return Payload { setValuesChecked(values) }
 }
 
 /**
