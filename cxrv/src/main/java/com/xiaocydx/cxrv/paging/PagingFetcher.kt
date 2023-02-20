@@ -62,7 +62,7 @@ internal class PagingFetcher<K : Any, T : Any>(
     @MainThread
     private suspend fun SendChannel<PagingEvent<T>>.doLoad(loadType: LoadType) {
         log {
-            when(loadType) {
+            when (loadType) {
                 LoadType.REFRESH -> "PagingFetcher refresh load"
                 LoadType.APPEND -> "PagingFetcher append load"
             }
@@ -117,20 +117,13 @@ internal class PagingFetcher<K : Any, T : Any>(
     }
 
     @MainThread
-    private fun loadParams(
-        loadType: LoadType
-    ): LoadParams<K> = LoadParams.create(
+    private fun loadParams(loadType: LoadType): LoadParams<K> = LoadParams.create(
         loadType = loadType,
         key = when (loadType) {
             LoadType.REFRESH -> nextKey ?: initKey
-            LoadType.APPEND -> requireNotNull(nextKey) {
-                "nextKey == `null`表示加载完成，不能再进行末尾加载"
-            }
+            LoadType.APPEND -> requireNotNull(nextKey) { "nextKey == null表示末尾加载完成" }
         },
-        pageSize = when (loadType) {
-            LoadType.REFRESH -> config.initPageSize
-            else -> config.pageSize
-        }
+        pageSize = if (loadType === LoadType.REFRESH) config.initPageSize else config.pageSize
     )
 
     fun append() {
