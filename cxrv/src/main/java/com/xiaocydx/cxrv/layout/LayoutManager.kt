@@ -7,6 +7,10 @@ import androidx.recyclerview.widget.RecyclerView.*
 
 /**
  * 设置[LinearLayoutManagerCompat]，可用于链式调用场景
+ *
+ * **注意**：[LinearLayoutManagerCompat.isScrollToFirstOnUpdate]默认启用，
+ * 对于部分特殊场景，例如分页加载上一页数据，往列表首位插入上一页item的场景，
+ * 可能需要禁用[LinearLayoutManagerCompat.isScrollToFirstOnUpdate]。
  */
 inline fun <T : RecyclerView> T.linear(
     @Orientation orientation: Int = VERTICAL,
@@ -15,6 +19,10 @@ inline fun <T : RecyclerView> T.linear(
 
 /**
  * 设置[GridLayoutManagerCompat]，可用于链式调用场景
+ *
+ * **注意**：[GridLayoutManagerCompat.isScrollToFirstOnUpdate]默认启用，
+ * 对于部分特殊场景，例如分页加载上一页数据，往列表首位插入上一页item的场景，
+ * 可能需要禁用[GridLayoutManagerCompat.isScrollToFirstOnUpdate]。
  */
 inline fun <T : RecyclerView> T.grid(
     spanCount: Int,
@@ -24,6 +32,10 @@ inline fun <T : RecyclerView> T.grid(
 
 /**
  * 设置[StaggeredGridLayoutManagerCompat]，可用于链式调用场景
+ *
+ * **注意**：[StaggeredGridLayoutManagerCompat.isScrollToFirstOnUpdate]默认启用，
+ * 对于部分特殊场景，例如分页加载上一页数据，往列表首位插入上一页item的场景，
+ * 可能需要禁用[StaggeredGridLayoutManagerCompat.isScrollToFirstOnUpdate]。
  */
 inline fun <T : RecyclerView> T.staggered(
     spanCount: Int,
