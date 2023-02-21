@@ -5,6 +5,7 @@ import android.view.Choreographer
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
 import com.xiaocydx.cxrv.internal.*
 import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -278,21 +279,27 @@ class PagingCollector<T : Any> internal constructor(
         // 执行onBindViewHolder()或者滚动过程中可能触发末尾加载，
         // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成。
         // 若此时将加载状态同步分发给listener，则会因为listener调用notifyXXX()函数，
-        // 导致RecyclerView内部逻辑判断为异常情况，异常情况的判断条件为以下几点：
-        // 1. rv.isComputingLayout == true
-        // 2. rv.mDispatchScrollCounter > 0
-        // 3. rv.scrollState != SCROLL_STATE_IDLE
-
-        // 第2点的rv.mDispatchScrollCounter需要反射访问，为了避免不必要的开销，统一做以下处理：
-        if (latestFrameVsyncMs == -1L) {
-            // 快路径，在下一个异步消息中分发加载状态
-            yield()
-        } else {
-            // 假设下一帧布局流程在Animation回调下执行，添加负延时的Animation回调进行插队，
-            // 确保下一帧执行布局流程之前，先分发加载状态，让listener完成状态的处理逻辑。
-            // 异步消息无法确保这种插队行为，因为异步消息可能被doFrame消息按vsync时间插队。
-            val beforeNextRvLayoutDelay = -(SystemClock.uptimeMillis() - latestFrameVsyncMs)
-            Choreographer.getInstance().awaitFrame(beforeNextRvLayoutDelay)
+        when {
+            !rv.isComputingLayout
+                    && rv.scrollState == SCROLL_STATE_IDLE
+                    && rv.dispatchScrollCounter <= 0 -> {
+                // RecyclerView内部逻辑判断为异常情况的条件：
+                // 1. rv.isComputingLayout == true
+                // 2. rv.scrollState != SCROLL_STATE_IDLE
+                // 3. rv.dispatchScrollCounter > 0
+                // 只要上述判断条件都不满足，即可直接分发加载状态
+            }
+            latestFrameVsyncMs == -1L -> {
+                // 快路径，在下一个异步消息中分发加载状态
+                yield()
+            }
+            else -> {
+                // 假设下一帧布局流程在Animation回调下执行，添加负延时的Animation回调进行插队，
+                // 确保下一帧执行布局流程之前，先分发加载状态，让listener完成状态的处理逻辑。
+                // 异步消息无法确保这种插队行为，因为异步消息可能被doFrame消息按vsync时间插队。
+                val beforeNextRvLayoutDelay = -(SystemClock.uptimeMillis() - latestFrameVsyncMs)
+                Choreographer.getInstance().awaitFrame(beforeNextRvLayoutDelay)
+            }
         }
 
         trace(TRACE_DISPATCH_LOAD_STATES_TAG) { setLoadStates(event.loadStates) }
@@ -344,5 +351,11 @@ class PagingCollector<T : Any> internal constructor(
 
     private companion object {
         const val TRACE_DISPATCH_LOAD_STATES_TAG = "PagingCollector Dispatch LoadStates"
+        private val dispatchScrollCounterField = runCatching {
+            RecyclerView::class.java.getDeclaredField("mDispatchScrollCounter")
+        }.onSuccess { it.isAccessible = true }.getOrNull()
+
+        val RecyclerView.dispatchScrollCounter: Int
+            get() = (dispatchScrollCounterField?.get(this) as? Int) ?: 0
     }
 }
