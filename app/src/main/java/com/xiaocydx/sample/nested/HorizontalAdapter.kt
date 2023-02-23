@@ -12,10 +12,11 @@ import com.xiaocydx.sample.databinding.ItemNestedHorizontalBinding
 class HorizontalAdapter : RecyclerView.Adapter<HorizontalHolder>() {
     private var data = emptyList<HorizontalItem>()
 
-    fun setDataAndNotifyChanged(data: List<HorizontalItem>) {
+    fun updateData(data: List<HorizontalItem>) {
         val itemCount = itemCount
         this.data = data
-        notifyItemRangeChanged(0, itemCount, javaClass.simpleName)
+        notifyItemRangeRemoved(0, itemCount)
+        notifyItemRangeInserted(0, data.size)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HorizontalHolder {

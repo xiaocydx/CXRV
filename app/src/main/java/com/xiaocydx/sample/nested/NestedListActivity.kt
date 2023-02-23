@@ -33,13 +33,12 @@ class NestedListActivity : AppCompatActivity() {
         withLayoutParams(matchParent, matchParent)
     }
 
-    private fun getItems(
-        size: Int
-    ): List<VerticalItem> = (1..size).map {
+    private fun getItems(size: Int): List<VerticalItem> = (1..size).map {
+        val finalSize = if (it % 2 == 0) size / 2 else size
         VerticalItem(
             id = "Vertical-$it",
             title = "List-$it",
-            data = (1..size).map { value ->
+            data = (1..finalSize).map { value ->
                 HorizontalItem(id = "Horizontal-$value", title = "$it-${value}")
             }
         )

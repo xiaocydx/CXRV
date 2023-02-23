@@ -31,8 +31,8 @@ class VerticalAdapter : ListAdapter<VerticalItem, VerticalHolder>() {
     }
 
     override fun onBindViewHolder(holder: VerticalHolder, item: VerticalItem) {
-        holder.onBindView(item)
         holder.onRestoreState(savedStates.remove(item.id))
+        holder.onBindView(item)
     }
 
     override fun onViewRecycled(holder: VerticalHolder) {
@@ -49,6 +49,7 @@ class VerticalHolder(
 
     init {
         binding.rvHorizontal
+            .apply { itemAnimator = null }
             .linear(orientation = HORIZONTAL)
             .fixedSize().divider {
                 width = 8.dp
@@ -60,7 +61,7 @@ class VerticalHolder(
 
     fun onBindView(item: VerticalItem) {
         binding.tvTitle.text = item.title
-        adapter.setDataAndNotifyChanged(item.data)
+        adapter.updateData(item.data)
     }
 
     fun onSaveState(): Parcelable? {
