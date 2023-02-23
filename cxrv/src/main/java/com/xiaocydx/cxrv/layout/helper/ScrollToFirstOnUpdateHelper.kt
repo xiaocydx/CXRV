@@ -3,6 +3,8 @@
 package androidx.recyclerview.widget
 
 import android.os.Parcelable
+import android.os.SystemClock
+import android.view.Choreographer
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.layout.callback.LayoutManagerCallback
@@ -15,6 +17,7 @@ import com.xiaocydx.cxrv.layout.callback.LayoutManagerCallback
  */
 internal class ScrollToFirstOnUpdateHelper : AdapterDataObserver(), LayoutManagerCallback {
     private var previousItemCount = 0
+    private var willScrollToFirst = false
     private var adapter: Adapter<*>? = null
     private var layout: LayoutManager? = null
     private val view: RecyclerView?
@@ -39,24 +42,20 @@ internal class ScrollToFirstOnUpdateHelper : AdapterDataObserver(), LayoutManage
 
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
         val view = view ?: return
-        val layout = layout ?: return
         if (isEnabled
                 && positionStart == 0
                 && previousItemCount != 0
-                && view.isFirstItemCompletelyVisible
-                && !layout.hasPendingScrollPositionOrSavedState()) {
-            view.scrollToPosition(0)
+                && view.isFirstItemCompletelyVisible) {
+            view.scrollToFirstInNextFrame()
         }
     }
 
     override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
         val view = view ?: return
-        val layout = layout ?: return
         if (isEnabled
                 && (fromPosition == 0 || toPosition == 0)
-                && view.isFirstItemCompletelyVisible
-                && !layout.hasPendingScrollPositionOrSavedState()) {
-            view.scrollToPosition(0)
+                && view.isFirstItemCompletelyVisible) {
+            view.scrollToFirstInNextFrame()
         }
     }
 
@@ -68,6 +67,22 @@ internal class ScrollToFirstOnUpdateHelper : AdapterDataObserver(), LayoutManage
         adapter?.unregisterAdapterDataObserver(this)
         adapter = null
         layout = null
+    }
+
+    /**
+     * 下一帧执行RecyclerView的布局流程之前，再判断是否滚动到首位，
+     * 尽可能避免覆盖`mPendingScrollPosition`和`mPendingSavedState`。
+     */
+    private fun RecyclerView.scrollToFirstInNextFrame() {
+        if (willScrollToFirst) return
+        willScrollToFirst = true
+        val latestFrameVsyncMs = drawingTime.coerceAtLeast(0L)
+        val beforeNextRvLayoutDelay = -(SystemClock.uptimeMillis() - latestFrameVsyncMs)
+        Choreographer.getInstance().postFrameCallbackDelayed({
+            willScrollToFirst = false
+            val layout = layoutManager ?: return@postFrameCallbackDelayed
+            if (!layout.hasPendingScrollPositionOrSavedState()) scrollToPosition(0)
+        }, beforeNextRvLayoutDelay)
     }
 
     private fun LayoutManager.hasPendingScrollPositionOrSavedState() = when (this) {
