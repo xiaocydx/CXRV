@@ -31,11 +31,14 @@ class VerticalAdapter : ListAdapter<VerticalItem, VerticalHolder>() {
     }
 
     override fun onBindViewHolder(holder: VerticalHolder, item: VerticalItem) {
-        holder.onRestoreState(savedStates.remove(item.id))
         holder.onBindView(item)
     }
 
-    override fun onViewRecycled(holder: VerticalHolder) {
+    override fun onViewAttachedToWindow(holder: VerticalHolder) {
+        holder.onRestoreState(savedStates.remove(holder.item.id))
+    }
+
+    override fun onViewDetachedFromWindow(holder: VerticalHolder) {
         val state = holder.onSaveState() ?: return
         savedStates[holder.item.id] = state
     }
@@ -49,13 +52,16 @@ class VerticalHolder(
 
     init {
         binding.rvHorizontal
-            .apply { itemAnimator = null }
-            .linear(orientation = HORIZONTAL)
+            .adapter(adapter)
+            .linear(orientation = HORIZONTAL) {
+                // recycle to sharedPool
+                recycleChildrenOnDetach = true
+            }
             .fixedSize().divider {
                 width = 8.dp
                 horizontalEdge = true
             }
-            .adapter(adapter)
+            .apply { itemAnimator = null }
             .setRecycledViewPool(sharedPool)
     }
 

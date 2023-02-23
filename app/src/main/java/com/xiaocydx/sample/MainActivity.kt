@@ -15,6 +15,7 @@ import com.xiaocydx.sample.itemclick.ItemClickActivity
 import com.xiaocydx.sample.itemselect.MultiSelectionActivity
 import com.xiaocydx.sample.itemselect.SingleSelectionActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
+import com.xiaocydx.sample.nested.NestedListActivity
 import com.xiaocydx.sample.paging.PagingActivity
 import com.xiaocydx.sample.paging.article.ArticleListActivity
 import com.xiaocydx.sample.payload.PayloadActivity
@@ -48,6 +49,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun ListAdapter<StartItem, *>.submitStartList() {
         submitList(listOf(
+            StartItem<NestedListActivity>("嵌套列表示例"),
             StartItem<ItemClickActivity>("item点击、长按示例"),
             StartItem<SingleSelectionActivity>("item单项选择示例"),
             StartItem<MultiSelectionActivity>("item多项选择示例"),
