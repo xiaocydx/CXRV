@@ -2,6 +2,7 @@
 
 package androidx.recyclerview.widget
 
+import android.os.Parcelable
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.layout.callback.LayoutManagerCallback
@@ -37,19 +38,25 @@ internal class ScrollToFirstOnUpdateHelper : AdapterDataObserver(), LayoutManage
     }
 
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+        val view = view ?: return
+        val layout = layout ?: return
         if (isEnabled
                 && positionStart == 0
                 && previousItemCount != 0
-                && view?.isFirstItemCompletelyVisible == true) {
-            view?.scrollToPosition(0)
+                && view.isFirstItemCompletelyVisible
+                && !layout.hasPendingScrollPositionOrSavedState()) {
+            view.scrollToPosition(0)
         }
     }
 
     override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
+        val view = view ?: return
+        val layout = layout ?: return
         if (isEnabled
                 && (fromPosition == 0 || toPosition == 0)
-                && view?.isFirstItemCompletelyVisible == true) {
-            view?.scrollToPosition(0)
+                && view.isFirstItemCompletelyVisible
+                && !layout.hasPendingScrollPositionOrSavedState()) {
+            view.scrollToPosition(0)
         }
     }
 
@@ -61,5 +68,20 @@ internal class ScrollToFirstOnUpdateHelper : AdapterDataObserver(), LayoutManage
         adapter?.unregisterAdapterDataObserver(this)
         adapter = null
         layout = null
+    }
+
+    private fun LayoutManager.hasPendingScrollPositionOrSavedState() = when (this) {
+        is LinearLayoutManager -> mPendingScrollPosition != NO_POSITION || mPendingSavedState != null
+        is StaggeredGridLayoutManager -> mPendingScrollPosition != NO_POSITION || mPendingSavedState != null
+        else -> true
+    }
+
+    private companion object {
+        val mPendingSavedStateField = runCatching {
+            StaggeredGridLayoutManager::class.java.getDeclaredField("mPendingSavedState")
+        }.onSuccess { it.isAccessible = true }.getOrNull()
+
+        val StaggeredGridLayoutManager.mPendingSavedState: Parcelable?
+            get() = mPendingSavedStateField?.get(this) as? Parcelable
     }
 }

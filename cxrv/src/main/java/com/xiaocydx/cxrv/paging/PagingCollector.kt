@@ -283,11 +283,11 @@ class PagingCollector<T : Any> internal constructor(
         when {
             !rv.isComputingLayout
                     && rv.scrollState == SCROLL_STATE_IDLE
-                    && rv.dispatchScrollCounter <= 0 -> {
+                    && rv.mDispatchScrollCounter <= 0 -> {
                 // 以下条件满足其中之一则为异常情况：
                 // 1. rv.isComputingLayout == true
                 // 2. rv.scrollState != SCROLL_STATE_IDLE
-                // 3. rv.dispatchScrollCounter > 0
+                // 3. rv.mDispatchScrollCounter > 0
                 // 当这些条件都不满足时，才能直接分发加载状态
             }
             latestFrameVsyncMs == -1L -> {
@@ -352,11 +352,11 @@ class PagingCollector<T : Any> internal constructor(
 
     private companion object {
         const val TRACE_DISPATCH_LOAD_STATES_TAG = "PagingCollector Dispatch LoadStates"
-        private val dispatchScrollCounterField = runCatching {
+        val mDispatchScrollCounterField = runCatching {
             RecyclerView::class.java.getDeclaredField("mDispatchScrollCounter")
         }.onSuccess { it.isAccessible = true }.getOrNull()
 
-        val RecyclerView.dispatchScrollCounter: Int
-            get() = (dispatchScrollCounterField?.get(this) as? Int) ?: 0
+        val RecyclerView.mDispatchScrollCounter: Int
+            get() = (mDispatchScrollCounterField?.get(this) as? Int) ?: 0
     }
 }
