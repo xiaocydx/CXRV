@@ -46,7 +46,8 @@ class HeaderFooterActivity : AppCompatActivity() {
         }
         btnRemoveHeader.onClick {
             header?.let(rvFoo::removeHeader)
-            header?.let { checkRemoved(it.hashCode()) }
+                ?.getItemViewType()
+                ?.let { checkRemoved(it) }
             header = null
         }
     }
@@ -92,7 +93,7 @@ class HeaderFooterActivity : AppCompatActivity() {
     private fun ActivityHeaderFooterBinding.checkRemoved(viewType: Int) {
         val checker = HeaderFooterRemovedChecker(rvFoo, viewType)
         // 由于remove动画结束后，Header和Footer才被回收进缓存，因此在动画结束后检查
-        rvFoo.itemAnimator?.isRunning(checker::run) ?: run(checker::run)
+        rvFoo.itemAnimator?.isRunning(checker::check) ?: run(checker::check)
     }
 
     private fun createView(isHeader: Boolean) = View(this).apply {

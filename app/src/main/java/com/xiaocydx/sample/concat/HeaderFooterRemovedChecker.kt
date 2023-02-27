@@ -17,7 +17,7 @@ class HeaderFooterRemovedChecker(
 ) {
 
     @Throws(IllegalStateException::class)
-    fun run() {
+    fun check() {
         checkCacheViews()
         checkRecycledViewPool()
     }
