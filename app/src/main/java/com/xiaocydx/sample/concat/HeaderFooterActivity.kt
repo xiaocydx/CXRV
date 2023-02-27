@@ -60,7 +60,8 @@ class HeaderFooterActivity : AppCompatActivity() {
         }
         btnRemoveFooter.onClick {
             footer?.let(rvFoo::removeFooter)
-            footer?.let { checkRemoved(it.hashCode()) }
+                ?.getItemViewType()
+                ?.let { checkRemoved(it) }
             footer = null
         }
     }

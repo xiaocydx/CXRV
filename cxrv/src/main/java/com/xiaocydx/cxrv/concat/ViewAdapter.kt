@@ -55,7 +55,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
     /**
      * 返回唯一的ViewType值，例如[View.hashCode]
      */
-    protected abstract fun getItemViewType(): Int
+    abstract fun getItemViewType(): Int
 
     @CallSuper
     override fun onViewRecycled(holder: VH) {
