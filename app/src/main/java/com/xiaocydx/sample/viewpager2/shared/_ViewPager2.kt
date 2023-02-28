@@ -3,7 +3,6 @@
 package com.xiaocydx.sample.viewpager2.shared
 
 import android.view.View
-import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.viewpager2.widget.ViewPager2
@@ -12,7 +11,6 @@ import com.xiaocydx.sample.R
 /**
  * 共享[RecycledViewPool]，可用于分类场景
  */
-@get:MainThread
 val ViewPager2.sharedRecycledViewPool: RecycledViewPool
     get() {
         val key = R.id.tag_vp2_shared_recycled_view_pool
@@ -27,7 +25,6 @@ val ViewPager2.sharedRecycledViewPool: RecycledViewPool
 /**
  * 向上查找[ViewPager2]父级
  */
-@MainThread
 fun RecyclerView.findParentViewPager2(): ViewPager2? {
     var parent: View? = parent as? View
     while (parent != null && parent !is ViewPager2) {
