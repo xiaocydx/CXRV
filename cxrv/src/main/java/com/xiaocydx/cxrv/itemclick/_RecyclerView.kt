@@ -120,7 +120,7 @@ internal fun View.holder(rv: RecyclerView): ViewHolder? {
 internal fun <VH : ViewHolder> View.holder(adapter: Adapter<VH>): VH? {
     val parent = parent as? RecyclerView ?: return null
     val holder = parent.getChildViewHolder(this) ?: return null
-    return if (holder.bindingAdapter == adapter) holder as VH else null
+    return if (holder.bindingAdapter === adapter) holder as VH else null
 }
 
 @CheckResult
