@@ -32,6 +32,8 @@ internal class MultiTypeAdapter<T : Any>(
         multiType.forEach { it.delegate.attachAdapter(this) }
     }
 
+    fun getType(viewType: Int) = multiType.keyAt(viewType)
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return multiType.getViewTypeDelegate(viewType).onCreateViewHolder(parent)
     }

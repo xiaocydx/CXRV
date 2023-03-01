@@ -69,9 +69,31 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      * [ViewTypeDelegate]的函数被调用传入[VH]之前，会先校验[VH]和[ITEM]的对应关系，
      * 因此通过`bindingAdapterPosition`获取的item是类型安全的，将item类型转换为[ITEM]返回即可。
      */
+    @Deprecated(
+        message = "该属性无法确保类型安全，以一对一关系更改viewType的局部更新场景为例，" +
+                "onViewRecycled()传入的holder其实际viewType跟当前viewType已经不一致，" +
+                "此时将获取的item转换为ITEM会抛出ClassCastException异常。",
+        replaceWith = ReplaceWith("getItemOrNull()")
+    )
     @Suppress("UNCHECKED_CAST")
     val VH.item: ITEM
         get() = adapter.getItem(bindingAdapterPosition) as ITEM
+
+    /**
+     * 通过[VH]获取item
+     *
+     * 若通过`bindingAdapterPosition`获取不到item，或者item类型验证失败，则返回`null`。
+     * 以一对一关系更改`viewType`的局部更新场景为例，[onViewRecycled]传入的`holder`，
+     * 其实际`viewType`跟当前[viewType]已经不一致，此时item类型验证失败。
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun VH.getItemOrNull(): ITEM? {
+        val item = adapter.getItemOrNull(bindingAdapterPosition) ?: return null
+        val adapter = adapter as? MultiTypeAdapter ?: return null
+        val clazz = adapter.getType(viewType)?.clazz ?: return null
+        // 大部分场景clazz.isAssignableFrom(item.javaClass)直接进入if (this == cls)分支返回true
+        return if (clazz.isAssignableFrom(item.javaClass)) item as ITEM else null
+    }
 
     /**
      * 通过[VH]设置item，该函数必须在主线程调用
@@ -90,7 +112,9 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      * ```
      */
     @MainThread
-    inline fun VH.setItem(newItem: ITEM.() -> ITEM) = setItem(item.newItem())
+    inline fun VH.setItem(newItem: ITEM.() -> ITEM) {
+        getItemOrNull()?.newItem()?.let { setItem(it) }
+    }
 
     /**
      * 通过[VH]移除item，该函数必须在主线程调用

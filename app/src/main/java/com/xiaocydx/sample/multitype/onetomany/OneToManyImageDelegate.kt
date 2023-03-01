@@ -8,8 +8,7 @@ import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
  * @author xcc
  * @date 2022/2/17
  */
-class OneToManyImageDelegate :
-    ViewTypeDelegate<OneToManyMessage, OneToManyImageDelegate.ViewHolder>() {
+class OneToManyImageDelegate : ViewTypeDelegate<OneToManyMessage, OneToManyImageDelegate.ViewHolder>() {
 
     override fun areItemsTheSame(oldItem: OneToManyMessage, newItem: OneToManyMessage): Boolean {
         return oldItem.id == newItem.id
