@@ -7,23 +7,6 @@ import androidx.lifecycle.setTagIfAbsent
 import java.io.Closeable
 
 /**
- * 保留[ViewModel]，可用于分类场景
- */
-@Suppress("FunctionName")
-@JvmName("RetainedViewModelsTyped")
-fun RetainedViewModels(host: ViewModel): RetainedViewModels<ViewModel> {
-    return RetainedViewModels<ViewModel>(host)
-}
-
-/**
- * 保留[ViewModel]，可用于分类场景
- */
-@Suppress("FunctionName")
-fun <VM : ViewModel> RetainedViewModels(host: ViewModel): RetainedViewModels<VM> {
-    return RetainedViewModels<VM>().apply { host.setTagIfAbsent(hashCode().toString(), this) }
-}
-
-/**
  * 通过[key]获取[ViewModel]，若不存在，则调用[defaultValue]保留结果。
  */
 @MainThread
@@ -69,11 +52,14 @@ fun <VM : ViewModel> RetainedViewModels<VM>.retainForKeys(keys: Set<String>) {
 }
 
 /**
- * 可用于分类场景，父级[ViewModel]保留子级[ViewModel]
+ * 可用于分组场景，父级[ViewModel]保留子级[ViewModel]
  */
-class RetainedViewModels<VM : ViewModel>
-@PublishedApi internal constructor() : Closeable {
+class RetainedViewModels<VM : ViewModel>(host: ViewModel) {
     private val viewModels: MutableMap<String, VM> = mutableMapOf()
+
+    init {
+        host.setTagIfAbsent(hashCode().toString(), Cleaner())
+    }
 
     @MainThread
     fun isEmpty(): Boolean {
@@ -105,12 +91,10 @@ class RetainedViewModels<VM : ViewModel>
     }
 
     /**
-     * [ViewModel.clear]被调用时，会同步调用[close]
+     * `host.clear()`被调用时，会同步调用[clear]
      */
-    @MainThread
-    @SinceKotlin("999.9")
-    @Suppress("NEWER_VERSION_IN_SINCE_KOTLIN")
-    override fun close() {
-        clear()
+    private inner class Cleaner : Closeable {
+        @MainThread
+        override fun close() = clear()
     }
 }
