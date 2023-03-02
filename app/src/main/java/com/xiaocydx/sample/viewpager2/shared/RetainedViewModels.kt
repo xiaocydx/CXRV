@@ -1,5 +1,6 @@
 package com.xiaocydx.sample.viewpager2.shared
 
+import android.os.Looper
 import androidx.annotation.MainThread
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.clear
@@ -55,46 +56,69 @@ fun <VM : ViewModel> RetainedViewModels<VM>.retainForKeys(keys: Set<String>) {
  * 可用于分组场景，父级[ViewModel]保留子级[ViewModel]
  */
 class RetainedViewModels<VM : ViewModel>(host: ViewModel) {
+    private var hostCleared = false
     private val viewModels: MutableMap<String, VM> = mutableMapOf()
 
     init {
+        assertMainThread()
+        // 若已调用host.clear()，则直接执行Cleaner.close()
         host.setTagIfAbsent(hashCode().toString(), Cleaner())
     }
 
     @MainThread
     fun isEmpty(): Boolean {
+        assertMainThread()
         return viewModels.isEmpty()
     }
 
     @MainThread
     fun keys(): Set<String> {
+        assertMainThread()
         return viewModels.keys
     }
 
     @MainThread
-    fun getOrNull(key: String): VM? = viewModels[key]
+    fun getOrNull(key: String): VM? {
+        assertMainThread()
+        return viewModels[key]
+    }
 
     @MainThread
     fun put(key: String, viewModel: VM) {
+        assertMainThread()
+        if (hostCleared) {
+            viewModel.clear()
+            return
+        }
         viewModels.put(key, viewModel)?.clear()
     }
 
     @MainThread
     fun remove(key: String) {
+        assertMainThread()
         viewModels.remove(key)?.clear()
     }
 
     @MainThread
     fun clear() {
+        assertMainThread()
         viewModels.values.forEach { it.clear() }
         viewModels.clear()
     }
 
+    private fun assertMainThread() {
+        val isMainThread = Thread.currentThread() === Looper.getMainLooper().thread
+        assert(isMainThread) { "只能在主线程中调用当前函数" }
+    }
+
     /**
-     * `host.clear()`被调用时，会同步调用[clear]
+     * `host.clear()`被调用时，同步调用[clear]
      */
     private inner class Cleaner : Closeable {
         @MainThread
-        override fun close() = clear()
+        override fun close() {
+            hostCleared = true
+            clear()
+        }
     }
 }
