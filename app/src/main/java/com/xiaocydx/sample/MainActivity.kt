@@ -14,6 +14,7 @@ import com.xiaocydx.sample.databinding.ItemStartBinding
 import com.xiaocydx.sample.itemclick.ItemClickActivity
 import com.xiaocydx.sample.itemselect.MultiSelectionActivity
 import com.xiaocydx.sample.itemselect.SingleSelectionActivity
+import com.xiaocydx.sample.itemtouch.ItemTouchActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
 import com.xiaocydx.sample.nested.NestedListActivity
 import com.xiaocydx.sample.paging.PagingActivity
@@ -51,6 +52,7 @@ class MainActivity : AppCompatActivity() {
         submitList(listOf(
             StartItem<NestedListActivity>("嵌套列表示例"),
             StartItem<ItemClickActivity>("item点击、长按示例"),
+            StartItem<ItemTouchActivity>("item拖动、侧滑示例"),
             StartItem<SingleSelectionActivity>("item单项选择示例"),
             StartItem<MultiSelectionActivity>("item多项选择示例"),
             StartItem<MultiTypeActivity>("item多类型示例"),

@@ -24,6 +24,9 @@
             android:name=".itemclick.ItemClickActivity"
             android:exported="false" />
         <activity
+            android:name=".itemtouch.ItemTouchActivity"
+            android:exported="false" />
+        <activity
             android:name=".itemselect.SingleSelectionActivity"
             android:exported="false" />
         <activity
