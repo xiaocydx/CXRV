@@ -1,11 +1,13 @@
 package com.xiaocydx.cxrv.itemtouch
 
 import android.graphics.Canvas
+import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.R
 import com.xiaocydx.cxrv.internal.accessEach
+import com.xiaocydx.cxrv.internal.toUnmodifiableList
 
 /**
  * [ItemTouchCallback]的分发器
@@ -79,6 +81,11 @@ internal class ItemTouchDispatcher(
     private fun ArrayList<ItemTouchCallback>.findIntercepting(holder: ViewHolder): ItemTouchCallback? {
         accessEach { if (it.onIntercept(holder)) return it }
         return null
+    }
+
+    @VisibleForTesting
+    fun getItemTouchCallbacks(): List<ItemTouchCallback> {
+        return callbacks?.toUnmodifiableList() ?: emptyList()
     }
 
     fun addItemTouchCallback(callback: ItemTouchCallback) {

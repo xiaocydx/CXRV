@@ -78,11 +78,7 @@ inline fun <AdapterT : Adapter<out VH>, VH : ViewHolder> RecyclerView.itemTouch(
  */
 inline fun <AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder> AdapterT.itemTouch(
     crossinline block: ItemTouchScope<AdapterT, VH>.() -> Unit
-): Disposable = DisposableWrapper().also { wrapper ->
-    doOnAttach { rv ->
-        rv.itemTouch(this, block).also(wrapper::attach)
-    }.also(wrapper::attachIfEmpty)
-}
+): Disposable = repeatOnAttach { rv -> rv.itemTouch(this, block) }
 
 /**
  * 拖动时移动item
