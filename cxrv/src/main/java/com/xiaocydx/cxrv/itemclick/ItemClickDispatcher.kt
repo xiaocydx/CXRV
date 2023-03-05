@@ -5,10 +5,12 @@ import android.view.MotionEvent.ACTION_DOWN
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.OnLongClickListener
+import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.SimpleOnItemTouchListener
 import com.xiaocydx.cxrv.R
 import com.xiaocydx.cxrv.internal.accessEach
+import com.xiaocydx.cxrv.internal.toUnmodifiableList
 import com.xiaocydx.cxrv.list.Disposable
 
 /**
@@ -123,6 +125,11 @@ internal class ItemClickDispatcher(
         }
         clearPendingLongClickTargets()
         return consumed
+    }
+
+    @VisibleForTesting
+    fun getDispatchTargets(): List<DispatchTarget> {
+        return dispatchTargets?.toUnmodifiableList() ?: emptyList()
     }
 
     private fun addDispatchTarget(target: DispatchTarget) {
