@@ -250,6 +250,32 @@ class CoroutineListDifferTest {
         verify(exactly = 1) { updateCallback.onMoved(0, 2) }
     }
 
+    @Test
+    fun execute_UpdateOp_SubmitList_Cancel(): Unit = runBlocking {
+        val listener = spyk(object : ListExecuteListener<String> {
+            override fun onExecute(op: UpdateOp<String>) = Unit
+        })
+        differ.addListExecuteListener(listener)
+        differ.updateList(UpdateOp.SubmitList(listOf("A", "B")))
+
+        // 提交新列表，进行(A, B) -> (A, B, C)的差异计算
+        differ.updateList(UpdateOp.SubmitList(listOf("A", "B", "C")))
+        // 将addItemOp和removeItemOp添加到更新队列，在差异计算完成后执行
+        val addItemOp = UpdateOp.AddItem(position = 0, "D")
+        val removeItemOp = UpdateOp.RemoveItems<String>(position = 0, 1)
+        differ.updateList(addItemOp)
+        differ.updateList(removeItemOp)
+
+        // 再次提交新列表，取消(A, B) -> (A, B, C)的差异计算和挂起的更新操作
+        differ.awaitUpdateList(UpdateOp.SubmitList(emptyList()))
+        assertThat(differ.currentList).isEmpty()
+        // 验证取消(A, B) -> (A, B, C)的差异计算后不会添加C
+        verify(exactly = 0) { updateCallback.onInserted(2, 1) }
+        // 验证取消(A, B) -> (A, B, C)的差异计算后不会执行addItemOp和removeItemOp
+        verify(exactly = 0) { listener.onExecute(addItemOp) }
+        verify(exactly = 0) { listener.onExecute(removeItemOp) }
+    }
+
     private class TestDiffCallback : DiffUtil.ItemCallback<String>() {
         override fun areItemsTheSame(oldItem: String, newItem: String): Boolean {
             return oldItem == newItem

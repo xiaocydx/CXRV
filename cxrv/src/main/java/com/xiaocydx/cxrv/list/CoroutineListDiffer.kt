@@ -17,19 +17,20 @@ import kotlin.coroutines.*
  * 列表更新帮助类，计算两个列表的差异，并根据计算结果更新列表
  *
  * ### 更新操作
- * 调用[updateList]或[awaitUpdateList]，传入更新操作更新列表，
- * 若正在执行[UpdateOp.SubmitList]，则执行完之后才处理传入的更新操作，
- * [awaitUpdateList]会响应调用处协程的取消，抛出[CancellationException]，但不会取消更新操作。
+ * 调用[updateList]或[awaitUpdateList]，传入[UpdateOp]更新列表，
+ * 若传入的[UpdateOp]是[UpdateOp.SubmitList]，则取消正在执行和挂起中的[UpdateOp]，
+ * 若传入的[UpdateOp]不是[UpdateOp.SubmitList]，则立即被执行或者进入更新队列等待被执行，
+ * [awaitUpdateList]会响应调用处协程的取消，抛出[CancellationException]，但不会取消[UpdateOp]。
  *
  * ### 更新取消
- * 调用[CoroutineListDiffer.cancel]会取消挂起中的更新操作，
- * 不会停止正在执行的[UpdateOp.SubmitList]，但在执行完之后不会更新列表。
+ * 调用[CoroutineListDiffer.cancel]能取消挂起中的[UpdateOp]，不能停止正在执行的[UpdateOp.SubmitList]，
+ * 原因是[DiffUtil.calculateDiff]的计算逻辑无法响应取消，虽然不能停止计算，但是能在计算完成后不更新列表。
  *
  * ### 更新回调
  * 1.调用[addListChangedListener]，可以添加列表已更改的[ListChangedListener]，
- * 当[ListChangedListener.onListChanged]被调用时，表示列表数据修改完成、列表更新操作执行完成。
- * 2.调用[addListExecuteListener]，可以添加执行列表更新操作的[ListExecuteListener]，
- * 当[ListExecuteListener.onExecute]被调用时，表示开始执行列表更新操作，该监听用于构建双向通信。
+ * 当[ListChangedListener.onListChanged]被调用时，表示列表数据修改完成、[UpdateOp]执行完成。
+ * 2.调用[addListExecuteListener]，可以添加执行[UpdateOp]的[ListExecuteListener]，
+ * 当[ListExecuteListener.onExecute]被调用时，表示开始执行[UpdateOp]，该监听用于构建双向通信。
  *
  * @author xcc
  * @date 2021/12/9
@@ -64,11 +65,11 @@ class CoroutineListDiffer<T : Any>(
      *    if(exception == null) {
      *         // 此时列表已更新、数据已修改
      *    } else {
-     *         // 更新操作可能被取消
+     *         // op可能被取消
      *    }
      * }
      * ```
-     * @param dispatch 是否将更新操作分发给[ListExecuteListener]
+     * @param dispatch 是否将[op]分发给[ListExecuteListener]
      */
     fun updateList(
         op: UpdateOp<T>,
@@ -92,9 +93,9 @@ class CoroutineListDiffer<T : Any>(
     /**
      * 更新列表并等待完成
      *
-     * **注意**：该函数会响应调用处协程的取消，抛出[CancellationException]，
-     * 但不会取消更新操作，调用[CoroutineListDiffer.cancel]，会取消挂起中的更新操作，
-     * 不会停止正在执行的[UpdateOp.SubmitList]，但在执行完之后不会更新列表。
+     * **注意**：该函数会响应调用处协程的取消，抛出[CancellationException]，但不会取消[op]，
+     * 调用[CoroutineListDiffer.cancel]能取消挂起中的[UpdateOp]，不能停止正在执行的[UpdateOp.SubmitList]，
+     * 原因是[DiffUtil.calculateDiff]的计算逻辑无法响应取消，虽然不能停止计算，但是能在计算完成后不更新列表。
      *
      * ```
      * val differ: CoroutineListDiffer<Any> = ...
@@ -104,7 +105,7 @@ class CoroutineListDiffer<T : Any>(
      *    // 此时列表已更新、数据已修改
      * }
      * ```
-     * @param dispatch 是否将更新操作分发给[ListExecuteListener]
+     * @param dispatch 是否将[op]分发给[ListExecuteListener]
      */
     suspend fun awaitUpdateList(
         op: UpdateOp<T>,
@@ -141,6 +142,7 @@ class CoroutineListDiffer<T : Any>(
     @MainThread
     private fun isLockNeeded(op: UpdateOp<T>): Boolean {
         if (mutex.isLocked) {
+            if (op is UpdateOp.SubmitList) cancel()
             return true
         }
         if (op !is UpdateOp.SubmitList) {
@@ -327,7 +329,7 @@ class CoroutineListDiffer<T : Any>(
     }
 
     /**
-     * 添加执行列表更新操作的监听
+     * 添加执行[UpdateOp]的监听
      *
      * * [ListExecuteListener.onExecute]中可以调用[removeListExecuteListener]。
      */
@@ -343,7 +345,7 @@ class CoroutineListDiffer<T : Any>(
     }
 
     /**
-     * 移除执行列表更新操作的监听
+     * 移除执行[UpdateOp]的监听
      */
     fun removeListExecuteListener(
         listener: ListExecuteListener<T>
