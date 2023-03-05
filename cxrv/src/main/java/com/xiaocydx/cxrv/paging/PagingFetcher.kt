@@ -3,14 +3,12 @@ package com.xiaocydx.cxrv.paging
 import androidx.annotation.MainThread
 import com.xiaocydx.cxrv.internal.flowOnMain
 import com.xiaocydx.cxrv.internal.log
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 
 /**
  * 分页提取器，从[PagingSource]中加载结果
@@ -27,13 +25,17 @@ internal class PagingFetcher<K : Any, T : Any>(
     private var nextKey: K? = null
     private val appendEvent = ConflatedEvent<Unit>()
     private val retryEvent = ConflatedEvent<Unit>()
-    @Volatile private var sendChannel: SendChannel<PagingEvent<T>>? = null
+    private val completableJob: CompletableJob = Job()
     @Volatile var loadStates: LoadStates = LoadStates.Incomplete; private set
 
-    val flow: Flow<PagingEvent<T>> = safeChannelFlow<PagingEvent<T>> { channel ->
+    val flow: Flow<PagingEvent<T>> = safeChannelFlow { channel ->
         check(!isCollected) { "分页事件流Flow<PagingEvent<*>>只能被收集一次" }
         isCollected = true
-        sendChannel = channel
+        completableJob.invokeOnCompletion {
+            // 注意：此处不要用channel::close简化代码，
+            // 这会将invokeOnCompletion的异常恢复给下游。
+            channel.close()
+        }
 
         launch(start = UNDISPATCHED) {
             appendEvent.flow.filter {
@@ -135,6 +137,6 @@ internal class PagingFetcher<K : Any, T : Any>(
     }
 
     fun close() {
-        sendChannel?.close()
+        completableJob.cancel()
     }
 }

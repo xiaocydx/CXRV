@@ -24,12 +24,9 @@ class PagingFetcherTest {
 
     @Test
     fun collect_RefreshSuccess_PagingEvent(): Unit = runBlocking {
-        val fetcher =
-                getTestFetcher(maxPage = 1, result = Result.NORMAL)
+        val fetcher = getTestFetcher(maxPage = 1, result = Result.NORMAL)
         val events = mutableListOf<PagingEvent<String>>()
-        launch {
-            fetcher.flow.toList(events)
-        }
+        launch { fetcher.flow.toList(events) }
 
         delay(100)
         fetcher.close()
@@ -42,12 +39,9 @@ class PagingFetcherTest {
 
     @Test
     fun collect_RefreshFailure_PagingEvent(): Unit = runBlocking {
-        val fetcher =
-                getTestFetcher(maxPage = 1, result = Result.REFRESH_FAILURE)
+        val fetcher = getTestFetcher(maxPage = 1, result = Result.REFRESH_FAILURE)
         val events = mutableListOf<PagingEvent<String>>()
-        launch {
-            fetcher.flow.toList(events)
-        }
+        launch { fetcher.flow.toList(events) }
 
         delay(100)
         fetcher.close()
@@ -60,12 +54,9 @@ class PagingFetcherTest {
 
     @Test
     fun collect_RefreshRetry_PagingEvent(): Unit = runBlocking {
-        val fetcher =
-                getTestFetcher(maxPage = 1, result = Result.REFRESH_FAILURE)
+        val fetcher = getTestFetcher(maxPage = 1, result = Result.REFRESH_FAILURE)
         val events = mutableListOf<PagingEvent<String>>()
-        launch {
-            fetcher.flow.toList(events)
-        }
+        launch { fetcher.flow.toList(events) }
 
         delay(100)
         events.clear()
@@ -81,8 +72,7 @@ class PagingFetcherTest {
 
     @Test
     fun collect_AppendSuccess_PagingEvent(): Unit = runBlocking {
-        val fetcher =
-                getTestFetcher(maxPage = 2, result = Result.NORMAL)
+        val fetcher = getTestFetcher(maxPage = 2, result = Result.NORMAL)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
             fetcher.flow.filter {
@@ -103,8 +93,7 @@ class PagingFetcherTest {
 
     @Test
     fun collect_AppendFailure_PagingEvent(): Unit = runBlocking {
-        val fetcher =
-                getTestFetcher(maxPage = 2, result = Result.APPEND_FAILURE)
+        val fetcher = getTestFetcher(maxPage = 2, result = Result.APPEND_FAILURE)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
             fetcher.flow.filter {
@@ -125,8 +114,7 @@ class PagingFetcherTest {
 
     @Test
     fun collect_AppendRetry_PagingEvent(): Unit = runBlocking {
-        val fetcher =
-                getTestFetcher(maxPage = 2, result = Result.APPEND_FAILURE)
+        val fetcher = getTestFetcher(maxPage = 2, result = Result.APPEND_FAILURE)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
             fetcher.flow.filter {
@@ -151,8 +139,7 @@ class PagingFetcherTest {
 
     @Test
     fun refreshFailure_DisallowAppend(): Unit = runBlocking {
-        val fetcher =
-                getTestFetcher(maxPage = 1, result = Result.REFRESH_FAILURE)
+        val fetcher = getTestFetcher(maxPage = 1, result = Result.REFRESH_FAILURE)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
             fetcher.flow.toList(events)
@@ -169,8 +156,7 @@ class PagingFetcherTest {
 
     @Test
     fun refreshFully_DisallowAppend(): Unit = runBlocking {
-        val fetcher =
-                getTestFetcher(maxPage = 1, result = Result.NORMAL)
+        val fetcher = getTestFetcher(maxPage = 1, result = Result.NORMAL)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
             fetcher.flow.toList(events)
@@ -187,8 +173,7 @@ class PagingFetcherTest {
 
     @Test
     fun appendFully_DisallowAppend(): Unit = runBlocking {
-        val fetcher =
-                getTestFetcher(maxPage = 2, result = Result.NORMAL)
+        val fetcher = getTestFetcher(maxPage = 2, result = Result.NORMAL)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
             fetcher.flow.filter {
@@ -203,6 +188,17 @@ class PagingFetcherTest {
         delay(100)
         fetcher.close()
         assertThat(events.size).isEqualTo(2)
+    }
+
+    @Test
+    fun closed_DisallowSend_PagingEvent(): Unit = runBlocking {
+        val fetcher = getTestFetcher(maxPage = 2, result = Result.NORMAL)
+        val events = mutableListOf<PagingEvent<String>>()
+        fetcher.close()
+        launch { fetcher.flow.toList(events) }
+
+        delay(100)
+        assertThat(events.size).isEqualTo(0)
     }
 
     private fun getTestFetcher(
