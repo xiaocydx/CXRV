@@ -138,10 +138,15 @@ internal class AppendTrigger(
         val layoutPosition = when {
             startPosition in minPosition..maxPosition -> startPosition
             endPosition in minPosition..maxPosition -> endPosition
+            startPosition < minPosition && endPosition > maxPosition -> Int.MIN_VALUE
             else -> -1
         }
         if (layoutPosition != -1) {
-            log { "$from trigger append, layoutPosition = $layoutPosition" }
+            if (layoutPosition == Int.MIN_VALUE) {
+                log { "$from trigger append" }
+            } else {
+                log { "$from trigger append, layoutPosition = $layoutPosition" }
+            }
             append()
         }
     }
@@ -192,7 +197,7 @@ internal class AppendTrigger(
             if (position !in startPosition..endPosition) return
 
             if (rv?.isPreLayout == true) {
-                // 此时处于预测布局，填充子View时调用了onBindViewHolder()，
+                // 此时处于preLayout，填充子View时调用了onBindViewHolder()，
                 // 例如列表全选功能，调用notifyItemRangeChanged()做全选更新，
                 // 这种情况不启用滚动绑定触发方案，而是启用滚动监听触发方案。
                 preAppend()
