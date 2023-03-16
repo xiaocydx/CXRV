@@ -158,8 +158,16 @@ class ListState<T : Any> : ListOwner<T> {
                 || toPosition !in sourceList.indices) {
             return false
         }
-        val item = sourceList.removeAt(fromPosition)
-        sourceList.add(toPosition, item)
+        // 先remove再add可能会造成两次较大范围的元素搬运
+        // val item = sourceList.removeAt(fromPosition)
+        // sourceList.add(toPosition, item)
+        if (fromPosition < toPosition) {
+            // 从小到大，fromPosition两两交换至toPosition
+            for (i in fromPosition until toPosition) sourceList.swap(i, i + 1)
+        } else {
+            // 从大到小，fromPosition两两交换至toPosition
+            for (i in fromPosition downTo toPosition + 1) sourceList.swap(i, i - 1)
+        }
         return true
     }
 }
