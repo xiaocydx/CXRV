@@ -1,11 +1,13 @@
 package com.xiaocydx.cxrv.list
 
+import android.annotation.SuppressLint
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.internal.reverseAccessEach
+import com.xiaocydx.cxrv.internal.swap
 import com.xiaocydx.cxrv.internal.toUnmodifiableList
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -17,19 +19,18 @@ import kotlin.coroutines.*
  * 列表更新帮助类，计算两个列表的差异，并根据计算结果更新列表
  *
  * ### 更新操作
- * 调用[updateList]或[awaitUpdateList]，传入[UpdateOp]更新列表，
+ * 调用[updateList]传入[UpdateOp]更新列表，返回更新结果[UpdateResult]，
  * 若传入的[UpdateOp]是[UpdateOp.SubmitList]，则取消正在执行和挂起中的[UpdateOp]，
- * 若传入的[UpdateOp]不是[UpdateOp.SubmitList]，则立即被执行或者进入更新队列等待被执行，
- * [awaitUpdateList]会响应调用处协程的取消，抛出[CancellationException]，但不会取消[UpdateOp]。
+ * 若传入的[UpdateOp]不是[UpdateOp.SubmitList]，则立即被执行或者进入更新队列等待被执行。
  *
  * ### 更新取消
  * 调用[CoroutineListDiffer.cancel]能取消挂起中的[UpdateOp]，不能停止正在执行的[UpdateOp.SubmitList]，
  * 原因是[DiffUtil.calculateDiff]的计算逻辑无法响应取消，虽然不能停止计算，但是能在计算完成后不更新列表。
  *
  * ### 更新回调
- * 1.调用[addListChangedListener]，可以添加列表已更改的[ListChangedListener]，
+ * 调用[addListChangedListener]，可以添加列表已更改的[ListChangedListener]，
  * 当[ListChangedListener.onListChanged]被调用时，表示列表数据修改完成、[UpdateOp]执行完成。
- * 2.调用[addListExecuteListener]，可以添加执行[UpdateOp]的[ListExecuteListener]，
+ * 调用[addListExecuteListener]，可以添加执行[UpdateOp]的[ListExecuteListener]，
  * 当[ListExecuteListener.onExecute]被调用时，表示开始执行[UpdateOp]，该监听用于构建双向通信。
  *
  * @author xcc
@@ -71,23 +72,17 @@ class CoroutineListDiffer<T : Any>(
      * ```
      * @param dispatch 是否将[op]分发给[ListExecuteListener]
      */
+    @Deprecated(
+        message = "合并更新列表函数，去除complete参数，提供UpdateResult",
+        replaceWith = ReplaceWith("updateList(op, dispatch).await()")
+    )
     fun updateList(
         op: UpdateOp<T>,
         dispatch: Boolean = true,
         complete: ((exception: Throwable?) -> Unit)? = null
-    ) = runOnMainThread {
-        if (isLockNeeded(op)) {
-            val job = scope.launch {
-                mutex.withLock { execute(op, dispatch) }
-            }
-            complete?.let(job::invokeOnCompletion)
-        } else {
-            // 该分支下调用execute()不会产生挂起，
-            // 因此直接执行execute()的状态机逻辑。
-            @Suppress("UNCHECKED_CAST")
-            execute(this, op as UpdateOp<Any>, dispatch, NopSymbol)
-            complete?.invoke(null)
-        }
+    ) {
+        updateList(op, dispatch).let { it as? CompleteCompat }
+            ?.invokeOnCompletion(complete) ?: complete?.invoke(null)
     }
 
     /**
@@ -107,18 +102,45 @@ class CoroutineListDiffer<T : Any>(
      * ```
      * @param dispatch 是否将[op]分发给[ListExecuteListener]
      */
-    suspend fun awaitUpdateList(
+    @Deprecated(
+        message = "合并更新列表函数，去除complete参数，提供UpdateResult",
+        replaceWith = ReplaceWith("updateList(op, dispatch).await()")
+    )
+    suspend fun awaitUpdateList(op: UpdateOp<T>, dispatch: Boolean = true) {
+        updateList(op, dispatch).await()
+    }
+
+    /**
+     * 更新列表
+     *
+     * **注意**：[UpdateResult.await]会响应调用处协程的取消，抛出[CancellationException]，但不会取消[op]，
+     * 调用[CoroutineListDiffer.cancel]能取消挂起中的[UpdateOp]，不能停止正在执行的[UpdateOp.SubmitList]，
+     * 原因是[DiffUtil.calculateDiff]的计算逻辑无法响应取消，虽然不能停止计算，但是能在计算完成后不更新列表。
+     *
+     * ```
+     * val differ: CoroutineListDiffer<Any> = ...
+     * val op = UpdateOp.SubmitList(newList)
+     * scope.launch {
+     *    differ.updateList(op).await()
+     *    // 此时列表已更新、数据已修改
+     * }
+     * ```
+     * @param dispatch 是否将[op]分发给[ListExecuteListener]
+     */
+    fun updateList(
         op: UpdateOp<T>,
         dispatch: Boolean = true
-    ) = withMainDispatcher {
+    ): UpdateResult = assertMainThreadUpdate {
         if (isLockNeeded(op)) {
-            scope.launch {
+            scope.async {
                 mutex.withLock { execute(op, dispatch) }
-            }.join()
+            }.let(::DeferredResult)
         } else {
             // 该分支下调用execute()不会产生挂起，
             // 因此直接执行execute()的状态机逻辑。
-            execute(op, dispatch)
+            @Suppress("UNCHECKED_CAST")
+            execute(this, op as UpdateOp<Any>, dispatch, NopSymbol)
+            CompleteResult
         }
     }
 
@@ -165,7 +187,7 @@ class CoroutineListDiffer<T : Any>(
         val oldList = sourceList
         when {
             oldList === newList -> return false
-            oldList.isEmpty() && newList.isEmpty() -> return false
+            oldList.isEmpty() && newList.isEmpty() -> return true
             oldList.isNotEmpty() && newList.isEmpty() -> {
                 val count = oldList.size
                 sourceList.clear()
@@ -263,7 +285,7 @@ class CoroutineListDiffer<T : Any>(
     private fun removeItems(position: Int, itemCount: Int): Boolean {
         if (position !in sourceList.indices || itemCount <= 0) return false
         if (itemCount == 1) {
-            // ArrayList.removeAt()相比于ArrayList.removeRange()，
+            // ArrayList.remove()相比于ArrayList.removeRange()，
             // 移除的是最后一位元素时，不会调用System.arraycopy()。
             sourceList.removeAt(position)
             updateCallback.onRemoved(position, 1)
@@ -283,8 +305,16 @@ class CoroutineListDiffer<T : Any>(
                 || toPosition !in sourceList.indices) {
             return false
         }
-        val item = sourceList.removeAt(fromPosition)
-        sourceList.add(toPosition, item)
+        // 先remove再add可能会造成两次较大范围的元素搬运
+        // val item = sourceList.removeAt(fromPosition)
+        // sourceList.add(toPosition, item)
+        if (fromPosition < toPosition) {
+            // 从小到大，fromPosition两两交换至toPosition
+            for (i in fromPosition until toPosition) sourceList.swap(i, i + 1)
+        } else {
+            // 从大到小，fromPosition两两交换至toPosition
+            for (i in fromPosition downTo toPosition + 1) sourceList.swap(i, i - 1)
+        }
         updateCallback.onMoved(fromPosition, toPosition)
         return true
     }
@@ -310,7 +340,7 @@ class CoroutineListDiffer<T : Any>(
      */
     fun addListChangedListener(
         listener: ListChangedListener<T>
-    ) = runOnMainThread {
+    ) = assertMainThread {
         if (changedListeners == null) {
             changedListeners = arrayListOf()
         }
@@ -324,7 +354,7 @@ class CoroutineListDiffer<T : Any>(
      */
     fun removeListChangedListener(
         listener: ListChangedListener<T>
-    ) = runOnMainThread {
+    ) = assertMainThread {
         changedListeners?.remove(listener)
     }
 
@@ -335,7 +365,7 @@ class CoroutineListDiffer<T : Any>(
      */
     fun addListExecuteListener(
         listener: ListExecuteListener<T>
-    ) = runOnMainThread {
+    ) = assertMainThread {
         if (executeListeners == null) {
             executeListeners = arrayListOf()
         }
@@ -349,7 +379,7 @@ class CoroutineListDiffer<T : Any>(
      */
     fun removeListExecuteListener(
         listener: ListExecuteListener<T>
-    ) = runOnMainThread {
+    ) = assertMainThread {
         executeListeners?.remove(listener)
     }
 
@@ -358,19 +388,23 @@ class CoroutineListDiffer<T : Any>(
         scope.coroutineContext.cancelChildren()
     }
 
-    private inline fun runOnMainThread(crossinline block: () -> Unit) {
+    @SuppressLint("VisibleForTests")
+    private inline fun assertMainThread(crossinline block: () -> Unit) {
         val dispatcher = mainDispatcher.immediate
         if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
+            assert(dispatcher is TestMainCoroutineDispatcher) { "只能在主线程中调用当前函数" }
             dispatcher.dispatch(EmptyCoroutineContext) { block() }
         } else {
             block()
         }
     }
 
-    private suspend inline fun withMainDispatcher(crossinline block: suspend () -> Unit) {
+    @SuppressLint("VisibleForTests")
+    private inline fun assertMainThreadUpdate(crossinline block: () -> UpdateResult): UpdateResult {
         val dispatcher = mainDispatcher.immediate
-        if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
-            withContext(dispatcher) { block() }
+        return if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
+            assert(dispatcher is TestMainCoroutineDispatcher) { "只能在主线程中调用当前函数" }
+            TestUpdateResult(dispatcher) { block() }
         } else {
             block()
         }
@@ -378,8 +412,8 @@ class CoroutineListDiffer<T : Any>(
 
     private companion object NopSymbol : Continuation<Any?> {
         @Suppress("UNCHECKED_CAST")
-        private val execute =
-                CoroutineListDiffer<Any>::execute as Function4<Any, UpdateOp<Any>, Boolean, Continuation<Unit>, Any?>
+        private val execute = CoroutineListDiffer<Any>::execute
+                as Function4<Any, UpdateOp<Any>, Boolean, Continuation<Unit>, Any?>
         override val context: CoroutineContext = EmptyCoroutineContext
         override fun resumeWith(result: Result<Any?>) = Unit
     }

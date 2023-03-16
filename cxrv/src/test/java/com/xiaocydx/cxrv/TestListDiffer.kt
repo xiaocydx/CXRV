@@ -1,5 +1,6 @@
 package com.xiaocydx.cxrv
 
+import com.xiaocydx.cxrv.list.TestMainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.Runnable
@@ -28,13 +29,11 @@ private class TestWorkExecutor(
     }
 ) {
     override fun beforeExecute(t: Thread?, r: java.lang.Runnable?) {
-        if (dispatchDelay > 0) {
-            Thread.sleep(dispatchDelay)
-        }
+        if (dispatchDelay > 0) Thread.sleep(dispatchDelay)
     }
 }
 
-private class TestMainDispatcher : MainCoroutineDispatcher() {
+private class TestMainDispatcher : TestMainCoroutineDispatcher() {
     private val dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor { runnable ->
         thread(start = false, isDaemon = true) {
             isTestMain.set(true)
