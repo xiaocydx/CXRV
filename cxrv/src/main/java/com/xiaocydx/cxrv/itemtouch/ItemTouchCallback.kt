@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.RecyclerView.*
 
 /**
  * [ItemTouchCallback]是[ItemTouchHelper.Callback]的简化类，
- * 仅定义了业务场景中常用的函数，用于简化模板代码，例如[getDragFlags]、[onDrag]等等，
+ * 仅定义了实际场景中常用的函数，用于简化模板代码，例如[getDragFlags]、[onDrag]等等，
  * 这些常用函数对应[ItemTouchHelper.Callback]中的同名函数，通过[onIntercept]完成回调分发。
  *
  * [onSelected]、[onDraw]、[clearView]参考自[ItemTouchUIUtil]的命名，可以看作是触摸开始、触摸中、触摸结束的回调。

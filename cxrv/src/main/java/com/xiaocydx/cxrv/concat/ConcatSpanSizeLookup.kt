@@ -57,7 +57,7 @@ class ConcatSpanSizeLookup(
 }
 
 /**
- * 业务场景设置的原始[SpanSizeLookup]
+ * 实际场景设置的原始[SpanSizeLookup]
  */
 private val GridLayoutManager.sourceSpanSizeLookup: SpanSizeLookup
     get() = when (spanSizeLookup) {

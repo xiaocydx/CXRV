@@ -33,7 +33,7 @@ internal interface ConcatAdapterHolder {
     val concatAdapter: ConcatAdapter
 
     /**
-     * 业务场景设置的原始[SpanSizeLookup]
+     * 实际场景设置的原始[SpanSizeLookup]
      */
     val sourceLookup: SpanSizeLookup
 

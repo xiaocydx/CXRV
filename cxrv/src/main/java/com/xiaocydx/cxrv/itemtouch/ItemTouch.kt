@@ -10,7 +10,7 @@ import com.xiaocydx.cxrv.list.*
  * 设置item触摸回调
  *
  * **注意**：[ItemTouchCallback]是[ItemTouchHelper.Callback]的简化类，
- * 仅用于简化一般业务场景的模板代码，若对item触摸效果有更精细的要求，
+ * 仅用于简化一般场景的模板代码，若对item触摸效果有更精细的要求，
  * 则自行创建[ItemTouchHelper]，完成[ItemTouchHelper.Callback]的配置。
  */
 fun RecyclerView.addItemTouchCallback(callback: ItemTouchCallback) {
