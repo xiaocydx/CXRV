@@ -11,7 +11,6 @@ import com.xiaocydx.cxrv.internal.swap
 import com.xiaocydx.cxrv.internal.toUnmodifiableList
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.util.*
 import kotlin.coroutines.*
 
@@ -42,7 +41,7 @@ class CoroutineListDiffer<T : Any>(
     private val workDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) {
-    private val mutex = Mutex()
+    private val runner = SingleRunner()
     private val scope = CoroutineScope(SupervisorJob() + mainDispatcher.immediate)
     private var sourceList: ArrayList<T> = arrayListOf()
     private var executeListeners: ArrayList<ListExecuteListener<T>>? = null
@@ -131,9 +130,9 @@ class CoroutineListDiffer<T : Any>(
         op: UpdateOp<T>,
         dispatch: Boolean = true
     ): UpdateResult = assertMainThreadUpdate {
-        if (isLockNeeded(op)) {
-            scope.async {
-                mutex.withLock { execute(op, dispatch) }
+        if (isLaunchNeeded(op)) {
+            scope.launch {
+                runner.afterPrevious { execute(op, dispatch) }
             }.let(::DeferredResult)
         } else {
             // 该分支下调用execute()不会产生挂起，
@@ -162,8 +161,8 @@ class CoroutineListDiffer<T : Any>(
     }
 
     @MainThread
-    private fun isLockNeeded(op: UpdateOp<T>): Boolean {
-        if (mutex.isLocked) {
+    private fun isLaunchNeeded(op: UpdateOp<T>): Boolean {
+        if (runner.isRunning) {
             if (op is UpdateOp.SubmitList) cancel()
             return true
         }
@@ -383,9 +382,9 @@ class CoroutineListDiffer<T : Any>(
         executeListeners?.remove(listener)
     }
 
-    fun cancel() {
+    fun cancel() = assertMainThread {
         // 允许调用处多次cancel
-        scope.coroutineContext.cancelChildren()
+        runner.cancel()
     }
 
     @SuppressLint("VisibleForTests")
@@ -407,6 +406,51 @@ class CoroutineListDiffer<T : Any>(
             TestUpdateResult(dispatcher) { block() }
         } else {
             block()
+        }
+    }
+
+    /**
+     * 实际场景不需要使用[Mutex]支持多线程调用[cancel]，因此实现简易的挂起队列即可
+     */
+    @MainThread
+    private class SingleRunner {
+        private var current: Job? = null
+        private var queue: LinkedList<CancellableContinuation<Unit>>? = null
+        val isRunning: Boolean
+            get() = current != null
+
+        suspend fun <T> afterPrevious(block: suspend () -> T): T {
+            if (current != null) {
+                suspendCancellableCoroutine(::addToLast)
+            }
+            current = coroutineContext.job
+            return try {
+                block()
+            } finally {
+                // 协程被取消，block抛出CancellationException
+                current = null
+                removeFirst()?.resume(Unit)
+            }
+        }
+
+        fun cancel() {
+            // 先清空queue，再处理current，
+            // 避免current被cancel后取下一个。
+            queue?.forEach { it.cancel() }
+            queue?.clear()
+            current?.cancel()
+            current = null
+        }
+
+        private fun addToLast(cont: CancellableContinuation<Unit>) {
+            val queue = queue ?: LinkedList<CancellableContinuation<Unit>>().also { queue = it }
+            queue.add(cont)
+        }
+
+        private fun removeFirst(): Continuation<Unit>? {
+            val queue = queue ?: return null
+            // 当queue为空时，调用removeFirst()会抛出NoSuchElementException
+            return if (queue.isNotEmpty()) queue.removeFirst() else null
         }
     }
 

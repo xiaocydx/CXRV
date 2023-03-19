@@ -2,7 +2,7 @@ package com.xiaocydx.cxrv.list
 
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.Continuation
@@ -62,18 +62,18 @@ internal object CompleteResult : UpdateResult {
 }
 
 /**
- * 执行[UpdateOp]产生挂起，通过[deferred]等待更新结果
+ * 执行[UpdateOp]产生挂起，通过[job]等待更新完成
  */
 internal class DeferredResult(
-    private val deferred: Deferred<Unit>
+    private val job: Job
 ) : UpdateResult, CompleteCompat {
     override val isComplete: Boolean
-        get() = deferred.isCompleted
+        get() = job.isCompleted
 
-    override suspend fun await(): Unit = deferred.await()
+    override suspend fun await(): Unit = job.join()
 
     override fun invokeOnCompletion(complete: ((exception: Throwable?) -> Unit)?) {
-        complete?.let(deferred::invokeOnCompletion)
+        complete?.let(job::invokeOnCompletion)
     }
 }
 
@@ -86,7 +86,8 @@ internal class TestUpdateResult(
     private val block: () -> UpdateResult
 ) : UpdateResult, CompleteCompat {
     @Volatile private var result: UpdateResult? = null
-    @Volatile private var continuation: Continuation<Unit>? = null
+    @Volatile private var blockCont: Continuation<Unit>? = null
+    @Volatile private var resultCont: Continuation<Unit>? = null
     @Volatile private var complete: ((exception: Throwable?) -> Unit)? = null
     override val isComplete: Boolean
         get() = result?.isComplete ?: false
@@ -94,20 +95,42 @@ internal class TestUpdateResult(
     init {
         dispatcher.dispatch(EmptyCoroutineContext) {
             result = block()
-            continuation?.resume(Unit)
-            complete?.invoke(null)
+            blockCont?.resume(Unit)
+            resultCont?.resume(Unit)
+            handleComplete(result!!, complete)
         }
     }
 
+    suspend fun awaitBlock() {
+        if (result != null) return
+        suspendCancellableCoroutine { blockCont = it }
+    }
+
     override suspend fun await() {
-        assert(result == null)
-        suspendCancellableCoroutine { continuation = it }
-        result?.await()
+        val result = result
+        if (result != null) {
+            result.await()
+            return
+        }
+        suspendCancellableCoroutine { resultCont = it }
+        this.result?.await()
     }
 
     override fun invokeOnCompletion(complete: ((exception: Throwable?) -> Unit)?) {
-        assert(result == null)
+        val result = result
+        if (result != null) {
+            handleComplete(result, complete)
+            return
+        }
         this.complete = complete
+    }
+
+    private fun handleComplete(result: UpdateResult, complete: ((exception: Throwable?) -> Unit)?) {
+        if (result is CompleteCompat) {
+            complete?.let(result::invokeOnCompletion)
+        } else {
+            complete?.invoke(null)
+        }
     }
 }
 

@@ -276,6 +276,46 @@ class CoroutineListDifferTest {
         verify(exactly = 0) { listener.onExecute(removeItemOp) }
     }
 
+    @Test
+    fun execute_UpdateOp_Current_Await(): Unit = runBlocking {
+        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
+        differ.updateList(UpdateOp.SubmitList(listOf("C", "D"))).await()
+        assertThat(differ.currentList).isEqualTo(listOf("C", "D"))
+    }
+
+    @Test
+    fun execute_UpdateOp_Queue_Await(): Unit = runBlocking {
+        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
+        differ.updateList(UpdateOp.SubmitList(listOf("C", "D")))
+        differ.updateList(UpdateOp.SetItem(0, "E"))
+        differ.updateList(UpdateOp.RemoveItems(1, 1)).await()
+        assertThat(differ.currentList).isEqualTo(listOf("E"))
+    }
+
+    @Test
+    fun execute_UpdateOp_Current_Cancel(): Unit = runBlocking {
+        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
+        val result = differ.updateList(UpdateOp.SubmitList(listOf("C", "D")))
+        assertThat(result is TestUpdateResult).isTrue()
+        (result as TestUpdateResult).awaitBlock()
+        differ.cancel()
+        result.await()
+        assertThat(differ.currentList).isEqualTo(listOf("A", "B"))
+    }
+
+    @Test
+    fun execute_UpdateOp_Queue_Cancel(): Unit = runBlocking {
+        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
+        differ.updateList(UpdateOp.SubmitList(listOf("C", "D")))
+        differ.updateList(UpdateOp.SetItem(0, "E"))
+        val result = differ.updateList(UpdateOp.RemoveItems(1, 1))
+        assertThat(result is TestUpdateResult).isTrue()
+        (result as TestUpdateResult).awaitBlock()
+        differ.cancel()
+        result.await()
+        assertThat(differ.currentList).isEqualTo(listOf("A", "B"))
+    }
+
     private class TestDiffCallback : DiffUtil.ItemCallback<String>() {
         override fun areItemsTheSame(oldItem: String, newItem: String): Boolean {
             return oldItem == newItem
