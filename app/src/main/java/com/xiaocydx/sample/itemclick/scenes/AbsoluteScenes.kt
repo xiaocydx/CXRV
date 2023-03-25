@@ -31,9 +31,6 @@ class AbsoluteScenes : ItemClickScenes() {
         }.autoDispose()
     }
 
-    /**
-     * 可以对比其它[ItemClickScenes]的`showToast`，显示内容会不断增多
-     */
     private fun RecyclerView.toast(action: String, position: Int) {
         toast("$text\n" +
                 "$action itemView\n" +
