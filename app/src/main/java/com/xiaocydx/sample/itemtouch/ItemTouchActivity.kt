@@ -18,8 +18,7 @@ import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
-import com.xiaocydx.sample.databinding.ItemTextType1Binding
-import com.xiaocydx.sample.databinding.ItemTextType2Binding
+import com.xiaocydx.sample.databinding.ItemTextTypeBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.extension.TextItem
 import com.xiaocydx.sample.extension.getTextType1Delegate
@@ -75,13 +74,9 @@ class ItemTouchActivity : AppCompatActivity() {
         // ACTION_DOWN触摸到targetView就能开始拖动，
         // withLongPress = true表示继续启用长按itemView拖动。
         startDragView(withLongPress = true) { holder ->
-            assert(holder is BindingHolder<*>)
-            holder as BindingHolder<*>
-            when (val binding = holder.binding) {
-                is ItemTextType1Binding -> binding.targetView
-                is ItemTextType2Binding -> binding.targetView
-                else -> holder.itemView
-            }
+            holder.let { it as? BindingHolder<*> }
+                ?.let { it.binding as? ItemTextTypeBinding }
+                ?.targetView ?: holder.itemView
         }
         // 拖动开始时放大itemView
         onSelected {

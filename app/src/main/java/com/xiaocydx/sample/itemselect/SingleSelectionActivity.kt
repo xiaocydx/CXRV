@@ -1,7 +1,6 @@
 package com.xiaocydx.sample.itemselect
 
 import android.os.Bundle
-import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -25,8 +24,8 @@ import com.xiaocydx.sample.withLayoutParams
 /**
  * [singleSelection]示例代码
  *
- * * 配置单项选择功能。
- * * 页面配置发生变更时（例如旋转屏幕），保留选择状态。
+ * 1. 配置单项选择功能。
+ * 2. 页面配置发生变更时（例如旋转屏幕），保留选择状态。
  *
  * @author xcc
  * @date 2022/2/18
@@ -39,7 +38,7 @@ class SingleSelectionActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
-    private fun contentView(): View = RecyclerView(this).apply {
+    private fun contentView() = RecyclerView(this).apply {
         id = viewModel.rvId
         adapter = SingleSelectionBindingAdapter()
         // adapter = SingleSelectionAdapter()
@@ -51,31 +50,29 @@ class SingleSelectionActivity : AppCompatActivity() {
         withLayoutParams(matchParent, matchParent)
     }
 
+    /**
+     * [BindingAdapter]的构建函数，适用于简单列表场景
+     */
     @Suppress("FunctionName")
-    private fun SingleSelectionBindingAdapter(): ListAdapter<*, *> {
-        return bindingAdapter(
-            uniqueId = { item: String -> item },
-            inflate = ItemSelectionBinding::inflate
-        ) {
-            val selection = singleSelection(
-                itemKey = { item: String -> item },
-                itemAccess = { getItem(it) }
-            ).initSelected(viewModel)
+    private fun SingleSelectionBindingAdapter() = bindingAdapter(
+        uniqueId = { item: String -> item },
+        inflate = ItemSelectionBinding::inflate
+    ) {
+        val selection = singleSelection(
+            itemKey = { item: String -> item },
+            itemAccess = { getItem(it) }
+        ).initSelected(viewModel)
 
-            onBindViewPayloads { item, _ ->
-                viewSelect.isVisible = selection.isSelected(holder)
-                if (selection.hasPayload(holder)) {
-                    return@onBindViewPayloads
-                }
-                tvSelection.text = item
-            }
+        doOnItemClick { holder, item ->
+            // selection.select(holder)
+            selection.toggleSelect(holder)
+        }
+        submitList((1..20).map { "Selection-$it" })
 
-            doOnItemClick { holder, item ->
-                // selection.select(holder)
-                selection.toggleSelect(holder)
-            }
-
-            submitList((1..20).map { "Selection-$it" })
+        onBindView { item ->
+            viewSelect.isVisible = selection.isSelected(holder)
+            if (selection.hasPayload(holder)) return@onBindView
+            tvSelection.text = item
         }
     }
 
@@ -101,11 +98,9 @@ class SingleSelectionActivity : AppCompatActivity() {
             return oldItem == newItem
         }
 
-        override fun ItemSelectionBinding.onBindView(item: String, payloads: List<Any>) {
+        override fun ItemSelectionBinding.onBindView(item: String) {
             viewSelect.isVisible = selection.isSelected(holder)
-            if (selection.hasPayload(holder)) {
-                return
-            }
+            if (selection.hasPayload(holder)) return
             tvSelection.text = item
         }
     }

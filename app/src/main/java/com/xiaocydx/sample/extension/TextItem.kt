@@ -4,28 +4,36 @@ import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.submitList
-import com.xiaocydx.sample.databinding.ItemTextType1Binding
-import com.xiaocydx.sample.databinding.ItemTextType2Binding
+import com.xiaocydx.sample.R
+import com.xiaocydx.sample.databinding.ItemTextTypeBinding
 import kotlin.math.max
 
 data class TextItem(val text: String, val type: String)
 
-fun getTextType1Delegate(): BindingDelegate<TextItem, ItemTextType1Binding> {
+fun getTextType1Delegate(): BindingDelegate<TextItem, ItemTextTypeBinding> {
     return bindingDelegate(
         uniqueId = TextItem::text,
-        inflate = ItemTextType1Binding::inflate
+        inflate = ItemTextTypeBinding::inflate
     ) {
         typeLinker { it.type == "type1" }
+        onCreateView {
+            textView.setBackgroundResource(R.drawable.selector_text_type1)
+            targetView.setBackgroundResource(R.drawable.selector_text_type1_target)
+        }
         onBindView { textView.text = it.text }
     }
 }
 
-fun getTextType2Delegate(): BindingDelegate<TextItem, ItemTextType2Binding> {
+fun getTextType2Delegate(): BindingDelegate<TextItem, ItemTextTypeBinding> {
     return bindingDelegate(
         uniqueId = TextItem::text,
-        inflate = ItemTextType2Binding::inflate
+        inflate = ItemTextTypeBinding::inflate
     ) {
         typeLinker { it.type == "type2" }
+        onCreateView {
+            textView.setBackgroundResource(R.drawable.selector_text_type2)
+            targetView.setBackgroundResource(R.drawable.selector_text_type2_target)
+        }
         onBindView { textView.text = it.text }
     }
 }
