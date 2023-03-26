@@ -3,6 +3,7 @@
 package androidx.recyclerview.widget
 
 import android.view.View
+import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView.LayoutParams
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.concat.ViewAdapter
@@ -28,7 +29,13 @@ internal fun RecyclerView.isViewHolderRemoved(child: View): Boolean {
     return getChildViewHolder(child)?.isRemoved ?: return false
 }
 
-@Suppress("FunctionName")
-internal fun SimpleViewHolder(itemView: View): ViewHolder {
-    return object : ViewHolder(itemView) {}
+internal class SimpleViewHolder(itemView: View) : ViewHolder(itemView) {
+
+    fun isNotReuseUpdatedViewHolder(parent: ViewGroup): Boolean {
+        val rv = parent as? RecyclerView ?: return false
+        val changedScrap = rv.mRecycler?.mChangedScrap
+        // changedScrap.isEmpty()为true时，不创建迭代器
+        if (changedScrap.isNullOrEmpty()) return false
+        return changedScrap.firstOrNull { it.itemView === itemView } != null
+    }
 }

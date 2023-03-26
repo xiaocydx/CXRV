@@ -80,7 +80,7 @@ fun <T : RecyclerView> T.addFooter(footer: View): ViewAdapter<*> {
 /**
  * 若当前适配器为[ConcatAdapter]且包含[header]，则移除[header]
  *
- * @return 返回[header]转换后的[ViewAdapter]，若[header]未添加过或已移除过，则返回null。
+ * @return 返回[header]转换后的[ViewAdapter]，若[header]未添加或已移除，则返回null。
  */
 fun RecyclerView.removeHeader(header: View): ViewAdapter<*>? {
     val concatAdapter = adapter as? ConcatAdapter ?: return null
@@ -93,7 +93,7 @@ fun RecyclerView.removeHeader(header: View): ViewAdapter<*>? {
 /**
  * 若当前适配器为[ConcatAdapter]且包含[footer]，则移除[footer]
  *
- * @return 返回[footer]转换后的[ViewAdapter]，若[footer]未添加过或已移除过，则返回null。
+ * @return 返回[footer]转换后的[ViewAdapter]，若[footer]未添加或已移除，则返回null。
  */
 fun RecyclerView.removeFooter(footer: View): ViewAdapter<*>? {
     val concatAdapter = adapter as? ConcatAdapter ?: return null
@@ -136,8 +136,8 @@ infix fun Adapter<*>.withFooter(
  *
  * FragmentA有一个Header和内容区Adapter，
  * FragmentA开启了隔离ViewType配置:
- * * Header的隔离ViewType = 0。
- * * 内容区itemView的隔离ViewType = 1。
+ * 1. Header的隔离ViewType = 0。
+ * 2. 内容区itemView的隔离ViewType = 1。
  *
  * FragmentB只有内容区Adapter，itemView的ViewType = 0，
  * 从[RecycledViewPool]中可能会取出Header的ViewHolder，
@@ -175,7 +175,11 @@ private fun Adapter<*>.containView(view: View): Boolean {
 internal class SimpleViewAdapter(val view: View) : ViewAdapter<ViewHolder>(currentAsItem = true) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return SimpleViewHolder(view)
+        val holder = SimpleViewHolder(view)
+        require(!holder.isNotReuseUpdatedViewHolder(parent)) {
+            "view转换的ViewAdapter，notifyItemChanged()更新没有重用ViewHolder"
+        }
+        return holder
     }
 
     override fun getItemViewType(): Int = view.hashCode()
