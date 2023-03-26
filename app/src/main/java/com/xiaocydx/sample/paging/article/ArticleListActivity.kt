@@ -1,5 +1,6 @@
 package com.xiaocydx.sample.paging.article
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -36,6 +37,7 @@ class ArticleListActivity : AppCompatActivity() {
         initEdgeToEdge()
     }
 
+    @SuppressLint("SetTextI18n")
     private fun initView() {
         listAdapter = bindingAdapter(
             uniqueId = ArticleInfo::id,
@@ -43,7 +45,7 @@ class ArticleListActivity : AppCompatActivity() {
         ) {
             onBindView {
                 tvTitle.text = it.title ?: ""
-                tvAuthor.text = ("作者：${it.author ?: ""}")
+                tvAuthor.text = "作者：${it.author ?: ""}"
             }
         }
 

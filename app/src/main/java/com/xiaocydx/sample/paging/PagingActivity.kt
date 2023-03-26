@@ -29,8 +29,8 @@ import com.xiaocydx.sample.showToast
  */
 class PagingActivity : AppCompatActivity() {
     private val sharedViewModel: PagingSharedViewModel by viewModels()
-    private lateinit var binding: ActivityPagingBinding
     private val fragmentTag = PagingFragment::class.java.simpleName
+    private lateinit var binding: ActivityPagingBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,9 +53,9 @@ class PagingActivity : AppCompatActivity() {
                 uniqueId = MenuAction::text,
                 inflate = ItemMenuBinding::inflate
             ) {
-                onBindView { root.text = it.text }
+                submitList(MenuAction.values().toList())
                 doOnSimpleItemClick(::executeMenuAction)
-                submitList(values().toList())
+                onBindView { root.text = it.text }
             })
     }
 

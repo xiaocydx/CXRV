@@ -31,19 +31,16 @@ class PayloadActivity : AppCompatActivity() {
                 color = 0xFF7E7AAA.toInt()
             }
             adapter(CountAdapter().apply {
-                doOnItemClick(
-                    target = { binding.btnCount1 }
-                ) { holder, _ -> holder.setItem { incrementCount1() } }
-
-                doOnItemClick(
-                    target = { binding.btnCount2 }
-                ) { holder, _ -> holder.setItem { incrementCount2() } }
-
-                doOnItemClick(
-                    target = { binding.btnCount3 }
-                ) { holder, _ -> holder.setItem { incrementCount3() } }
-
                 submitList((1..3).map { CountItem(id = it.toString()) })
+                doOnItemClick(target = { binding.btnCount1 }) { holder, _ ->
+                    holder.setItem { incrementCount1() }
+                }
+                doOnItemClick(target = { binding.btnCount2 }) { holder, _ ->
+                    holder.setItem { incrementCount2() }
+                }
+                doOnItemClick(target = { binding.btnCount3 }) { holder, _ ->
+                    holder.setItem { incrementCount3() }
+                }
             })
             overScrollNever()
             withLayoutParams(matchParent, matchParent)

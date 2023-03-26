@@ -97,9 +97,7 @@ internal class DefaultSwipeRefreshLayout(context: Context) : SwipeRefreshLayout(
 
     fun setAdapter(adapter: ListAdapter<*, *>?) {
         val collector: PagingCollector<*>? = adapter?.pagingCollector
-        if (this.collector == collector) {
-            return
-        }
+        if (this.collector == collector) return
         val previous = this.collector
         previous?.removeLoadStatesListener(controller)
         previous?.removeHandleEventListener(controller)
@@ -122,20 +120,14 @@ internal class DefaultSwipeRefreshLayout(context: Context) : SwipeRefreshLayout(
         override suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<Any>) {
             val loadType = event.loadType
             val loadState = event.loadStates.refresh
-            if (loadType != LoadType.REFRESH || !loadState.isComplete) {
-                return
-            }
+            if (loadType != LoadType.REFRESH || !loadState.isComplete) return
             val timeMillis = refreshCompleteWhen - SystemClock.uptimeMillis()
-            if (timeMillis <= 0) {
-                return
-            }
+            if (timeMillis <= 0) return
             delay(timeMillis)
         }
 
         override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
-            if (previous.refreshToComplete(current)) {
-                isRefreshing = false
-            }
+            if (previous.refreshToComplete(current)) isRefreshing = false
         }
     }
 }

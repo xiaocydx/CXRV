@@ -9,49 +9,49 @@ import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
-import com.xiaocydx.sample.databinding.ItemNestedVerticalBinding
+import com.xiaocydx.sample.databinding.ItemNestedOuterBinding
 import com.xiaocydx.sample.dp
 
 /**
  * @author xcc
  * @date 2022/4/6
  */
-class VerticalAdapter : ListAdapter<VerticalItem, VerticalHolder>() {
+class OuterAdapter : ListAdapter<OuterItem, OuterHolder>() {
     private val sharedPool = RecyclerView.RecycledViewPool()
     private val savedStates = mutableMapOf<String, Parcelable>()
 
-    override fun areItemsTheSame(oldItem: VerticalItem, newItem: VerticalItem): Boolean {
+    override fun areItemsTheSame(oldItem: OuterItem, newItem: OuterItem): Boolean {
         return oldItem.id == newItem.id
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VerticalHolder {
-        val binding = ItemNestedVerticalBinding
-            .inflate(parent.inflater, parent, false)
-        return VerticalHolder(sharedPool, binding)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OuterHolder {
+        val binding = ItemNestedOuterBinding.inflate(
+            parent.inflater, parent, false)
+        return OuterHolder(sharedPool, binding)
     }
 
-    override fun onBindViewHolder(holder: VerticalHolder, item: VerticalItem) {
+    override fun onBindViewHolder(holder: OuterHolder, item: OuterItem) {
         holder.onBindView(item)
     }
 
-    override fun onViewAttachedToWindow(holder: VerticalHolder) {
+    override fun onViewAttachedToWindow(holder: OuterHolder) {
         holder.onRestoreState(savedStates.remove(holder.item.id))
     }
 
-    override fun onViewDetachedFromWindow(holder: VerticalHolder) {
+    override fun onViewDetachedFromWindow(holder: OuterHolder) {
         val state = holder.onSaveState() ?: return
         savedStates[holder.item.id] = state
     }
 }
 
-class VerticalHolder(
+class OuterHolder(
     sharedPool: RecyclerView.RecycledViewPool,
-    private val binding: ItemNestedVerticalBinding
+    private val binding: ItemNestedOuterBinding
 ) : RecyclerView.ViewHolder(binding.root) {
-    private val adapter = HorizontalAdapter()
+    private val adapter = InnerAdapter()
 
     init {
-        binding.rvHorizontal
+        binding.rvInner
             .adapter(adapter)
             .linear(orientation = HORIZONTAL) {
                 // recycle to sharedPool
@@ -65,16 +65,16 @@ class VerticalHolder(
             .setRecycledViewPool(sharedPool)
     }
 
-    fun onBindView(item: VerticalItem) {
+    fun onBindView(item: OuterItem) {
         binding.tvTitle.text = item.title
         adapter.updateData(item.data)
     }
 
     fun onSaveState(): Parcelable? {
-        return binding.rvHorizontal.layoutManager?.onSaveInstanceState()
+        return binding.rvInner.layoutManager?.onSaveInstanceState()
     }
 
-    fun onRestoreState(state: Parcelable?): Unit = with(binding.rvHorizontal) {
+    fun onRestoreState(state: Parcelable?): Unit = with(binding.rvInner) {
         if (state == null) {
             layoutManager?.scrollToPosition(0)
         } else {

@@ -31,8 +31,10 @@ class FooListViewModel(
      * 分页的主要入口，提供[PagingData]数据流，当调用了[Pager.refresh]，
      * 会发射新的[PagingData]并取消旧的[PagingData]的事件流。
      */
-    private val pager = repository
-        .getFooPager(initKey = 1, config = PagingConfig(pageSize = 10))
+    private val pager = repository.getFooPager(
+        initKey = 1,
+        config = PagingConfig(pageSize = 10)
+    )
 
     /**
      * 列表状态

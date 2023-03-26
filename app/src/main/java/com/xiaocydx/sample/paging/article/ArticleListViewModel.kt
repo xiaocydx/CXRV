@@ -12,23 +12,20 @@ import com.xiaocydx.sample.retrofit.ArticleInfo
  * @author xcc
  * @date 2022/3/17
  */
-class ArticleListViewModel(
-    repository: ArticleListRepository = ArticleListRepository
-) : ViewModel() {
-    private val listState = ListState<ArticleInfo>()
-    private val pager = repository
-        .getArticlePager(initKey = 0, pageSize = 15)
+class ArticleListViewModel(repository: ArticleListRepository = ArticleListRepository) : ViewModel() {
+    private val state = ListState<ArticleInfo>()
+    private val pager = repository.getArticlePager(initKey = 0, pageSize = 15)
     val rvId = ViewCompat.generateViewId()
-    val flow = pager.flow.storeIn(listState, viewModelScope)
+    val flow = pager.flow.storeIn(state, viewModelScope)
 
     fun refresh() {
         pager.refresh()
     }
 
     fun deleteArticle(articleId: Int) {
-        listState.currentList
+        state.currentList
             .indexOfFirst { it.id == articleId }
             .takeIf { it != -1 }
-            ?.let(listState::removeItemAt)
+            ?.let(state::removeItemAt)
     }
 }
