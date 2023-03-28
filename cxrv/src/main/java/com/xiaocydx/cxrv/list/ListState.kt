@@ -125,7 +125,13 @@ class ListState<T : Any> : ListOwner<T> {
     @MainThread
     private fun addItem(position: Int, item: T): Boolean {
         if (position !in 0..sourceList.size) return false
-        sourceList.add(position, item)
+        if (position == sourceList.size) {
+            // ArrayList.add()相比于ArrayList.add(position, item)，
+            // position等于size时，不会调用System.arraycopy()。
+            sourceList.add(item)
+        } else {
+            sourceList.add(position, item)
+        }
         return true
     }
 
