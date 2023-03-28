@@ -1,5 +1,6 @@
 package com.xiaocydx.cxrv.list
 
+import android.os.Build
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import com.google.common.truth.Truth.assertThat
@@ -8,8 +9,12 @@ import com.xiaocydx.cxrv.testWorkDispatcher
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.util.concurrent.CountDownLatch
 
 /**
@@ -18,6 +23,8 @@ import java.util.concurrent.CountDownLatch
  * @author xcc
  * @date 2021/10/12
  */
+@Config(sdk = [Build.VERSION_CODES.Q])
+@RunWith(RobolectricTestRunner::class)
 class CoroutineListDifferTest {
     private val diffCallback: TestDiffCallback = spyk(TestDiffCallback())
     private val updateCallback: ListUpdateCallback = mockk(relaxed = true)
@@ -316,6 +323,43 @@ class CoroutineListDifferTest {
         assertThat(differ.currentList).isEqualTo(listOf("A", "B"))
     }
 
+    @Test
+    fun execute_SubmitList_On_MainThread(): Unit = runBlocking {
+        val dispatcher = Dispatchers.Main
+        val differ = CoroutineListDiffer(diffCallback, updateCallback, dispatcher, dispatcher)
+        val initList = listOf("A", "B")
+        val newList = listOf("C", "D")
+
+        var result = differ.updateList(UpdateOp.SubmitList(initList))
+        assertThat(result).isEqualTo(CompleteResult)
+
+        result = differ.updateList(UpdateOp.SubmitList(newList))
+        assertThat(result).isEqualTo(CompleteResult)
+        assertThat(differ.currentList).isEqualTo(newList)
+    }
+
+    @Test
+    fun setWorkDispatcher_Cancel() {
+        val differ = CoroutineListDiffer(
+            diffCallback, updateCallback,
+            Dispatchers.Default, Dispatchers.Main
+        )
+        val initList = listOf("A", "B")
+        val newList1 = listOf("C", "D")
+        val newList2 = listOf("E", "F")
+
+        var result = differ.updateList(UpdateOp.SubmitList(initList))
+        assertThat(result).isEqualTo(CompleteResult)
+
+        result = differ.updateList(UpdateOp.SubmitList(newList1))
+        assertThat(result).isNotEqualTo(CompleteResult)
+
+        differ.setWorkDispatcher(differ.mainDispatcher)
+        result = differ.updateList(UpdateOp.SubmitList(newList2))
+        assertThat(result).isEqualTo(CompleteResult)
+        assertThat(differ.currentList).isEqualTo(newList2)
+    }
+
     private class TestDiffCallback : DiffUtil.ItemCallback<String>() {
         override fun areItemsTheSame(oldItem: String, newItem: String): Boolean {
             return oldItem == newItem
@@ -325,8 +369,6 @@ class CoroutineListDifferTest {
             return oldItem == newItem
         }
 
-        override fun getChangePayload(oldItem: String, newItem: String): Any? {
-            return null
-        }
+        override fun getChangePayload(oldItem: String, newItem: String): Any? = null
     }
 }

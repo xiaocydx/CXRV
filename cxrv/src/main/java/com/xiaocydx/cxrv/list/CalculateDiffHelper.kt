@@ -1,6 +1,5 @@
 package com.xiaocydx.cxrv.list
 
-import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.DiffUtil
 
 /**
@@ -9,7 +8,6 @@ import androidx.recyclerview.widget.DiffUtil
  * @author xcc
  * @date 2021/9/17
  */
-@WorkerThread
 internal fun <T> List<T>.calculateDiff(
     newList: List<T>,
     diffCallback: DiffUtil.ItemCallback<T>

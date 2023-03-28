@@ -38,8 +38,8 @@ import kotlin.coroutines.*
 class CoroutineListDiffer<T : Any>(
     private val diffCallback: DiffUtil.ItemCallback<T>,
     private val updateCallback: ListUpdateCallback,
-    private val workDispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
+    private var workDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) {
     private val runner = SingleRunner()
     private val scope = CoroutineScope(SupervisorJob() + mainDispatcher.immediate)
@@ -54,6 +54,19 @@ class CoroutineListDiffer<T : Any>(
         workDispatcher: CoroutineDispatcher = Dispatchers.Default,
         mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
     ) : this(diffCallback, AdapterListUpdateCallback(adapter), workDispatcher, mainDispatcher)
+
+    /**
+     * 设置差异计算的工作线程调度器
+     *
+     * 若[dispatcher]等于[mainDispatcher]，则在主线程执行差异计算，这种做法的实际意义：
+     * 当调度器调度较慢时，会导致差异计算较慢执行（工作线程）、更新列表较慢执行（主线程），
+     * 在列表数据量不大的情况下，可以选择在主线程执行差异计算，调度器不进行任何的调度。
+     */
+    fun setWorkDispatcher(dispatcher: CoroutineDispatcher) = assertMainThread {
+        if (workDispatcher === dispatcher) return@assertMainThread
+        cancel()
+        workDispatcher = dispatcher
+    }
 
     /**
      * 更新列表
@@ -143,6 +156,53 @@ class CoroutineListDiffer<T : Any>(
         }
     }
 
+    /**
+     * 添加列表已更改的监听
+     *
+     * [ListChangedListener.onListChanged]中可以调用[removeListChangedListener]。
+     */
+    fun addListChangedListener(listener: ListChangedListener<T>) = assertMainThread {
+        if (changedListeners == null) {
+            changedListeners = arrayListOf()
+        }
+        if (!changedListeners!!.contains(listener)) {
+            changedListeners!!.add(listener)
+        }
+    }
+
+    /**
+     * 移除列表已更改的监听
+     */
+    fun removeListChangedListener(listener: ListChangedListener<T>) = assertMainThread {
+        changedListeners?.remove(listener)
+    }
+
+    /**
+     * 添加执行[UpdateOp]的监听
+     *
+     * * [ListExecuteListener.onExecute]中可以调用[removeListExecuteListener]。
+     */
+    fun addListExecuteListener(listener: ListExecuteListener<T>) = assertMainThread {
+        if (executeListeners == null) {
+            executeListeners = arrayListOf()
+        }
+        if (!executeListeners!!.contains(listener)) {
+            executeListeners!!.add(listener)
+        }
+    }
+
+    /**
+     * 移除执行[UpdateOp]的监听
+     */
+    fun removeListExecuteListener(listener: ListExecuteListener<T>) = assertMainThread {
+        executeListeners?.remove(listener)
+    }
+
+    fun cancel() = assertMainThread {
+        // 允许调用处多次cancel
+        runner.cancel()
+    }
+
     @MainThread
     private suspend fun execute(op: UpdateOp<T>, dispatch: Boolean) {
         if (dispatch) {
@@ -172,13 +232,11 @@ class CoroutineListDiffer<T : Any>(
         // 对应submitList()的快路径
         val oldList = sourceList
         val newList = op.newList
-        if (oldList === newList) {
-            return false
+        return when {
+            oldList === newList -> false
+            oldList.isEmpty() || newList.isEmpty() -> false
+            else -> isWorkDispatchNeeded()
         }
-        if (oldList.isEmpty() || newList.isEmpty()) {
-            return false
-        }
-        return true
     }
 
     @MainThread
@@ -199,7 +257,7 @@ class CoroutineListDiffer<T : Any>(
             else -> {
                 // 若无法确保newList是安全的，则提前对其进行copy
                 val safeList = newList.ensureSafeMutable()
-                val result: DiffUtil.DiffResult = withContext(workDispatcher) {
+                val result: DiffUtil.DiffResult = withWorkDispatcher {
                     oldList.calculateDiff(safeList, diffCallback)
                 }
                 sourceList = safeList
@@ -333,58 +391,12 @@ class CoroutineListDiffer<T : Any>(
     }
 
     /**
-     * 添加列表已更改的监听
-     *
-     * [ListChangedListener.onListChanged]中可以调用[removeListChangedListener]。
+     * 若[workDispatcher]是`HandlerContext`，则进行`HandlerContext.equals()`对比，
      */
-    fun addListChangedListener(
-        listener: ListChangedListener<T>
-    ) = assertMainThread {
-        if (changedListeners == null) {
-            changedListeners = arrayListOf()
-        }
-        if (!changedListeners!!.contains(listener)) {
-            changedListeners!!.add(listener)
-        }
-    }
+    private fun isWorkDispatchNeeded() = workDispatcher != mainDispatcher
 
-    /**
-     * 移除列表已更改的监听
-     */
-    fun removeListChangedListener(
-        listener: ListChangedListener<T>
-    ) = assertMainThread {
-        changedListeners?.remove(listener)
-    }
-
-    /**
-     * 添加执行[UpdateOp]的监听
-     *
-     * * [ListExecuteListener.onExecute]中可以调用[removeListExecuteListener]。
-     */
-    fun addListExecuteListener(
-        listener: ListExecuteListener<T>
-    ) = assertMainThread {
-        if (executeListeners == null) {
-            executeListeners = arrayListOf()
-        }
-        if (!executeListeners!!.contains(listener)) {
-            executeListeners!!.add(listener)
-        }
-    }
-
-    /**
-     * 移除执行[UpdateOp]的监听
-     */
-    fun removeListExecuteListener(
-        listener: ListExecuteListener<T>
-    ) = assertMainThread {
-        executeListeners?.remove(listener)
-    }
-
-    fun cancel() = assertMainThread {
-        // 允许调用处多次cancel
-        runner.cancel()
+    private suspend inline fun <R> withWorkDispatcher(crossinline block: () -> R): R {
+        return if (isWorkDispatchNeeded()) withContext(workDispatcher) { block() } else block()
     }
 
     @SuppressLint("VisibleForTests")

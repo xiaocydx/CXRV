@@ -7,8 +7,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.getItem
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 
 /**
  * 多类型适配器
@@ -18,9 +16,8 @@ import kotlinx.coroutines.Dispatchers
  */
 @PublishedApi
 internal class MultiTypeAdapter<T : Any>(
-    private var multiType: MultiType<T> = unregistered(),
-    workDispatcher: CoroutineDispatcher = Dispatchers.Default
-) : ListAdapter<T, ViewHolder>(workDispatcher) {
+    private var multiType: MultiType<T> = unregistered()
+) : ListAdapter<T, ViewHolder>() {
 
     init {
         setMultiType(multiType)
