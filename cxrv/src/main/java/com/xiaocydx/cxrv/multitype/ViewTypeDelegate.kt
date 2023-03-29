@@ -186,7 +186,8 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      *
      * [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      */
-    @AnyThread
+    @MainThread
+    @WorkerThread
     abstract fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean
 
     /**
@@ -195,7 +196,8 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      * 1. [areItemsTheSame]返回true -> 调用[areContentsTheSame]。
      * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      */
-    @AnyThread
+    @MainThread
+    @WorkerThread
     open fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean = oldItem == newItem
 
     /**

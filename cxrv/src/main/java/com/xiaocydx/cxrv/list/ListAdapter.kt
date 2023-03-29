@@ -3,10 +3,7 @@ package com.xiaocydx.cxrv.list
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.AnyThread
-import androidx.annotation.CallSuper
-import androidx.annotation.LayoutRes
-import androidx.annotation.MainThread
+import androidx.annotation.*
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
@@ -97,7 +94,8 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>() :
      *
      * [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      */
-    @AnyThread
+    @MainThread
+    @WorkerThread
     protected abstract fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean
 
     /**
@@ -106,7 +104,8 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>() :
      * 1. [areItemsTheSame]返回true -> 调用[areContentsTheSame]。
      * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      */
-    @AnyThread
+    @MainThread
+    @WorkerThread
     protected open fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean = oldItem == newItem
 
     /**
@@ -268,17 +267,14 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>() :
     }
 
     private inner class InternalDiffItemCallback : DiffUtil.ItemCallback<ITEM>() {
-        @AnyThread
         override fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean {
             return this@ListAdapter.areItemsTheSame(oldItem, newItem)
         }
 
-        @AnyThread
         override fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean {
             return this@ListAdapter.areContentsTheSame(oldItem, newItem)
         }
 
-        @MainThread
         override fun getChangePayload(oldItem: ITEM, newItem: ITEM): Any? {
             return this@ListAdapter.getChangePayload(oldItem, newItem)
         }
