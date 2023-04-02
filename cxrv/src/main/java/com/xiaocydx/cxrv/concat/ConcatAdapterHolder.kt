@@ -1,3 +1,4 @@
+@file:JvmName("ConcatAdapterHolderInternalKt")
 @file:Suppress("PackageDirectoryMismatch")
 
 package androidx.recyclerview.widget

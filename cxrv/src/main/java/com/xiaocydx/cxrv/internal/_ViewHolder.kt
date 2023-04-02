@@ -1,3 +1,4 @@
+@file:JvmName("_ViewHolderInternalKt")
 @file:Suppress("PackageDirectoryMismatch")
 
 package androidx.recyclerview.widget

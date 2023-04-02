@@ -1,3 +1,4 @@
+@file:JvmName("_ViewModelInternalKt")
 @file:Suppress("PackageDirectoryMismatch")
 
 package androidx.lifecycle

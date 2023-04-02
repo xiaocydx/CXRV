@@ -1,3 +1,4 @@
+@file:JvmName("OptimizeScrollInternalKt")
 @file:Suppress("PackageDirectoryMismatch")
 
 package androidx.recyclerview.widget
