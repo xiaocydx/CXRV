@@ -1,5 +1,6 @@
 package com.xiaocydx.cxrv.divider
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -26,6 +27,7 @@ import kotlin.math.max
  * @author xcc
  * @date 2021/9/29
  */
+@SuppressLint("SupportAnnotationUsage")
 class DividerItemDecoration private constructor(config: Config) : ItemDecoration() {
     private var outRect: Rect = emptyRect
     private val divider: Drawable? = config.drawable
@@ -148,7 +150,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         /**
          * 分割线颜色值，搭配[width]和[height]使用
          */
-        @setparam:ColorInt
+        @set:ColorInt
         var color = -1
             set(value) {
                 drawable = ColorDrawable(value)
@@ -157,7 +159,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         /**
          * 分割线颜色资源Id，搭配[width]和[height]使用
          */
-        @setparam:ColorRes
+        @set:ColorRes
         var colorRes = -1
             set(value) {
                 color = ContextCompat.getColor(context, value)
@@ -166,7 +168,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         /**
          * 分割线Drawable资源Id
          */
-        @setparam:DrawableRes
+        @set:DrawableRes
         var drawableRes = -1
             set(value) {
                 drawable = requireNotNull(
