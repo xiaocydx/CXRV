@@ -1,6 +1,5 @@
 package com.xiaocydx.cxrv.divider
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -19,7 +18,6 @@ import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.warn
 import com.xiaocydx.cxrv.R
 import java.lang.ref.WeakReference
-import kotlin.math.max
 
 /**
  * 通用分割线
@@ -27,7 +25,6 @@ import kotlin.math.max
  * @author xcc
  * @date 2021/9/29
  */
-@SuppressLint("SupportAnnotationUsage")
 class DividerItemDecoration private constructor(config: Config) : ItemDecoration() {
     private var outRect: Rect = emptyRect
     private val divider: Drawable? = config.drawable
@@ -150,7 +147,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         /**
          * 分割线颜色值，搭配[width]和[height]使用
          */
-        @set:ColorInt
+        @ColorInt
         var color = -1
             set(value) {
                 drawable = ColorDrawable(value)
@@ -159,7 +156,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         /**
          * 分割线颜色资源Id，搭配[width]和[height]使用
          */
-        @set:ColorRes
+        @ColorRes
         var colorRes = -1
             set(value) {
                 color = ContextCompat.getColor(context, value)
@@ -168,7 +165,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         /**
          * 分割线Drawable资源Id
          */
-        @set:DrawableRes
+        @DrawableRes
         var drawableRes = -1
             set(value) {
                 drawable = requireNotNull(
@@ -272,18 +269,18 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
                 drawable == null -> width
                 drawable!!.intrinsicWidth != -1 -> drawable!!.intrinsicWidth
                 else -> width
-            }.let { max(it, 0) }
+            }.coerceAtLeast(0)
 
             height = when {
                 drawable == null -> height
                 drawable!!.intrinsicHeight != -1 -> drawable!!.intrinsicHeight
                 else -> height
-            }.let { max(it, 0) }
+            }.coerceAtLeast(0)
 
-            leftMargin = max(leftMargin, 0)
-            topMargin = max(topMargin, 0)
-            rightMargin = max(rightMargin, 0)
-            bottomMargin = max(bottomMargin, 0)
+            leftMargin = leftMargin.coerceAtLeast(0)
+            topMargin = topMargin.coerceAtLeast(0)
+            rightMargin = rightMargin.coerceAtLeast(0)
+            bottomMargin = bottomMargin.coerceAtLeast(0)
             return DividerItemDecoration(this)
         }
     }
