@@ -36,8 +36,7 @@ class FooCategoryViewModel : ViewModel() {
         if (newItem == list.lastIndex) {
             newItem = (newItem - 1).coerceAtLeast(0)
         }
-        val list = list
-            .toMutableList().apply { removeAt(currentItem) }
+        val list = list.toMutableList().apply { removeAt(currentItem) }
         copy(list = list, currentItem = newItem, pendingItem = newItem)
     }
 
