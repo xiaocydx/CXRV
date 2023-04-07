@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+@file:JvmName("PrepareScrapInternalKt")
 @file:Suppress("PackageDirectoryMismatch")
 
 package androidx.recyclerview.widget
@@ -22,9 +23,9 @@ import android.os.Looper
 import android.view.Choreographer
 import androidx.annotation.IntRange
 import androidx.annotation.MainThread
-import androidx.core.os.HandlerCompat
 import androidx.recyclerview.widget.RecyclerView.*
-import com.xiaocydx.sample.extension.LooperElement
+import com.xiaocydx.cxrv.internal.*
+import com.xiaocydx.cxrv.recycle.LooperElement
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
@@ -34,7 +35,7 @@ import kotlin.coroutines.resume
 /**
  * 按[PrepareScrapPairs.add]的添加顺序，预创建ViewHolder并放入[RecycledViewPool]
  *
- * **注意**：此函数应当在初始化视图时调用，并确保RecyclerView有父级、已设置Adapter，
+ * **注意**：此函数应当在初始化视图时调用，并确保RecyclerView已设置Adapter，
  * 预创建流程会按[prepareDeadline]进行停止，避免产生不必要的创建开销。
  *
  * ```
@@ -57,17 +58,18 @@ import kotlin.coroutines.resume
  * 预创建执行过程发射创建成功的ViewHolder，供收集处统计或测试。
  */
 @MainThread
+@ExperimentalFeature
 fun RecyclerView.prepareScrap(
     prepareAdapter: Adapter<*>,
     prepareDeadline: PrepareDeadline = PrepareDeadline.FOREVER_NS,
     prepareDispatcher: CoroutineDispatcher = DefaultIoDispatcher,
     block: PrepareScrapPairs.() -> Unit
 ): Flow<ViewHolder> {
+    assertMainThread()
     require(adapter != null) { "请先对RecyclerView设置Adapter" }
-    require(parent != null) { "请先将RecyclerView添加到父级中" }
     val recyclerView = this
     val preparePairs = PrepareScrapPairs().apply(block).complete()
-    return unsafeFlow<ViewHolder> {
+    return unsafeFlow {
         coroutineScope {
             val deadlineNs = AtomicLong(Long.MAX_VALUE)
             val deadlineJob = when (prepareDeadline) {
@@ -80,7 +82,7 @@ fun RecyclerView.prepareScrap(
 
             val choreographer = Choreographer.getInstance()
             val prepareContext = LooperElement(Looper.myLooper()!!) + prepareDispatcher
-            val prepareFlow = unsafeFlow<ViewHolder> {
+            val prepareFlow = unsafeFlow {
                 preparePairs.forEach { prepareViewType, prepareCount ->
                     var count = prepareCount
                     while (count > 0 && System.nanoTime() < deadlineNs.get()) {
@@ -103,7 +105,7 @@ fun RecyclerView.prepareScrap(
             emitAll(prepareFlow)
             deadlineJob?.cancel()
         }
-    }.flowOn(Dispatchers.Main.immediate)
+    }.flowOnMain()
 }
 
 /**
@@ -131,7 +133,7 @@ class PrepareScrapPairs @PublishedApi internal constructor() {
 
     fun add(viewType: Int, @IntRange(from = 1) count: Int) {
         check(!isComplete) { "已完成添加" }
-        pairs.add(Pair(viewType, count.coerceAtLeast(0)))
+        pairs.add(Pair(viewType, count.coerceAtLeast(1)))
     }
 
     internal inline fun forEach(action: (viewType: Int, count: Int) -> Unit) {
@@ -210,24 +212,5 @@ private class DeadlineNsObserver(
             unregisterAdapterDataObserver()
             cont.resume(frameTimeNs)
         }
-    }
-
-    private inline fun runOnMainThread(crossinline action: () -> Unit) {
-        if (Thread.currentThread() === Looper.getMainLooper().thread) {
-            action()
-        } else {
-            HandlerCompat.createAsync(Looper.getMainLooper()).post { action() }
-        }
-    }
-}
-
-/**
- * 不检测执行上下文、异常透明性的Flow
- */
-private inline fun <T> unsafeFlow(
-    crossinline block: suspend FlowCollector<T>.() -> Unit
-): Flow<T> = object : Flow<T> {
-    override suspend fun collect(collector: FlowCollector<T>) {
-        collector.block()
     }
 }

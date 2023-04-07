@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.extension
+package com.xiaocydx.cxrv.recycle
 
 import android.os.Looper
 import kotlinx.coroutines.ThreadContextElement
