@@ -1,7 +1,7 @@
+@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+
 package com.xiaocydx.cxrv.paging
 
-import androidx.recyclerview.widget.ConcatAdapter
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.cxrv.concat.withFooter
@@ -10,33 +10,20 @@ import com.xiaocydx.cxrv.internal.RvDslMarker
 import com.xiaocydx.cxrv.list.ListAdapter
 
 /**
- * 分页初始化作用域
+ * 连接加载头部适配器、内容适配器、加载尾部适配器的分页初始化作用域
  *
  * @author xcc
- * @date 2022/3/8
+ * @date 2022/7/27
  */
 @RvDslMarker
-@Deprecated(
-    message = "此类的命名、属性、函数不够合理，因此废弃",
-    replaceWith = ReplaceWith("PagingConcatScope")
-)
-open class PagingScope {
+open class PagingConcatScope {
     private var isNeedHeader = true
     private var isNeedFooter = true
     private var loadHeader: ViewAdapter<*>? = null
     private var loadFooter: ViewAdapter<*>? = null
     private var initHeader: (LoadHeaderConfig.() -> Unit)? = null
     private var initFooter: (LoadFooterConfig.() -> Unit)? = null
-
-    /**
-     * 是否启用item动画
-     */
-    var enabledItemAnim: Boolean = true
-
-    /**
-     * 内容适配器
-     */
-    var listAdapter: ListAdapter<*, *>? = null
+    private var isComplete = false
 
     /**
      * 设置加载头部适配器
@@ -44,6 +31,7 @@ open class PagingScope {
      * @param adapter 传入`null`表示不需要加载头部
      */
     fun loadHeader(adapter: ViewAdapter<*>?) {
+        checkComplete()
         loadHeader = adapter
         initHeader = null
         isNeedHeader = adapter != null
@@ -76,6 +64,7 @@ open class PagingScope {
      * ```
      */
     fun loadHeader(block: LoadHeaderConfig.() -> Unit) {
+        checkComplete()
         loadHeader = null
         initHeader = block
         isNeedHeader = true
@@ -87,6 +76,7 @@ open class PagingScope {
      * @param adapter 传入`null`表示不需要加载尾部
      */
     fun loadFooter(adapter: ViewAdapter<*>?) {
+        checkComplete()
         loadFooter = adapter
         initFooter = null
         isNeedFooter = adapter != null
@@ -119,28 +109,10 @@ open class PagingScope {
      * ```
      */
     fun loadFooter(block: LoadFooterConfig.() -> Unit) {
+        checkComplete()
         loadFooter = null
         initFooter = block
         isNeedFooter = true
-    }
-
-    protected fun complete(rv: RecyclerView) {
-        val sourceAdapter: Adapter<*>? = rv.adapter
-        if (sourceAdapter is ConcatAdapter) {
-            sourceAdapter.apply {
-                addAdapterIfNonNull(getFinalLoadHeader())
-                addAdapter(getFinalListAdapter())
-                addAdapterIfNonNull(getFinalLoadFooter())
-            }
-        } else {
-            rv.adapter = getFinalListAdapter()
-                .withHeaderIfNonNull(getFinalLoadHeader())
-                .withFooterIfNonNull(getFinalLoadFooter())
-        }
-        if (!enabledItemAnim) {
-            rv.itemAnimator = null
-        }
-        clear()
     }
 
     /**
@@ -153,11 +125,28 @@ open class PagingScope {
      */
     protected open fun LoadFooterConfig.withDefault(): Boolean = false
 
-    protected fun getFinalListAdapter(): ListAdapter<*, *> {
-        return requireNotNull(listAdapter) { "未设置或已清除listAdapter" }
+    protected fun checkComplete() {
+        check(!isComplete) { "已完成适配器的连接工作" }
     }
 
-    private fun getFinalLoadHeader(): ViewAdapter<*>? {
+    /**
+     * 完成适配器的连接工作，返回连接后的结果，该函数只能被调用一次
+     */
+    protected fun completeConcat(adapter: ListAdapter<*, *>): Adapter<*> {
+        checkComplete()
+        isComplete = true
+        var outcome: Adapter<*> = adapter
+        getLoadHeader(adapter)?.let {
+            outcome = outcome.withHeader(it)
+        }
+        getLoadFooter(adapter)?.let {
+            outcome = outcome.withFooter(it)
+        }
+        clear()
+        return outcome
+    }
+
+    private fun getLoadHeader(adapter: ListAdapter<*, *>): ViewAdapter<*>? {
         if (!isNeedHeader) {
             return null
         }
@@ -168,10 +157,10 @@ open class PagingScope {
             return null
         }
         initHeader?.invoke(config)
-        return LoadHeaderAdapter(config, getFinalListAdapter())
+        return LoadHeaderAdapter(config, adapter)
     }
 
-    private fun getFinalLoadFooter(): ViewAdapter<*>? {
+    private fun getLoadFooter(adapter: ListAdapter<*, *>): ViewAdapter<*>? {
         if (!isNeedFooter) {
             return null
         }
@@ -182,19 +171,7 @@ open class PagingScope {
             return null
         }
         initFooter?.invoke(config)
-        return LoadFooterAdapter(config, getFinalListAdapter())
-    }
-
-    private fun ConcatAdapter.addAdapterIfNonNull(adapter: ViewAdapter<*>?) {
-        adapter?.let(::addAdapter)
-    }
-
-    private fun Adapter<*>.withHeaderIfNonNull(adapter: ViewAdapter<*>?): Adapter<*> {
-        return if (adapter != null) withHeader(adapter) else this
-    }
-
-    private fun Adapter<*>.withFooterIfNonNull(adapter: ViewAdapter<*>?): Adapter<*> {
-        return if (adapter != null) withFooter(adapter) else this
+        return LoadFooterAdapter(config, adapter)
     }
 
     private fun clear() {
@@ -202,6 +179,5 @@ open class PagingScope {
         loadFooter = null
         initFooter = null
         initHeader = null
-        listAdapter = null
     }
 }

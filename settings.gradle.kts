@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "CXRV"
 include(":app")
 include(":cxrv")
+include(":cxrv-paging")

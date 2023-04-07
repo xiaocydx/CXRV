@@ -3,7 +3,7 @@
 
     <application>
         <activity
-            android:name="com.xiaocydx.cxrv.TestActivity"
+            android:name="com.xiaocydx.cxrv.paging.TestActivity"
             android:theme="@style/Theme.AppCompat.Light.DarkActionBar"/>
     </application>
 </manifest>

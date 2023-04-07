@@ -1,3 +1,5 @@
+@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+
 package com.xiaocydx.cxrv.paging
 
 import com.xiaocydx.cxrv.internal.flowOnMain

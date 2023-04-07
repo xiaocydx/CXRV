@@ -6,7 +6,6 @@ import androidx.lifecycle.Lifecycle.State
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario.launch
 import com.google.common.truth.Truth.assertThat
-import com.xiaocydx.cxrv.TestActivity
 import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.autoDispose
