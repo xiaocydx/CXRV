@@ -1,21 +1,21 @@
+@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+
 package com.xiaocydx.cxrv.binding
 
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewbinding.ViewBinding
-import com.xiaocydx.cxrv.concat.SpanSizeProvider
 import com.xiaocydx.cxrv.internal.RvDslMarker
 import com.xiaocydx.cxrv.list.ListOwner
 import com.xiaocydx.cxrv.list.setItem
 import com.xiaocydx.cxrv.list.setItems
 
 /**
- * [BindingDelegate]的构建函数，适用于简单列表场景
+ * [BindingAdapter]的构建函数，适用于简单列表场景
  *
  * ```
- * bindingDelegate(
+ * bindingAdapter(
  *     inflate = ItemFooBinding::inflate,
  *     areItemsTheSame { oldItem: Foo, newItem: Foo ->
  *         oldItem.id == newItem.id
@@ -32,21 +32,17 @@ import com.xiaocydx.cxrv.list.setItems
  * @param inflate         函数引用`VB::inflate`
  * @param areItemsTheSame 对应[DiffUtil.ItemCallback.areItemsTheSame]
  */
-inline fun <ITEM : Any, VB : ViewBinding> bindingDelegate(
+inline fun <ITEM : Any, VB : ViewBinding> bindingAdapter(
     noinline inflate: Inflate<VB>,
     noinline areItemsTheSame: (oldItem: ITEM, newItem: ITEM) -> Boolean,
-    block: BindingDelegateScope<ITEM, VB>.() -> Unit
-): BindingDelegate<ITEM, VB> {
-    // viewType的值是类的JavaClass的hashCode，
-    // 因此需要内联到调用处，在调用处生成匿名内部类。
-    return object : BindingDelegateScope<ITEM, VB>(inflate, areItemsTheSame) {}.apply(block)
-}
+    block: BindingAdapterScope<ITEM, VB>.() -> Unit
+): BindingAdapter<ITEM, VB> = BindingAdapterScope(inflate, areItemsTheSame).apply(block)
 
 /**
- * [BindingDelegate]的构建函数，适用于简单列表场景
+ * [BindingAdapter]的构建函数，适用于简单列表场景
  *
  * ```
- * bindingDelegate(
+ * bindingAdapter(
  *     uniqueId = Foo::id,
  *     inflate = ItemFooBinding::inflate
  * ) {
@@ -61,11 +57,11 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingDelegate(
  * @param inflate  函数引用`VB::inflate`
  * @param uniqueId item唯一id，是[DiffUtil.ItemCallback.areItemsTheSame]的简化函数
  */
-inline fun <ITEM : Any, VB : ViewBinding> bindingDelegate(
+inline fun <ITEM : Any, VB : ViewBinding> bindingAdapter(
     noinline inflate: Inflate<VB>,
     crossinline uniqueId: (item: ITEM) -> Any?,
-    block: BindingDelegateScope<ITEM, VB>.() -> Unit
-): BindingDelegate<ITEM, VB> = bindingDelegate(
+    block: BindingAdapterScope<ITEM, VB>.() -> Unit
+): BindingAdapter<ITEM, VB> = bindingAdapter(
     inflate = inflate,
     areItemsTheSame = { oldItem: ITEM, newItem: ITEM ->
         uniqueId(oldItem) == uniqueId(newItem)
@@ -74,14 +70,14 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingDelegate(
 )
 
 /**
- * [BindingDelegate]的构建作用域
+ * [BindingAdapter]的构建作用域
  */
 @RvDslMarker
-abstract class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
+class BindingAdapterScope<ITEM : Any, VB : ViewBinding>
 @PublishedApi internal constructor(
     private val inflate: Inflate<VB>,
     private val areItemsTheSame: (oldItem: ITEM, newItem: ITEM) -> Boolean
-) : BindingDelegate<ITEM, VB>() {
+) : BindingAdapter<ITEM, VB>() {
     private var areContentsTheSame: ((oldItem: ITEM, newItem: ITEM) -> Boolean)? = null
     private var getChangePayload: ((oldItem: ITEM, newItem: ITEM) -> Any?)? = null
     private var onCreateView: (VB.() -> Unit)? = null
@@ -92,8 +88,6 @@ abstract class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
     private var onViewDetachedFromWindow: (VB.() -> Unit)? = null
     private var onAttachedToRecyclerView: ((rv: RecyclerView) -> Unit)? = null
     private var onDetachedFromRecyclerView: ((rv: RecyclerView) -> Unit)? = null
-    private var fullSpan: ((position: Int, ViewHolder) -> Boolean)? = null
-    private var getSpanSize: ((position: Int, spanCount: Int) -> Int)? = null
 
     /**
      * 对应[DiffUtil.ItemCallback.areContentsTheSame]
@@ -180,20 +174,6 @@ abstract class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
         onDetachedFromRecyclerView = block
     }
 
-    /**
-     * 对应[SpanSizeProvider.fullSpan]
-     */
-    fun fullSpan(block: (position: Int, ViewHolder) -> Boolean) {
-        fullSpan = block
-    }
-
-    /**
-     * 对应[SpanSizeProvider.getSpanSize]
-     */
-    fun getSpanSize(block: (position: Int, spanCount: Int) -> Int) {
-        getSpanSize = block
-    }
-
     override fun inflate(): Inflate<VB> = inflate
 
     override fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean {
@@ -244,13 +224,5 @@ abstract class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
         onDetachedFromRecyclerView?.invoke(recyclerView)
-    }
-
-    override fun fullSpan(position: Int, holder: ViewHolder): Boolean {
-        return fullSpan?.invoke(position, holder) ?: false
-    }
-
-    override fun getSpanSize(position: Int, spanCount: Int): Int {
-        return getSpanSize?.invoke(position, spanCount) ?: 1
     }
 }

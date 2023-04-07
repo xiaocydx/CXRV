@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.utils.extendsFrom
-
 plugins {
     id("com.android.library")
     id("kotlin-android")
@@ -16,7 +14,7 @@ publishing {
 }
 
 android {
-    namespace = "com.xiaocydx.cxrv"
+    namespace = "com.xiaocydx.cxrv.binding"
     compileSdk = 31
 
     defaultConfig {
@@ -47,23 +45,12 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
-    testOptions {
-        unitTests { isIncludeAndroidResources = true }
-    }
-    configurations {
-        testImplementation.extendsFrom(compileOnly)
+    buildFeatures {
+        viewBinding = true
     }
 }
+
 dependencies {
-    compileOnly("androidx.appcompat:appcompat:1.2.0")
+    compileOnly(project(":cxrv"))
     compileOnly("androidx.recyclerview:recyclerview:1.2.0")
-    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
-    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0")
-    testImplementation("junit:junit:4.+")
-    testImplementation("com.google.truth:truth:1.0")
-    testImplementation("org.robolectric:robolectric:4.3.1")
-    testImplementation("io.mockk:mockk:1.12.0")
-    testImplementation("androidx.test:core:1.4.0")
-    androidTestImplementation("androidx.test.ext:junit:1.1.2")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
 }

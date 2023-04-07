@@ -3,17 +3,16 @@ package com.xiaocydx.cxrv.binding
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewbinding.ViewBinding
-import com.xiaocydx.cxrv.R
-import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
+import com.xiaocydx.cxrv.list.ListAdapter
 
 /**
- * 使用[ViewBinding]完成视图绑定的[ViewTypeDelegate]模板类
+ * 使用[ViewBinding]完成视图绑定的[ListAdapter]模板类
  *
  * @author xcc
- * @date 2021/12/6
+ * @date 2021/12/5
  */
-abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> :
-        ViewTypeDelegate<ITEM, BindingHolder<VB>>() {
+abstract class BindingAdapter<ITEM : Any, VB : ViewBinding> :
+        ListAdapter<ITEM, BindingHolder<VB>>() {
     /**
      * Kotlin中类的函数引用，若不是直接作为内联函数的实参，则会编译为单例，
      * 但此处仍然用属性保存函数引用，不重复获取，即使编译规则改了也不受影响。
@@ -75,7 +74,7 @@ abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> :
      */
     protected open fun VB.onViewDetachedFromWindow() = Unit
 
-    final override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
+    final override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BindingHolder<VB> {
         if (inflate == null) {
             inflate = inflate()
         }
