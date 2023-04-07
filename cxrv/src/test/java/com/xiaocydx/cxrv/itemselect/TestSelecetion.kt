@@ -8,9 +8,9 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.SimpleViewHolder
 
-data class TestItem(val key: String)
+internal data class TestItem(val key: String)
 
-class TestAdapter(var data: MutableList<TestItem>) : Adapter<ViewHolder>() {
+internal class TestAdapter(var data: MutableList<TestItem>) : Adapter<ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val itemView = View(parent.context).apply {
             layoutParams = LayoutParams(MATCH_PARENT, 100)

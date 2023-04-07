@@ -32,7 +32,7 @@ import org.robolectric.annotation.LooperMode
 @LooperMode(LooperMode.Mode.PAUSED)
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class LoadFooterAdapterTest {
+internal class LoadFooterAdapterTest {
     private val listAdapter = TestListAdapter()
     private val collector = listAdapter.pagingCollector
     private val onCreateView: OnCreateView<View> = spyk({ View(it.context) })

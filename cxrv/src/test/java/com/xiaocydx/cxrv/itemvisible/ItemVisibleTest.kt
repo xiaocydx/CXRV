@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class ItemVisibleTest {
+internal class ItemVisibleTest {
     private lateinit var scenario: ActivityScenario<TestActivity>
     private val testAdapter: TestAdapter = TestAdapter()
     private val testItems = (0..99).map { it.toString() }

@@ -20,7 +20,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class PagingFetcherTest {
+internal class PagingFetcherTest {
 
     @Test
     fun collect_RefreshSuccess_PagingEvent(): Unit = runBlocking {

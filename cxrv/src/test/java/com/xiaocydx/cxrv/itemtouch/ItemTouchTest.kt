@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class ItemTouchTest {
+internal class ItemTouchTest {
     private lateinit var scenario: ActivityScenario<TestActivity>
 
     @Before

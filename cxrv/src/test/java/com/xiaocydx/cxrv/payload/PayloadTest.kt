@@ -9,7 +9,7 @@ import org.junit.Test
  * @author xcc
  * @date 2022/11/13
  */
-class PayloadTest {
+internal class PayloadTest {
 
     @Test
     @Suppress("LocalVariableName")

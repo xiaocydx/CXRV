@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
  * @author xcc
  * @date 2021/10/12
  */
-class TestActivity : AppCompatActivity() {
+internal class TestActivity : AppCompatActivity() {
     lateinit var recyclerView: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class HeaderFooterTest {
+internal class HeaderFooterTest {
     private lateinit var scenario: ActivityScenario<TestActivity>
     private lateinit var headerView: View
     private lateinit var footerView: View

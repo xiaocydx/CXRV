@@ -3,18 +3,18 @@ package com.xiaocydx.cxrv.multitype
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 
-class TestItem
-class TypeTestItem(
+internal class TestItem
+internal class TypeTestItem(
     val type: TestType
 )
 
-enum class TestType {
+internal enum class TestType {
     TYPE_A, TYPE_B
 }
 
 internal fun<T: Any> mutableMultiTypeOf() = MutableMultiTypeImpl<T>()
 
-open class TestDelegate : ViewTypeDelegate<TestItem, ViewHolder>() {
+internal open class TestDelegate : ViewTypeDelegate<TestItem, ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
         error("onCreateViewHolder")
@@ -26,7 +26,7 @@ open class TestDelegate : ViewTypeDelegate<TestItem, ViewHolder>() {
     override fun areItemsTheSame(oldItem: TestItem, newItem: TestItem): Boolean = true
 }
 
-open class TypeADelegate : ViewTypeDelegate<TypeTestItem, ViewHolder>() {
+internal open class TypeADelegate : ViewTypeDelegate<TypeTestItem, ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
         error("onCreateViewHolder")
@@ -40,7 +40,7 @@ open class TypeADelegate : ViewTypeDelegate<TypeTestItem, ViewHolder>() {
     }
 }
 
-open class TypeBDelegate : ViewTypeDelegate<TypeTestItem, ViewHolder>() {
+internal open class TypeBDelegate : ViewTypeDelegate<TypeTestItem, ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
         error("onCreateViewHolder")

@@ -20,7 +20,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class ListStateTest {
+internal class ListStateTest {
     private val listState = ListState<String>()
 
     @Test

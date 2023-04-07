@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class LoadHeaderAdapterTest {
+internal class LoadHeaderAdapterTest {
     private val listAdapter = TestListAdapter()
     private val collector = listAdapter.pagingCollector
     private val onCreateView: OnCreateView<View> = spyk({ View(it.context) })

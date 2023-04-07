@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.SimpleViewHolder
  * @author xcc
  * @date 2021/10/15
  */
-open class TestAdapter : RecyclerView.Adapter<ViewHolder>() {
+internal open class TestAdapter : RecyclerView.Adapter<ViewHolder>() {
     var items: List<String> = emptyList()
         set(value) {
             field = value

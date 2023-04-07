@@ -25,7 +25,7 @@ import java.util.concurrent.CountDownLatch
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class CoroutineListDifferTest {
+internal class CoroutineListDifferTest {
     private val diffCallback: TestDiffCallback = spyk(TestDiffCallback())
     private val updateCallback: ListUpdateCallback = mockk(relaxed = true)
     private val differ: CoroutineListDiffer<String> = CoroutineListDiffer(

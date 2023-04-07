@@ -6,7 +6,7 @@ import com.xiaocydx.cxrv.layout.LayoutManagerExtensions
  * @author xcc
  * @date 2022/11/22
  */
-class TestLayoutManagerExtensions : LayoutManagerExtensions<TestLayoutManager> {
+internal class TestLayoutManagerExtensions : LayoutManagerExtensions<TestLayoutManager> {
 
     override fun findFirstVisibleItemPosition(layout: TestLayoutManager): Int {
         return layout.findFirstVisibleItemPosition()

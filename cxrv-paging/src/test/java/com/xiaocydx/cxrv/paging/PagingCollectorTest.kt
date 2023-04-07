@@ -25,7 +25,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class PagingCollectorTest {
+internal class PagingCollectorTest {
     private val adapter = TestAdapter()
     private val collector = adapter.pagingCollector
     private var loadStateDisposable: Disposable = spyk(

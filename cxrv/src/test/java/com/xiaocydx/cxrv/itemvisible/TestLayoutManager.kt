@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView.LayoutManager
  * @author xcc
  * @date 2022/11/22
  */
-class TestLayoutManager(private val fakePosition: Int) : LayoutManager() {
+internal class TestLayoutManager(private val fakePosition: Int) : LayoutManager() {
     fun findFirstVisibleItemPosition() = fakePosition
 
     fun findFirstCompletelyVisibleItemPosition() = fakePosition

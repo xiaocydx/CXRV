@@ -12,9 +12,9 @@ import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlin.coroutines.CoroutineContext
 
-fun testMainDispatcher(): MainCoroutineDispatcher = TestMainDispatcher()
+internal fun testMainDispatcher(): MainCoroutineDispatcher = TestMainDispatcher()
 
-fun testWorkDispatcher(dispatchDelay: Long = 0): CoroutineDispatcher {
+internal fun testWorkDispatcher(dispatchDelay: Long = 0): CoroutineDispatcher {
     return TestWorkExecutor(dispatchDelay).asCoroutineDispatcher()
 }
 

@@ -16,7 +16,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class MutableMultiTypeTest {
+internal class MutableMultiTypeTest {
     private val testDelegate: TestDelegate = spyk(TestDelegate())
     private val typeADelegate: TypeADelegate = spyk(TypeADelegate())
     private val typeBDelegate: TypeBDelegate = spyk(TypeBDelegate())

@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class SingleSelectionTest {
+internal class SingleSelectionTest {
     private lateinit var recyclerView: RecyclerView
     private val adapter = TestAdapter(
         data = (1..10).map { TestItem(it.toString()) }.toMutableList()

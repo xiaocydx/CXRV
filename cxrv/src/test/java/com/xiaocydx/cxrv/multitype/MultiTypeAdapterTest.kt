@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class MultiTypeAdapterTest {
+internal class MultiTypeAdapterTest {
     private val typeADelegate: TypeADelegate = spyk(TypeADelegate())
     private val typeBDelegate: TypeBDelegate = spyk(TypeBDelegate())
 
