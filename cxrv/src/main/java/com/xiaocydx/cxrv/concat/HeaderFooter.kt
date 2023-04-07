@@ -72,7 +72,7 @@ fun RecyclerView.addHeader(header: View): ViewAdapter<*> {
  *
  * @return 返回[footer]转换后的[ViewAdapter]。
  */
-fun <T : RecyclerView> T.addFooter(footer: View): ViewAdapter<*> {
+fun RecyclerView.addFooter(footer: View): ViewAdapter<*> {
     val adapter: Adapter<*> = requireNotNull(adapter) {
         "请先对RecyclerView设置Adapter，然后再添加Footer。"
     }
