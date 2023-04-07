@@ -60,7 +60,7 @@ class CoroutineListDiffer<T : Any>(
      *
      * 若[dispatcher]等于[mainDispatcher]，则在主线程执行差异计算，这种做法的实际意义：
      * 当调度器调度较慢时，会导致差异计算较慢执行（工作线程）、更新列表较慢执行（主线程），
-     * 在列表数据量不大的情况下，可以选择在主线程执行差异计算，调度器不进行任何的调度。
+     * 在列表数据量或修改量不大的情况下，可以选择在主线程执行差异计算，不进行任何的调度。
      */
     fun setWorkDispatcher(dispatcher: CoroutineDispatcher) = assertMainThread {
         if (workDispatcher === dispatcher) return@assertMainThread

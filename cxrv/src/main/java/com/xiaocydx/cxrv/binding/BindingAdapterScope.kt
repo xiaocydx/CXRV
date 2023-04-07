@@ -1,11 +1,13 @@
 package com.xiaocydx.cxrv.binding
 
-import androidx.annotation.WorkerThread
-import androidx.recyclerview.widget.DiffUtil.ItemCallback
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewbinding.ViewBinding
 import com.xiaocydx.cxrv.internal.RvDslMarker
+import com.xiaocydx.cxrv.list.ListOwner
+import com.xiaocydx.cxrv.list.setItem
+import com.xiaocydx.cxrv.list.setItems
 
 /**
  * [BindingAdapter]的构建函数，适用于简单列表场景
@@ -26,7 +28,7 @@ import com.xiaocydx.cxrv.internal.RvDslMarker
  * }
  * ```
  * @param inflate         函数引用`VB::inflate`
- * @param areItemsTheSame 对应[ItemCallback.areItemsTheSame]
+ * @param areItemsTheSame 对应[DiffUtil.ItemCallback.areItemsTheSame]
  */
 inline fun <ITEM : Any, VB : ViewBinding> bindingAdapter(
     noinline inflate: Inflate<VB>,
@@ -51,7 +53,7 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingAdapter(
  * }
  * ```
  * @param inflate  函数引用`VB::inflate`
- * @param uniqueId item唯一id，是[ItemCallback.areItemsTheSame]的简化函数
+ * @param uniqueId item唯一id，是[DiffUtil.ItemCallback.areItemsTheSame]的简化函数
  */
 inline fun <ITEM : Any, VB : ViewBinding> bindingAdapter(
     noinline inflate: Inflate<VB>,
@@ -86,21 +88,22 @@ class BindingAdapterScope<ITEM : Any, VB : ViewBinding>
     private var onDetachedFromRecyclerView: ((rv: RecyclerView) -> Unit)? = null
 
     /**
-     * 对应[ItemCallback.areContentsTheSame]
+     * 对应[DiffUtil.ItemCallback.areContentsTheSame]
      *
-     * 仅当[areItemsTheSame]的`block`返回true时才调用[block]。
+     * 1. [areItemsTheSame]返回true -> 调用[areContentsTheSame]。
+     * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用[areContentsTheSame]进行差异对比。
      */
-    fun areContentsTheSame(@WorkerThread block: (oldItem: ITEM, newItem: ITEM) -> Boolean) {
+    fun areContentsTheSame(block: (oldItem: ITEM, newItem: ITEM) -> Boolean) {
         areContentsTheSame = block
     }
 
     /**
-     * 对应[ItemCallback.getChangePayload]
+     * 对应[DiffUtil.ItemCallback.getChangePayload]
      *
-     * 仅当[areItemsTheSame]的`block`返回true、
-     * [areContentsTheSame]的`block`返回false时才调用[block]。
+     * 1. [areItemsTheSame]返回true -> [areContentsTheSame]返回false -> 调用[getChangePayload]。
+     * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用[getChangePayload]进行差异对比。
      */
-    fun getChangePayload(@WorkerThread block: (oldItem: ITEM, newItem: ITEM) -> Any?) {
+    fun getChangePayload(block: (oldItem: ITEM, newItem: ITEM) -> Any?) {
         getChangePayload = block
     }
 

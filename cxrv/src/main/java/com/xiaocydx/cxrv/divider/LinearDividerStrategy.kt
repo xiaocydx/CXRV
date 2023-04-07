@@ -3,9 +3,11 @@ package com.xiaocydx.cxrv.divider
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.view.View
-import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
+import androidx.recyclerview.widget.isHeaderOrFooterOrRemoved
+import androidx.recyclerview.widget.isViewHolderRemoved
 import com.xiaocydx.cxrv.internal.childEach
 import com.xiaocydx.cxrv.list.isFirstChildBindingAdapterPosition
 import com.xiaocydx.cxrv.list.isHeaderOrFooter

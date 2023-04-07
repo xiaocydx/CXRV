@@ -145,7 +145,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>() :
      * 启用在主线程执行差异计算
      *
      * 当调度器调度较慢时，会导致差异计算较慢执行（工作线程）、更新列表较慢执行（主线程），
-     * 在列表数据量不大的情况下，可以选择在主线程执行差异计算，调度器不进行任何的调度。
+     * 在列表数据量或修改量不大的情况下，可以选择在主线程执行差异计算，不进行任何的调度。
      */
     @MainThread
     fun calculateDiffOnMainThread() {
@@ -154,10 +154,6 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>() :
 
     /**
      * 设置差异计算的工作线程调度器，默认是[Dispatchers.Default]
-     *
-     * 若[dispatcher]等于`mainDispatcher`，则在主线程执行差异计算，这种做法的实际意义：
-     * 当调度器调度较慢时，会导致差异计算较慢执行（工作线程）、更新列表较慢执行（主线程），
-     * 在列表数据量不大的情况下，可以选择在主线程执行差异计算，调度器不进行任何的调度。
      */
     @MainThread
     fun setWorkDispatcher(dispatcher: CoroutineDispatcher) {
