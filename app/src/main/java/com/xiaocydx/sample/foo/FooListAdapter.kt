@@ -32,14 +32,10 @@ class FooListAdapter : ListAdapter<Foo, FooListAdapter.ViewHolder>() {
     }
 
     override fun getItemViewType(position: Int): Int {
-        return toViewType(getItem(position).type)
+        return getItem(position).type.ordinal
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvFoo: TextView = itemView.findViewById(R.id.tvFoo)
-    }
-
-    companion object {
-        fun toViewType(type: FooType) = type.ordinal
     }
 }

@@ -153,7 +153,7 @@ class FooListFragment : Fragment() {
     companion object {
         private const val KEY_CATEGORY_ID = "KEY_CATEGORY_ID"
 
-        fun newInstance(categoryId: Long): FooListFragment = FooListFragment().apply {
+        fun newInstance(categoryId: Long) = FooListFragment().apply {
             arguments = Bundle(1).apply { putLong(KEY_CATEGORY_ID, categoryId) }
         }
     }
