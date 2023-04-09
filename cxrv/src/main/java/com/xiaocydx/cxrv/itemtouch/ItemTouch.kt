@@ -106,8 +106,7 @@ inline fun <AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolde
  * }
  * ```
  */
-fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onDragMoveItem()
-    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
+fun ItemTouchScope<out ListAdapter<*, *>, *>.onDragMoveItem() {
     onDrag { from, to ->
         moveItem(from, to)
         true
@@ -124,8 +123,7 @@ fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onDragMoveItem()
  * }
  * ```
  */
-fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onSwipeRemoveItem()
-    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
+fun ItemTouchScope<out ListAdapter<*, *>, *>.onSwipeRemoveItem() {
     onSwipe { position, _ -> removeItemAt(position) }
 }
 
@@ -143,10 +141,7 @@ fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onSwipeRemoveItem()
     message = "早期理解错误，以为局部更新的move等同于swap",
     replaceWith = ReplaceWith("onDragMoveItem()")
 )
-fun <AdapterT, ITEM, VH> ItemTouchScope<AdapterT, VH>.onDragSwapItem()
-    where AdapterT : ListAdapter<out ITEM, out VH>, ITEM : Any, VH : ViewHolder {
-    onDragMoveItem()
-}
+fun ItemTouchScope<out ListAdapter<*, *>, *>.onDragSwapItem() = onDragMoveItem()
 
 @PublishedApi
 internal class ItemTouchDisposable : Disposable {
