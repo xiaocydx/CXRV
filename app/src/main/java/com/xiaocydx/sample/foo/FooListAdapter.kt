@@ -2,8 +2,11 @@ package com.xiaocydx.sample.foo
 
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.TextView
+import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.getItem
 import com.xiaocydx.sample.R
@@ -24,7 +27,15 @@ class FooListAdapter : ListAdapter<Foo, FooListAdapter.ViewHolder>() {
             FooType.TYPE2.ordinal -> R.layout.item_foo_type2
             else -> throw IllegalArgumentException()
         }
-        return ViewHolder(parent.inflate(layout))
+        val holder = ViewHolder(parent.inflate(layout))
+        val isStaggered = recyclerView?.layoutManager is StaggeredGridLayoutManager
+        if (isStaggered) {
+            // 兼容瀑布流的测量逻辑，确保itemView高度不会被“挤压”
+            val initialHeight = holder.itemView.layoutParams.height
+            holder.itemView.updateLayoutParams { height = WRAP_CONTENT }
+            holder.tvFoo.updateLayoutParams { height = initialHeight }
+        }
+        return holder
     }
 
     override fun onBindViewHolder(holder: ViewHolder, item: Foo) {
