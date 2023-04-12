@@ -53,7 +53,7 @@ import kotlin.coroutines.*
 class CoroutineListDiffer<T : Any>(
     private val diffCallback: DiffUtil.ItemCallback<T>,
     private val updateCallback: ListUpdateCallback,
-    private var workDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private var diffDispatcher: CoroutineDispatcher = Dispatchers.Default,
     val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) {
     private val runner = SingleRunner()
@@ -66,9 +66,9 @@ class CoroutineListDiffer<T : Any>(
     constructor(
         diffCallback: DiffUtil.ItemCallback<T>,
         adapter: RecyclerView.Adapter<*>,
-        workDispatcher: CoroutineDispatcher = Dispatchers.Default,
+        diffDispatcher: CoroutineDispatcher = Dispatchers.Default,
         mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
-    ) : this(diffCallback, AdapterListUpdateCallback(adapter), workDispatcher, mainDispatcher)
+    ) : this(diffCallback, AdapterListUpdateCallback(adapter), diffDispatcher, mainDispatcher)
 
     /**
      * 设置差异计算的工作线程调度器
@@ -77,11 +77,11 @@ class CoroutineListDiffer<T : Any>(
      * 当调度器调度较慢时，会导致差异计算较慢执行（工作线程）、更新列表较慢执行（主线程），
      * 在列表数据量或修改量不大的情况下，可以选择在主线程执行差异计算，不进行任何的调度。
      */
-    fun setWorkDispatcher(dispatcher: CoroutineDispatcher) {
+    fun setDiffDispatcher(dispatcher: CoroutineDispatcher) {
         assertMainThread()
-        if (workDispatcher === dispatcher) return
+        if (diffDispatcher === dispatcher) return
         cancel()
-        workDispatcher = dispatcher
+        diffDispatcher = dispatcher
     }
 
     /**
@@ -254,7 +254,7 @@ class CoroutineListDiffer<T : Any>(
         return when {
             oldList === newList -> false
             oldList.isEmpty() || newList.isEmpty() -> false
-            else -> isWorkDispatchNeeded()
+            else -> isDiffDispatchNeeded()
         }
     }
 
@@ -276,7 +276,7 @@ class CoroutineListDiffer<T : Any>(
             else -> {
                 // 若无法确保newList是安全的，则提前对其进行copy
                 val safeList = newList.ensureSafeMutable()
-                val result: DiffUtil.DiffResult = withWorkDispatcher {
+                val result: DiffUtil.DiffResult = withDiffDispatcher {
                     oldList.calculateDiff(safeList, diffCallback)
                 }
                 sourceList = safeList
@@ -416,12 +416,12 @@ class CoroutineListDiffer<T : Any>(
     }
 
     /**
-     * 若[workDispatcher]是`HandlerContext`，则进行`HandlerContext.equals()`对比，
+     * 若[diffDispatcher]是`HandlerContext`，则进行`HandlerContext.equals()`对比，
      */
-    private fun isWorkDispatchNeeded() = workDispatcher != mainDispatcher
+    private fun isDiffDispatchNeeded() = diffDispatcher != mainDispatcher
 
-    private suspend inline fun <R> withWorkDispatcher(crossinline block: () -> R): R {
-        return if (isWorkDispatchNeeded()) withContext(workDispatcher) { block() } else block()
+    private suspend inline fun <R> withDiffDispatcher(crossinline block: () -> R): R {
+        return if (isDiffDispatchNeeded()) withContext(diffDispatcher) { block() } else block()
     }
 
     private fun assertMainThread() {

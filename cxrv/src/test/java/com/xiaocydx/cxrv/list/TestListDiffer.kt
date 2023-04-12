@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv
+package com.xiaocydx.cxrv.list
 
 import android.os.Looper
-import com.xiaocydx.cxrv.list.CoroutineListDiffer
 import kotlinx.coroutines.*
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadPoolExecutor
@@ -30,7 +29,7 @@ import kotlin.coroutines.CoroutineContext
  * @param dispatchDelay 调度延时，用于模拟较长时间的差异计算
  */
 @Suppress("TestFunctionName")
-internal fun TestWorkDispatcher(dispatchDelay: Long = 0): CoroutineDispatcher {
+internal fun TestDiffDispatcher(dispatchDelay: Long = 0): CoroutineDispatcher {
     val executor = object : ThreadPoolExecutor(
         /* corePoolSize */0,
         /* maximumPoolSize */Int.MAX_VALUE,

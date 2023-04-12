@@ -53,14 +53,6 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>() :
     final override val currentList: List<ITEM>
         get() = differ.currentList
 
-    @Deprecated(
-        message = "提供workDispatcher的设置函数，不再需要构造函数传参",
-        replaceWith = ReplaceWith("setWorkDispatcher()")
-    )
-    constructor(workDispatcher: CoroutineDispatcher = Dispatchers.Default) : this() {
-        setWorkDispatcher(workDispatcher)
-    }
-
     /**
      * 可用于[onCreateViewHolder]中创建itemView
      */
@@ -165,16 +157,16 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>() :
      */
     @MainThread
     fun calculateDiffOnMainThread() {
-        setWorkDispatcher(differ.mainDispatcher)
+        setDiffDispatcher(differ.mainDispatcher)
     }
 
     /**
      * 设置差异计算的工作线程调度器，默认是[Dispatchers.Default]
      */
     @MainThread
-    fun setWorkDispatcher(dispatcher: CoroutineDispatcher) {
+    fun setDiffDispatcher(dispatcher: CoroutineDispatcher) {
         assertMainThread()
-        differ.setWorkDispatcher(dispatcher)
+        differ.setDiffDispatcher(dispatcher)
     }
 
     /**

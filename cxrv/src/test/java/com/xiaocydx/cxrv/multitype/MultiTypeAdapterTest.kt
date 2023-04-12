@@ -103,7 +103,7 @@ internal class MultiTypeAdapterTest {
         val adapter = multiTypeAdapter<Any>(
             // 单元测试在主线程上执行，若runBlocking()把主线程阻塞了，
             // 则差异计算完成后无法恢复到主线程，因此直接在主线程上进行差异计算。
-            workDispatcher = Dispatchers.Main.immediate,
+            diffDispatcher = Dispatchers.Main.immediate,
         ) {
             register(typeADelegate) { it.type == TestType.TYPE_A }
             register(typeBDelegate) { it.type == TestType.TYPE_B }
@@ -123,9 +123,9 @@ internal class MultiTypeAdapterTest {
     }
 
     private inline fun <T : Any> multiTypeAdapter(
-        workDispatcher: CoroutineDispatcher = Dispatchers.Default,
+        diffDispatcher: CoroutineDispatcher = Dispatchers.Default,
         block: MutableMultiType<T>.() -> Unit
     ): MultiTypeAdapter<T> = MultiTypeAdapter(
         multiType = mutableMultiTypeOf<T>().apply(block).complete()
-    ).apply { setWorkDispatcher(workDispatcher) }
+    ).apply { setDiffDispatcher(diffDispatcher) }
 }

@@ -20,8 +20,6 @@ import android.os.Build
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import com.google.common.truth.Truth.assertThat
-import com.xiaocydx.cxrv.TestMainDispatcher
-import com.xiaocydx.cxrv.TestWorkDispatcher
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -302,7 +300,7 @@ class CoroutineListDifferTest {
     @Test
     fun execute_SubmitList_On_MainThread(): Unit = runBlockingTest {
         val differ = it.differ
-        differ.setWorkDispatcher(differ.mainDispatcher)
+        differ.setDiffDispatcher(differ.mainDispatcher)
         val initList = listOf("A", "B")
         val newList = listOf("C", "D")
 
@@ -315,7 +313,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun setWorkDispatcher_Cancel(): Unit = runBlockingTest {
+    fun setDiffDispatcher_Cancel(): Unit = runBlockingTest {
         val differ = it.differ
         val initList = listOf("A", "B")
         val newList1 = listOf("C", "D")
@@ -327,7 +325,7 @@ class CoroutineListDifferTest {
         result = differ.updateList(UpdateOp.SubmitList(newList1))
         assertThat(result).isNotEqualTo(CompleteResult)
 
-        differ.setWorkDispatcher(differ.mainDispatcher)
+        differ.setDiffDispatcher(differ.mainDispatcher)
         result = differ.updateList(UpdateOp.SubmitList(newList2))
         assertThat(result).isEqualTo(CompleteResult)
         assertThat(differ.currentList).isEqualTo(newList2)
@@ -342,7 +340,7 @@ class CoroutineListDifferTest {
             diffCallback = diffCallback,
             updateCallback = updateCallback,
             // 设置调度延迟，模拟较长时间的差异计算。
-            workDispatcher = TestWorkDispatcher(dispatchDelay = 100),
+            diffDispatcher = TestDiffDispatcher(dispatchDelay = 100),
             mainDispatcher = TestMainDispatcher(coroutineContext)
         )
         block(TestProperty(differ, diffCallback, updateCallback))
