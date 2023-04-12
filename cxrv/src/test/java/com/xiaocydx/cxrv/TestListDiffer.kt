@@ -16,64 +16,74 @@
 
 package com.xiaocydx.cxrv
 
-import com.xiaocydx.cxrv.list.TestMainCoroutineDispatcher
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.MainCoroutineDispatcher
-import kotlinx.coroutines.Runnable
-import kotlinx.coroutines.asCoroutineDispatcher
-import java.util.concurrent.Executors
+import android.os.Looper
+import com.xiaocydx.cxrv.list.CoroutineListDiffer
+import kotlinx.coroutines.*
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 
-internal fun testMainDispatcher(): MainCoroutineDispatcher = TestMainDispatcher()
-
-internal fun testWorkDispatcher(dispatchDelay: Long = 0): CoroutineDispatcher {
-    return TestWorkExecutor(dispatchDelay).asCoroutineDispatcher()
-}
-
-private class TestWorkExecutor(
-    private val dispatchDelay: Long
-) : ThreadPoolExecutor(
-    0, Int.MAX_VALUE,
-    60L, TimeUnit.SECONDS,
-    SynchronousQueue(),
-    { runnable ->
-        thread(start = false, isDaemon = true) { runnable.run() }
-    }
-) {
-    override fun beforeExecute(t: Thread?, r: java.lang.Runnable?) {
-        if (dispatchDelay > 0) Thread.sleep(dispatchDelay)
-    }
-}
-
-private class TestMainDispatcher : TestMainCoroutineDispatcher() {
-    private val dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor { runnable ->
-        thread(start = false, isDaemon = true) {
-            isTestMain.set(true)
-            runnable.run()
+/**
+ * @param dispatchDelay 调度延时，用于模拟较长时间的差异计算
+ */
+@Suppress("TestFunctionName")
+internal fun TestWorkDispatcher(dispatchDelay: Long = 0): CoroutineDispatcher {
+    val executor = object : ThreadPoolExecutor(
+        /* corePoolSize */0,
+        /* maximumPoolSize */Int.MAX_VALUE,
+        /* keepAliveTime */60L,
+        /* unit */TimeUnit.SECONDS,
+        /* workQueue */SynchronousQueue(),
+        /* threadFactory */{ runnable ->
+            thread(start = false, isDaemon = true, block = { runnable.run() })
         }
-    }.asCoroutineDispatcher()
+    ) {
+        override fun beforeExecute(t: Thread, r: Runnable) {
+            if (dispatchDelay > 0) Thread.sleep(dispatchDelay)
+        }
+    }
+    return executor.asCoroutineDispatcher()
+}
 
+/**
+ * [runBlocking]产生挂起会休眠主线程，不同于Android消息队列的`epoll_wait()`，
+ * [CoroutineListDiffer]通过Android平台的[Dispatchers.Main]无法唤醒主线程，
+ * 解决办法是将[BlockingEventLoop]包装为[MainCoroutineDispatcher]，
+ * 让[CoroutineListDiffer]通过[TestMainDispatcher]唤醒主线程。
+ */
+@Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+internal class TestMainDispatcher(private val eventLoop: BlockingEventLoop) : MainCoroutineDispatcher() {
+    private val thread = eventLoop.thread()
     override val immediate: MainCoroutineDispatcher = this
 
-    /**
-     * 不能根据[Thread.currentThread.name]判断是否为测试主线程，会有额外后缀。
-     */
-    @Suppress("KDocUnresolvedReference")
+    constructor(context: CoroutineContext) : this(kotlin.run {
+        val eventLoop = context[ContinuationInterceptor] as? BlockingEventLoop
+        assert(eventLoop?.thread() === Looper.getMainLooper().thread)
+        eventLoop!!
+    })
+
     override fun isDispatchNeeded(context: CoroutineContext): Boolean {
-        return !isTestMain.get()!!
+        return Thread.currentThread() !== thread
     }
 
     override fun dispatch(context: CoroutineContext, block: Runnable) {
-        dispatcher.dispatch(context, block)
-    }
-
-    private companion object {
-        val isTestMain = object : ThreadLocal<Boolean>() {
-            override fun initialValue(): Boolean = false
+        if (isDispatchNeeded(context)) {
+            eventLoop.dispatch(context, block)
+        } else {
+            block.run()
         }
     }
+}
+
+/**
+ * 直接访问成员属性`thread`会编译报错，通过反射访问
+ */
+@Suppress("INVISIBLE_REFERENCE")
+private fun BlockingEventLoop.thread(): Thread {
+    val method = javaClass.getDeclaredMethod("getThread")
+    method.isAccessible = true
+    return method.invoke(this) as Thread
 }

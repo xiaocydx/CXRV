@@ -16,14 +16,7 @@
 
 package com.xiaocydx.cxrv.list
 
-import androidx.annotation.VisibleForTesting
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainCoroutineDispatcher
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.coroutines.resume
 
 /**
  * 列表更新操作
@@ -92,66 +85,3 @@ internal class DeferredResult(
         complete?.let(job::invokeOnCompletion)
     }
 }
-
-/**
- * 实现逻辑很粗糙，但对单元测试来说已经足够
- */
-@VisibleForTesting
-internal class TestUpdateResult(
-    dispatcher: CoroutineDispatcher,
-    private val block: () -> UpdateResult
-) : UpdateResult, CompleteCompat {
-    @Volatile private var result: UpdateResult? = null
-    @Volatile private var blockCont: Continuation<Unit>? = null
-    @Volatile private var resultCont: Continuation<Unit>? = null
-    @Volatile private var complete: ((exception: Throwable?) -> Unit)? = null
-    override val isComplete: Boolean
-        get() = result?.isComplete ?: false
-
-    init {
-        dispatcher.dispatch(EmptyCoroutineContext) {
-            result = block()
-            blockCont?.resume(Unit)
-            resultCont?.resume(Unit)
-            handleComplete(result!!, complete)
-        }
-    }
-
-    suspend fun awaitBlock() {
-        if (result != null) return
-        suspendCancellableCoroutine { blockCont = it }
-    }
-
-    override suspend fun await() {
-        val result = result
-        if (result != null) {
-            result.await()
-            return
-        }
-        suspendCancellableCoroutine { resultCont = it }
-        this.result?.await()
-    }
-
-    override fun invokeOnCompletion(complete: ((exception: Throwable?) -> Unit)?) {
-        val result = result
-        if (result != null) {
-            handleComplete(result, complete)
-            return
-        }
-        this.complete = complete
-    }
-
-    private fun handleComplete(result: UpdateResult, complete: ((exception: Throwable?) -> Unit)?) {
-        if (result is CompleteCompat) {
-            complete?.let(result::invokeOnCompletion)
-        } else {
-            complete?.invoke(null)
-        }
-    }
-}
-
-/**
- * 对单元测试跳过主线程断言
- */
-@VisibleForTesting
-internal abstract class TestMainCoroutineDispatcher : MainCoroutineDispatcher()

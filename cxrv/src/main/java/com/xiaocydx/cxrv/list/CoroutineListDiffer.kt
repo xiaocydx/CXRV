@@ -16,7 +16,6 @@
 
 package com.xiaocydx.cxrv.list
 
-import android.annotation.SuppressLint
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.DiffUtil
@@ -78,8 +77,9 @@ class CoroutineListDiffer<T : Any>(
      * 当调度器调度较慢时，会导致差异计算较慢执行（工作线程）、更新列表较慢执行（主线程），
      * 在列表数据量或修改量不大的情况下，可以选择在主线程执行差异计算，不进行任何的调度。
      */
-    fun setWorkDispatcher(dispatcher: CoroutineDispatcher) = assertMainThread {
-        if (workDispatcher === dispatcher) return@assertMainThread
+    fun setWorkDispatcher(dispatcher: CoroutineDispatcher) {
+        assertMainThread()
+        if (workDispatcher === dispatcher) return
         cancel()
         workDispatcher = dispatcher
     }
@@ -155,11 +155,9 @@ class CoroutineListDiffer<T : Any>(
      * ```
      * @param dispatch 是否将[op]分发给[ListExecuteListener]
      */
-    fun updateList(
-        op: UpdateOp<T>,
-        dispatch: Boolean = true
-    ): UpdateResult = assertMainThreadUpdate {
-        if (isLaunchNeeded(op)) {
+    fun updateList(op: UpdateOp<T>, dispatch: Boolean = true): UpdateResult {
+        assertMainThread()
+        return if (isLaunchNeeded(op)) {
             scope.launch {
                 runner.afterPrevious { execute(op, dispatch) }
             }.let(::DeferredResult)
@@ -177,7 +175,8 @@ class CoroutineListDiffer<T : Any>(
      *
      * [ListChangedListener.onListChanged]中可以调用[removeListChangedListener]。
      */
-    fun addListChangedListener(listener: ListChangedListener<T>) = assertMainThread {
+    fun addListChangedListener(listener: ListChangedListener<T>) {
+        assertMainThread()
         if (changedListeners == null) {
             changedListeners = arrayListOf()
         }
@@ -189,7 +188,8 @@ class CoroutineListDiffer<T : Any>(
     /**
      * 移除列表已更改的监听
      */
-    fun removeListChangedListener(listener: ListChangedListener<T>) = assertMainThread {
+    fun removeListChangedListener(listener: ListChangedListener<T>) {
+        assertMainThread()
         changedListeners?.remove(listener)
     }
 
@@ -198,7 +198,8 @@ class CoroutineListDiffer<T : Any>(
      *
      * * [ListExecuteListener.onExecute]中可以调用[removeListExecuteListener]。
      */
-    fun addListExecuteListener(listener: ListExecuteListener<T>) = assertMainThread {
+    fun addListExecuteListener(listener: ListExecuteListener<T>) {
+        assertMainThread()
         if (executeListeners == null) {
             executeListeners = arrayListOf()
         }
@@ -210,11 +211,13 @@ class CoroutineListDiffer<T : Any>(
     /**
      * 移除执行[UpdateOp]的监听
      */
-    fun removeListExecuteListener(listener: ListExecuteListener<T>) = assertMainThread {
+    fun removeListExecuteListener(listener: ListExecuteListener<T>) {
+        assertMainThread()
         executeListeners?.remove(listener)
     }
 
-    fun cancel() = assertMainThread {
+    fun cancel() {
+        assertMainThread()
         // 允许调用处多次cancel
         runner.cancel()
     }
@@ -421,26 +424,9 @@ class CoroutineListDiffer<T : Any>(
         return if (isWorkDispatchNeeded()) withContext(workDispatcher) { block() } else block()
     }
 
-    @SuppressLint("VisibleForTests")
-    private inline fun assertMainThread(crossinline block: () -> Unit) {
+    private fun assertMainThread() {
         val dispatcher = mainDispatcher.immediate
-        if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
-            assert(dispatcher is TestMainCoroutineDispatcher) { "只能在主线程中调用当前函数" }
-            dispatcher.dispatch(EmptyCoroutineContext) { block() }
-        } else {
-            block()
-        }
-    }
-
-    @SuppressLint("VisibleForTests")
-    private inline fun assertMainThreadUpdate(crossinline block: () -> UpdateResult): UpdateResult {
-        val dispatcher = mainDispatcher.immediate
-        return if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
-            assert(dispatcher is TestMainCoroutineDispatcher) { "只能在主线程中调用当前函数" }
-            TestUpdateResult(dispatcher) { block() }
-        } else {
-            block()
-        }
+        assert(!dispatcher.isDispatchNeeded(EmptyCoroutineContext)) { "只能在主线程中调用当前函数" }
     }
 
     /**
