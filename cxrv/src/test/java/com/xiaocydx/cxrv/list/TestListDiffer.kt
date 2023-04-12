@@ -69,11 +69,7 @@ internal class TestMainDispatcher(private val eventLoop: BlockingEventLoop) : Ma
     }
 
     override fun dispatch(context: CoroutineContext, block: Runnable) {
-        if (isDispatchNeeded(context)) {
-            eventLoop.dispatch(context, block)
-        } else {
-            block.run()
-        }
+        eventLoop.dispatch(context, block)
     }
 }
 

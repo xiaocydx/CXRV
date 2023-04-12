@@ -63,6 +63,7 @@ fun RecyclerView.prepareScrap(
     prepareAdapter: Adapter<*>,
     prepareDeadline: PrepareDeadline = PrepareDeadline.FOREVER_NS,
     prepareDispatcher: CoroutineDispatcher = DefaultIoDispatcher,
+    mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate,
     block: PrepareScrapPairs.() -> Unit
 ): Flow<ViewHolder> {
     assertMainThread()
@@ -70,6 +71,7 @@ fun RecyclerView.prepareScrap(
     val recyclerView = this
     val preparePairs = PrepareScrapPairs().apply(block).complete()
     return unsafeFlow {
+        assertMainThread()
         coroutineScope {
             val deadlineNs = AtomicLong(Long.MAX_VALUE)
             val deadlineJob = when (prepareDeadline) {
@@ -105,7 +107,7 @@ fun RecyclerView.prepareScrap(
             emitAll(prepareFlow)
             deadlineJob?.cancel()
         }
-    }.flowOnMain()
+    }.flowOn(mainDispatcher.immediate)
 }
 
 /**
