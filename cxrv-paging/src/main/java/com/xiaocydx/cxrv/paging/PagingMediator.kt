@@ -22,7 +22,7 @@ package com.xiaocydx.cxrv.paging
  * @author xcc
  * @date 2021/9/15
  */
-interface PagingMediator {
+internal interface PagingMediator {
     /**
      * 加载状态集合
      */
