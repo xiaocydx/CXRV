@@ -22,7 +22,6 @@ import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
-import androidx.recyclerview.widget.isHeaderOrFooterOrRemoved
 import androidx.recyclerview.widget.isViewHolderRemoved
 import com.xiaocydx.cxrv.internal.childEach
 import com.xiaocydx.cxrv.list.isFirstChildBindingAdapterPosition
@@ -65,7 +64,7 @@ internal object LinearDividerStrategy : DividerStrategy {
         val orientation = parent.orientation
         canvas.clipPadding(parent)
         parent.childEach { child ->
-            if (parent.isHeaderOrFooterOrRemoved(child)) {
+            if (parent.isHeaderOrFooter(child)) {
                 return@childEach
             }
             val offsets = child.getItemOffsets() ?: return@childEach
@@ -119,56 +118,58 @@ internal object LinearDividerStrategy : DividerStrategy {
     }
 
     private fun DividerItemDecoration.drawVerticalDivider(canvas: Canvas, child: View, offsets: Rect) {
-        val bounds = drawEdge.getBounds(child, withAnimOffset = true)
+        val bounds = drawEdge.getBounds(child, withAnim = true)
+        val alpha = drawEdge.getAlpha(child, withAnim = true)
         var left = bounds.left
         var right = bounds.right
         // drawLeft
         if (offsets.left > 0) {
             left -= offsets.left
-            canvas.drawDivider(left, bounds.top, bounds.left, bounds.bottom)
+            canvas.drawDivider(left, bounds.top, bounds.left, bounds.bottom, alpha)
         }
         // drawRight
         if (offsets.right > 0) {
             right += offsets.right
-            canvas.drawDivider(bounds.right, bounds.top, right, bounds.bottom)
+            canvas.drawDivider(bounds.right, bounds.top, right, bounds.bottom, alpha)
         }
 
         left += leftMargin
         right -= rightMargin
         // drawTop
         if (offsets.top > 0) {
-            canvas.drawDivider(left, bounds.top - offsets.top, right, bounds.top)
+            canvas.drawDivider(left, bounds.top - offsets.top, right, bounds.top, alpha)
         }
         // drawBottom
         if (offsets.bottom > 0) {
-            canvas.drawDivider(left, bounds.bottom, right, bounds.bottom + offsets.bottom)
+            canvas.drawDivider(left, bounds.bottom, right, bounds.bottom + offsets.bottom, alpha)
         }
     }
 
     private fun DividerItemDecoration.drawHorizontalDivider(canvas: Canvas, child: View, offset: Rect) {
-        val bounds = drawEdge.getBounds(child, withAnimOffset = true)
+        val bounds = drawEdge.getBounds(child, withAnim = true)
+        val alpha = drawEdge.getAlpha(child, withAnim = true)
         var top = bounds.top
         var bottom = bounds.bottom
         // drawTop
         if (offset.top > 0) {
             top -= offset.top
-            canvas.drawDivider(bounds.left, top, bounds.right, bounds.top)
+            canvas.drawDivider(bounds.left, top, bounds.right, bounds.top, alpha)
         }
         // drawBottom
         if (offset.bottom > 0) {
             bottom += offset.bottom
-            canvas.drawDivider(bounds.left, bounds.bottom, bounds.right, bottom)
+            canvas.drawDivider(bounds.left, bounds.bottom, bounds.right, bottom, alpha)
         }
 
         top += topMargin
         bottom -= bottomMargin
         // drawLeft
         if (offset.left > 0) {
-            canvas.drawDivider(bounds.left - offset.left, top, bounds.left, bottom)
+            canvas.drawDivider(bounds.left - offset.left, top, bounds.left, bottom, alpha)
         }
         // drawRight
         if (offset.right > 0) {
-            canvas.drawDivider(bounds.right, top, bounds.right + offset.right, bottom)
+            canvas.drawDivider(bounds.right, top, bounds.right + offset.right, bottom, alpha)
         }
     }
 }

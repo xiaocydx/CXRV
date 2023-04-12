@@ -23,10 +23,7 @@ import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.view.View
-import androidx.annotation.ColorInt
-import androidx.annotation.ColorRes
-import androidx.annotation.DrawableRes
-import androidx.annotation.Px
+import androidx.annotation.*
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LayoutManagerCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -135,8 +132,14 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         getItemOffsets()?.let(outRect::set)
     }
 
-    internal fun Canvas.drawDivider(left: Int, top: Int, right: Int, bottom: Int) {
+    internal fun Canvas.drawDivider(
+        left: Int, top: Int, right: Int, bottom: Int,
+        @FloatRange(from = 0.0, to = 1.0) alpha: Float
+    ) {
         divider?.also {
+            it.alpha = (alpha * 255).toInt()
+                .coerceAtLeast(0)
+                .coerceAtMost(255)
             it.setBounds(left, top, right, bottom)
             it.draw(this)
         }

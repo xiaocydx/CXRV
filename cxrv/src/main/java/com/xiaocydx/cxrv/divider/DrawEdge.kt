@@ -18,6 +18,7 @@ package com.xiaocydx.cxrv.divider
 
 import android.graphics.Rect
 import android.view.View
+import androidx.annotation.FloatRange
 import androidx.recyclerview.widget.RecyclerView.LayoutParams
 import kotlin.math.roundToInt
 
@@ -53,7 +54,7 @@ internal class DrawEdge {
         bottom = false
     }
 
-    fun getBounds(child: View, withAnimOffset: Boolean): Rect {
+    fun getBounds(child: View, withAnim: Boolean): Rect {
         val lp = child.layoutParams as LayoutParams
         bounds.set(
             child.left - lp.leftMargin,
@@ -61,8 +62,8 @@ internal class DrawEdge {
             child.right + lp.rightMargin,
             child.bottom + lp.bottomMargin
         )
-        if (withAnimOffset) {
-            // 执行默认item动画时会有X/Y偏移
+        if (withAnim) {
+            // 执行默认item动画会有X、Y偏移
             val translationX = child.translationX.roundToInt()
             val translationY = child.translationY.roundToInt()
             bounds.left += translationX
@@ -71,5 +72,11 @@ internal class DrawEdge {
             bounds.bottom += translationY
         }
         return bounds
+    }
+
+    @FloatRange(from = 0.0, to = 1.0)
+    fun getAlpha(child: View, withAnim: Boolean): Float {
+        // 执行默认item动画会有alpha变化
+        return if (withAnim) child.alpha else 1f
     }
 }

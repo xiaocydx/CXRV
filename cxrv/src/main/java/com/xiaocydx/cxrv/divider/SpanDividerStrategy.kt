@@ -18,9 +18,12 @@ package com.xiaocydx.cxrv.divider
 
 import android.graphics.Canvas
 import android.view.View
-import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import androidx.recyclerview.widget.isViewHolderRemoved
 import com.xiaocydx.cxrv.R
 import com.xiaocydx.cxrv.internal.childEach
 import com.xiaocydx.cxrv.list.isHeaderOrFooter
@@ -64,7 +67,7 @@ internal object SpanDividerStrategy : DividerStrategy {
         val orientation = parent.orientation
         canvas.clipPadding(parent)
         parent.childEach { child ->
-            if (parent.isHeaderOrFooterOrRemoved(child)) {
+            if (parent.isHeaderOrFooter(child)) {
                 return@childEach
             }
             val span = child.getSpanParams() ?: return@childEach
@@ -142,7 +145,8 @@ internal object SpanDividerStrategy : DividerStrategy {
         span: SpanParams
     ) {
         setVerticalDrawEdge(parent, span)
-        val bounds = drawEdge.getBounds(child, withAnimOffset = false)
+        val bounds = drawEdge.getBounds(child, withAnim = false)
+        val alpha = drawEdge.getAlpha(child, withAnim = !parent.isStaggered)
         val reverseLayout = parent.reverseLayout
         var left = bounds.left
         var right = bounds.right
@@ -159,20 +163,20 @@ internal object SpanDividerStrategy : DividerStrategy {
 
         if (drawEdge.left) {
             left -= width
-            canvas.drawDivider(left, top, bounds.left, bottom)
+            canvas.drawDivider(left, top, bounds.left, bottom, alpha)
         }
         if (drawEdge.right) {
             right += width
-            canvas.drawDivider(bounds.right, top, right, bottom)
+            canvas.drawDivider(bounds.right, top, right, bottom, alpha)
         }
 
         left = if (span.isFirstSpan) left + leftMargin else left
         right = if (span.isLastSpan) right - rightMargin else right
         if (drawEdge.top) {
-            canvas.drawDivider(left, bounds.top - height, right, bounds.top)
+            canvas.drawDivider(left, bounds.top - height, right, bounds.top, alpha)
         }
         if (drawEdge.bottom) {
-            canvas.drawDivider(left, bounds.bottom, right, bounds.bottom + height)
+            canvas.drawDivider(left, bounds.bottom, right, bounds.bottom + height, alpha)
         }
     }
 
@@ -187,7 +191,8 @@ internal object SpanDividerStrategy : DividerStrategy {
         span: SpanParams
     ) {
         setHorizontalDrawEdge(parent, span)
-        val bounds = drawEdge.getBounds(child, withAnimOffset = false)
+        val bounds = drawEdge.getBounds(child, withAnim = false)
+        val alpha = drawEdge.getAlpha(child, withAnim = !parent.isStaggered)
         val reverseLayout = parent.reverseLayout
         var top = bounds.top
         var bottom = bounds.bottom
@@ -204,20 +209,20 @@ internal object SpanDividerStrategy : DividerStrategy {
 
         if (drawEdge.top) {
             top -= height
-            canvas.drawDivider(left, top, right, bounds.top)
+            canvas.drawDivider(left, top, right, bounds.top, alpha)
         }
         if (drawEdge.bottom) {
             bottom += height
-            canvas.drawDivider(left, bounds.bottom, right, bottom)
+            canvas.drawDivider(left, bounds.bottom, right, bottom, alpha)
         }
 
         top = if (span.isFirstSpan) top + topMargin else top
         bottom = if (span.isLastSpan) bottom - bottomMargin else bottom
         if (drawEdge.left) {
-            canvas.drawDivider(bounds.left - width, top, bounds.left, bottom)
+            canvas.drawDivider(bounds.left - width, top, bounds.left, bottom, alpha)
         }
         if (drawEdge.right) {
-            canvas.drawDivider(bounds.right, top, bounds.right + width, bottom)
+            canvas.drawDivider(bounds.right, top, bounds.right + width, bottom, alpha)
         }
     }
 
