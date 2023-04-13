@@ -16,6 +16,8 @@
 
 package com.xiaocydx.cxrv.recycle
 
+import android.content.Context
+import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -25,7 +27,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,29 +45,42 @@ internal class PrepareScrapTest {
     private val typeBCount = 20
 
     @Test
-    fun collectToList(): Unit = runBlocking(Dispatchers.Main) {
-        val rv = RecyclerView(ApplicationProvider.getApplicationContext())
+    fun scrapList(): Unit = runBlocking(Dispatchers.Main) {
+        val rv = RecyclerView(Context())
         val adapter = TestAdapter()
         rv.adapter = adapter
-
-        val holderList = rv.prepareScrap(adapter) {
+        val scrapList = rv.prepareScrap(adapter) {
             add(typeA, typeACount)
             add(typeB, typeBCount)
-        }.toList()
+        }
 
-        val listA = holderList.filter { it.itemViewType == typeA }
-        val listB = holderList.filter { it.itemViewType == typeB }
+        val listA = scrapList.filter { it.itemViewType == typeA }
+        val listB = scrapList.filter { it.itemViewType == typeB }
         assertThat(listA.size).isEqualTo(typeACount)
         assertThat(listB.size).isEqualTo(typeBCount)
     }
 
     @Test
-    fun choreographer() {
-        // TODO: Choreographer的可测试性
+    fun putScrap(): Unit = runBlocking(Dispatchers.Main) {
+        val rv = RecyclerView(Context())
+        val adapter = TestAdapter()
+        rv.adapter = adapter
+        rv.prepareScrap(adapter) {
+            add(typeA, typeACount)
+            add(typeB, typeBCount)
+        }
+        val pool = rv.recycledViewPool
+        assertThat(pool.getRecycledViewCount(typeA)).isEqualTo(typeACount)
+        assertThat(pool.getRecycledViewCount(typeB)).isEqualTo(typeBCount)
     }
+
+    @Suppress("TestFunctionName")
+    private fun Context() = ApplicationProvider.getApplicationContext<Context>()
 
     private class TestAdapter : RecyclerView.Adapter<ViewHolder>() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            assertThat(Looper.myLooper()).isEqualTo(Looper.getMainLooper())
+            assertThat(Thread.currentThread()).isNotEqualTo(Looper.getMainLooper().thread)
             return object : ViewHolder(View(parent.context)) {}
         }
 

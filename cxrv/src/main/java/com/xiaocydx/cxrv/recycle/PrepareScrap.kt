@@ -25,87 +25,79 @@ import androidx.annotation.IntRange
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.internal.*
+import com.xiaocydx.cxrv.recycle.ChoreographerDispatcher
 import com.xiaocydx.cxrv.recycle.LooperElement
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
 import kotlinx.coroutines.flow.*
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.resume
 
 /**
- * 按[PrepareScrapPairs.add]的添加顺序，预创建ViewHolder并放入[RecycledViewPool]
+ * 按[PrepareScrapScope.add]的添加顺序，预创建ViewHolder并放入[RecycledViewPool]
  *
  * **注意**：此函数应当在初始化视图时调用，并确保RecyclerView已设置Adapter，
  * 预创建流程会按[prepareDeadline]进行停止，避免产生不必要的创建开销。
  *
- * ```
- * recyclerView.prepareScrap(
- *     prepareAdapter = adapter,
- *     prepareDeadline = PrepareDeadline.FOREVER_NS,
- *     prepareDispatcher = DefaultIoDispatcher
- * ) {
- *     add(viewType = viewType1, count = 10)
- *     add(viewType = viewType2, count = 10)
- * }.launchIn(coroutineScope)
- * ```
- *
  * @param prepareAdapter    调用[Adapter.createViewHolder]创建ViewHolder
  * @param prepareDeadline   预创建的截止时间，默认为[PrepareDeadline.FOREVER_NS]
- * @param prepareDispatcher 用于预创建的协程调度器，默认为[DefaultIoDispatcher]
- * @param block             调用[PrepareScrapPairs.add]，添加预创建的键值对
- *
- * @return 收集返回的`Flow<ViewHolder>`，才开始执行预创建流程，
- * 预创建执行过程发射创建成功的ViewHolder，供收集处统计或测试。
+ * @param prepareDispatcher 用于预创建的协程调度器，默认为[Dispatchers.IO]
+ * @param block             调用[PrepareScrapScope.add]，添加预创建的键值对
  */
 @MainThread
 @ExperimentalFeature
-fun RecyclerView.prepareScrap(
+suspend fun RecyclerView.prepareScrap(
     prepareAdapter: Adapter<*>,
     prepareDeadline: PrepareDeadline = PrepareDeadline.FOREVER_NS,
-    prepareDispatcher: CoroutineDispatcher = DefaultIoDispatcher,
-    block: PrepareScrapPairs.() -> Unit
-): Flow<ViewHolder> {
+    prepareDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    block: PrepareScrapScope.() -> Unit
+): List<ViewHolder> {
     assertMainThread()
     require(adapter != null) { "请先对RecyclerView设置Adapter" }
-    val recyclerView = this
-    val preparePairs = PrepareScrapPairs().apply(block).complete()
-    return unsafeFlow {
-        coroutineScope {
-            val deadlineNs = AtomicLong(Long.MAX_VALUE)
-            val deadlineJob = when (prepareDeadline) {
-                PrepareDeadline.FOREVER_NS -> null
-                PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
-                    // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
-                    deadlineNs.set(prepareAdapter.awaitDeadlineNs())
+    val rv = this
+    val preparePairs = ArrayList(PrepareScrapScope().apply(block).pairs)
+    val scrapList = ArrayList<ViewHolder>(preparePairs.sumOf { it.count })
+
+    // 通过Handler发送的消息可能会被doFrame消息按时间顺序插队，
+    // 也就导致处理完doFrame消息后，才往RecycledViewPool放入scrap，
+    // 调整为在doFrame消息的Animation回调下往RecycledViewPool放入scrap。
+    withContext(ChoreographerDispatcher()) {
+        val deadlineNs = DeadlineNs()
+        val deadlineJob = when (prepareDeadline) {
+            PrepareDeadline.FOREVER_NS -> null
+            PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
+                // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
+                deadlineNs.set(prepareAdapter.awaitDeadlineNs())
+            }
+        }
+
+        val channel = Channel<ViewHolder>(BUFFERED)
+        // 对prepareDispatcher调度的线程临时设置主线程Looper，
+        // 确保View的构造过程获取到主线程Looper，例如GestureDetector。
+        val prepareContext = prepareDispatcher + LooperElement(Looper.myLooper()!!)
+        launch(prepareContext) {
+            preparePairs.accessEach { (viewType, count) ->
+                var remainingCount = count
+                while (remainingCount > 0 && deadlineNs.checkVolatile()) {
+                    remainingCount--
+                    // FIXME: createViewHolder()执行异常反馈出去
+                    channel.send(prepareAdapter.createViewHolder(rv, viewType))
                 }
             }
-
-            val choreographer = Choreographer.getInstance()
-            val prepareContext = LooperElement(Looper.myLooper()!!) + prepareDispatcher
-            val prepareFlow = unsafeFlow {
-                preparePairs.forEach { prepareViewType, prepareCount ->
-                    var count = prepareCount
-                    while (count > 0 && System.nanoTime() < deadlineNs.get()) {
-                        // 由于使用unsafeFlow不检测执行上下文、异常透明性（提高发射性能），
-                        // 因此emit()没有检查Job已取消的处理，需要补充判断以响应Job取消。
-                        ensureActive()
-                        count--
-                        val scrap = runCatching {
-                            prepareAdapter.createViewHolder(recyclerView, prepareViewType)
-                        }.getOrNull() ?: continue
-                        // 通过Handler发送的消息可能会被首帧的doFrame消息按时间顺序插队，
-                        // 也就导致处理完首帧doFrame消息后，才往RecycledViewPool放入scrap，
-                        // 因此调整为在doFrame消息的Animation回调下往RecycledViewPool放入scrap。
-                        choreographer.postFrameCallback { recyclerView.putPrepareScrap(scrap) }
-                        emit(scrap)
-                    }
-                }
-            }.flowOn(prepareContext)
-
-            emitAll(prepareFlow)
-            deadlineJob?.cancel()
+        }.invokeOnCompletion {
+            channel.close()
         }
-    }.flowOnMain()
+
+        for (scrap in channel) {
+            if (!deadlineNs.checkPlain()) break
+            // FIXME: putScrap()执行异常反馈出去
+            rv.putScrap(scrap)
+            scrapList.add(scrap)
+        }
+        deadlineJob?.cancelAndJoin()
+    }
+    return scrapList
 }
 
 /**
@@ -124,40 +116,25 @@ enum class PrepareDeadline {
 }
 
 /**
- * 调用[PrepareScrapPairs.add]，添加预创建的键值对
+ * 调用[PrepareScrapScope.add]，添加预创建的键值对
  */
-class PrepareScrapPairs @PublishedApi internal constructor() {
+class PrepareScrapScope @PublishedApi internal constructor() {
     @PublishedApi
     internal val pairs = mutableListOf<Pair>()
-    private var isComplete = false
 
     fun add(viewType: Int, @IntRange(from = 1) count: Int) {
-        check(!isComplete) { "已完成添加" }
         pairs.add(Pair(viewType, count.coerceAtLeast(1)))
     }
-
-    internal inline fun forEach(action: (viewType: Int, count: Int) -> Unit) {
-        pairs.forEach { action(it.viewType, it.count) }
-    }
-
-    @PublishedApi
-    internal fun complete() = apply { isComplete = true }
 
     /**
      * 不使用[kotlin.Pair]，有装箱拆箱的开销
      */
     @PublishedApi
-    internal class Pair(val viewType: Int, val count: Int)
+    internal data class Pair(val viewType: Int, val count: Int)
 }
 
-/**
- * 默认串行创建ViewHolder
- */
-@OptIn(ExperimentalCoroutinesApi::class)
-private val DefaultIoDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
-
 @MainThread
-private fun RecyclerView.putPrepareScrap(scrap: ViewHolder) {
+private fun RecyclerView.putScrap(scrap: ViewHolder) {
     val pool = recycledViewPool
     val mScrap = pool.mScrap
     val viewType = scrap.itemViewType
@@ -174,6 +151,20 @@ private suspend fun Adapter<*>.awaitDeadlineNs(): Long {
     return suspendCancellableCoroutine { cont ->
         DeadlineNsObserver(this, cont).attach()
     }
+}
+
+private class DeadlineNs {
+    private var plainValue = Long.MAX_VALUE
+    @Volatile private var volatileValue = Long.MAX_VALUE
+
+    fun set(deadlineNs: Long) {
+        plainValue = deadlineNs
+        volatileValue = deadlineNs
+    }
+
+    fun checkPlain() = System.nanoTime() < plainValue
+
+    fun checkVolatile() = System.nanoTime() < plainValue
 }
 
 @MainThread
