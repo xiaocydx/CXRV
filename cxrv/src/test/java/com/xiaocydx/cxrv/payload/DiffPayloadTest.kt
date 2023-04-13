@@ -29,7 +29,7 @@ internal class DiffPayloadTest {
 
     @Test
     @Suppress("LocalVariableName")
-    fun add_Value_Success() {
+    fun addValue() {
         val oldItem = CountItem(count1 = 1, count2 = 2)
         val newItem = CountItem(count1 = 3, count2 = 4)
 

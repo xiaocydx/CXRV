@@ -51,7 +51,7 @@ internal class ItemClickTest {
     }
 
     @Test
-    fun add_DispatchTarget_OnAttach() {
+    fun addDispatchTargetOnAttach() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             val dispatcher = recyclerView.itemClickDispatcher
@@ -74,7 +74,7 @@ internal class ItemClickTest {
     }
 
     @Test
-    fun repeat_Add_DispatchTarget_OnAttach() {
+    fun repeatAddDispatchTargetOnAttach() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             val dispatcher = recyclerView.itemClickDispatcher
@@ -98,7 +98,7 @@ internal class ItemClickTest {
     }
 
     @Test
-    fun remove_DispatchTarget_OnDispose() {
+    fun removeDispatchTargetOnDispose() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             val dispatcher = recyclerView.itemClickDispatcher

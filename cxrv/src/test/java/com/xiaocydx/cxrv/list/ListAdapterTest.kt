@@ -46,7 +46,7 @@ internal class ListAdapterTest {
     )
 
     @Test
-    fun manual_Dispose() {
+    fun manualDispose() {
         changedDisposable.also {
             it.dispose()
             assertDisposed(it)
@@ -54,7 +54,7 @@ internal class ListAdapterTest {
     }
 
     @Test
-    fun lifecycle_AutoDispose() {
+    fun lifecycleAutoDispose() {
         launch(TestActivity::class.java)
             .moveToState(State.CREATED)
             .onActivity { activity ->
@@ -69,7 +69,7 @@ internal class ListAdapterTest {
     }
 
     @Test
-    fun executeOnce_AutoDispose() {
+    fun executeOnceAutoDispose() {
         val handler: ListChangedListener<Any> = mockk(relaxed = true)
         val disposable = adapter.doOnListChanged(once = true, handler)
         adapter.submitList(listOf("A"))

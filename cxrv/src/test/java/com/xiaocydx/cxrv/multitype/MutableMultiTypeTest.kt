@@ -38,7 +38,7 @@ internal class MutableMultiTypeTest {
     private val typeBDelegate: TypeBDelegate = spyk(TypeBDelegate())
 
     @Test
-    fun register_OneToOneType() {
+    fun registerOneToOne() {
         mutableMultiTypeOf<Any>().init {
             register(testDelegate)
             assertThat(size).isEqualTo(1)
@@ -47,7 +47,7 @@ internal class MutableMultiTypeTest {
     }
 
     @Test
-    fun register_OneToManyTypes() {
+    fun registerOneToMany() {
         mutableMultiTypeOf<TypeTestItem>().init {
             register(typeADelegate) { it.type == TestType.TYPE_A }
             register(typeBDelegate) { it.type == TestType.TYPE_B }
@@ -58,7 +58,7 @@ internal class MutableMultiTypeTest {
     }
 
     @Test
-    fun register_OneToManyTypes_CheckTypeGroups() {
+    fun registerOneToManyCheckTypeGroups() {
         var exception: IllegalArgumentException? = null
         try {
             mutableMultiTypeOf<TypeTestItem>().init {
@@ -76,7 +76,7 @@ internal class MutableMultiTypeTest {
     }
 
     @Test
-    fun register_OneToOneType_OneToManyTypes() {
+    fun registerOneToOneAndOneToMany() {
         mutableMultiTypeOf<Any>().init {
             register(testDelegate)
             register(typeADelegate) { it.type == TestType.TYPE_A }

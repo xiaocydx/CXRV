@@ -61,7 +61,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun select_Success() {
+    fun select() {
         val item1 = adapter.data.first()
         val item2 = adapter.data.last()
         var success = selection.select(item1)
@@ -77,7 +77,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun unselect_Success() {
+    fun unselect() {
         val item1 = adapter.data.first()
         val item2 = adapter.data.last()
         selection.select(item1)
@@ -95,14 +95,14 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun selectAll_Success() {
+    fun selectAll() {
         val success = selection.selectAll(recyclerView)
         assertThat(success).isTrue()
         assertThat(selection.selectedItems()).isEqualTo(adapter.data)
     }
 
     @Test
-    fun clearSelected_Success() {
+    fun clearSelected() {
         selection.selectAll(recyclerView)
         val success = selection.clearSelected(recyclerView)
         assertThat(success).isTrue()
@@ -110,46 +110,38 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun repeat_Select_Failure() {
+    fun repeatSelect() {
         var success = true
         val item = adapter.data.first()
-        repeat(2) {
-            success = selection.select(item)
-        }
+        repeat(2) { success = selection.select(item) }
         assertThat(success).isFalse()
     }
 
     @Test
-    fun repeat_Unselect_Failure() {
+    fun repeatUnselect() {
         var success = true
         val item = adapter.data.first()
         selection.select(item)
-        repeat(2) {
-            success = selection.unselect(item)
-        }
+        repeat(2) { success = selection.unselect(item) }
         assertThat(success).isFalse()
     }
 
     @Test
-    fun repeat_SelectAll_Failure() {
+    fun repeatSelectAll() {
         var success = true
-        repeat(2) {
-            success = selection.selectAll(recyclerView)
-        }
+        repeat(2) { success = selection.selectAll(recyclerView) }
         assertThat(success).isFalse()
     }
 
     @Test
-    fun repeat_ClearSelected_Failure() {
+    fun repeatClearSelected() {
         var success = true
-        repeat(2) {
-            success = selection.clearSelected(recyclerView)
-        }
+        repeat(2) { success = selection.clearSelected(recyclerView) }
         assertThat(success).isFalse()
     }
 
     @Test
-    fun select_Trigger_OnSelectMax() {
+    fun selectTriggerOnSelectMax() {
         val onSelectedMax: () -> Unit = mockk(relaxed = true)
         val selection = adapter.multiSelection(
             maxSelectSize = 2,
@@ -164,7 +156,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun select_Trigger_OnSelect() {
+    fun selectTriggerOnSelect() {
         val onSelect: (TestItem) -> Unit = mockk(relaxed = true)
         selection.onSelect(onSelect)
         val item = adapter.data.first()
@@ -173,7 +165,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun unselect_Trigger_OnUnselect() {
+    fun unselectTriggerOnUnselect() {
         val onUnselect: (TestItem) -> Unit = mockk(relaxed = true)
         selection.onUnselect(onUnselect)
         val item = adapter.data.first()
@@ -183,7 +175,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun selectAll_Trigger_OnSelectAllStateChange() {
+    fun selectAllTriggerOnSelectAllStateChange() {
         val onStateChange: (Boolean) -> Unit = mockk(relaxed = true)
         selection.onSelectAllStateChange(onStateChange)
         selection.selectAll(recyclerView)
@@ -191,7 +183,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun unselect_Trigger_OnSelectAllStateChange() {
+    fun unselectTriggerOnSelectAllStateChange() {
         val onStateChange: (Boolean) -> Unit = mockk(relaxed = true)
         selection.onSelectAllStateChange(onStateChange)
         selection.selectAll(recyclerView)
@@ -200,7 +192,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun clearSelected_Trigger_OnSelectAllStateChange() {
+    fun clearSelectedTriggerOnSelectAllStateChange() {
         val onStateChange: (Boolean) -> Unit = mockk(relaxed = true)
         selection.onSelectAllStateChange(onStateChange)
         selection.selectAll(recyclerView)
@@ -209,7 +201,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun changed_Trigger_OnSelectAllStateChange() {
+    fun changedTriggerOnSelectAllStateChange() {
         val onStateChange: (Boolean) -> Unit = mockk(relaxed = true)
         selection.onSelectAllStateChange(onStateChange)
         selection.selectAll(recyclerView)
@@ -221,7 +213,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun insertItem_Trigger_OnSelectAllStateChange() {
+    fun insertItemTriggerOnSelectAllStateChange() {
         val onStateChange: (Boolean) -> Unit = mockk(relaxed = true)
         selection.onSelectAllStateChange(onStateChange)
         selection.selectAll(recyclerView)
@@ -233,7 +225,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun changed_Trigger_ClearInvalidSelected() {
+    fun changedTriggerClearInvalidSelected() {
         val item = adapter.data.first()
         selection.select(item)
         adapter.data.removeAt(0)
@@ -242,7 +234,7 @@ internal class MultiSelectionTest {
     }
 
     @Test
-    fun removeItem_Trigger_ClearInvalidSelected() {
+    fun removeItemTriggerClearInvalidSelected() {
         val item = adapter.data.first()
         selection.select(item)
         adapter.data.removeAt(0)

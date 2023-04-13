@@ -29,7 +29,7 @@ internal class PayloadTest {
 
     @Test
     @Suppress("LocalVariableName")
-    fun generate_Value_Success() {
+    fun generateValue() {
         val VALUE1 = Payload.value(1)
         val VALUE2 = Payload.value(2)
         assertThat(VALUE1.countOneBits()).isEqualTo(1)
@@ -38,7 +38,7 @@ internal class PayloadTest {
     }
 
     @Test
-    fun check_Value_Success() {
+    fun checkValue() {
         val payload = Payload {
             repeat(2) { (1..5).forEach(::add) }
         }
@@ -52,7 +52,7 @@ internal class PayloadTest {
 
     @Test
     @Suppress("LocalVariableName")
-    fun check_Payload_Equals() {
+    fun checkEquals() {
         val VALUE1 = Payload.value(1)
         val VALUE2 = Payload.value(2)
         val VALUE3 = Payload.value(3)
@@ -67,7 +67,7 @@ internal class PayloadTest {
 
     @Test
     @Suppress("LocalVariableName")
-    fun check_Payload_HashCode() {
+    fun checkHashCode() {
         val VALUE1 = Payload.value(1)
         val VALUE2 = Payload.value(2)
         val VALUE3 = Payload.value(3)
@@ -82,7 +82,7 @@ internal class PayloadTest {
 
     @Test
     @Suppress("LocalVariableName")
-    fun take_Payloads_ForEach_Success() {
+    fun takeForEach() {
         val VALUE1 = Payload.value(1)
         val VALUE2 = Payload.value(2)
         val payloads = listOf(
@@ -100,7 +100,7 @@ internal class PayloadTest {
 
     @Test
     @Suppress("LocalVariableName")
-    fun take_Payloads_Merge_Success() {
+    fun takeMerge() {
         val VALUE1 = Payload.value(1)
         val VALUE2 = Payload.value(2)
         val VALUE3 = Payload.value(3)
@@ -122,7 +122,7 @@ internal class PayloadTest {
     }
 
     @Test
-    fun take_Payloads_Empty() {
+    fun takeFromEmptyList() {
         val outcome = arrayListOf<Int>()
         Payload.take(listOf(), outcome::add)
         assertThat(outcome).hasSize(1)
@@ -130,7 +130,7 @@ internal class PayloadTest {
     }
 
     @Test
-    fun takeOrEmpty_Payloads_Empty() {
+    fun takeOrEmptyFromEmptyList() {
         val outcome = arrayListOf<Int>()
         Payload.takeOrEmpty(listOf(), outcome::add)
         assertThat(outcome).hasSize(1)
@@ -138,7 +138,7 @@ internal class PayloadTest {
     }
 
     @Test
-    fun takeOrEmpty_Payloads_Empty_Value() {
+    fun takeOrEmptyFromEmptyValue() {
         val outcome = arrayListOf<Int>()
         val payload = Payload { }
         Payload.takeOrEmpty(listOf(payload), outcome::add)

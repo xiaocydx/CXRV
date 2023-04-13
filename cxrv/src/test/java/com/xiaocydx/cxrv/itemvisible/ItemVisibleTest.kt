@@ -57,28 +57,22 @@ internal class ItemVisibleTest {
     }
 
     @Test
-    fun recyclerView_LinearLayoutManager_ItemVisible() {
-        recyclerView_ItemVisible {
-            LinearLayoutManager(context)
-        }
+    fun linearLayoutManager() {
+        testItemVisible { LinearLayoutManager(context) }
     }
 
     @Test
-    fun recyclerView_GridLayoutManager_ItemVisible() {
-        recyclerView_ItemVisible {
-            GridLayoutManager(context, 3)
-        }
+    fun gridLayoutManager() {
+        testItemVisible { GridLayoutManager(context, 3) }
     }
 
     @Test
-    fun recyclerView_StaggeredGridLayoutManager_ItemVisible() {
-        recyclerView_ItemVisible {
-            StaggeredGridLayoutManager(3, VERTICAL)
-        }
+    fun staggeredGridLayoutManager() {
+        testItemVisible { StaggeredGridLayoutManager(3, VERTICAL) }
     }
 
     @Test
-    fun recyclerView_TestLayoutManager_ItemVisible() {
+    fun testLayoutManager() {
         scenario.onActivity { activity ->
             val rv = activity.recyclerView
             val fakePosition = 100
@@ -90,7 +84,7 @@ internal class ItemVisibleTest {
         }
     }
 
-    private inline fun recyclerView_ItemVisible(crossinline layout: RecyclerView.() -> LayoutManager) {
+    private inline fun testItemVisible(crossinline layout: RecyclerView.() -> LayoutManager) {
         scenario.onActivity { activity ->
             activity.recyclerView.apply {
                 layoutManager = layout()

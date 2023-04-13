@@ -39,7 +39,7 @@ import org.robolectric.annotation.Config
 internal class PagingFetcherTest {
 
     @Test
-    fun collect_RefreshSuccess_PagingEvent(): Unit = runBlocking {
+    fun collectRefreshSuccessPagingEvent(): Unit = runBlocking {
         val fetcher = getTestFetcher(maxPage = 1, result = Result.NORMAL)
         val events = mutableListOf<PagingEvent<String>>()
         launch { fetcher.flow.toList(events) }
@@ -54,7 +54,7 @@ internal class PagingFetcherTest {
     }
 
     @Test
-    fun collect_RefreshFailure_PagingEvent(): Unit = runBlocking {
+    fun collectRefreshFailurePagingEvent(): Unit = runBlocking {
         val fetcher = getTestFetcher(maxPage = 1, result = Result.REFRESH_FAILURE)
         val events = mutableListOf<PagingEvent<String>>()
         launch { fetcher.flow.toList(events) }
@@ -69,7 +69,7 @@ internal class PagingFetcherTest {
     }
 
     @Test
-    fun collect_RefreshRetry_PagingEvent(): Unit = runBlocking {
+    fun collectRefreshRetryPagingEvent(): Unit = runBlocking {
         val fetcher = getTestFetcher(maxPage = 1, result = Result.REFRESH_FAILURE)
         val events = mutableListOf<PagingEvent<String>>()
         launch { fetcher.flow.toList(events) }
@@ -87,7 +87,7 @@ internal class PagingFetcherTest {
     }
 
     @Test
-    fun collect_AppendSuccess_PagingEvent(): Unit = runBlocking {
+    fun collectAppendSuccessPagingEvent(): Unit = runBlocking {
         val fetcher = getTestFetcher(maxPage = 2, result = Result.NORMAL)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
@@ -108,7 +108,7 @@ internal class PagingFetcherTest {
     }
 
     @Test
-    fun collect_AppendFailure_PagingEvent(): Unit = runBlocking {
+    fun collectAppendFailurePagingEvent(): Unit = runBlocking {
         val fetcher = getTestFetcher(maxPage = 2, result = Result.APPEND_FAILURE)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
@@ -129,7 +129,7 @@ internal class PagingFetcherTest {
     }
 
     @Test
-    fun collect_AppendRetry_PagingEvent(): Unit = runBlocking {
+    fun collectAppendRetryPagingEvent(): Unit = runBlocking {
         val fetcher = getTestFetcher(maxPage = 2, result = Result.APPEND_FAILURE)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
@@ -154,7 +154,7 @@ internal class PagingFetcherTest {
     }
 
     @Test
-    fun refreshFailure_DisallowAppend(): Unit = runBlocking {
+    fun refreshFailureDisallowAppend(): Unit = runBlocking {
         val fetcher = getTestFetcher(maxPage = 1, result = Result.REFRESH_FAILURE)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
@@ -171,7 +171,7 @@ internal class PagingFetcherTest {
     }
 
     @Test
-    fun refreshFully_DisallowAppend(): Unit = runBlocking {
+    fun refreshFullyDisallowAppend(): Unit = runBlocking {
         val fetcher = getTestFetcher(maxPage = 1, result = Result.NORMAL)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
@@ -188,7 +188,7 @@ internal class PagingFetcherTest {
     }
 
     @Test
-    fun appendFully_DisallowAppend(): Unit = runBlocking {
+    fun appendFullyDisallowAppend(): Unit = runBlocking {
         val fetcher = getTestFetcher(maxPage = 2, result = Result.NORMAL)
         val events = mutableListOf<PagingEvent<String>>()
         launch {
@@ -207,7 +207,7 @@ internal class PagingFetcherTest {
     }
 
     @Test
-    fun closed_DisallowSend_PagingEvent(): Unit = runBlocking {
+    fun closedDisallowSendPagingEvent(): Unit = runBlocking {
         val fetcher = getTestFetcher(maxPage = 2, result = Result.NORMAL)
         val events = mutableListOf<PagingEvent<String>>()
         fetcher.close()

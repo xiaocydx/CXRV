@@ -56,7 +56,7 @@ internal class PrepareScrapTest {
     }
 
     @Test
-    fun prepareScrap_CollectToList(): Unit = runBlocking {
+    fun collectToList(): Unit = runBlocking {
         var recyclerView: RecyclerView? = null
         scenario.onActivity { recyclerView = it.recyclerView }
         val rv = recyclerView!!
@@ -78,7 +78,7 @@ internal class PrepareScrapTest {
     }
 
     @Test
-    fun prepareScrap_Choreographer() {
+    fun choreographer() {
         // TODO: Choreographer的可测试性
     }
 }

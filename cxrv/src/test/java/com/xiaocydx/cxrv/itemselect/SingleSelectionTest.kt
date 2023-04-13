@@ -61,7 +61,7 @@ internal class SingleSelectionTest {
     }
 
     @Test
-    fun select_Success() {
+    fun select() {
         val item = adapter.data.first()
         val success = selection.select(item)
         assertThat(success).isTrue()
@@ -70,7 +70,7 @@ internal class SingleSelectionTest {
     }
 
     @Test
-    fun unselect_Success() {
+    fun unselect() {
         val item = adapter.data.first()
         selection.select(item)
         val success = selection.unselect(item)
@@ -80,28 +80,24 @@ internal class SingleSelectionTest {
     }
 
     @Test
-    fun repeat_Select_Failure() {
+    fun repeatSelect() {
         var success = true
         val item = adapter.data.first()
-        repeat(2) {
-            success = selection.select(item)
-        }
+        repeat(2) { success = selection.select(item) }
         assertThat(success).isFalse()
     }
 
     @Test
-    fun repeat_Unselect_Failure() {
+    fun repeatUnselect() {
         var success = true
         val item = adapter.data.first()
         selection.select(item)
-        repeat(2) {
-            success = selection.unselect(item)
-        }
+        repeat(2) { success = selection.unselect(item) }
         assertThat(success).isFalse()
     }
 
     @Test
-    fun selectCurrent_UnselectPrevious() {
+    fun selectCurrentUnselectPrevious() {
         val item1 = adapter.data.first()
         selection.select(item1)
         val item2 = adapter.data.last()
@@ -110,7 +106,7 @@ internal class SingleSelectionTest {
     }
 
     @Test
-    fun select_Trigger_OnSelect() {
+    fun selectTriggerOnSelect() {
         val onSelect: (TestItem) -> Unit = mockk(relaxed = true)
         selection.onSelect(onSelect)
         val item = adapter.data.first()
@@ -119,7 +115,7 @@ internal class SingleSelectionTest {
     }
 
     @Test
-    fun unselect_Trigger_OnUnselect() {
+    fun unselectTriggerOnUnselect() {
         val onUnselect: (TestItem) -> Unit = mockk(relaxed = true)
         selection.onUnselect(onUnselect)
         val item = adapter.data.first()
@@ -129,7 +125,7 @@ internal class SingleSelectionTest {
     }
 
     @Test
-    fun changed_Trigger_ClearInvalidSelected() {
+    fun changedTriggerClearInvalidSelected() {
         val item = adapter.data.first()
         selection.select(item)
         adapter.data.remove(item)
@@ -138,7 +134,7 @@ internal class SingleSelectionTest {
     }
 
     @Test
-    fun removeItem_Trigger_ClearInvalidSelected() {
+    fun removeItemTriggerClearInvalidSelected() {
         val item = adapter.data.first()
         selection.select(item)
         adapter.data.remove(item)

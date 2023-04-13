@@ -62,7 +62,7 @@ internal class LoadHeaderAdapterTest {
     }
 
     @Test
-    fun createAndShow_LoadingView() {
+    fun createAndShowLoadingView() {
         val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
             assertThat(exception()).isNull()
         })
@@ -81,7 +81,7 @@ internal class LoadHeaderAdapterTest {
     }
 
     @Test
-    fun createAndShow_EmptyView() {
+    fun createAndShowEmptyView() {
         val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
             assertThat(exception()).isNull()
         })
@@ -103,7 +103,7 @@ internal class LoadHeaderAdapterTest {
     }
 
     @Test
-    fun createAndShow_FailureView() {
+    fun createAndShowFailureView() {
         val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
             assertThat(exception()).isNotNull()
         })
@@ -123,7 +123,7 @@ internal class LoadHeaderAdapterTest {
     }
 
     @Test
-    fun clearList_CreateAndShow_EmptyView() {
+    fun clearListCreateAndShowEmptyView() {
         val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
             assertThat(exception()).isNull()
         })

@@ -68,7 +68,7 @@ internal class HeaderFooterTest {
     }
 
     @Test
-    fun adapter_RepeatWithHeaderFooter() {
+    fun repeatWithHeaderFooterByAdapter() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             val concatAdapter = testAdapter
@@ -91,7 +91,7 @@ internal class HeaderFooterTest {
     }
 
     @Test
-    fun adapter_RepeatRemoveHeaderFooter() {
+    fun repeatRemoveHeaderFooterByAdapter() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             val concatAdapter = testAdapter
@@ -114,7 +114,7 @@ internal class HeaderFooterTest {
     }
 
     @Test
-    fun recyclerview_RepeatAddHeaderFooter() {
+    fun repeatAddHeaderFooterByRecyclerview() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             recyclerView.apply {
@@ -135,7 +135,7 @@ internal class HeaderFooterTest {
     }
 
     @Test
-    fun recyclerview_RepeatRemoveHeaderFooter() {
+    fun repeatRemoveHeaderFooterByRecyclerview() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             recyclerView.apply {
@@ -156,7 +156,7 @@ internal class HeaderFooterTest {
     }
 
     @Test
-    fun recyclerView_RemoveHeader_ClearHeaderViewHolder() {
+    fun removeHeaderClearHeaderViewHolder() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             recyclerView.adapter = testAdapter
@@ -176,7 +176,7 @@ internal class HeaderFooterTest {
     }
 
     @Test
-    fun recyclerView_RemoveFromParent_ClearHeaderViewHolder() {
+    fun removeFromParentClearHeaderViewHolder() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             recyclerView.adapter = testAdapter
@@ -196,7 +196,7 @@ internal class HeaderFooterTest {
     }
 
     @Test
-    fun recyclerView_RemoveFooter_ClearFooterViewHolder() {
+    fun removeFooterClearFooterViewHolder() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             recyclerView.adapter = testAdapter
@@ -215,7 +215,7 @@ internal class HeaderFooterTest {
     }
 
     @Test
-    fun recyclerView_RemoveFromParent_ClearFooterViewHolder() {
+    fun removeFromParentClearFooterViewHolder() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             recyclerView.adapter = testAdapter

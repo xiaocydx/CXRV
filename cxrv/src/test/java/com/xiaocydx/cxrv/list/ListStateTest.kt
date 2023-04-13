@@ -40,7 +40,7 @@ internal class ListStateTest {
     private val listState = ListState<String>()
 
     @Test
-    fun execute_UpdateOp_SubmitList() {
+    fun submitList() {
         val initList = listOf("A")
         listState.updateList(UpdateOp.SubmitList(initList))
         assertThat(listState.currentList).isEqualTo(initList)
@@ -51,7 +51,7 @@ internal class ListStateTest {
     }
 
     @Test
-    fun execute_UpdateOp_SetItem() {
+    fun setItem() {
         val initList = listOf("A")
         listState.updateList(UpdateOp.SubmitList(initList))
         listState.updateList(UpdateOp.SetItem(0, "B"))
@@ -59,7 +59,7 @@ internal class ListStateTest {
     }
 
     @Test
-    fun execute_UpdateOp_SetItems() {
+    fun setItems() {
         val initList = listOf("A", "B")
         listState.updateList(UpdateOp.SubmitList(initList))
         listState.updateList(UpdateOp.SetItems(0, listOf("C", "D", "E")))
@@ -67,7 +67,7 @@ internal class ListStateTest {
     }
 
     @Test
-    fun execute_UpdateOp_AddItem() {
+    fun addItem() {
         val initList = listOf("A")
         listState.updateList(UpdateOp.SubmitList(initList))
         listState.updateList(UpdateOp.AddItem(initList.size, "B"))
@@ -75,7 +75,7 @@ internal class ListStateTest {
     }
 
     @Test
-    fun execute_UpdateOp_AddItems() {
+    fun addItems() {
         val initList = listOf("A")
         listState.updateList(UpdateOp.SubmitList(initList))
         listState.updateList(UpdateOp.AddItems(initList.size, listOf("B", "C")))
@@ -83,7 +83,7 @@ internal class ListStateTest {
     }
 
     @Test
-    fun execute_UpdateOp_RemoveItems() {
+    fun removeItems() {
         val initList = listOf("A", "B", "C")
         listState.updateList(UpdateOp.SubmitList(initList))
         listState.updateList(UpdateOp.RemoveItems(position = 0, itemCount = 2))
@@ -91,7 +91,7 @@ internal class ListStateTest {
     }
 
     @Test
-    fun execute_UpdateOp_MoveItem() {
+    fun moveItem() {
         val initList = listOf("A", "B", "C")
         listState.updateList(UpdateOp.SubmitList(initList))
         listState.updateList(UpdateOp.MoveItem(0, 2))
@@ -99,7 +99,7 @@ internal class ListStateTest {
     }
 
     @Test
-    fun execute_UpdateOp_DispatchListener() {
+    fun dispatchUpdatedListener() {
         val listener: (UpdateOp<String>) -> Unit = spyk()
         listState.addUpdatedListener(listener)
         val op: UpdateOp<String> = UpdateOp.SubmitList(listOf("A"))
@@ -108,7 +108,7 @@ internal class ListStateTest {
     }
 
     @Test
-    fun collect_MultiTimes_ThrowException(): Unit = runBlocking {
+    fun collectMultiTimesThrowException(): Unit = runBlocking {
         val flow = listState.asFlow()
         val parentJob = SupervisorJob(coroutineContext.job)
         val deferred = async(parentJob) {
@@ -123,7 +123,7 @@ internal class ListStateTest {
     }
 
     @Test
-    fun collect_FirstEmit_LatestState(): Unit = runBlocking {
+    fun collectFirstEmitLatestState(): Unit = runBlocking {
         val initList = listOf("A")
         listState.updateList(UpdateOp.SubmitList(initList))
         val flow = listState.asFlow()

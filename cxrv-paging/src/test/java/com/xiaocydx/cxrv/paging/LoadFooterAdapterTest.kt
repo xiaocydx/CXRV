@@ -65,7 +65,7 @@ internal class LoadFooterAdapterTest {
     }
 
     @Test
-    fun createAndShow_LoadingView() {
+    fun createAndShowLoadingView() {
         val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
             assertThat(exception()).isNull()
         })
@@ -87,7 +87,7 @@ internal class LoadFooterAdapterTest {
     }
 
     @Test
-    fun createAndShow_FullyView() {
+    fun createAndShowFullyView() {
         val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
             assertThat(exception()).isNull()
         })
@@ -109,7 +109,7 @@ internal class LoadFooterAdapterTest {
     }
 
     @Test
-    fun createAndShow_FailureView() {
+    fun createAndShowFailureView() {
         val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
             assertThat(exception()).isNotNull()
         })
@@ -132,7 +132,7 @@ internal class LoadFooterAdapterTest {
     }
 
     @Test
-    fun insertItem_CreateAndShow_FullyView() {
+    fun insertItemCreateAndShowFullyView() {
         val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
             assertThat(exception()).isNull()
         })

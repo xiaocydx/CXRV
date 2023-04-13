@@ -49,7 +49,7 @@ internal class ItemTouchTest {
     }
 
     @Test
-    fun add_ItemTouchCallback_OnAttach() {
+    fun addItemTouchCallbackOnAttach() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             val dispatcher = recyclerView.itemTouchDispatcher
@@ -65,7 +65,7 @@ internal class ItemTouchTest {
     }
 
     @Test
-    fun repeat_Add_ItemTouchCallback_OnAttach() {
+    fun repeatAddItemTouchCallbackOnAttach() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             val dispatcher = recyclerView.itemTouchDispatcher
@@ -85,7 +85,7 @@ internal class ItemTouchTest {
     }
 
     @Test
-    fun remove_ItemTouchCallback_OnDispose() {
+    fun removeItemTouchCallbackOnDispose() {
         scenario.onActivity { activity ->
             val recyclerView = activity.recyclerView
             val dispatcher = recyclerView.itemTouchDispatcher

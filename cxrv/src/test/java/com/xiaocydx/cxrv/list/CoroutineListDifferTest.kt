@@ -40,7 +40,7 @@ import org.robolectric.annotation.Config
 class CoroutineListDifferTest {
 
     @Test
-    fun execute_UpdateOp_SubmitList(): Unit = runBlockingTest {
+    fun submitList(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val job = launch { awaitCancellation() }
         val initList = listOf("A")
@@ -58,7 +58,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_SetItem(): Unit = runBlockingTest {
+    fun setItem(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val job = launch { awaitCancellation() }
         val initList = listOf("A")
@@ -73,7 +73,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_SetItems(): Unit = runBlockingTest {
+    fun setItems(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val job = launch { awaitCancellation() }
         val initList = listOf("A", "B")
@@ -89,7 +89,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_AddItem(): Unit = runBlockingTest {
+    fun addItem(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val job = launch { awaitCancellation() }
         val initList = listOf("A")
@@ -104,7 +104,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_AddItems(): Unit = runBlockingTest {
+    fun addItems(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val job = launch { awaitCancellation() }
         val initList = listOf("A")
@@ -119,7 +119,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_RemoveItems(): Unit = runBlockingTest {
+    fun removeItems(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val job = launch { awaitCancellation() }
         val initList = listOf("A", "B", "C")
@@ -134,7 +134,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_MoveItem(): Unit = runBlockingTest {
+    fun moveItem(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val job = launch { awaitCancellation() }
         val initList = listOf("A", "B", "C")
@@ -149,7 +149,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_SubmitList_Await(): Unit = runBlockingTest {
+    fun submitListAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
@@ -164,7 +164,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_SetItem_Await(): Unit = runBlockingTest {
+    fun setItemAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
@@ -175,7 +175,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_SetItems_Await(): Unit = runBlockingTest {
+    fun setItemsAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A", "B")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
@@ -187,7 +187,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_AddItem_Await(): Unit = runBlockingTest {
+    fun addItemAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
@@ -198,7 +198,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_AddItems_Await(): Unit = runBlockingTest {
+    fun addItemsAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
@@ -209,7 +209,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_RemoveItems_Await(): Unit = runBlockingTest {
+    fun removeItemsAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A", "B", "C")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
@@ -220,7 +220,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_MoveItem_Await(): Unit = runBlockingTest {
+    fun moveItemAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A", "B", "C")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
@@ -231,7 +231,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_SubmitList_Cancel(): Unit = runBlockingTest {
+    fun submitListCancel(): Unit = runBlockingTest {
         val (differ, _, updateCallback) = it
         val listener = spyk(object : ListExecuteListener<String> {
             override fun onExecute(op: UpdateOp<String>) = Unit
@@ -258,7 +258,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_Current_Await(): Unit = runBlockingTest {
+    fun currentAwait(): Unit = runBlockingTest {
         val differ = it.differ
         differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
         differ.updateList(UpdateOp.SubmitList(listOf("C", "D"))).await()
@@ -266,7 +266,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_Queue_Await(): Unit = runBlockingTest {
+    fun queueAwait(): Unit = runBlockingTest {
         val differ = it.differ
         differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
         differ.updateList(UpdateOp.SubmitList(listOf("C", "D")))
@@ -276,7 +276,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_Current_Cancel(): Unit = runBlockingTest {
+    fun currentCancel(): Unit = runBlockingTest {
         val differ = it.differ
         differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
         val result = differ.updateList(UpdateOp.SubmitList(listOf("C", "D")))
@@ -286,7 +286,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_UpdateOp_Queue_Cancel(): Unit = runBlockingTest {
+    fun queueCancel(): Unit = runBlockingTest {
         val differ = it.differ
         differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
         differ.updateList(UpdateOp.SubmitList(listOf("C", "D")))
@@ -298,7 +298,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun execute_SubmitList_On_MainThread(): Unit = runBlockingTest {
+    fun calculateDiffOnMainThread(): Unit = runBlockingTest {
         val differ = it.differ
         differ.setDiffDispatcher(differ.mainDispatcher)
         val initList = listOf("A", "B")
@@ -313,7 +313,7 @@ class CoroutineListDifferTest {
     }
 
     @Test
-    fun setDiffDispatcher_Cancel(): Unit = runBlockingTest {
+    fun setDiffDispatcherCancel(): Unit = runBlockingTest {
         val differ = it.differ
         val initList = listOf("A", "B")
         val newList1 = listOf("C", "D")

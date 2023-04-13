@@ -49,7 +49,7 @@ internal class PagingCollectorTest {
     )
 
     @Test
-    fun manual_Dispose() {
+    fun manualDispose() {
         loadStateDisposable.also {
             it.dispose()
             assertDisposed(it)
@@ -57,7 +57,7 @@ internal class PagingCollectorTest {
     }
 
     @Test
-    fun lifecycle_AutoDispose() {
+    fun lifecycleAutoDispose() {
         launch(TestActivity::class.java)
             .moveToState(State.CREATED)
             .onActivity { activity ->
@@ -68,7 +68,7 @@ internal class PagingCollectorTest {
     }
 
     @Test
-    fun executeOnce_AutoDispose() {
+    fun executeOnceAutoDispose() {
         val handler: LoadStatesListener = mockk(relaxed = true)
         val disposable = collector.doOnLoadStatesChanged(once = true, handler)
 

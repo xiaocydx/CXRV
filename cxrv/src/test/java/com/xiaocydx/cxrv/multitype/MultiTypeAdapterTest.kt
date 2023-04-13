@@ -49,7 +49,7 @@ internal class MultiTypeAdapterTest {
     private val typeBDelegate: TypeBDelegate = spyk(TypeBDelegate())
 
     @Test
-    fun viewTypeDelegate_GetAdapter_NonNull() {
+    fun getAdapterNonNull() {
         val delegate = spyk(TestDelegate())
         val adapter = multiTypeAdapter<Any> { register(delegate) }
         verify(exactly = 1) { delegate.attachAdapter(adapter) }
@@ -58,7 +58,7 @@ internal class MultiTypeAdapterTest {
     }
 
     @Test
-    fun adapter_GetItemViewType_Valid() {
+    fun getItemViewTypeValid() {
         val adapter = multiTypeAdapter<Any> {
             register(typeADelegate) { it.type == TestType.TYPE_A }
             register(typeBDelegate) { it.type == TestType.TYPE_B }
@@ -71,7 +71,7 @@ internal class MultiTypeAdapterTest {
     }
 
     @Test
-    fun viewTypeDelegate_OnCreateViewHolder() {
+    fun onCreateViewHolder() {
         val delegate: TestDelegate = mockk(relaxed = true)
         val adapter =
                 multiTypeAdapter<Any> { register(delegate) }
@@ -85,7 +85,7 @@ internal class MultiTypeAdapterTest {
     }
 
     @Test
-    fun viewTypeDelegate_OnBindViewHolder() {
+    fun onBindViewHolder() {
         val delegate: TestDelegate = mockk(relaxed = true)
         val adapter =
                 multiTypeAdapter<Any> { register(delegate) }
@@ -99,7 +99,7 @@ internal class MultiTypeAdapterTest {
     }
 
     @Test
-    fun viewTypeDelegate_DiffItemCallback(): Unit = runBlocking {
+    fun diffItemCallback(): Unit = runBlocking {
         val adapter = multiTypeAdapter<Any>(
             // 单元测试在主线程上执行，若runBlocking()把主线程阻塞了，
             // 则差异计算完成后无法恢复到主线程，因此直接在主线程上进行差异计算。
