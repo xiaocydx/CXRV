@@ -52,18 +52,22 @@ android {
     }
     configurations {
         testImplementation.extendsFrom(compileOnly)
+        androidTestImplementation.extendsFrom(compileOnly)
     }
 }
 dependencies {
     compileOnly("androidx.appcompat:appcompat:1.2.0")
     compileOnly("androidx.recyclerview:recyclerview:1.2.0")
-    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
-    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+
+    val truth = "com.google.truth:truth:1.0"
+    testImplementation(truth)
     testImplementation("junit:junit:4.+")
-    testImplementation("com.google.truth:truth:1.0")
-    testImplementation("org.robolectric:robolectric:4.3.1")
     testImplementation("io.mockk:mockk:1.12.0")
-    testImplementation("androidx.test:core:1.4.0")
-    androidTestImplementation("androidx.test.ext:junit:1.1.2")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("org.robolectric:robolectric:4.3.1")
+    androidTestImplementation(truth)
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
