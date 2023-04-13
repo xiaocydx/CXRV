@@ -16,57 +16,40 @@
 
 package com.xiaocydx.cxrv.recycle
 
-import android.os.Build
-import androidx.lifecycle.Lifecycle
+import android.view.View
+import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.prepareScrap
-import androidx.test.core.app.ActivityScenario
-import androidx.test.core.app.ActivityScenario.launch
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.xiaocydx.cxrv.TestActivity
-import com.xiaocydx.cxrv.TestAdapter
-import com.xiaocydx.cxrv.list.TestMainDispatcher
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
-import org.junit.Before
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 /**
  * PrepareScrap的单元测试
  *
  * @author xcc
- * @date 2023/4/12
+ * @date 2023/4/13
  */
-@Config(sdk = [Build.VERSION_CODES.Q])
-@RunWith(RobolectricTestRunner::class)
+@RunWith(AndroidJUnit4::class)
 internal class PrepareScrapTest {
     private val typeA = 1
     private val typeB = 2
     private val typeACount = 10
     private val typeBCount = 20
-    private lateinit var scenario: ActivityScenario<TestActivity>
-
-    @Before
-    fun setup() {
-        scenario = launch(TestActivity::class.java)
-            .moveToState(Lifecycle.State.CREATED)
-    }
 
     @Test
-    fun collectToList(): Unit = runBlocking {
-        var recyclerView: RecyclerView? = null
-        scenario.onActivity { recyclerView = it.recyclerView }
-        val rv = recyclerView!!
+    fun collectToList(): Unit = runBlocking(Dispatchers.Main) {
+        val rv = RecyclerView(ApplicationProvider.getApplicationContext())
         val adapter = TestAdapter()
         rv.adapter = adapter
 
-        val holderList = rv.prepareScrap(
-            prepareAdapter = adapter,
-            mainDispatcher = TestMainDispatcher(coroutineContext)
-        ) {
+        val holderList = rv.prepareScrap(adapter) {
             add(typeA, typeACount)
             add(typeB, typeBCount)
         }.toList()
@@ -80,5 +63,14 @@ internal class PrepareScrapTest {
     @Test
     fun choreographer() {
         // TODO: Choreographer的可测试性
+    }
+
+    private class TestAdapter : RecyclerView.Adapter<ViewHolder>() {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            return object : ViewHolder(View(parent.context)) {}
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) = error("")
+        override fun getItemCount(): Int = error("")
     }
 }
