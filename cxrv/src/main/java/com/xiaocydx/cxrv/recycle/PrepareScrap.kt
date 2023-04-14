@@ -15,7 +15,7 @@
  */
 
 @file:JvmName("PrepareScrapInternalKt")
-@file:Suppress("PackageDirectoryMismatch")
+@file:Suppress("PackageDirectoryMismatch", "INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
 
 package androidx.recyclerview.widget
 
@@ -25,25 +25,51 @@ import androidx.annotation.IntRange
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.internal.*
-import com.xiaocydx.cxrv.recycle.ChoreographerDispatcher
-import com.xiaocydx.cxrv.recycle.LooperElement
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
+import kotlinx.coroutines.channels.Channel.Factory.CHANNEL_DEFAULT_CAPACITY
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.resume
 
 /**
- * 按[PrepareScrapScope.add]的添加顺序，预创建ViewHolder并放入[RecycledViewPool]
+ * 按[PrepareScope.add]的添加顺序，预创建ViewHolder并放入[RecycledViewPool]
  *
- * **注意**：此函数应当在初始化视图时调用，并确保RecyclerView已设置Adapter，
- * 预创建流程会按[prepareDeadline]进行停止，避免产生不必要的创建开销。
+ * **注意**：该函数需要在视图初始化阶段调用，如果有自定义的[RecycledViewPool]，
+ * 那么在调用该函数之前，先对RecyclerView设置自定义的[RecycledViewPool]，例如：
+ * ```
+ * lifecycleScope.launch {
+ *     recyclerView = CustomRecycledViewPool()
+ *     val result = recyclerView.prepareScrap(
+ *         prepareAdapter = adapter,
+ *         prepareDeadline = PrepareDeadline.FOREVER_NS,
+ *         prepareDispatcher = Dispatchers.IO
+ *     ) {
+ *         add(viewType1, 20)
+ *         add(viewType2, 10)
+ *     }
+ *     result.getRecycledScrapCount()
+ *     result.getPreparedScrapCount()
+ * }
+ * ```
  *
- * @param prepareAdapter    调用[Adapter.createViewHolder]创建ViewHolder
- * @param prepareDeadline   预创建的截止时间，默认为[PrepareDeadline.FOREVER_NS]
- * @param prepareDispatcher 用于预创建的协程调度器，默认为[Dispatchers.IO]
- * @param block             调用[PrepareScrapScope.add]，添加预创建的键值对
+ * @param prepareAdapter 对RecyclerView设置的Adapter可能是[ConcatAdapter]，
+ * 因此需要主动传入跟列表数据关联的Adapter，用于观察数据变更和创建ViewHolder，
+ * 若调用[Adapter.createViewHolder]抛出异常，则结束预创建流程，并传递异常。
+ *
+ * @param prepareDeadline 预创建的截止时间，默认为[PrepareDeadline.FOREVER_NS]，
+ * 预创建流程会按[prepareDeadline]进行停止，尽可能避免创建多余的ViewHolder。
+ *
+ * @param prepareDispatcher 用于预创建的协程调度器，默认为[Dispatchers.IO]，
+ * 可以通过`Dispatchers.IO.limitedParallelism()`创建一个并行度受限的调度器，
+ * 供多处调用该函数的地方使用。
+ *
+ * @param block 调用[PrepareScope.add]，添加预创建的键值对，添加顺序决定创建顺序，
+ * 如果对RecyclerView设置的[RecycledViewPool]，已经存在ViewHolder（共享池场景）
+ * 那么可以先减去[RecycledViewPool.getRecycledViewCount]，再添加预创建的键值对。
+ *
+ * @return [PrepareResult]提供数量查询函数，可用于数据统计或者单元测试。
  */
 @MainThread
 @ExperimentalFeature
@@ -51,53 +77,52 @@ suspend fun RecyclerView.prepareScrap(
     prepareAdapter: Adapter<*>,
     prepareDeadline: PrepareDeadline = PrepareDeadline.FOREVER_NS,
     prepareDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    block: PrepareScrapScope.() -> Unit
-): List<ViewHolder> {
+    block: PrepareScope.() -> Unit
+): PrepareResult {
     assertMainThread()
-    require(adapter != null) { "请先对RecyclerView设置Adapter" }
     val rv = this
-    val preparePairs = ArrayList(PrepareScrapScope().apply(block).pairs)
-    val scrapList = ArrayList<ViewHolder>(preparePairs.sumOf { it.count })
+    val pairs = PrepareScope().apply(block).getPairs()
+    val initialCapacity = pairs.sumOf { it.count }
+    val result = PrepareResult(initialCapacity, recycledViewPool)
+    if (initialCapacity <= 0) return result
 
-    // 通过Handler发送的消息可能会被doFrame消息按时间顺序插队，
-    // 也就导致处理完doFrame消息后，才往RecycledViewPool放入scrap，
+    // 通过Handler.post()发送的消息可能被doFrame消息按时间顺序插队，
+    // 这会导致处理完doFrame消息后，才往RecycledViewPool放入scrap，
     // 调整为在doFrame消息的Animation回调下往RecycledViewPool放入scrap。
-    withContext(ChoreographerDispatcher()) {
+    // MainHandlerContext()是一个可行的方案，但目前还不确定其产生的影响。
+    withContext(ChoreographerContext()) {
         val deadlineNs = DeadlineNs()
         val deadlineJob = when (prepareDeadline) {
             PrepareDeadline.FOREVER_NS -> null
             PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
                 // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
-                deadlineNs.set(prepareAdapter.awaitDeadlineNs())
+                val value = prepareAdapter.awaitDeadlineNs()
+                trace(TRACE_DEADLINE_TAG) { deadlineNs.set(value) }
             }
         }
 
-        val channel = Channel<ViewHolder>(BUFFERED)
-        // 对prepareDispatcher调度的线程临时设置主线程Looper，
-        // 确保View的构造过程获取到主线程Looper，例如GestureDetector。
-        val prepareContext = prepareDispatcher + LooperElement(Looper.myLooper()!!)
+        // LooperContext对prepareDispatcher调度的线程设置主线程Looper，
+        // 确保View的构造过程能获取到主线程Looper，例如GestureDetector。
+        val prepareContext = prepareDispatcher + LooperContext(Looper.myLooper()!!)
+        val channel = Channel<ViewHolder>(result.channelCapacity)
         launch(prepareContext) {
-            preparePairs.accessEach { (viewType, count) ->
+            coroutineContext.job.invokeOnCompletion { channel.close() }
+            pairs.forEach { (viewType, count) ->
                 var remainingCount = count
                 while (remainingCount > 0 && deadlineNs.checkVolatile()) {
                     remainingCount--
-                    // FIXME: createViewHolder()执行异常反馈出去
                     channel.send(prepareAdapter.createViewHolder(rv, viewType))
                 }
             }
-        }.invokeOnCompletion {
-            channel.close()
         }
 
         for (scrap in channel) {
             if (!deadlineNs.checkPlain()) break
-            // FIXME: putScrap()执行异常反馈出去
-            rv.putScrap(scrap)
-            scrapList.add(scrap)
+            trace(TRACE_PUT_SCRAP_TAG) { result.putScrapToRecycledViewPool(scrap) }
         }
         deadlineJob?.cancelAndJoin()
     }
-    return scrapList
+    return result
 }
 
 /**
@@ -116,38 +141,86 @@ enum class PrepareDeadline {
 }
 
 /**
- * 调用[PrepareScrapScope.add]，添加预创建的键值对
+ * 调用[PrepareScope.add]，添加预创建的键值对
  */
-class PrepareScrapScope @PublishedApi internal constructor() {
-    @PublishedApi
-    internal val pairs = mutableListOf<Pair>()
+class PrepareScope internal constructor() {
+    private val pairs = mutableListOf<Pair>()
 
     fun add(viewType: Int, @IntRange(from = 1) count: Int) {
-        pairs.add(Pair(viewType, count.coerceAtLeast(1)))
+        if (count < 1) return
+        pairs.add(Pair(viewType, count))
     }
+
+    internal fun getPairs(): List<Pair> = ArrayList(pairs)
 
     /**
      * 不使用[kotlin.Pair]，有装箱拆箱的开销
      */
-    @PublishedApi
     internal data class Pair(val viewType: Int, val count: Int)
 }
 
+/**
+ * [RecyclerView.prepareScrap]的结果，提供数量查询函数
+ */
 @MainThread
-private fun RecyclerView.putScrap(scrap: ViewHolder) {
-    val pool = recycledViewPool
-    val mScrap = pool.mScrap
-    val viewType = scrap.itemViewType
-    val scrapData = mScrap[viewType] ?: kotlin.run {
-        // 触发内部逻辑创建scrapData
-        pool.getRecycledViewCount(viewType)
-        mScrap.get(viewType)!!
+class PrepareResult private constructor(
+    initialCapacity: Int,
+    private val recycledViewPool: RecycledViewPool
+) {
+    private val preparedScrapList: List<ViewHolder>
+    internal val channelCapacity: Int
+
+    init {
+        var capacity = CHANNEL_DEFAULT_CAPACITY
+        if (initialCapacity > capacity) capacity = UNLIMITED
+        channelCapacity = capacity
+        preparedScrapList = if (initialCapacity > 0) ArrayList(initialCapacity) else emptyList()
     }
-    scrapData.mScrapHeap.add(scrap)
+
+    /**
+     * 获取[viewType]在[RecycledViewPool]的回收数量
+     *
+     * 1. 数量小于[getRecycledScrapCount]，通常表示RecyclerView布局流程已取走部分ViewHolder进行填充。
+     * 2. 数量大于[getRecycledScrapCount]，通常表示执行预创建流程之前，[RecycledViewPool]就存在ViewHolder。
+     */
+    fun getRecycledScrapCount(viewType: Int): Int {
+        assertMainThread()
+        return recycledViewPool.getRecycledViewCount(viewType)
+    }
+
+    /**
+     * 获取[viewType]在[RecycledViewPool]的预创建数量
+     */
+    fun getPreparedScrapCount(viewType: Int): Int {
+        assertMainThread()
+        return preparedScrapList.fold(0) { acc, scrap ->
+            if (scrap.itemViewType == viewType) acc + 1 else acc
+        }
+    }
+
+    internal fun putScrapToRecycledViewPool(scrap: ViewHolder) {
+        assertMainThread()
+        recycledViewPool.putScrap(scrap)
+        preparedScrapList.let { it as? MutableList<ViewHolder> }?.add(scrap)
+    }
+
+    private fun RecycledViewPool.putScrap(scrap: ViewHolder) {
+        val viewType = scrap.itemViewType
+        val scrapData = mScrap[viewType] ?: kotlin.run {
+            // 触发内部逻辑创建scrapData
+            getRecycledViewCount(viewType)
+            mScrap.get(viewType)!!
+        }
+        scrapData.mScrapHeap.add(scrap)
+    }
 }
+
+private const val TRACE_DEADLINE_TAG = "PrepareScrap Deadline"
+private const val TRACE_PUT_SCRAP_TAG = "PrepareScrap PutScrap"
 
 @MainThread
 private suspend fun Adapter<*>.awaitDeadlineNs(): Long {
+    assertMainThread()
     return suspendCancellableCoroutine { cont ->
         DeadlineNsObserver(this, cont).attach()
     }
@@ -157,14 +230,16 @@ private class DeadlineNs {
     private var plainValue = Long.MAX_VALUE
     @Volatile private var volatileValue = Long.MAX_VALUE
 
-    fun set(deadlineNs: Long) {
-        plainValue = deadlineNs
-        volatileValue = deadlineNs
+    @MainThread
+    fun set(value: Long) {
+        assertMainThread()
+        plainValue = value
+        volatileValue = value
     }
 
     fun checkPlain() = System.nanoTime() < plainValue
 
-    fun checkVolatile() = System.nanoTime() < plainValue
+    fun checkVolatile() = System.nanoTime() < volatileValue
 }
 
 @MainThread
@@ -199,9 +274,9 @@ private class DeadlineNsObserver(
     private fun resume() {
         if (isResume) return
         isResume = true
-        Choreographer.getInstance().postFrameCallback { frameTimeNs ->
+        Choreographer.getInstance().postFrameCallbackDelayed({ frameTimeNs ->
             unregisterAdapterDataObserver()
             cont.resume(frameTimeNs)
-        }
+        }, Long.MIN_VALUE)
     }
 }

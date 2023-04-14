@@ -45,33 +45,35 @@ internal class PrepareScrapTest {
     private val typeBCount = 20
 
     @Test
-    fun scrapList(): Unit = runBlocking(Dispatchers.Main) {
+    fun getPrepareScrapCount(): Unit = runBlocking(Dispatchers.Main) {
         val rv = RecyclerView(Context())
         val adapter = TestAdapter()
         rv.adapter = adapter
-        val scrapList = rv.prepareScrap(adapter) {
+        val result = rv.prepareScrap(adapter) {
             add(typeA, typeACount)
             add(typeB, typeBCount)
         }
-
-        val listA = scrapList.filter { it.itemViewType == typeA }
-        val listB = scrapList.filter { it.itemViewType == typeB }
-        assertThat(listA.size).isEqualTo(typeACount)
-        assertThat(listB.size).isEqualTo(typeBCount)
+        assertThat(result.getPreparedScrapCount(typeA)).isEqualTo(typeACount)
+        assertThat(result.getPreparedScrapCount(typeB)).isEqualTo(typeBCount)
     }
 
     @Test
-    fun putScrap(): Unit = runBlocking(Dispatchers.Main) {
+    fun getRecycledScrapCount(): Unit = runBlocking(Dispatchers.Main) {
         val rv = RecyclerView(Context())
         val adapter = TestAdapter()
         rv.adapter = adapter
-        rv.prepareScrap(adapter) {
+
+        val scrapA = adapter.createViewHolder(rv, typeA)
+        val scrapB = adapter.createViewHolder(rv, typeB)
+        rv.recycledViewPool.putRecycledView(scrapA)
+        rv.recycledViewPool.putRecycledView(scrapB)
+
+        val result = rv.prepareScrap(adapter) {
             add(typeA, typeACount)
             add(typeB, typeBCount)
         }
-        val pool = rv.recycledViewPool
-        assertThat(pool.getRecycledViewCount(typeA)).isEqualTo(typeACount)
-        assertThat(pool.getRecycledViewCount(typeB)).isEqualTo(typeBCount)
+        assertThat(result.getRecycledScrapCount(typeA)).isEqualTo(typeACount + 1)
+        assertThat(result.getRecycledScrapCount(typeB)).isEqualTo(typeBCount + 1)
     }
 
     @Suppress("TestFunctionName")
@@ -80,7 +82,6 @@ internal class PrepareScrapTest {
     private class TestAdapter : RecyclerView.Adapter<ViewHolder>() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             assertThat(Looper.myLooper()).isEqualTo(Looper.getMainLooper())
-            assertThat(Thread.currentThread()).isNotEqualTo(Looper.getMainLooper().thread)
             return object : ViewHolder(View(parent.context)) {}
         }
 
