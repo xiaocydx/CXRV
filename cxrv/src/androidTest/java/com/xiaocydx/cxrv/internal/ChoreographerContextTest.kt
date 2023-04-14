@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.recycle
+package com.xiaocydx.cxrv.internal
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -25,37 +25,40 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
 /**
- * [ChoreographerDispatcher]的单元测试
+ * [ChoreographerContext]的单元测试
  *
  * @author xcc
  * @date 2023/4/14
  */
 @RunWith(AndroidJUnit4::class)
-internal class ChoreographerDispatcherTest {
+internal class ChoreographerContextTest {
 
     @Test
     fun dispatchToDoFrame(): Unit = runBlocking(Dispatchers.Main) {
         assertThat(stackTraceContainsDoFrame()).isFalse()
-        val dispatcher = TestChoreographerDispatcher()
+        val dispatcher = TestChoreographerContext()
+        withContext(dispatcher) {
+            assertThat(stackTraceContainsDoFrame()).isTrue()
+        }
+        assertThat(stackTraceContainsDoFrame()).isFalse()
+    }
 
+    @Test
+    fun dispatchYield(): Unit = runBlocking(Dispatchers.Main) {
         val launchDispatchCount = 1
         val yieldDispatchCount = 5
+        val dispatcher = TestChoreographerContext()
         withContext(dispatcher) {
-            repeat(yieldDispatchCount) {
-                assertThat(stackTraceContainsDoFrame()).isTrue()
-                yield()
-            }
+            repeat(yieldDispatchCount) { yield() }
         }
-
-        assertThat(stackTraceContainsDoFrame()).isFalse()
         val expectedCount = launchDispatchCount + yieldDispatchCount
         assertThat(dispatcher.dispatchCount).isEqualTo(expectedCount)
     }
 
     @Test
     fun dispatcherEquals(): Unit = runBlocking(Dispatchers.Main) {
-        val dispatcher1 = TestChoreographerDispatcher()
-        val dispatcher2 = TestChoreographerDispatcher()
+        val dispatcher1 = TestChoreographerContext()
+        val dispatcher2 = TestChoreographerContext()
         assertThat(dispatcher1).isEqualTo(dispatcher2)
         assertThat(System.identityHashCode(dispatcher1))
             .isNotEqualTo(System.identityHashCode(dispatcher2))
@@ -63,16 +66,26 @@ internal class ChoreographerDispatcherTest {
 
     @Test
     fun dispatcherHashCode(): Unit = runBlocking(Dispatchers.Main) {
-        val dispatcher1 = TestChoreographerDispatcher()
-        val dispatcher2 = TestChoreographerDispatcher()
+        val dispatcher1 = TestChoreographerContext()
+        val dispatcher2 = TestChoreographerContext()
         assertThat(dispatcher1.hashCode())
             .isEqualTo(dispatcher2.hashCode())
         assertThat(System.identityHashCode(dispatcher1))
             .isNotEqualTo(System.identityHashCode(dispatcher2))
     }
 
+    @Test
+    @Suppress("SpellCheckingInspection")
+    fun withContextUndispatched(): Unit = runBlocking(Dispatchers.Main) {
+        assertThat(stackTraceContainsDoFrame()).isFalse()
+        val dispatcher1 = TestChoreographerContext()
+        val dispatcher2 = TestChoreographerContext()
+        withContext(dispatcher1) { withContext(dispatcher2) {} }
+        assertThat(dispatcher2.dispatchCount).isEqualTo(0)
+    }
+
     /**
-     * 若调用栈包含`doFrame`，则表示[ChoreographerDispatcher]调度成功
+     * 若调用栈包含`doFrame`，则表示[ChoreographerContext]调度成功
      */
     private fun stackTraceContainsDoFrame(): Boolean {
         val result = runCatching { throw RuntimeException() }
@@ -81,7 +94,7 @@ internal class ChoreographerDispatcherTest {
         return doFrame != null
     }
 
-    private class TestChoreographerDispatcher : ChoreographerDispatcher() {
+    private class TestChoreographerContext : ChoreographerContext() {
         private val _dispatchCount = AtomicInteger(0)
         val dispatchCount: Int
             get() = _dispatchCount.get()

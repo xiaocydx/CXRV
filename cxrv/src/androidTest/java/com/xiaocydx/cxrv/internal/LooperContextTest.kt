@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.recycle
+package com.xiaocydx.cxrv.internal
 
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -25,13 +25,13 @@ import org.junit.runner.RunWith
 import java.util.concurrent.Executors
 
 /**
- * [LooperElement]的单元测试
+ * [LooperContext]的单元测试
  *
  * @author xcc
  * @date 2023/4/13
  */
 @RunWith(AndroidJUnit4::class)
-internal class LooperElementTest {
+internal class LooperContextTest {
 
     @Test
     fun updateAndRestoreLooper(): Unit = runBlocking(Dispatchers.Main) {
@@ -39,7 +39,7 @@ internal class LooperElementTest {
         val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
         withContext(dispatcher) { assertThat(Looper.myLooper()).isNull() }
 
-        withContext(dispatcher + LooperElement(looper)) {
+        withContext(dispatcher + LooperContext(looper)) {
             currentCoroutineContext().job.invokeOnCompletion {
                 assertThat(Looper.myLooper()).isEqualTo(looper)
             }

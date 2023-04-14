@@ -16,24 +16,28 @@
 
 package com.xiaocydx.cxrv.internal
 
+import android.os.Handler
 import android.os.Looper
-import android.view.Choreographer
-import android.view.Choreographer.FrameCallback
+import android.os.MessageQueue
+import androidx.annotation.CallSuper
 import androidx.core.os.HandlerCompat
-import kotlinx.coroutines.android.awaitFrame
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.MainCoroutineDispatcher
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.cancel
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.coroutines.CoroutineContext
 
 /**
  * 主线程异步消息Handler
  */
-private val asyncHandler = HandlerCompat.createAsync(Looper.getMainLooper())
+private val asyncHandler by lazy { HandlerCompat.createAsync(Looper.getMainLooper()) }
 
 /**
  * 当前是否为主线程
  */
 internal val isMainThread: Boolean
-    get() = Looper.getMainLooper().thread === Thread.currentThread()
+    get() = Thread.currentThread() === Looper.getMainLooper().thread
 
 /**
  * 若当前不为主线程，则将[action]post到主线程中执行
@@ -50,12 +54,44 @@ internal fun assertMainThread() {
 }
 
 /**
- * 没有选择使用[awaitFrame]的原因是要增加[delayMillis]参数
+ * **注意**：实现此接口的调度器仅用于特殊场景，例如解决doFrame消息插队问题
  */
-internal suspend fun Choreographer.awaitFrame(
-    delayMillis: Long = 0L
-): Long = suspendCancellableCoroutine { cont ->
-    val callback = FrameCallback { cont.resume(it) }
-    postFrameCallbackDelayed(callback, delayMillis)
-    cont.invokeOnCancellation { removeFrameCallback(callback) }
+internal sealed interface DispatchAtFrontOfQueue : ContinuationInterceptor {
+
+    /**
+     * 将[block]调度到队列前面，前面指的是插到其它执行逻辑之前，可以不是队列头部，
+     * 若[block]调度失败，则取消`context.job`，并且不能通过其它调度器完成[block]。
+     */
+    fun dispatch(context: CoroutineContext, block: Runnable)
+}
+
+/**
+ * 往[MessageQueue]头部插入消息的主线程调度器
+ */
+internal open class MainHandlerContext : MainCoroutineDispatcher(), DispatchAtFrontOfQueue {
+    private val handler: Handler = asyncHandler
+    final override val immediate: MainCoroutineDispatcher
+        get() = this
+
+    /**
+     * 当前线程可能临时设置了主线程[Looper]，因此对比[Thread]而不是[Looper]
+     */
+    override fun isDispatchNeeded(context: CoroutineContext): Boolean {
+        return Thread.currentThread() !== Looper.getMainLooper().thread
+    }
+
+    @CallSuper
+    override fun dispatch(context: CoroutineContext, block: Runnable) {
+        if (!handler.postAtFrontOfQueue(block)) {
+            context.cancel(CancellationException("往主线程发送消息被拒绝"))
+        }
+    }
+
+    final override fun equals(other: Any?): Boolean {
+        return other is MainHandlerContext && other.handler === handler
+    }
+
+    final override fun hashCode(): Int {
+        return System.identityHashCode(handler)
+    }
 }

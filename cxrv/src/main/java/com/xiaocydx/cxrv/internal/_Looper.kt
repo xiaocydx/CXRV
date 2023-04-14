@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.recycle
+package com.xiaocydx.cxrv.internal
 
 import android.os.Looper
 import kotlinx.coroutines.ThreadContextElement
@@ -26,24 +26,22 @@ import kotlin.coroutines.CoroutineContext
 private val looperThreadLocal: ThreadLocal<Looper>? = initializeLooperThreadLocalOrNull()
 
 /**
- * 若后续Android版本反射`sThreadLocal`失败，则可以考虑使用：
+ * 若后续Android版本反射`sThreadLocal`失败，则考虑使用：
  * [AndroidHiddenApiBypass](https://github.com/LSPosed/AndroidHiddenApiBypass)
  */
-private fun initializeLooperThreadLocalOrNull(): ThreadLocal<Looper>? = try {
+private fun initializeLooperThreadLocalOrNull(): ThreadLocal<Looper>? = runCatching {
     @Suppress("DiscouragedPrivateApi")
     val field = Looper::class.java.getDeclaredField("sThreadLocal")
     field.isAccessible = true
     @Suppress("UNCHECKED_CAST")
     field.get(null) as? ThreadLocal<Looper>
-} catch (e: Throwable) {
-    null
-}
+}.getOrNull()
 
 /**
  * 协程的[Looper]上下文元素，用于临时替换协程所处线程的[Looper]对象
  */
-internal class LooperElement(private val newState: Looper) : ThreadContextElement<Looper?> {
-    companion object Key : CoroutineContext.Key<LooperElement>
+internal class LooperContext(private val newState: Looper) : ThreadContextElement<Looper?> {
+    companion object Key : CoroutineContext.Key<LooperContext>
 
     override val key: CoroutineContext.Key<*> = Key
 
