@@ -27,8 +27,8 @@ allprojects {
 dependencies {
     // RecyclerView的版本需要1.2.0或以上
     implementation 'androidx.recyclerview:recyclerview:1.2.0'
-    implementation 'com.github.xiaocydx.CXRV:cxrv:1.3.0'
-    implementation 'com.github.xiaocydx.CXRV:cxrv-paging:1.3.0'
-    implementation 'com.github.xiaocydx.CXRV:cxrv-binding:1.3.0'
+    implementation 'com.github.xiaocydx.CXRV:cxrv:1.3.1'
+    implementation 'com.github.xiaocydx.CXRV:cxrv-paging:1.3.1'
+    implementation 'com.github.xiaocydx.CXRV:cxrv-binding:1.3.1'
 }
 ```
