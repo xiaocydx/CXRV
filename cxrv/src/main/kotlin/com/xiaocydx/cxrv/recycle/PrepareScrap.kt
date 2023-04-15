@@ -72,7 +72,6 @@ import kotlin.coroutines.resume
  * @return [PrepareResult]提供数量查询函数，可用于数据统计或者单元测试。
  */
 @MainThread
-@ExperimentalFeature
 suspend fun RecyclerView.prepareScrap(
     prepareAdapter: Adapter<*>,
     prepareDeadline: PrepareDeadline = PrepareDeadline.FOREVER_NS,
@@ -180,8 +179,8 @@ class PrepareResult private constructor(
     /**
      * 获取[viewType]在[RecycledViewPool]的回收数量
      *
-     * 1. 数量小于[getRecycledScrapCount]，通常表示RecyclerView布局流程已取走部分ViewHolder进行填充。
-     * 2. 数量大于[getRecycledScrapCount]，通常表示执行预创建流程之前，[RecycledViewPool]就存在ViewHolder。
+     * 回收数量不一定等于[getPreparedScrapCount]，可能布局流程已取走一部分进行填充，
+     * 又或者在执行预创建流程之前，[RecyclerView]已存在ViewHolder，例如共享池场景。
      */
     fun getRecycledScrapCount(viewType: Int): Int {
         assertMainThread()
