@@ -90,13 +90,15 @@ suspend fun RecyclerView.prepareScrap(
     // 调整为在doFrame消息的Animation回调下往RecycledViewPool放入scrap。
     // MainHandlerContext()是一个可行的方案，但目前还不确定其产生的影响。
     withContext(ChoreographerContext()) {
-        val deadlineNs = DeadlineNs()
+        var prepareJob: Job? = null
+        var deadline = false
         val deadlineJob = when (prepareDeadline) {
             PrepareDeadline.FOREVER_NS -> null
             PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
                 // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
-                val value = prepareAdapter.awaitDeadlineNs()
-                trace(TRACE_DEADLINE_TAG) { deadlineNs.set(value) }
+                prepareAdapter.awaitDeadlineNs()
+                prepareJob?.cancel()
+                trace(TRACE_DEADLINE_TAG) { deadline = true }
             }
         }
 
@@ -104,11 +106,12 @@ suspend fun RecyclerView.prepareScrap(
         // 确保View的构造过程能获取到主线程Looper，例如GestureDetector。
         val prepareContext = prepareDispatcher + LooperContext(Looper.myLooper()!!)
         val channel = Channel<ViewHolder>(result.channelCapacity)
-        launch(prepareContext) {
+        prepareJob = launch(prepareContext) {
             coroutineContext.job.invokeOnCompletion { channel.close() }
             pairs.forEach { (viewType, count) ->
                 var remainingCount = count
-                while (remainingCount > 0 && deadlineNs.checkVolatile()) {
+                while (remainingCount > 0) {
+                    ensureActive()
                     remainingCount--
                     channel.send(prepareAdapter.createViewHolder(rv, viewType))
                 }
@@ -116,10 +119,10 @@ suspend fun RecyclerView.prepareScrap(
         }
 
         for (scrap in channel) {
-            if (!deadlineNs.checkPlain()) break
+            if (deadline) break
             trace(TRACE_PUT_SCRAP_TAG) { result.putScrapToRecycledViewPool(scrap) }
         }
-        deadlineJob?.cancelAndJoin()
+        deadlineJob?.cancel()
     }
     return result
 }
@@ -142,7 +145,7 @@ enum class PrepareDeadline {
 /**
  * 调用[PrepareScope.add]，添加预创建的键值对
  */
-class PrepareScope internal constructor() {
+class PrepareScope private constructor() {
     private val pairs = mutableListOf<Pair>()
 
     fun add(viewType: Int, @IntRange(from = 1) count: Int) {
@@ -223,22 +226,6 @@ private suspend fun Adapter<*>.awaitDeadlineNs(): Long {
     return suspendCancellableCoroutine { cont ->
         DeadlineNsObserver(this, cont).attach()
     }
-}
-
-private class DeadlineNs {
-    private var plainValue = Long.MAX_VALUE
-    @Volatile private var volatileValue = Long.MAX_VALUE
-
-    @MainThread
-    fun set(value: Long) {
-        assertMainThread()
-        plainValue = value
-        volatileValue = value
-    }
-
-    fun checkPlain() = System.nanoTime() < plainValue
-
-    fun checkVolatile() = System.nanoTime() < volatileValue
 }
 
 @MainThread
