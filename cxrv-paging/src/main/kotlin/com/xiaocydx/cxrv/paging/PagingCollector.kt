@@ -18,13 +18,14 @@
 
 package com.xiaocydx.cxrv.paging
 
-import android.os.SystemClock
-import android.view.Choreographer
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
-import com.xiaocydx.cxrv.internal.*
+import com.xiaocydx.cxrv.internal.assertMainThread
+import com.xiaocydx.cxrv.internal.awaitNextLayout
+import com.xiaocydx.cxrv.internal.reverseAccessEach
+import com.xiaocydx.cxrv.internal.trace
 import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.UpdateOp
@@ -214,8 +215,7 @@ class PagingCollector<T : Any> internal constructor(
      * 添加加载状态集合已更改的监听
      *
      * 1. [LoadStatesListener.onLoadStatesChanged]在列表更改后才会被触发。
-     * 2. [LoadStatesListener.onLoadStatesChanged]在下一帧执行布局流程前被触发。
-     * 3. [LoadStatesListener.onLoadStatesChanged]中可以调用[removeLoadStatesListener]。
+     * 2. [LoadStatesListener.onLoadStatesChanged]中可以调用[removeLoadStatesListener]。
      */
     @MainThread
     fun addLoadStatesListener(listener: LoadStatesListener) {
@@ -284,43 +284,24 @@ class PagingCollector<T : Any> internal constructor(
         val listMediator = mediator?.asListMediator<T>()
         val newVersion = event.getVersionOrZero()
 
-        var latestFrameVsyncMs = -1L
         // 若mediator的类型是ListMediator，则version < newVersion时才更新列表
         if (op != null && (listMediator == null || version < newVersion)) {
-            latestFrameVsyncMs = rv.drawingTime.coerceAtLeast(0L)
             adapter.awaitUpdateList(op, dispatch = false)
             // 更新列表完成后才保存版本号
             version = newVersion
         }
 
         if (loadStates == event.loadStates) return
-        // 执行onBindViewHolder()或者滚动过程中可能触发末尾加载，
-        // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成，
-        // 此时对listeners分发加载状态，则会因为listeners调用notifyXXX()，
-        // 导致RecyclerView内部逻辑断言为异常情况。
-        when {
-            !rv.isComputingLayout
-                    && rv.scrollState == SCROLL_STATE_IDLE
-                    && rv.mDispatchScrollCounter <= 0 -> {
-                // 以下条件满足其中之一则为异常情况：
-                // 1. rv.isComputingLayout == true
-                // 2. rv.scrollState != SCROLL_STATE_IDLE
-                // 3. rv.mDispatchScrollCounter > 0
-                // 当这些条件都不满足时，才能直接分发加载状态
-            }
-            latestFrameVsyncMs == -1L -> {
-                // 快路径，在下一个异步消息中分发加载状态
-                yield()
-            }
-            else -> {
-                // 假设下一帧布局流程在Animation回调下执行，添加负延时的Animation回调进行插队，
-                // 确保下一帧执行布局流程之前，先分发加载状态，让listeners完成对加载状态的处理。
-                // 异步消息无法确保这种插队行为，因为异步消息可能被doFrame消息按vsync时间插队。
-                val beforeNextRvLayoutDelay = -(SystemClock.uptimeMillis() - latestFrameVsyncMs)
-                Choreographer.getInstance().awaitFrame(beforeNextRvLayoutDelay)
-            }
-        }
 
+        if (rv.isComputingLayout
+                || rv.scrollState != SCROLL_STATE_IDLE
+                || rv.mDispatchScrollCounter > 0) {
+            // 执行onBindViewHolder()或者滚动过程中可能触发末尾加载，
+            // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成，
+            // 此时对listeners分发加载状态，则会因为listeners调用notifyXXX()，
+            // 导致RecyclerView内部逻辑断言为异常情况。
+            yield()
+        }
         trace(TRACE_DISPATCH_LOAD_STATES_TAG) { setLoadStates(event.loadStates) }
     }
 
