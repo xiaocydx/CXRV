@@ -131,11 +131,19 @@ internal class LoadFooterAdapter(
         }
     }
 
+    /**
+     * 对`isLoadingVisibleWhileExceed`不需要支持到`isFullyVisibleWhileExceed`的程度，
+     * 因为必要性不大，实际场景对`isLoadingVisibleWhileExceed`的期望主要是加载状态变更。
+     */
     private fun LoadStates.toVisible(): Visible = when {
         !adapter.hasDisplayItem -> NONE
         this.isFully -> if (config.fullyScope != null) FULLY else NONE
         append.isIncomplete -> NONE
-        append.isLoading -> if (config.loadingScope != null) LOADING else NONE
+        append.isLoading -> when {
+            config.loadingScope == null -> NONE
+            !config.isLoadingVisibleWhileExceed -> LOADING
+            else -> if (recyclerView?.isExceedVisibleRange() == true) LOADING else NONE
+        }
         append.isFailure -> if (config.failureScope != null) FAILURE else NONE
         append.isSuccess -> NONE
         else -> visible

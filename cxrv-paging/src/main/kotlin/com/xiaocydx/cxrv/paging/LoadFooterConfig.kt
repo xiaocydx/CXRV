@@ -80,6 +80,15 @@ class LoadFooterConfig @PublishedApi internal constructor() {
         }
 
     /**
+     * 是否当RecyclerView的滚动范围超过可视范围时，才显示加载中视图
+     */
+    var isLoadingVisibleWhileExceed: Boolean = false
+        set(value) {
+            checkComplete()
+            field = value
+        }
+
+    /**
      * 是否当RecyclerView的滚动范围超过可视范围时，才显示加载完全视图
      */
     var isFullyVisibleWhileExceed: Boolean = false
