@@ -184,6 +184,7 @@ internal class AppendTrigger(
 
         override fun onChildViewAttachedToWindow(view: View) {
             if (!isEnabled || !loadStates.append.isFailure) return
+            if (rv.scrollState == SCROLL_STATE_IDLE) return
             val lm = rv.layoutManager ?: return
             val holder = rv.getChildViewHolder(view) ?: return
             if (holder.layoutPosition != lm.itemCount - 1) return
