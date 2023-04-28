@@ -20,7 +20,7 @@ import java.lang.ref.WeakReference
  * 启用手势导航栏边到边的示例代码
  */
 fun Window.enableGestureNavBarEdgeToEdge() {
-    val contentRef = (decorView as ViewGroup).children
+    val contentRootRef = (decorView as ViewGroup).children
         .firstOrNull { it is ViewGroup }?.let(::WeakReference)
     WindowCompat.setDecorFitsSystemWindows(this, false)
     ViewCompat.setOnApplyWindowInsetsListener(decorView) { v, insets ->
@@ -29,7 +29,7 @@ fun Window.enableGestureNavBarEdgeToEdge() {
             decorInsets = decorInsets.consume(navigationBars())
         }
         ViewCompat.onApplyWindowInsets(v, decorInsets)
-        contentRef?.get()?.updateMargins(
+        contentRootRef?.get()?.updateMargins(
             top = decorInsets.getInsets(statusBars()).top,
             bottom = decorInsets.getInsets(navigationBars()).bottom
         )
@@ -83,8 +83,7 @@ private fun WindowInsetsCompat.consume(typeMask: Int): WindowInsetsCompat {
 
 private fun WindowInsetsCompat.isGestureNavigationBar(resources: Resources): Boolean {
     val threshold = (24 * resources.displayMetrics.density).toInt()
-    val stableHeight = getInsetsIgnoringVisibility(navigationBars()).bottom
-    return stableHeight <= threshold.coerceAtLeast(66)
+    return getInsets(navigationBars()).bottom <= threshold.coerceAtLeast(66)
 }
 
 /**
