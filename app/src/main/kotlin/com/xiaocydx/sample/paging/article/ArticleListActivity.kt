@@ -6,6 +6,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.bindingAdapter
+import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
@@ -53,12 +54,8 @@ class ArticleListActivity : AppCompatActivity() {
             id = viewModel.rvId
             overScrollNever()
             withLayoutParams(matchParent, matchParent)
-            linear().fixedSize().divider {
-                width = 10.dp
-                height = 10.dp
-                horizontalEdge = true
-                verticalEdge = true
-            }.adapter(listAdapter.withPaging())
+            divider(10.dp, 10.dp) { edge(Edge.all()) }
+            linear().fixedSize().adapter(listAdapter.withPaging())
         }
 
         setContentView(rvArticle.withSwipeRefresh(listAdapter))

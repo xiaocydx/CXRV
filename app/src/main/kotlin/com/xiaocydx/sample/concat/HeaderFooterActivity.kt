@@ -5,7 +5,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.HeaderFooterRemovedChecker
 import com.xiaocydx.cxrv.concat.*
-import com.xiaocydx.cxrv.divider.spacing
+import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
@@ -51,7 +51,7 @@ class HeaderFooterActivity : AppCompatActivity() {
         }
         // 注意：先设置footer，再添加header和footer，
         // 因为要先确定内容区，才能连接header和footer。
-        rvFoo.linear().spacing(height = 5.dp).adapter(fooAdapter)
+        rvFoo.linear().divider(height = 5.dp).adapter(fooAdapter)
 
         // 对于初始化时不添加header和footer，而是后续动态添加/移除的场景，
         // 先设置HeaderFooterConcatAdapter，这能让首次添加有动画效果且性能更高。

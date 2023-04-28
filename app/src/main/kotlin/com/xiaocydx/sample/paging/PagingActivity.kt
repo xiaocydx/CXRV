@@ -45,9 +45,8 @@ class PagingActivity : AppCompatActivity() {
         binding.rvMenu
             .linear()
             .fixedSize()
-            .divider {
-                height = 0.5f.dp
-                color = 0xFFD5D5D5.toInt()
+            .divider(height = 0.5f.dp) {
+                color(0xFFD5D5D5.toInt())
             }
             .adapter(bindingAdapter(
                 uniqueId = MenuAction::text,

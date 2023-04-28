@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import com.xiaocydx.cxrv.binding.bindingAdapter
+import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.*
@@ -32,11 +33,7 @@ class ItemClickActivity : AppCompatActivity() {
         rvClick.linear()
         rvScenes
             .linear(orientation = HORIZONTAL)
-            .divider {
-                width = 5.dp
-                height = 5.dp
-                horizontalEdge = true
-            }
+            .divider(5.dp, 5.dp) { edge(Edge.horizontal()) }
             .adapter(bindingAdapter(
                 uniqueId = ItemClickScenes::text,
                 inflate = ItemButtonBinding::inflate

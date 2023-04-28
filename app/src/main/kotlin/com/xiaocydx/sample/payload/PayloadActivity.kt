@@ -26,10 +26,8 @@ class PayloadActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(RecyclerView(this).apply {
-            linear().fixedSize().divider {
-                height = 0.5f.dp
-                color = 0xFF7E7AAA.toInt()
-            }
+            linear().fixedSize()
+            divider(height = 0.5f.dp) { color(0xFF7E7AAA.toInt()) }
             adapter(CountAdapter().apply {
                 submitList((1..3).map { CountItem(id = it.toString()) })
                 doOnItemClick(target = { binding.btnCount1 }) { holder, _ ->

@@ -1,5 +1,6 @@
 package com.xiaocydx.sample.paging
 
+import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
@@ -22,12 +23,9 @@ class LinearLayoutFragment : PagingFragment() {
         rvPaging
             .linear()
             .fixedSize()
-            .divider {
-                height = 5.dp
-                width = 5.dp
-                color = 0xFF9DAA8F.toInt()
-                verticalEdge = true
-                horizontalEdge = true
+            .divider(5.dp, 5.dp) {
+                edge(Edge.all())
+                color(0xFF9DAA8F.toInt())
             }
             .adapter(fooAdapter.withPaging())
             .replaceWithSwipeRefresh(fooAdapter)

@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.setRecycleAllViewsOnDetach
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
+import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.autoDispose
@@ -67,11 +68,9 @@ class FooListFragment : Fragment() {
     ): View = RecyclerView(requireContext()).apply {
         fooViewModel = sharedViewModel.getFooViewModel(categoryId)
         id = fooViewModel.rvId
-        linear().fixedSize().divider {
-            width = 10.dp
-            height = 10.dp
-            topEdge = true
-            horizontalEdge = true
+        linear().fixedSize()
+        divider(10.dp, 10.dp) {
+            edge(Edge.top().horizontal())
         }
         initFooAdapter()
         overScrollNever()

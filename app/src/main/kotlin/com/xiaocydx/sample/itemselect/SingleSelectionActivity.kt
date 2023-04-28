@@ -42,9 +42,9 @@ class SingleSelectionActivity : AppCompatActivity() {
         id = viewModel.rvId
         adapter = SingleSelectionBindingAdapter()
         // adapter = SingleSelectionAdapter()
-        linear().fixedSize().divider {
-            height = 0.5f.dp
-            color = 0xFF7E7AAA.toInt()
+        linear().fixedSize()
+        divider(height = 0.5f.dp) {
+            color(0xFF7E7AAA.toInt())
         }
         overScrollNever()
         withLayoutParams(matchParent, matchParent)

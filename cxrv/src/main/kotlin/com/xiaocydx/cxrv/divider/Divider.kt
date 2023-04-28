@@ -26,32 +26,31 @@ import androidx.recyclerview.widget.RecyclerView
  * @param width  水平方向的间隔size
  * @param height 垂直方向的间隔size
  */
+@Deprecated("不需要其它含义的扩展函数", ReplaceWith("divider(width, height)"))
 fun <T : RecyclerView> T.spacing(
     @Px width: Int = 0,
     @Px height: Int = 0
-): T = divider {
-    this.width = width
-    this.height = height
-}
+): T = divider(width, height)
 
 /**
  * 添加通用分割线，可用于链式调用场景
  *
  * ```
- * recyclerView.divider {
- *     width = 5.dp
- *     height = 5.dp
- *     color = 0xFF9DAA8F.toInt()
- *     verticalEdge = true
- *     horizontalEdge = true
+ * recyclerView.divider(5.dp, 5.dp) {
+ *     edge(Edge.top().bottom())
+ *     color(0xFF9DAA8F.toInt())
  * }
  * ```
  * 详细的属性描述[DividerItemDecoration.Config]
  */
 inline fun <T : RecyclerView> T.divider(
-    block: DividerItemDecoration.Config.() -> Unit
+    @Px width: Int = 0,
+    @Px height: Int = 0,
+    block: DividerItemDecoration.Config.() -> Unit = {}
 ): T {
-    setDividerItemDecoration(DividerItemDecoration(context, block))
+    setDividerItemDecoration(DividerItemDecoration(context) {
+        width(width).height(height).apply(block)
+    })
     return this
 }
 
@@ -60,11 +59,9 @@ inline fun <T : RecyclerView> T.divider(
  *
  * ```
  * DividerItemDecoration(context) {
- *     width = 5.dp
- *     height = 5.dp
- *     color = 0xFF9DAA8F.toInt()
- *     verticalEdge = true
- *     horizontalEdge = true
+ *     width(5.dp).height(5.dp)
+ *     edge(Edge.top().bottom())
+ *     color(0xFF9DAA8F.toInt())
  * }
  * ```
  * 详细的属性描述[DividerItemDecoration.Config]

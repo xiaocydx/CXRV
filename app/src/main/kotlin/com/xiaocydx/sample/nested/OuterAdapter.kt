@@ -4,6 +4,7 @@ import android.os.Parcelable
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
+import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
@@ -52,15 +53,13 @@ class OuterHolder(
 
     init {
         binding.rvInner
+            .fixedSize()
             .adapter(adapter)
             .linear(orientation = HORIZONTAL) {
                 // recycle to sharedPool
                 recycleChildrenOnDetach = true
             }
-            .fixedSize().divider {
-                width = 8.dp
-                horizontalEdge = true
-            }
+            .divider(width = 8.dp) { edge(Edge.horizontal()) }
             .apply { itemAnimator = null }
             .setRecycledViewPool(sharedPool)
     }
