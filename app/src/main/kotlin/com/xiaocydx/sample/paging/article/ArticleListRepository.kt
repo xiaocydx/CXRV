@@ -15,11 +15,8 @@ open class ArticleListRepository(private val api: WanAndroidApi) {
 
     open fun getArticlePager(
         initKey: Int,
-        pageSize: Int
-    ): Pager<Int, ArticleInfo> = Pager(
-        initKey = initKey,
-        config = PagingConfig(pageSize)
-    ) { params ->
+        config: PagingConfig
+    ): Pager<Int, ArticleInfo> = Pager(initKey, config) { params ->
         val list = api.getArticleList(params.key, params.pageSize)
         val nextKey = if (list.over) null else params.key + 1
         LoadResult.Success(list.datas, nextKey)

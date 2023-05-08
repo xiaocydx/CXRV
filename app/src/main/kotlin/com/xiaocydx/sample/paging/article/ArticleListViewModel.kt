@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.removeItemAt
+import com.xiaocydx.cxrv.paging.PagingConfig
+import com.xiaocydx.cxrv.paging.PagingPrefetch
 import com.xiaocydx.cxrv.paging.storeIn
 import com.xiaocydx.sample.retrofit.ArticleInfo
 
@@ -14,7 +16,13 @@ import com.xiaocydx.sample.retrofit.ArticleInfo
  */
 class ArticleListViewModel(repository: ArticleListRepository = ArticleListRepository) : ViewModel() {
     private val state = ListState<ArticleInfo>()
-    private val pager = repository.getArticlePager(initKey = 0, pageSize = 15)
+    private val pager = repository.getArticlePager(
+        initKey = 0,
+        config = PagingConfig(
+            pageSize = 15,
+            appendPrefetch = PagingPrefetch.ItemCount(5)
+        )
+    )
     val rvId = ViewCompat.generateViewId()
     val flow = pager.flow.storeIn(state, viewModelScope)
 

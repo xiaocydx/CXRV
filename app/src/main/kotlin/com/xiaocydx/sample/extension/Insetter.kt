@@ -10,8 +10,7 @@ import androidx.annotation.CheckResult
 import androidx.annotation.Px
 import androidx.core.graphics.Insets
 import androidx.core.view.*
-import androidx.core.view.WindowInsetsCompat.Type.navigationBars
-import androidx.core.view.WindowInsetsCompat.Type.statusBars
+import androidx.core.view.WindowInsetsCompat.Type.*
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.list.enableBoundCheckCompat
 import java.lang.ref.WeakReference
@@ -76,9 +75,26 @@ private fun View.updateMargins(
     if (changed) layoutParams = params
 }
 
+/**
+ * 消费指定[InsetsType]类型集的`Insets`
+ *
+ * ```
+ * val typeMask = WindowInsetsCompat.Type.statusBars()
+ * val outcome = insets.consume(typeMask)
+ * outcome.getInsets(typeMask) // Insets.NONE
+ * outcome.getInsetsIgnoringVisibility() // Insets.NONE
+ * outcome.isVisible(typeMask) // 不改变可见结果
+ * ```
+ */
 @CheckResult
-private fun WindowInsetsCompat.consume(typeMask: Int): WindowInsetsCompat {
-    return WindowInsetsCompat.Builder(this).setInsets(typeMask, Insets.NONE).build()
+fun WindowInsetsCompat.consume(@InsetsType typeMask: Int): WindowInsetsCompat {
+    if (typeMask <= 0) return this
+    val builder = WindowInsetsCompat.Builder(this)
+    if (typeMask != ime()) {
+        // typeMask等于IME会抛出IllegalArgumentException
+        builder.setInsetsIgnoringVisibility(typeMask, Insets.NONE)
+    }
+    return builder.setInsets(typeMask, Insets.NONE).build()
 }
 
 private fun WindowInsetsCompat.isGestureNavigationBar(resources: Resources): Boolean {

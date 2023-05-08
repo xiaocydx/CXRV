@@ -12,6 +12,7 @@ import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
+import com.xiaocydx.cxrv.paging.PagingPrefetch
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.*
@@ -29,6 +30,10 @@ import com.xiaocydx.sample.retrofit.ArticleInfo
 class ArticleListActivity : AppCompatActivity() {
     private lateinit var rvArticle: RecyclerView
     private lateinit var listAdapter: ListAdapter<ArticleInfo, *>
+
+    /**
+     * 已使用预取策略[PagingPrefetch.ItemCount]
+     */
     private val viewModel: ArticleListViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
