@@ -291,51 +291,73 @@ class CoroutineListDiffer<T : Any>(
     private fun setItem(position: Int, newItem: T): Boolean {
         val oldItem = sourceList.getOrNull(position) ?: return false
         sourceList[position] = newItem
-        val payload = getChangePayload(oldItem, newItem)
+        var changed = true
+        val payload: Any? = when {
+            // oldItem和newItem为同一个对象，确保payload为null的更新
+            oldItem === newItem -> null
+            !diffCallback.areItemsTheSame(oldItem, newItem) -> {
+                changed = false
+                null
+            }
+            !diffCallback.areContentsTheSame(oldItem, newItem) -> {
+                diffCallback.getChangePayload(oldItem, newItem)
+            }
+            else -> NopSymbol
+        }
         if (payload !== NopSymbol) {
-            updateCallback.onChanged(position, 1, payload)
+            updateForSetItem(position, 1, changed, payload)
         }
         return true
     }
 
     @MainThread
-    @Suppress("SuspiciousEqualsCombination")
     private fun setItems(position: Int, newItems: List<T>): Boolean {
         if (position !in sourceList.indices) return false
         val end = (position + newItems.size - 1).coerceAtMost(sourceList.lastIndex)
         var index = position
         var start = index
         var count = 0
+        var changed = true
         var payload: Any? = NopSymbol
         while (index <= end) {
             val oldItem = sourceList[index]
             val newItem = newItems[index - position]
             sourceList[index] = newItem
 
-            val newPayload = getChangePayload(oldItem, newItem)
-            if (newPayload === NopSymbol) {
-                index++
-                continue
+            var newChanged = true
+            val newPayload: Any? = when {
+                // oldItem和newItem为同一个对象，确保payload为null的更新
+                oldItem === newItem -> null
+                !diffCallback.areItemsTheSame(oldItem, newItem) -> {
+                    newChanged = false
+                    null
+                }
+                !diffCallback.areContentsTheSame(oldItem, newItem) -> {
+                    diffCallback.getChangePayload(oldItem, newItem)
+                }
+                else -> NopSymbol
             }
 
-            if (payload !== NopSymbol && payload != newPayload) {
-                // payload不等于初始值和newPayload，将之前累积的更新合并为一次更新
-                updateCallback.onChanged(start, count, payload)
-                count = 0
+            if (payload !== newPayload || changed != newChanged) {
+                if (count > 0) {
+                    // 将累积的更新合并为一次更新
+                    updateForSetItem(start, count, changed, payload)
+                    count = 0
+                }
                 start = index
             }
 
-            count++
             index++
             payload = newPayload
+            changed = newChanged
+            if (payload !== NopSymbol) count++
         }
 
-        if (payload !== NopSymbol) {
+        if (count > 0) {
             // 该分支处理两种情况：
             // 1. oldItems和newItems的payload都一致，做一次完整更新
             // 2. oldItems和newItems的payload不一致，做最后一次更新
-            updateCallback.onChanged(start, count, payload)
-            return true
+            updateForSetItem(start, count, changed, payload)
         }
         return position <= end
     }
@@ -402,13 +424,14 @@ class CoroutineListDiffer<T : Any>(
     }
 
     @MainThread
-    private fun getChangePayload(oldItem: T, newItem: T): Any? {
-        if (oldItem !== newItem && diffCallback.areItemsTheSame(oldItem, newItem)) {
-            if (diffCallback.areContentsTheSame(oldItem, newItem)) return NopSymbol
-            return diffCallback.getChangePayload(oldItem, newItem)
+    private fun updateForSetItem(position: Int, count: Int, changed: Boolean, payload: Any?) {
+        if (changed) {
+            updateCallback.onChanged(position, count, payload)
+        } else {
+            // 跟差异计算一致的更新方式
+            updateCallback.onRemoved(position, count)
+            updateCallback.onInserted(position, count)
         }
-        // oldItem和newItem为同一个对象，返回null确保更新
-        return null
     }
 
     private fun List<T>.ensureSafeMutable(): ArrayList<T> {

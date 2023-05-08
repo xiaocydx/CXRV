@@ -61,12 +61,13 @@ class CoroutineListDifferTest {
     fun setItem(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val job = launch { awaitCancellation() }
-        val initList = listOf("A")
+        val initList = listOf("A", "B")
         differ.updateList(UpdateOp.SubmitList(initList)) {
-            differ.updateList(UpdateOp.SetItem(0, "B")) {
-                assertThat(differ.currentList).isEqualTo(listOf("B"))
-                verify(exactly = 1) { diffCallback.areItemsTheSame("A", "B") }
-                verify(exactly = 1) { updateCallback.onChanged(0, 1, null) }
+            differ.updateList(UpdateOp.SetItem(1, "&B")) {
+                assertThat(differ.currentList).isEqualTo(listOf("A", "&B"))
+                verify(exactly = 1) { diffCallback.areItemsTheSame("B", "&B") }
+                verify(exactly = 1) { updateCallback.onRemoved(1, 1) }
+                verify(exactly = 1) { updateCallback.onInserted(1, 1) }
                 job.cancel()
             }
         }
@@ -76,13 +77,14 @@ class CoroutineListDifferTest {
     fun setItems(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val job = launch { awaitCancellation() }
-        val initList = listOf("A", "B")
+        val initList = listOf("A", "B", "C")
         differ.updateList(UpdateOp.SubmitList(initList)) {
-            differ.updateList(UpdateOp.SetItems(0, listOf("C", "D", "E"))) {
-                assertThat(differ.currentList).isEqualTo(listOf("C", "D"))
-                verify(exactly = 1) { diffCallback.areItemsTheSame("A", "C") }
-                verify(exactly = 1) { diffCallback.areItemsTheSame("B", "D") }
-                verify(exactly = 1) { updateCallback.onChanged(0, 2, null) }
+            differ.updateList(UpdateOp.SetItems(1, listOf("&B", "&C", "D"))) {
+                assertThat(differ.currentList).isEqualTo(listOf("A", "&B", "&C"))
+                verify(exactly = 1) { diffCallback.areItemsTheSame("B", "&B") }
+                verify(exactly = 1) { diffCallback.areItemsTheSame("C", "&C") }
+                verify(exactly = 1) { updateCallback.onRemoved(1, 2) }
+                verify(exactly = 1) { updateCallback.onInserted(1, 2) }
                 job.cancel()
             }
         }
@@ -166,24 +168,26 @@ class CoroutineListDifferTest {
     @Test
     fun setItemAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
-        val initList = listOf("A")
+        val initList = listOf("A", "B")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
-        differ.awaitUpdateList(UpdateOp.SetItem(0, "B"))
-        assertThat(differ.currentList).isEqualTo(listOf("B"))
-        verify(exactly = 1) { diffCallback.areItemsTheSame("A", "B") }
-        verify(exactly = 1) { updateCallback.onChanged(0, 1, null) }
+        differ.awaitUpdateList(UpdateOp.SetItem(1, "&B"))
+        assertThat(differ.currentList).isEqualTo(listOf("A", "&B"))
+        verify(exactly = 1) { diffCallback.areItemsTheSame("B", "&B") }
+        verify(exactly = 1) { updateCallback.onRemoved(1, 1) }
+        verify(exactly = 1) { updateCallback.onInserted(1, 1) }
     }
 
     @Test
     fun setItemsAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
-        val initList = listOf("A", "B")
+        val initList = listOf("A", "B", "C")
         differ.awaitUpdateList(UpdateOp.SubmitList(initList))
-        differ.awaitUpdateList(UpdateOp.SetItems(0, listOf("C", "D", "E")))
-        assertThat(differ.currentList).isEqualTo(listOf("C", "D"))
-        verify(exactly = 1) { diffCallback.areItemsTheSame("A", "C") }
-        verify(exactly = 1) { diffCallback.areItemsTheSame("B", "D") }
-        verify(exactly = 1) { updateCallback.onChanged(0, 2, null) }
+        differ.awaitUpdateList(UpdateOp.SetItems(1, listOf("&B", "&C", "D")))
+        assertThat(differ.currentList).isEqualTo(listOf("A", "&B", "&C"))
+        verify(exactly = 1) { diffCallback.areItemsTheSame("B", "&B") }
+        verify(exactly = 1) { diffCallback.areItemsTheSame("C", "&C") }
+        verify(exactly = 1) { updateCallback.onRemoved(1, 2) }
+        verify(exactly = 1) { updateCallback.onInserted(1, 2) }
     }
 
     @Test
@@ -329,6 +333,135 @@ class CoroutineListDifferTest {
         result = differ.updateList(UpdateOp.SubmitList(newList2))
         assertThat(result).isEqualTo(CompleteResult)
         assertThat(differ.currentList).isEqualTo(newList2)
+    }
+
+    @Test
+    fun submitListPayloadChanged1(): Unit = runBlockingTest {
+        val (differ, diffCallback, updateCallback) = it
+        val position = 1
+        val itemA = "A"
+        val itemB = "B"
+        differ.updateList(UpdateOp.AddItems(0, listOf("X", itemA))).await()
+
+        // itemA和copyItemA内容一致，不需要更新
+        val copyItemA = String(itemA.toCharArray())
+        differ.updateList(UpdateOp.SubmitList(listOf("X", copyItemA))).await()
+        verify(atLeast = 1) { diffCallback.areItemsTheSame(itemA, copyItemA) }
+        verify(exactly = 1) { diffCallback.areContentsTheSame(itemA, copyItemA) }
+        verify(exactly = 0) { diffCallback.getChangePayload(itemA, copyItemA) }
+        verify(exactly = 0) { updateCallback.onChanged(position, 1, null) }
+
+        // A和B，areItemsTheSame()为false，按removeAndInsert更新
+        differ.updateList(UpdateOp.SubmitList(listOf("X", itemB))).await()
+        verify(atLeast = 1) { diffCallback.areItemsTheSame(copyItemA, itemB) }
+        verify(exactly = 0) { diffCallback.areContentsTheSame(copyItemA, itemB) }
+        verify(exactly = 0) { diffCallback.getChangePayload(copyItemA, itemB) }
+        verify(exactly = 1) { updateCallback.onRemoved(position, 1) }
+        verify(exactly = 1) { updateCallback.onInserted(position, 1) }
+    }
+
+    @Test
+    fun setItemPayloadChanged(): Unit = runBlockingTest {
+        val (differ, diffCallback, updateCallback) = it
+        val position = 1
+        val itemA = "A"
+        val itemB = "B"
+        differ.updateList(UpdateOp.AddItems(0, listOf("X", itemA))).await()
+
+        // A对象未改变，确保payload为null的更新
+        differ.updateList(UpdateOp.SetItem(position, itemA)).await()
+        verify(exactly = 0) { diffCallback.areItemsTheSame(itemA, itemA) }
+        verify(exactly = 0) { diffCallback.areContentsTheSame(itemA, itemA) }
+        verify(exactly = 0) { diffCallback.getChangePayload(itemA, itemA) }
+        verify(exactly = 1) { updateCallback.onChanged(position, 1, null) }
+
+        // itemA和copyItemA内容一致，不需要更新，跟差异计算结果一致
+        val copyItemA = String(itemA.toCharArray())
+        differ.updateList(UpdateOp.SetItem(position, copyItemA)).await()
+        verify(exactly = 1) { diffCallback.areItemsTheSame(itemA, copyItemA) }
+        verify(exactly = 1) { diffCallback.areContentsTheSame(itemA, copyItemA) }
+        verify(exactly = 0) { diffCallback.getChangePayload(itemA, copyItemA) }
+        verify(exactly = 1) { updateCallback.onChanged(position, 1, null) }
+
+        // A和B，areItemsTheSame()为false，按removeAndInsert更新，跟差异计算结果一致
+        differ.updateList(UpdateOp.SetItem(position, itemB)).await()
+        verify(exactly = 1) { diffCallback.areItemsTheSame(copyItemA, itemB) }
+        verify(exactly = 0) { diffCallback.areContentsTheSame(copyItemA, itemB) }
+        verify(exactly = 0) { diffCallback.getChangePayload(copyItemA, itemB) }
+        verify(exactly = 1) { updateCallback.onRemoved(position, 1) }
+        verify(exactly = 1) { updateCallback.onInserted(position, 1) }
+    }
+
+    @Test
+    fun submitListPayloadChanged2(): Unit = runBlockingTest {
+        val (differ, diffCallback, updateCallback) = it
+        val position = 0
+        val itemC = "C"
+        val itemD = "D"
+        val copyItemC = String(itemC.toCharArray())
+        val copyItemD = String(itemD.toCharArray())
+
+        val initList = listOf("A", "B", itemC, itemD, "E", "F")
+        val newList = listOf("A", "B", copyItemC, copyItemD, "&E", "&F")
+        differ.updateList(UpdateOp.SubmitList(initList)).await()
+        differ.updateList(UpdateOp.SubmitList(newList)).await()
+
+        // itemC和copyItemC，itemD和copyItemD内容一致，不需要更新
+        listOf(itemC, itemD).forEach { item ->
+            verify(atLeast = 1) { diffCallback.areItemsTheSame(item, any()) }
+            verify(exactly = 1) { diffCallback.areContentsTheSame(item, any()) }
+            verify(exactly = 0) { diffCallback.getChangePayload(item, any()) }
+            verify(exactly = 0) { updateCallback.onChanged(position + 2, 2, null) }
+        }
+
+        // E和&E，F和&F，areItemsTheSame()为false，按removeAndInsert更新
+        listOf("E", "F").forEach { item ->
+            verify(atLeast = 1) { diffCallback.areItemsTheSame(item, "&$item") }
+            verify(exactly = 0) { diffCallback.areContentsTheSame(item, "&$item") }
+            verify(exactly = 0) { diffCallback.getChangePayload(item, "&$item") }
+            verify(exactly = 1) { updateCallback.onRemoved(position + 4, 2) }
+            verify(exactly = 1) { updateCallback.onInserted(position + 4, 2) }
+        }
+    }
+
+    @Test
+    fun setItemsPayloadChanged(): Unit = runBlockingTest {
+        val (differ, diffCallback, updateCallback) = it
+        val position = 0
+        val itemC = "C"
+        val itemD = "D"
+        val copyItemC = String(itemC.toCharArray())
+        val copyItemD = String(itemD.toCharArray())
+
+        val initList = listOf("A", "B", itemC, itemD, "E", "F")
+        val items = listOf("A", "B", copyItemC, copyItemD, "&E", "&F")
+        differ.updateList(UpdateOp.AddItems(position, initList)).await()
+        differ.updateList(UpdateOp.SetItems(position, items)).await()
+
+        // A、B对象未改变，确保payload为null的更新
+        listOf("A", "B").forEach { item ->
+            verify(exactly = 0) { diffCallback.areItemsTheSame(item, item) }
+            verify(exactly = 0) { diffCallback.areContentsTheSame(item, item) }
+            verify(exactly = 0) { diffCallback.getChangePayload(item, item) }
+            verify(exactly = 1) { updateCallback.onChanged(position, 2, null) }
+        }
+
+        // itemC和copyItemC，itemD和copyItemD内容一致，不需要更新，跟差异计算结果一致
+        listOf(itemC, itemD).forEach { item ->
+            verify(exactly = 1) { diffCallback.areItemsTheSame(item, any()) }
+            verify(exactly = 1) { diffCallback.areContentsTheSame(item, any()) }
+            verify(exactly = 0) { diffCallback.getChangePayload(item, any()) }
+            verify(exactly = 0) { updateCallback.onChanged(position + 2, 2, null) }
+        }
+
+        // E和&E，F和&F，areItemsTheSame()为false，按removeAndInsert更新，跟差异计算结果一致
+        listOf("E", "F").forEach { item ->
+            verify(exactly = 1) { diffCallback.areItemsTheSame(item, "&$item") }
+            verify(exactly = 0) { diffCallback.areContentsTheSame(item, "&$item") }
+            verify(exactly = 0) { diffCallback.getChangePayload(item, "&$item") }
+            verify(exactly = 1) { updateCallback.onRemoved(position + 4, 2) }
+            verify(exactly = 1) { updateCallback.onInserted(position + 4, 2) }
+        }
     }
 
     private fun <T> runBlockingTest(
