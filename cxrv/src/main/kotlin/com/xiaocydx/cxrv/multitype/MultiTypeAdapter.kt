@@ -107,17 +107,19 @@ internal class MultiTypeAdapter<T : Any>(
 
     @VisibleForTesting(otherwise = PROTECTED)
     public override fun areItemsTheSame(oldItem: T, newItem: T): Boolean = with(multiType) {
-        // 若两个item的Class不相同，则viewType也不相同
+        // 当两个item的Class不同时，viewType也不同，属于一对一关系,
+        // 以替换item为例，此时会以removeAndInsert的方式更新列表。
         if (oldItem.javaClass != newItem.javaClass) return false
+
+        // 以下是对一对多关系的处理
         val oldViewType = getItemViewType(oldItem)
         val newViewType = getItemViewType(newItem)
 
-        // 若两个item的Class相同、viewType相同，则属于一对一关系
+        // 当两个item的viewType相同时，不需要再调用一次areItemsTheSame()
         val oldTheSame = getViewTypeDelegate(oldViewType).areItemsTheSame(oldItem, newItem)
         if (oldViewType == newViewType) return oldTheSame
 
-        // 若两个item的Class相同、viewType不同，则属于一对多关系，
-        // 对一对多关系，支持不同的ItemCallback.areItemsTheSame()实现。
+        // 当两个item的viewType不同时，支持不同的areItemsTheSame()实现
         oldTheSame && getViewTypeDelegate(newViewType).areItemsTheSame(oldItem, newItem)
     }
 
@@ -125,6 +127,9 @@ internal class MultiTypeAdapter<T : Any>(
     public override fun areContentsTheSame(oldItem: T, newItem: T): Boolean = with(multiType) {
         val oldViewType = getItemViewType(oldItem)
         val newViewType = getItemViewType(newItem)
+        // 当两个item的viewType不同时，不需要调用areContentsTheSame()和getChangePayload()，
+        // 因为Recycler.tryGetViewHolderForPositionByDeadline()会回收oldViewType的holder，
+        // 填充newViewType的holder，这是一个全量更新的过程，不会因为payload重用holder而改变。
         oldViewType == newViewType && getViewTypeDelegate(oldViewType).areContentsTheSame(oldItem, newItem)
     }
 
