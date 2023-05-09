@@ -11,7 +11,6 @@ import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.itemselect.hasPayload
-import com.xiaocydx.cxrv.itemselect.isSelected
 import com.xiaocydx.cxrv.itemselect.multiSelection
 import com.xiaocydx.cxrv.itemselect.toggleSelect
 import com.xiaocydx.cxrv.list.*
