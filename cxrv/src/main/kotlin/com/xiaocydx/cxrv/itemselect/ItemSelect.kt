@@ -146,7 +146,7 @@ fun <AdapterT : Adapter<*>, ITEM : Any, K : Any> AdapterT.multiSelection(
  * ```
  * 单项选择功能的配置流程以及函数描述，请看[singleSelection]的注释。
  */
-fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.singleSelection(
+fun <ITEM : Any, K : Any> ListAdapter<out ITEM, *>.singleSelection(
     initKey: K? = null,
     itemKey: (item: ITEM) -> K?
 ): SingleSelection<ITEM, K> = singleSelection(
@@ -164,7 +164,7 @@ fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.singleSelection(
  * ```
  * 多项选择功能的配置流程以及函数描述，请看[multiSelection]的注释。
  */
-fun <ITEM : Any, K : Any> ListAdapter<ITEM, *>.multiSelection(
+fun <ITEM : Any, K : Any> ListAdapter<out ITEM, *>.multiSelection(
     maxSelectSize: Int = Int.MAX_VALUE,
     initKeys: List<K>? = null,
     itemKey: (item: ITEM) -> K?

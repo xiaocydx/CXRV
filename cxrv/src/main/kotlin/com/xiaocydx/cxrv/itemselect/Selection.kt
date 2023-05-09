@@ -53,26 +53,31 @@ sealed class Selection<ITEM : Any, K : Any>(
      */
     internal val ViewHolder.item: ITEM?
         get() {
-            if (bindingAdapter != adapter) {
-                return null
-            }
+            if (bindingAdapter !== adapter) return null
             return adapter.itemAccess(bindingAdapterPosition)
         }
 
     /**
-     * 是否已选择
+     * 通过[item]判断是否已选择
      */
     abstract fun isSelected(item: ITEM): Boolean
 
     /**
-     * 选择
+     * 通过[holder]判断是否已选择
+     */
+    fun isSelected(holder: ViewHolder): Boolean {
+        return holder.item?.let(::isSelected) ?: false
+    }
+
+    /**
+     * 通过[item]选择
      *
      * @return `true`表示选择成功，`false`表示没有`itemKey`或者选择过。
      */
     internal abstract fun select(item: ITEM, position: Int): Boolean
 
     /**
-     * 取消选择
+     * 通过[item]取消选择
      *
      * @return  `true`表示取消成功，`false`表示没有`itemKey`或者未选择过。
      */
@@ -149,7 +154,7 @@ sealed class Selection<ITEM : Any, K : Any>(
 }
 
 /**
- * [holder]中是否包含[Payload]，用于在[Adapter.onBindViewHolder]中判断payload刷新
+ * [holder]中是否包含[Payload]，用于[Adapter.onBindViewHolder]进行payload更新
  */
 @Suppress("unused")
 fun Selection<*, *>.hasPayload(holder: ViewHolder): Boolean {
@@ -157,14 +162,17 @@ fun Selection<*, *>.hasPayload(holder: ViewHolder): Boolean {
 }
 
 /**
- * 是否已选择
+ * 通过[holder]判断是否已选择
  */
-fun <ITEM : Any> Selection<ITEM, *>.isSelected(holder: ViewHolder): Boolean {
-    return holder.item?.let(::isSelected) ?: false
-}
+@Deprecated(
+    message = "当ITEM类型为Any时，无法推断为调用该扩展函数，因此改为成员函数",
+    replaceWith = ReplaceWith("isSelected(holder)")
+)
+@Suppress("EXTENSION_SHADOWED_BY_MEMBER")
+fun Selection<*, *>.isSelected(holder: ViewHolder): Boolean = isSelected(holder)
 
 /**
- * 选择
+ * 通过[item]选择
  *
  * 该函数执行效率低于`select(ViewHolder)`，用于只能通过[item]选择的情况。
  *
@@ -177,17 +185,18 @@ fun <ITEM : Any, K : Any> Selection<ITEM, K>.select(item: ITEM): Boolean {
 }
 
 /**
- * 选择
+ * 通过[holder]选择
  *
  * @return `true`表示选择成功，`false`表示没有`itemKey`或者选择过。
  */
-fun <ITEM : Any> Selection<ITEM, *>.select(holder: ViewHolder): Boolean {
+fun Selection<*, *>.select(holder: ViewHolder): Boolean {
     val item = holder.item ?: return false
-    return select(item, holder.bindingAdapterPosition)
+    @Suppress("UNCHECKED_CAST")
+    return (this as Selection<Any, *>).select(item, holder.bindingAdapterPosition)
 }
 
 /**
- * 取消选择
+ * 通过[item]取消选择
  *
  * 该函数执行效率低于`unselect(ViewHolder)`，用于只能通过[item]取消选择的情况。
  *
@@ -200,39 +209,32 @@ fun <ITEM : Any, K : Any> Selection<ITEM, K>.unselect(item: ITEM): Boolean {
 }
 
 /**
- * 取消选择
+ * 通过[holder]取消选择
  *
  * @return `true`表示取消成功，`false`表示没有`itemKey`或者未选择过。
  */
-fun <ITEM : Any> Selection<ITEM, *>.unselect(holder: ViewHolder): Boolean {
+fun Selection<*, *>.unselect(holder: ViewHolder): Boolean {
     val item = holder.item ?: return false
-    return unselect(item, holder.bindingAdapterPosition)
+    @Suppress("UNCHECKED_CAST")
+    return (this as Selection<Any, *>).unselect(item, holder.bindingAdapterPosition)
 }
 
 /**
- * 切换选择/取消选择
+ * 通过[item]切换选择/取消选择
  *
  * 该函数执行效率低于`toggleSelect(ViewHolder)`，用于只能通过[item]切换选择/取消选择的情况。
  *
  * @return `true`表示切换成功，`false`表示切换失败。
  */
-fun <ITEM : Any> Selection<ITEM, *>.toggleSelect(
-    item: ITEM
-): Boolean = if (!isSelected(item)) {
-    select(item)
-} else {
-    unselect(item)
+fun <ITEM : Any> Selection<ITEM, *>.toggleSelect(item: ITEM): Boolean {
+    return if (!isSelected(item)) select(item) else unselect(item)
 }
 
 /**
- * 切换选择/取消选择
+ * 通过[holder]切换选择/取消选择
  *
  * @return `true`表示切换成功，`false`表示切换失败。
  */
-fun Selection<*, *>.toggleSelect(
-    holder: ViewHolder
-): Boolean = if (!isSelected(holder)) {
-    select(holder)
-} else {
-    unselect(holder)
+fun Selection<*, *>.toggleSelect(holder: ViewHolder): Boolean {
+    return if (!isSelected(holder)) select(holder) else unselect(holder)
 }
