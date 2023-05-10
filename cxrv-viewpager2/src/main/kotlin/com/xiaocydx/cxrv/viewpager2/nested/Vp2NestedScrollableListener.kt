@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.viewpager2.nested
+package com.xiaocydx.cxrv.viewpager2.nested
 
 import android.view.MotionEvent
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import com.xiaocydx.sample.R
+import com.xiaocydx.cxrv.viewpager2.R
 
 /**
  * 是否处理[ViewPager2]嵌套[RecyclerView]的滚动冲突
@@ -52,7 +52,7 @@ private class Vp2NestedScrollableListener : RecyclerView.OnItemTouchListener {
         return false
     }
 
-    override fun onTouchEvent(rv: RecyclerView, e: MotionEvent): Unit = Unit
+    override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) = Unit
 
-    override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean): Unit = Unit
+    override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) = Unit
 }

@@ -54,6 +54,7 @@ dependencies {
     implementation(project(":cxrv"))
     implementation(project(":cxrv-paging"))
     implementation(project(":cxrv-binding"))
+    implementation(project(":cxrv-viewpager2"))
     implementation(project(":cxrv-animatable"))
     testImplementation("junit:junit:4.+")
     androidTestImplementation("androidx.test.ext:junit:1.1.2")

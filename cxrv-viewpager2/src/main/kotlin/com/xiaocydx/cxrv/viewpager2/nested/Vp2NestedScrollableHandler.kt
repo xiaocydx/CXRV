@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.viewpager2.nested
+package com.xiaocydx.cxrv.viewpager2.nested
 
 import android.view.*
 import androidx.recyclerview.widget.RecyclerView
@@ -27,8 +27,7 @@ import kotlin.math.sign
  * 处理[ViewPager2]嵌套[RecyclerView]等滚动控件的滚动冲突
  *
  * 1. 若此类用于容器方案，则需要传入[host]，例如[Vp2NestedScrollableHost]。
- * 2. 此类不支持处理多指的滚动冲突，这会增加代码的复杂度，
- * 而且调用场景也不需要处理多指的滚动冲突，因为实用性较低。
+ * 2. 此类不支持处理多指的滚动冲突，实际场景通常不需要处理多指的滚动冲突。
  *
  * @author xcc
  * @date 2022/7/8
@@ -46,9 +45,9 @@ class Vp2NestedScrollableHandler constructor() {
      *
      * 若[handleInterceptTouchEvent]在[RecyclerView.OnItemTouchListener.onInterceptTouchEvent]下调用，
      * 则[handleInterceptTouchEvent]在[RecyclerView]开始滚动之后仍然会被调用，
-     * 因此添加[nestedScrollableHandled]，用于避免冗余的滚动冲突处理。
+     * 因此添加[isNestedScrollableHandled]，用于避免冗余的滚动冲突处理。
      */
-    private var nestedScrollableHandled = false
+    private var isNestedScrollableHandled = false
 
     constructor(host: ViewGroup) : this() {
         this.host = host
@@ -61,14 +60,12 @@ class Vp2NestedScrollableHandler constructor() {
      * `pagingTouchSlop = 2 * scaledTouchSlop`。
      */
     fun handleInterceptTouchEvent(child: View, e: MotionEvent) {
-        if (nestedScrollableHandled && e.action != MotionEvent.ACTION_DOWN) {
-            return
-        }
+        if (isNestedScrollableHandled && e.action != MotionEvent.ACTION_DOWN) return
         when (e.action) {
             MotionEvent.ACTION_DOWN -> {
-                nestedScrollableHandled = false
+                isNestedScrollableHandled = false
                 if (!ensureVp2Orientation(child) || !ensureVp2TouchSlop(child)) {
-                    nestedScrollableHandled = true
+                    isNestedScrollableHandled = true
                     return
                 }
                 initialTouchX = e.x.toRoundPx()
@@ -99,7 +96,7 @@ class Vp2NestedScrollableHandler constructor() {
                         }
                     }
                     child.requestDisallowInterceptTouchEvent(disallowIntercept)
-                    nestedScrollableHandled = true
+                    isNestedScrollableHandled = true
                 }
             }
         }
