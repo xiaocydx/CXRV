@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.viewpager2.animatable
+@file:Suppress("SpellCheckingInspection")
+
+package com.xiaocydx.cxrv.animatable
 
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnScrollListener
@@ -22,9 +24,8 @@ import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
 import com.xiaocydx.cxrv.list.Disposable
 
 /**
- * 添加受[RecyclerView]滚动控制的[AnimatableController]
+ * 添加受[AnimatableMediator.recyclerView]滚动控制的[AnimatableController]
  */
-@Suppress("SpellCheckingInspection")
 fun AnimatableMediator.controlledByScroll(): Disposable {
     findAnimatableController<RecyclerViewScrollController>()?.dispose()
     return RecyclerViewScrollController().attach(this)

@@ -17,6 +17,10 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.setRecycleAllViewsOnDetach
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
+import com.xiaocydx.cxrv.animatable.controlledByParentViewPager2
+import com.xiaocydx.cxrv.animatable.controlledByScroll
+import com.xiaocydx.cxrv.animatable.registerImageView
+import com.xiaocydx.cxrv.animatable.setAnimatableMediator
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -30,10 +34,6 @@ import com.xiaocydx.sample.foo.Foo
 import com.xiaocydx.sample.foo.FooListViewModel
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
-import com.xiaocydx.sample.viewpager2.animatable.controlledByParentViewPager2
-import com.xiaocydx.sample.viewpager2.animatable.controlledByScroll
-import com.xiaocydx.sample.viewpager2.animatable.registerImageView
-import com.xiaocydx.sample.viewpager2.animatable.setAnimatableMediator
 import com.xiaocydx.sample.viewpager2.nested.isVp2NestedScrollable
 import com.xiaocydx.sample.viewpager2.shared.findParentViewPager2
 import com.xiaocydx.sample.viewpager2.shared.sharedRecycledViewPool

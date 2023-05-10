@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
 
-package com.xiaocydx.sample.viewpager2.animatable
+package com.xiaocydx.cxrv.animatable
 
 import android.graphics.Rect
 import android.graphics.drawable.Animatable
 import android.widget.ImageView
 import androidx.annotation.FloatRange
-import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.xiaocydx.cxrv.internal.isVisible
 import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 
 /**
  * 添加[ImageView]的[AnimatableProvider]
  *
- * 当[ViewHolder.getBindingAdapter]等于[adapter]时，才调用[provider]。
- *
+ * @param provider      当`holder.bindingAdapter`等于[adapter]时，才调用[provider]。
  * @param visiableRatio [provider]返回的[ImageView]，其可视比例大于或等于该值才开始动图。
  */
 fun <VH : ViewHolder> AnimatableMediator.registerImageView(
@@ -47,10 +46,8 @@ fun <VH : ViewHolder> AnimatableMediator.registerImageView(
 /**
  * 添加[ImageView]的[AnimatableProvider]
  *
- * 当[ViewHolder.getBindingAdapter]等于`delegate.adapter`，
- * 并且[ViewHolder.getItemViewType]等于`delegate.viewType`时，
- * 才调用[provider]。
- *
+ * @param provider      当`holder.bindingAdapter`等于`delegate.adapter`，
+ * 并且`holder.viewType`等于`delegate.viewType`时，才调用[provider]。
  * @param visiableRatio [provider]返回的[ImageView]，其可视比例大于或等于该值才开始动图。
  */
 fun <VH : ViewHolder> AnimatableMediator.registerImageView(
@@ -61,6 +58,41 @@ fun <VH : ViewHolder> AnimatableMediator.registerImageView(
     mediator = this,
     provider = ViewTypeDelegateProvider(delegate, visiableRatio, provider)
 )
+
+/**
+ * 可废弃的[AnimatableProvider]
+ */
+class AnimatableProviderDisposable : AnimatableProvider {
+    private var mediator: AnimatableMediator? = null
+    private var provider: AnimatableProvider? = null
+    override val isDisposed: Boolean
+        get() = mediator == null && provider == null
+
+    fun attach(
+        mediator: AnimatableMediator,
+        provider: AnimatableProvider
+    ): Disposable {
+        this.mediator = mediator
+        this.provider = provider
+        mediator.addAnimatableProvider(this)
+        return this
+    }
+
+    override fun getAnimatableOrNull(holder: ViewHolder): Animatable? {
+        return provider?.getAnimatableOrNull(holder)
+    }
+
+    override fun canStartAnimatable(holder: ViewHolder, animatable: Animatable): Boolean {
+        return provider?.canStartAnimatable(holder, animatable) ?: true
+    }
+
+    override fun dispose() {
+        mediator?.removeAnimatableProvider(this)
+        provider?.dispose()
+        mediator = null
+        provider = null
+    }
+}
 
 private class AdapterProvider<VH : ViewHolder>(
     private val adapter: Adapter<VH>,
@@ -109,40 +141,5 @@ private abstract class ImageViewProvider<VH : ViewHolder>(
 
     override fun dispose() {
         isDisposed = true
-    }
-}
-
-/**
- * 可废弃的[AnimatableProvider]
- */
-class AnimatableProviderDisposable : AnimatableProvider {
-    private var mediator: AnimatableMediator? = null
-    private var provider: AnimatableProvider? = null
-    override val isDisposed: Boolean
-        get() = mediator == null && provider == null
-
-    fun attach(
-        mediator: AnimatableMediator,
-        provider: AnimatableProvider
-    ): Disposable {
-        this.mediator = mediator
-        this.provider = provider
-        mediator.addAnimatableProvider(this)
-        return this
-    }
-
-    override fun getAnimatableOrNull(holder: ViewHolder): Animatable? {
-        return provider?.getAnimatableOrNull(holder)
-    }
-
-    override fun canStartAnimatable(holder: ViewHolder, animatable: Animatable): Boolean {
-        return provider?.canStartAnimatable(holder, animatable) ?: true
-    }
-
-    override fun dispose() {
-        mediator?.removeAnimatableProvider(this)
-        provider?.dispose()
-        mediator = null
-        provider = null
     }
 }

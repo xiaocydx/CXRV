@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.viewpager2.animatable
+@file:Suppress("SpellCheckingInspection")
+
+package com.xiaocydx.cxrv.animatable
 
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Lifecycle.Event.*
+import androidx.lifecycle.Lifecycle.State.*
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.xiaocydx.cxrv.list.Disposable
 
 /**
- * 添加受父级[lifecycle]控制的[AnimatableController]
+ * 添加受[lifecycle]控制的[AnimatableController]
  *
- * @param state 当[lifecycle]的状态小于[state]时，调用[AnimatableMediator.stopAllAnimatable]
+ * @param state 当[lifecycle]的状态小于[state]时，停止全部。
  */
-@Suppress("SpellCheckingInspection")
 fun AnimatableMediator.controlledByLifecycle(lifecycle: Lifecycle, state: Lifecycle.State): Disposable {
     findAnimatableController<RecyclerViewLifecycleController>()?.dispose()
     return RecyclerViewLifecycleController(state).attach(this, lifecycle)
@@ -54,14 +57,28 @@ private class RecyclerViewLifecycleController(
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        val startEvent = Lifecycle.Event.upTo(state)
-        val stopEvent = Lifecycle.Event.downFrom(state)
+        val startEvent = upTo(state)
+        val stopEvent = downFrom(state)
         when (event) {
-            Lifecycle.Event.ON_DESTROY -> dispose()
+            ON_DESTROY -> dispose()
             startEvent -> mediator?.startAllAnimatable()
             stopEvent -> mediator?.stopAllAnimatable()
             else -> return
         }
+    }
+
+    private fun upTo(state: Lifecycle.State) = when (state) {
+        CREATED -> ON_CREATE
+        STARTED -> ON_START
+        RESUMED -> ON_RESUME
+        else -> null
+    }
+
+    private fun downFrom(state: Lifecycle.State) = when (state) {
+        CREATED -> ON_DESTROY
+        STARTED -> ON_STOP
+        RESUMED -> ON_PAUSE
+        else -> null
     }
 
     override fun dispose() {

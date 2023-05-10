@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.viewpager2.animatable
+@file:Suppress("SpellCheckingInspection")
+
+package com.xiaocydx.cxrv.animatable
 
 import android.view.View
 import android.view.View.OnAttachStateChangeListener
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.xiaocydx.cxrv.list.Disposable
 import java.lang.ref.WeakReference
 
 /**
- * 添加受父级[viewPager2]控制的[AnimatableController]
+ * 添加受父级[viewPager2]滚动控制的[AnimatableController]
  */
-@Suppress("SpellCheckingInspection")
 fun AnimatableMediator.controlledByParentViewPager2(viewPager2: ViewPager2): Disposable {
     findAnimatableController<ParentViewPager2Controller>()?.dispose()
     return ParentViewPager2Controller().attach(this, viewPager2)
@@ -73,7 +73,7 @@ private class ParentViewPager2Controller : OnPageChangeCallback(),
         val rvChild = mediator?.recyclerView ?: return
         val viewPager2 = viewPager2 ?: return
         val realParent = viewPager2.getChildAt(0) as? RecyclerView ?: return
-        val holder: ViewHolder = realParent.findContainingViewHolder(rvChild) ?: return
+        val holder = realParent.findContainingViewHolder(rvChild) ?: return
         if (holder.layoutPosition == viewPager2.currentItem) {
             mediator?.startAllAnimatable()
         }

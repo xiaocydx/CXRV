@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.viewpager2.animatable
+@file:Suppress("SpellCheckingInspection", "INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+
+package com.xiaocydx.cxrv.animatable
 
 import android.view.View
-import android.view.ViewTreeObserver
-import androidx.core.view.OneShotPreDrawListener
 import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.cxrv.internal.PreDrawListener
+import com.xiaocydx.cxrv.internal.accessEach
 import com.xiaocydx.cxrv.list.Disposable
 
 /**
@@ -29,7 +31,6 @@ import com.xiaocydx.cxrv.list.Disposable
  * @date 2022/7/23
  */
 @PublishedApi
-@Suppress("SpellCheckingInspection")
 internal class AnimatableMediatorImpl(
     override val recyclerView: RecyclerView
 ) : AnimatableMediator, () -> Unit {
@@ -134,10 +135,6 @@ internal class AnimatableMediatorImpl(
         }
     }
 
-    private inline fun <T> ArrayList<T>.accessEach(action: (T) -> Unit) {
-        for (index in this.indices) action(get(index))
-    }
-
     override fun dispose() {
         providers?.accessEach { it.dispose() }
         controllers?.accessEach { it.dispose() }
@@ -146,57 +143,5 @@ internal class AnimatableMediatorImpl(
         controllers = null
         preDrawListener = null
         isDisposed = true
-    }
-}
-
-/**
- * 实现逻辑改造自[OneShotPreDrawListener]
- */
-private class PreDrawListener(
-    private val view: View,
-    private val action: (() -> Unit)? = null
-) : ViewTreeObserver.OnPreDrawListener, View.OnAttachStateChangeListener {
-    private var isAddedPreDrawListener = false
-    private var viewTreeObserver: ViewTreeObserver = view.viewTreeObserver
-
-    init {
-        addOnPreDrawListener()
-        view.addOnAttachStateChangeListener(this)
-    }
-
-    override fun onPreDraw(): Boolean {
-        action?.invoke()
-        return true
-    }
-
-    override fun onViewAttachedToWindow(view: View) {
-        viewTreeObserver = view.viewTreeObserver
-        addOnPreDrawListener()
-    }
-
-    override fun onViewDetachedFromWindow(view: View) {
-        // 从视图树中移除监听，避免出现内存泄漏问题
-        removeOnPreDrawListener()
-    }
-
-    fun removeListener() {
-        removeOnPreDrawListener()
-        view.removeOnAttachStateChangeListener(this)
-    }
-
-    private fun addOnPreDrawListener() {
-        if (isAddedPreDrawListener) return
-        isAddedPreDrawListener = true
-        viewTreeObserver.addOnPreDrawListener(this)
-    }
-
-    private fun removeOnPreDrawListener() {
-        if (!isAddedPreDrawListener) return
-        isAddedPreDrawListener = false
-        if (viewTreeObserver.isAlive) {
-            viewTreeObserver.removeOnPreDrawListener(this)
-        } else {
-            view.viewTreeObserver.removeOnPreDrawListener(this)
-        }
     }
 }
