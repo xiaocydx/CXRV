@@ -48,10 +48,13 @@
             android:name=".paging.article.ArticleListActivity"
             android:exported="false" />
         <activity
+            android:name=".nested.NestedListActivity"
+            android:exported="false" />
+        <activity
             android:name=".viewpager2.ViewPager2Activity"
             android:exported="false" />
         <activity
-            android:name=".nested.NestedListActivity"
+            android:name=".viewpager2.pageloop.PageLoopActivity"
             android:exported="false" />
     </application>
 </manifest>

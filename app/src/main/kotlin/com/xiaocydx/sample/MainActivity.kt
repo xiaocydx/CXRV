@@ -21,6 +21,7 @@ import com.xiaocydx.sample.paging.PagingActivity
 import com.xiaocydx.sample.paging.article.ArticleListActivity
 import com.xiaocydx.sample.payload.PayloadActivity
 import com.xiaocydx.sample.viewpager2.ViewPager2Activity
+import com.xiaocydx.sample.viewpager2.pageloop.PageLoopActivity
 
 /**
  * @author xcc
@@ -60,7 +61,8 @@ class MainActivity : AppCompatActivity() {
             StartItem<HeaderFooterActivity>("HeaderFooter示例"),
             StartItem<PagingActivity>("分页加载示例（本地测试）"),
             StartItem<ArticleListActivity>("分页加载示例（网络请求）"),
-            StartItem<ViewPager2Activity>("ViewPager2共享池示例")
+            StartItem<ViewPager2Activity>("ViewPager2共享池示例"),
+            StartItem<PageLoopActivity>("ViewPager2页面循环示例")
         ))
     }
 
