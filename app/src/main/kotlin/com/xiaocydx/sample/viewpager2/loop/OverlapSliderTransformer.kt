@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.viewpager2.pageloop
+package com.xiaocydx.sample.viewpager2.loop
 
 import android.content.res.Resources
 import android.view.View

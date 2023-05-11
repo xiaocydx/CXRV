@@ -22,19 +22,17 @@ package androidx.recyclerview.widget
 import android.annotation.SuppressLint
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView.*
-import com.xiaocydx.cxrv.viewpager2.pageloop.PageLoopContent
+import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent
+import com.xiaocydx.cxrv.viewpager2.loop.RecordDataObserver
 
 /**
  * @author xcc
  * @date 2023/5/11
  */
-internal class PageLoopAdapter(
-    private val content: PageLoopContent,
-    private val updateAnchor: () -> Unit,
-) : Adapter<ViewHolder>() {
+internal class LoopPagerAdapter(private val content: LoopPagerContent) : Adapter<ViewHolder>() {
     private val observer = AdapterDataObserverImpl()
-    private val header = ExtraPage(isHeader = true, content, this, updateAnchor)
-    private val footer = ExtraPage(isHeader = false, content, this, updateAnchor)
+    private val header = ContentExtraPage(isHeader = true, content, this)
+    private val footer = ContentExtraPage(isHeader = false, content, this)
 
     @Suppress("UNCHECKED_CAST")
     private val contentAdapter = content.adapter as Adapter<ViewHolder>
@@ -53,15 +51,15 @@ internal class PageLoopAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>) {
         val bindingAdapterPosition = content.toBindingAdapterPosition(position)
-        // 将holder.mBindingAdapter，修改为contentAdapter，
-        // 确保不影响依靠bindingAdapter和bindingAdapterPosition实现的功能。
+        // 将holder.mBindingAdapter修改为contentAdapter，
+        // 确保不影响使用bindingAdapter和bindingAdapterPosition实现的功能。
         holder.mBindingAdapter = contentAdapter
         contentAdapter.onBindViewHolder(holder, bindingAdapterPosition, payloads)
     }
 
     override fun findRelativeAdapterPositionIn(adapter: Adapter<*>, holder: ViewHolder, position: Int): Int {
-        // 将holder.bindingAdapterPosition，修改为contentAdapter的position，
-        // 确保不影响依靠bindingAdapter和bindingAdapterPosition实现的功能。
+        // 将holder.bindingAdapterPosition修改为contentAdapter的position，
+        // 确保不影响使用bindingAdapter和bindingAdapterPosition实现的功能。
         val isValidAdapter = adapter === this || adapter === contentAdapter
         return if (isValidAdapter) content.toBindingAdapterPosition(position) else NO_POSITION
     }
@@ -100,13 +98,23 @@ internal class PageLoopAdapter(
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        contentAdapter.registerAdapterDataObserver(observer)
-        contentAdapter.onAttachedToRecyclerView(recyclerView)
+        header.recordContentCount()
+        footer.recordContentCount()
+        contentAdapter.apply {
+            registerAdapterDataObserver(header)
+            registerAdapterDataObserver(footer)
+            registerAdapterDataObserver(observer)
+            onAttachedToRecyclerView(recyclerView)
+        }
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        contentAdapter.unregisterAdapterDataObserver(observer)
-        contentAdapter.onDetachedFromRecyclerView(recyclerView)
+        contentAdapter.apply {
+            unregisterAdapterDataObserver(header)
+            unregisterAdapterDataObserver(footer)
+            unregisterAdapterDataObserver(observer)
+            onDetachedFromRecyclerView(recyclerView)
+        }
     }
 
     override fun setStateRestorationPolicy(strategy: StateRestorationPolicy) {
@@ -114,17 +122,11 @@ internal class PageLoopAdapter(
         super.setStateRestorationPolicy(strategy)
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     private inner class AdapterDataObserverImpl : AdapterDataObserver() {
-        private var lastContentCount = 0
 
-        fun recordContentCount() {
-            lastContentCount = content.itemCount
-        }
-
+        @SuppressLint("NotifyDataSetChanged")
         override fun onChanged() {
-            recordContentCount()
-            this@PageLoopAdapter.notifyDataSetChanged()
+            this@LoopPagerAdapter.notifyDataSetChanged()
         }
 
         override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
@@ -132,53 +134,42 @@ internal class PageLoopAdapter(
         }
 
         override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
-            header.onContentRangeChanged(positionStart, itemCount, payload, lastContentCount)
-            footer.onContentRangeChanged(positionStart, itemCount, payload, lastContentCount)
-            recordContentCount()
             val start = positionStart + header.itemCount
-            this@PageLoopAdapter.notifyItemRangeChanged(start, itemCount, payload)
+            this@LoopPagerAdapter.notifyItemRangeChanged(start, itemCount, payload)
         }
 
         override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-            header.onContentRangeInserted(positionStart, itemCount, lastContentCount)
-            footer.onContentRangeInserted(positionStart, itemCount, lastContentCount)
-            recordContentCount()
             val start = positionStart + header.itemCount
-            this@PageLoopAdapter.notifyItemRangeInserted(start, itemCount)
+            this@LoopPagerAdapter.notifyItemRangeInserted(start, itemCount)
         }
 
         override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-            header.onContentRangeRemoved(positionStart, itemCount, lastContentCount)
-            footer.onContentRangeRemoved(positionStart, itemCount, lastContentCount)
-            recordContentCount()
             val start = positionStart + header.itemCount
-            this@PageLoopAdapter.notifyItemRangeRemoved(start, itemCount)
+            this@LoopPagerAdapter.notifyItemRangeRemoved(start, itemCount)
         }
 
         override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
-            header.onContentRangeMoved(fromPosition, toPosition, itemCount, lastContentCount)
-            footer.onContentRangeMoved(fromPosition, toPosition, itemCount, lastContentCount)
-            recordContentCount()
             val from = fromPosition + header.itemCount
             val to = toPosition + header.itemCount
-            this@PageLoopAdapter.notifyItemMoved(from, to)
+            this@LoopPagerAdapter.notifyItemMoved(from, to)
         }
     }
 }
 
-private class ExtraPage(
+private class ContentExtraPage(
     private val isHeader: Boolean,
-    private val content: PageLoopContent,
-    private val adapter: PageLoopAdapter,
-    private val updateAnchor: () -> Unit
-) {
-    private var currentAsItem = false
+    private val content: LoopPagerContent,
+    private val adapter: LoopPagerAdapter
+) : RecordDataObserver(content.adapter) {
+    private var currentAsItem = content.canLoop
     private var previousAsItem = currentAsItem
 
     val itemCount: Int
         get() = if (currentAsItem) content.extraPageLimit else 0
 
-    fun updateItem(payload: Any? = null) {
+    fun recordContentCount() = recordItemCount()
+
+    private fun updateExtraPage(payload: Any? = null) {
         currentAsItem = content.canLoop
         // TODO: 一定要更新全部？
         val start = if (isHeader) 0 else adapter.itemCount - itemCount
@@ -196,30 +187,12 @@ private class ExtraPage(
         previousAsItem = currentAsItem
     }
 
-    fun onContentRangeChanged(start: Int, count: Int, payload: Any?, lastItemCount: Int) {
-    }
-
-    fun onContentRangeInserted(start: Int, count: Int, lastItemCount: Int) {
+    // TODO: 补充全部更新逻辑，解决离屏缓存的更新问题
+    override fun itemRangeInserted(positionStart: Int, itemCount: Int) {
         when {
-            start < 0 -> return
-            lastItemCount == 0 -> if (count > 1) updateItem()
-            isHeader && start == lastItemCount -> {
-                updateItem()
-                updateAnchor()
-            }
-            !isHeader && start == 0 -> {
-                updateItem()
-                updateAnchor()
-            }
+            lastItemCount == 0 -> if (itemCount > 1) updateExtraPage()
+            isHeader && positionStart == lastItemCount -> updateExtraPage()
+            !isHeader && positionStart == 0 -> updateExtraPage()
         }
-        // TODO: 头插和尾插需要更新锚点
-    }
-
-    fun onContentRangeRemoved(start: Int, count: Int, lastItemCount: Int) {
-    }
-
-    fun onContentRangeMoved(from: Int, to: Int, count: Int, lastItemCount: Int) {
     }
 }
-
-

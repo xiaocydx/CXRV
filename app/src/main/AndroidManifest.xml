@@ -54,7 +54,7 @@
             android:name=".viewpager2.ViewPager2Activity"
             android:exported="false" />
         <activity
-            android:name=".viewpager2.pageloop.PageLoopActivity"
+            android:name=".viewpager2.loop.LoopPagerActivity"
             android:exported="false" />
     </application>
 </manifest>

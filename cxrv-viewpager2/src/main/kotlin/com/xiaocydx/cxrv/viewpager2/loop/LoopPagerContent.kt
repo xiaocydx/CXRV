@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.viewpager2.pageloop
+package com.xiaocydx.cxrv.viewpager2.loop
 
-import androidx.recyclerview.widget.PageLoopAdapter
-import androidx.recyclerview.widget.PageLoopCallback
+import androidx.recyclerview.widget.LoopPagerAdapter
+import androidx.recyclerview.widget.LoopPagerCallback
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewpager2.widget.ViewPager2
 
@@ -25,7 +25,7 @@ import androidx.viewpager2.widget.ViewPager2
  * @author xcc
  * @date 2023/5/11
  */
-internal class PageLoopContent(val adapter: Adapter<*>, val extraPageLimit: Int) {
+internal class LoopPagerContent(val adapter: Adapter<*>, val extraPageLimit: Int) {
 
     val itemCount: Int
         get() = adapter.itemCount
@@ -33,9 +33,9 @@ internal class PageLoopContent(val adapter: Adapter<*>, val extraPageLimit: Int)
     val canLoop: Boolean
         get() = itemCount > 1
 
-    fun createPageLoopCallback(viewPager2: ViewPager2) = PageLoopCallback(this, viewPager2)
+    fun createLoopPagerAdapter() = LoopPagerAdapter(this)
 
-    fun createPageLoopAdapter(updateAnchor: () -> Unit) = PageLoopAdapter(this, updateAnchor)
+    fun createLoopPagerCallback(viewPager2: ViewPager2) = LoopPagerCallback(this, viewPager2)
 
     fun toBindingAdapterPosition(layoutPosition: Int): Int {
         if (!canLoop) return layoutPosition

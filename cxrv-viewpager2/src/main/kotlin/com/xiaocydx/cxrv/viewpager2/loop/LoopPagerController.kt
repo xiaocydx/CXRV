@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.viewpager2.pageloop
+package com.xiaocydx.cxrv.viewpager2.loop
 
-import androidx.recyclerview.widget.PageLoopAdapter
-import androidx.recyclerview.widget.PageLoopCallback
+import androidx.recyclerview.widget.LoopPagerAdapter
+import androidx.recyclerview.widget.LoopPagerCallback
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewpager2.widget.ViewPager2
 
@@ -25,49 +25,51 @@ import androidx.viewpager2.widget.ViewPager2
  * @author xcc
  * @date 2023/5/9
  */
-class PageLoopHelper(
+class LoopPagerController(
     private val viewPager2: ViewPager2,
     private val contentAdapter: Adapter<*>,
     private val extraPageLimit: Int = 1
 ) {
     private var notEmptyObserver: NotEmptyObserver? = null
-    private var pageLoopCallback: PageLoopCallback? = null
-    private var pageLoopAdapter: PageLoopAdapter? = null
+    private var loopPagerAdapter: LoopPagerAdapter? = null
+    private var loopPagerCallback: LoopPagerCallback? = null
 
+    // TODO: 补充运行时的loopPagerAdapter断言
     fun attach() = apply {
-        if (pageLoopAdapter != null) return@apply
-        val content = PageLoopContent(contentAdapter, extraPageLimit)
-        pageLoopCallback = content.createPageLoopCallback(viewPager2)
-        pageLoopAdapter = content.createPageLoopAdapter(pageLoopCallback!!::updateAnchor)
-        pageLoopCallback?.let(viewPager2::registerOnPageChangeCallback)
-        viewPager2.adapter = pageLoopAdapter
+        if (loopPagerAdapter != null) return@apply
+        val content = LoopPagerContent(contentAdapter, extraPageLimit)
+        loopPagerAdapter = content.createLoopPagerAdapter()
+        loopPagerCallback = content.createLoopPagerCallback(viewPager2)
+        loopPagerCallback?.attach()
+        viewPager2.adapter = loopPagerAdapter
     }
 
     fun detach() = apply {
-        if (pageLoopAdapter == null) return@apply
+        if (loopPagerAdapter == null) return@apply
         viewPager2.adapter = contentAdapter
-        pageLoopCallback?.let(viewPager2::unregisterOnPageChangeCallback)
+        loopPagerCallback?.detach()
         notEmptyObserver?.removeObserver()
         notEmptyObserver = null
-        pageLoopAdapter = null
-        pageLoopCallback = null
+        loopPagerAdapter = null
+        loopPagerCallback = null
     }
 
+    // TODO: 观察平滑滚动是否符合预期，需要记录layoutManager的状态么？
     fun setCurrentItem(position: Int, smoothScroll: Boolean = false) {
-        val pageLoopAdapter = pageLoopAdapter ?: return
-        assert(viewPager2.adapter == pageLoopAdapter)
+        val loopPagerAdapter = loopPagerAdapter ?: return
+        assert(viewPager2.adapter == loopPagerAdapter)
 
         notEmptyObserver?.removeObserver()
         notEmptyObserver = null
-        if (pageLoopAdapter.itemCount == 0) {
-            notEmptyObserver = NotEmptyObserver(pageLoopAdapter) {
+        if (loopPagerAdapter.itemCount == 0) {
+            notEmptyObserver = NotEmptyObserver(loopPagerAdapter) {
                 setCurrentItem(position, smoothScroll)
             }
             return
         }
 
         var layoutPosition = position
-        if (pageLoopAdapter.itemCount > 1) {
+        if (loopPagerAdapter.itemCount > 1) {
             layoutPosition += extraPageLimit
         }
         viewPager2.setCurrentItem(layoutPosition, smoothScroll)

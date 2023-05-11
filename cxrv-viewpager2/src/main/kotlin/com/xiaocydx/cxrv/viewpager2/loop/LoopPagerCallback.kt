@@ -23,25 +23,45 @@ import android.view.View
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.internal.doOnPreDraw
-import com.xiaocydx.cxrv.viewpager2.pageloop.PageLoopContent
+import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent
+import com.xiaocydx.cxrv.viewpager2.loop.RecordDataObserver
 
 /**
  * @author xcc
  * @date 2023/5/11
  */
-internal class PageLoopCallback(
-    private val content: PageLoopContent,
+internal class LoopPagerCallback(
+    private val content: LoopPagerContent,
     private val viewPager2: ViewPager2
 ) : ViewPager2.OnPageChangeCallback() {
+    private var isAttached = false
+    private val observer = AdapterDataObserverImpl()
 
-    // FIXME: 多指时无效
-    override fun onPageScrollStateChanged(state: Int) {
-        if (state == ViewPager2.SCROLL_STATE_DRAGGING) updateAnchor()
+    fun attach() {
+        if (isAttached) return
+        isAttached = true
+        viewPager2.registerOnPageChangeCallback(this)
+        content.adapter.registerAdapterDataObserver(observer)
     }
 
-    fun updateAnchor() {
+    fun detach() {
+        if (!isAttached) return
+        isAttached = false
+        viewPager2.unregisterOnPageChangeCallback(this)
+        content.adapter.unregisterAdapterDataObserver(observer)
+    }
+
+    // TODO:
+    //  1. 修复多指无效的问题
+    //  2. 滚动过程更新会是什么表现？
+    override fun onPageScrollStateChanged(state: Int) {
+        if (state == ViewPager2.SCROLL_STATE_DRAGGING) {
+            setPendingAnchorInfo(content.itemCount)
+        }
+    }
+
+    private fun setPendingAnchorInfo(contentCount: Int) {
         if (!content.canLoop) return
-        val contentCount = content.itemCount
         val extraPageLimit = content.extraPageLimit
         val currentItem = when (val layoutPosition = viewPager2.currentItem) {
             extraPageLimit - 1 -> contentCount + layoutPosition
@@ -54,11 +74,23 @@ internal class PageLoopCallback(
     private fun setCurrentItem(currentItem: Int) {
         if (viewPager2.currentItem == currentItem) return
         viewPager2.setCurrentItem(currentItem, false)
-        viewPager2.optimizeNextFrameCurrentItem(content)
+        viewPager2.optimizeNextFrameSetCurrentItemScroll(content)
+    }
+
+    private inner class AdapterDataObserverImpl : RecordDataObserver(content.adapter) {
+
+        // TODO: 补充全部更新逻辑，解决离屏缓存的更新问题
+        override fun itemRangeInserted(positionStart: Int, itemCount: Int) {
+            when {
+                lastItemCount == 0 -> return
+                positionStart == lastItemCount -> setPendingAnchorInfo(lastItemCount)
+                positionStart == 0 -> setPendingAnchorInfo(lastItemCount)
+            }
+        }
     }
 }
 
-private fun ViewPager2.optimizeNextFrameCurrentItem(content: PageLoopContent) {
+private fun ViewPager2.optimizeNextFrameSetCurrentItemScroll(content: LoopPagerContent) {
     val recyclerView = getChildAt(0) as? RecyclerView ?: return
     // reflect < 1ms
     val original = recyclerView.getViewCacheExtensionOrNull()
@@ -68,6 +100,7 @@ private fun ViewPager2.optimizeNextFrameCurrentItem(content: PageLoopContent) {
     doOnPreDraw { recyclerView.setViewCacheExtension(original) }
 }
 
+// TODO: 统一mViewCacheExtensionField的缓存
 private fun RecyclerView.getViewCacheExtensionOrNull(): ViewCacheExtension? {
     val mViewCacheExtensionField = runCatching {
         mRecycler.javaClass.getDeclaredField("mViewCacheExtension")
@@ -76,7 +109,7 @@ private fun RecyclerView.getViewCacheExtensionOrNull(): ViewCacheExtension? {
 }
 
 private class GetScrapOrCachedViewExtension(
-    private val content: PageLoopContent,
+    private val content: LoopPagerContent,
     private val recyclerView: RecyclerView,
     private val original: ViewCacheExtension?
 ) : ViewCacheExtension() {
@@ -95,7 +128,7 @@ private class GetScrapOrCachedViewExtension(
         for (index in attachedScrap.indices) {
             val holder = attachedScrap[index]
             if (!holder.wasReturnedFromScrap()
-                    && holder.isEqualsBindingAdapterPosition(position)
+                    && holder.isSameBindingAdapterPosition(position)
                     && !holder.isInvalid && !holder.isRemoved) {
                 holder.mPosition = position
                 holder.addFlags(ViewHolder.FLAG_RETURNED_FROM_SCRAP)
@@ -107,7 +140,7 @@ private class GetScrapOrCachedViewExtension(
         for (index in cachedViews.indices) {
             val holder = cachedViews[index]
             if (!holder.isInvalid
-                    && holder.isEqualsBindingAdapterPosition(position)
+                    && holder.isSameBindingAdapterPosition(position)
                     && !holder.isAttachedToTransitionOverlay) {
                 holder.mPosition = position
                 mCachedViews?.removeAt(index)
@@ -117,7 +150,7 @@ private class GetScrapOrCachedViewExtension(
         return null
     }
 
-    private fun ViewHolder.isEqualsBindingAdapterPosition(position: Int): Boolean {
+    private fun ViewHolder.isSameBindingAdapterPosition(position: Int): Boolean {
         return content.toBindingAdapterPosition(layoutPosition) == content.toBindingAdapterPosition(position)
     }
 }

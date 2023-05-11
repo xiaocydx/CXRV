@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.viewpager2.pageloop
+package com.xiaocydx.sample.viewpager2.loop
 
 import android.os.Bundle
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -9,9 +9,10 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
 import com.xiaocydx.cxrv.list.listCollector
 import com.xiaocydx.cxrv.list.onEach
-import com.xiaocydx.cxrv.viewpager2.pageloop.PageLoopHelper
+import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.showToast
@@ -25,11 +26,11 @@ import kotlin.math.abs
  * @author xcc
  * @date 2023/5/11
  */
-class PageLoopActivity : AppCompatActivity() {
+class LoopPagerActivity : AppCompatActivity() {
     private val viewModel: ContentViewModel by viewModels()
     private lateinit var viewPager2: ViewPager2
     private lateinit var adapter: ContentListAdapter
-    private lateinit var helper: PageLoopHelper
+    private lateinit var controller: LoopPagerController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +46,7 @@ class PageLoopActivity : AppCompatActivity() {
             it.withLayoutParams(MATCH_PARENT, MATCH_PARENT)
         }
 
-        helper = PageLoopHelper(viewPager2, adapter, extraPageLimit = 2).attach()
+        controller = LoopPagerController(viewPager2, adapter, extraPageLimit = 2).attach()
 
         val tlWidth = 30.dp
         val brWidth = 30.dp
@@ -79,10 +80,14 @@ class PageLoopActivity : AppCompatActivity() {
                     "layoutPosition = ${holder.layoutPosition}\n" +
                     "bindingAdapterPosition = ${holder.bindingAdapterPosition}")
         }
+        adapter.doOnLongItemClick { holder, item ->
+            viewModel.refresh()
+            true
+        }
 
         viewModel.refreshEvent
             .onStart { emit(Unit) }
-            .onEach { helper.setCurrentItem(0) }
+            .onEach { controller.setCurrentItem(0) }
             .launchIn(lifecycleScope)
 
         viewModel.flow

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.viewpager2.pageloop
+package com.xiaocydx.cxrv.viewpager2.loop
 
 import android.view.Choreographer
 import androidx.recyclerview.widget.RecyclerView

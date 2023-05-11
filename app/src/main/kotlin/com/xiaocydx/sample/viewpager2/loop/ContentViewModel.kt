@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.viewpager2.pageloop
+package com.xiaocydx.sample.viewpager2.loop
 
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
