@@ -5,22 +5,21 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
+import androidx.viewpager2.widget.MarginPageTransformer
 import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
 import com.xiaocydx.cxrv.list.listCollector
 import com.xiaocydx.cxrv.list.onEach
+import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.repeatOnLifecycle
-import com.xiaocydx.sample.showToast
 import com.xiaocydx.sample.withLayoutParams
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
-import kotlin.math.abs
 
 /**
  * @author xcc
@@ -46,14 +45,15 @@ class LoopPagerActivity : AppCompatActivity() {
             it.withLayoutParams(MATCH_PARENT, MATCH_PARENT)
         }
 
-        controller = LoopPagerController(viewPager2, adapter, extraPageLimit = 2).attach()
+        val width = 30.dp
+        val margin = 10.dp
+        controller = LoopPagerController(viewPager2)
+        controller.setAdapter(adapter)
+        controller.setPadding(left = width + margin, right = width + margin)
 
-        val tlWidth = 30.dp
-        val brWidth = 30.dp
-        val pageMargin = 10.dp
         viewPager2.offscreenPageLimit = 1
         viewPager2.setPageTransformer(CompositePageTransformer().apply {
-            // addTransformer(MarginPageTransformer(pageMargin))
+            addTransformer(MarginPageTransformer(margin))
             addTransformer(OverlapSliderTransformer(
                 viewPager2.orientation,
                 minScale = 0.25f,
@@ -63,22 +63,16 @@ class LoopPagerActivity : AppCompatActivity() {
             ))
         })
 
-        val rv = viewPager2.getChildAt(0) as RecyclerView
-        if (viewPager2.orientation == ViewPager2.ORIENTATION_VERTICAL) {
-            rv.setPadding(viewPager2.paddingLeft, tlWidth + abs(pageMargin), viewPager2.paddingRight, brWidth + abs(pageMargin))
-        } else {
-            rv.setPadding(tlWidth + abs(pageMargin), viewPager2.paddingTop, brWidth + abs(pageMargin), viewPager2.paddingBottom)
-        }
-        rv.clipToPadding = false
         setContentView(viewPager2)
     }
 
     private fun initCollect() {
         adapter.doOnItemClick { holder, item ->
-            viewModel.append()
-            showToast("item.text = ${item.text}\n" +
-                    "layoutPosition = ${holder.layoutPosition}\n" +
-                    "bindingAdapterPosition = ${holder.bindingAdapterPosition}")
+            controller.smoothScrollToPosition(5, LookupDirection.START)
+            // viewModel.append()
+            // showToast("item.text = ${item.text}\n" +
+            //         "layoutPosition = ${holder.layoutPosition}\n" +
+            //         "bindingAdapterPosition = ${holder.bindingAdapterPosition}")
         }
         adapter.doOnLongItemClick { holder, item ->
             viewModel.refresh()
@@ -86,8 +80,7 @@ class LoopPagerActivity : AppCompatActivity() {
         }
 
         viewModel.refreshEvent
-            .onStart { emit(Unit) }
-            .onEach { controller.setCurrentItem(0) }
+            .onEach { controller.scrollToPosition(0) }
             .launchIn(lifecycleScope)
 
         viewModel.flow

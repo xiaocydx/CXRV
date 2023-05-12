@@ -20,6 +20,8 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 
 /**
+ * 在每次更新时，记录`adapter.itemCount`为`lastItemCount`
+ *
  * @author xcc
  * @date 2023/5/11
  */
