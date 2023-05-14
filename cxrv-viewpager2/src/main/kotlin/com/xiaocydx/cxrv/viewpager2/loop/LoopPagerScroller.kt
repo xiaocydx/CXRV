@@ -25,6 +25,7 @@ import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.xiaocydx.cxrv.internal.doOnPreDraw
 import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
+import com.xiaocydx.cxrv.viewpager2.loop.LoopAnchorUpdater
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent
 
 /**
@@ -33,14 +34,93 @@ import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent
  * @author xcc
  * @date 2023/5/11
  */
-internal class LoopPagerScroller(private val content: LoopPagerContent) : OnPageChangeCallback() {
+internal class LoopPagerScroller(
+    private val content: LoopPagerContent
+) : OnPageChangeCallback(), LoopAnchorUpdater {
     private var runnable: SmoothScrollRunnable? = null
-    private var lastState = viewPager2.scrollState
     private val viewPager2: ViewPager2
         get() = content.viewPager2
 
     init {
         viewPager2.registerOnPageChangeCallback(this)
+    }
+
+    // TODO: 修复多指无效的问题
+    override fun onPageScrollStateChanged(state: Int) {
+        // TODO: 需要在平滑滚动结束前，更新锚点信息调整位置，
+        //  结束后更新，对Padding场景而言，有一帧未填充附加页面。
+        if (state == SCROLL_STATE_DRAGGING) {
+            updateAnchor(offset = 0, content.currentCount)
+        }
+    }
+
+    override fun updateAnchor(offset: Int, contentCount: Int) {
+        if (!content.supportLoop(contentCount)) return
+        val headerFirst = content.firstExtraLayoutPosition(isHeader = true, contentCount)
+        val headerLast = content.lastExtraLayoutPosition(isHeader = true, contentCount)
+        val footerFirst = content.firstExtraLayoutPosition(isHeader = false, contentCount)
+        val footerLast = content.lastExtraLayoutPosition(isHeader = false, contentCount)
+        val anchorPosition = when (val currentItem = viewPager2.currentItem) {
+            in headerFirst..headerLast -> currentItem + contentCount + offset
+            in footerFirst..footerLast -> currentItem - contentCount + offset
+            else -> return
+        }
+        scrollToPosition(anchorPosition)
+    }
+
+    /**
+     * [ViewPager2]非平滑滚动至[layoutPosition]
+     *
+     * [LoopPagerAdapter]确保同步更新离屏缓存，因此非平滑滚动都可以用[optimizeNextFrameScroll]。
+     */
+    fun scrollToPosition(layoutPosition: Int) {
+        if (layoutPosition == NO_POSITION || viewPager2.currentItem == layoutPosition) return
+        removeRunnable()
+        viewPager2.setCurrentItem(layoutPosition, false)
+        viewPager2.optimizeNextFrameScroll(content)
+    }
+
+    /**
+     * [ViewPager2]平滑滚动至[layoutPosition]
+     *
+     * @param direction [layoutPosition]相应`item`的查找方向，以[ViewPager2]水平布局方向为例，
+     * [LookupDirection.END]往右查找[layoutPosition]相应的`item`，并往右平滑滚动至[layoutPosition]。
+     */
+    fun smoothScrollToPosition(layoutPosition: Int, direction: LookupDirection = LookupDirection.END) {
+        if (layoutPosition == NO_POSITION || viewPager2.currentItem == layoutPosition) return
+        removeRunnable()
+        val contentCount = content.currentCount
+        val layoutFirst = content.firstLayoutPosition()
+        val layoutLast = content.lastLayoutPosition()
+        if (direction === LookupDirection.END) {
+            // 往结束方向查找
+            if (viewPager2.currentItem < layoutPosition) {
+                // layoutPosition在结束方向范围内，直接平滑滚动
+                viewPager2.currentItem = layoutPosition
+            } else if (layoutPosition + contentCount in layoutFirst..layoutLast) {
+                // layoutPosition + contentCount（附加页面）在结束方向范围内，直接平滑滚动
+                viewPager2.currentItem = layoutPosition + contentCount
+            } else {
+                // layoutPosition在开始方向范围内，先非平滑滚动至layoutPosition - 3，
+                // 同步屏障被移除后，再从layoutPosition - 3平滑滚动至layoutPosition。
+                scrollToPosition((layoutPosition - 3).coerceAtLeast(layoutFirst))
+                viewPager2.post(SmoothScrollRunnable(layoutPosition).also { runnable = it })
+            }
+        } else {
+            // 往开始方向查找
+            if (layoutPosition < viewPager2.currentItem) {
+                // layoutPosition在开始方向范围内，直接平滑滚动
+                viewPager2.currentItem = layoutPosition
+            } else if (layoutPosition - contentCount in layoutFirst..layoutLast) {
+                // layoutPosition - contentCount（附加页面）在开始方向范围内，直接平滑滚动
+                viewPager2.currentItem = layoutPosition - contentCount
+            } else {
+                // layoutPosition在结束方向范围内，先非平滑滚动至layoutPosition + 3，
+                // 同步屏障被移除后，再从layoutPosition + 3平滑滚动至layoutPosition。
+                scrollToPosition((layoutPosition + 3).coerceAtMost(layoutLast))
+                viewPager2.post(SmoothScrollRunnable(layoutPosition).also { runnable = it })
+            }
+        }
     }
 
     fun removeCallback() {
@@ -53,60 +133,6 @@ internal class LoopPagerScroller(private val content: LoopPagerContent) : OnPage
         runnable = null
     }
 
-    // TODO: 修复多指无效的问题
-    override fun onPageScrollStateChanged(state: Int) {
-        val isTouchScrollBeginning = state == SCROLL_STATE_DRAGGING
-        // TODO: 平滑滚动过程需要更早更新锚点信息，停下来再更新，对Padding场景而言，有一帧额外页面是空白
-        val isSmoothScrollEnding = lastState == SCROLL_STATE_SETTLING && state == SCROLL_STATE_IDLE
-        if (isTouchScrollBeginning || isSmoothScrollEnding) {
-            updateAnchor(content.itemCount)
-        }
-        lastState = state
-    }
-
-    fun updateAnchor(contentCount: Int) {
-        if (!content.supportLoop) return
-        val targetPosition = when (val currentItem = viewPager2.currentItem) {
-            in content.startExtraLayoutPositionRange(contentCount) -> currentItem + contentCount
-            in content.endExtraLayoutPositionRange(contentCount) -> currentItem - contentCount
-            else -> return
-        }
-        scrollToPosition(targetPosition)
-    }
-
-    fun scrollToPosition(layoutPosition: Int) {
-        if (layoutPosition == NO_POSITION || viewPager2.currentItem == layoutPosition) return
-        removeRunnable()
-        viewPager2.setCurrentItem(layoutPosition, false)
-        viewPager2.optimizeNextFrameScroll(content)
-    }
-
-    fun smoothScrollToPosition(layoutPosition: Int, direction: LookupDirection = LookupDirection.END) {
-        if (layoutPosition == NO_POSITION || viewPager2.currentItem == layoutPosition) return
-        removeRunnable()
-        val contentCount = content.itemCount
-        val layoutPositionRange = content.layoutPositionRange()
-        if (direction === LookupDirection.END) {
-            if (viewPager2.currentItem < layoutPosition) {
-                viewPager2.currentItem = layoutPosition
-            } else if (layoutPosition + contentCount in layoutPositionRange) {
-                viewPager2.currentItem = layoutPosition + contentCount
-            } else {
-                scrollToPosition((layoutPosition - 3).coerceAtLeast(layoutPositionRange.first))
-                viewPager2.post(SmoothScrollRunnable(layoutPosition).also { runnable = it })
-            }
-        } else {
-            if (layoutPosition < viewPager2.currentItem) {
-                viewPager2.currentItem = layoutPosition
-            } else if (layoutPosition - contentCount in layoutPositionRange) {
-                viewPager2.currentItem = layoutPosition - contentCount
-            } else {
-                scrollToPosition((layoutPosition + 3).coerceAtMost(layoutPositionRange.last))
-                viewPager2.post(SmoothScrollRunnable(layoutPosition).also { runnable = it })
-            }
-        }
-    }
-
     private inner class SmoothScrollRunnable(private val layoutPosition: Int) : Runnable {
         override fun run() {
             viewPager2.currentItem = layoutPosition
@@ -116,16 +142,18 @@ internal class LoopPagerScroller(private val content: LoopPagerContent) : OnPage
 }
 
 /**
- * 当滚动到起始端和结束端的额外页面，再次滚动时，会更新锚点信息以支持循环，
+ * ### 优化初衷
+ * 当滚动到起始端和结束端的附加页面时，再次触发滚动，会更新锚点信息，
  * 更新锚点信息是通过非平滑滚动实现，这会导致可见的`itemView`被移除，
  * 下一帧[RecyclerView]按更新后的锚点信息布局，填充新的[ViewHolder]，
- * 对图片内容而言，一般有图片缓存，因此更新锚点信息的布局产生的影响比较小，
- * 但对视频内容而言，可见的`itemView`被移除、重新绑定新的[ViewHolder]，
- * 产生的影响比较大。
+ * 对图片内容而言，通常有图片缓存，因此更新锚点信息产生的影响较小，
+ * 但对视频内容而言，可见的`itemView`被移除、绑定新的[ViewHolder]，
+ * 产生的影响较大。
  *
- * 利用[ViewCacheExtension]解决产生的影响，下一帧布局从[Recycler]的暂存区和离屏缓存，
+ * ### 优化方案
+ * 利用[ViewCacheExtension]解决上述问题，下一帧布局从[Recycler]的暂存区和离屏缓存，
  * 获取`bindingAdapterPosition`一致的[ViewHolder]，以此避免可见的`itemView`被移除、
- * 重新绑定新的[ViewHolder]。
+ * 绑定新的[ViewHolder]。
  */
 private fun ViewPager2.optimizeNextFrameScroll(content: LoopPagerContent) {
     val recyclerView = getChildAt(0) as? RecyclerView ?: return
@@ -167,6 +195,7 @@ private class GetScrapOrCachedViewExtension(
             if (!holder.wasReturnedFromScrap()
                     && holder.isSameBindingAdapterPosition(position)
                     && !holder.isInvalid && !holder.isRemoved) {
+                // 修正layoutPosition，确保后续能消费滚动偏移
                 holder.mPosition = position
                 holder.addFlags(ViewHolder.FLAG_RETURNED_FROM_SCRAP)
                 return holder.itemView
@@ -179,6 +208,7 @@ private class GetScrapOrCachedViewExtension(
             if (!holder.isInvalid
                     && holder.isSameBindingAdapterPosition(position)
                     && !holder.isAttachedToTransitionOverlay) {
+                // 修正layoutPosition，确保后续能消费滚动偏移
                 holder.mPosition = position
                 mCachedViews?.removeAt(index)
                 return holder.itemView
