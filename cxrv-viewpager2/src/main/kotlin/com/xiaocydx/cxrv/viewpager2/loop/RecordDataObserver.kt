@@ -39,26 +39,35 @@ internal abstract class RecordDataObserver(private val adapter: Adapter<*>) : Ad
     }
 
     final override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
-        if (positionStart >= 0) onItemRangeChanged(positionStart, itemCount, null)
+        if (positionStart >= 0 && itemCount > 0) {
+            onItemRangeChanged(positionStart, itemCount, null)
+        }
+        recordItemCount()
     }
 
     final override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
-        if (positionStart >= 0) itemRangeChanged(positionStart, itemCount, payload)
+        if (positionStart >= 0 && itemCount > 0) {
+            itemRangeChanged(positionStart, itemCount, payload)
+        }
         recordItemCount()
     }
 
     final override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-        if (positionStart >= 0) itemRangeInserted(positionStart, itemCount)
+        if (positionStart >= 0 && itemCount > 0) {
+            itemRangeInserted(positionStart, itemCount)
+        }
         recordItemCount()
     }
 
     final override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-        if (positionStart >= 0) itemRangeRemoved(positionStart, itemCount)
+        if (positionStart >= 0 && itemCount > 0) {
+            itemRangeRemoved(positionStart, itemCount)
+        }
         recordItemCount()
     }
 
     final override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
-        if (fromPosition >= 0 && toPosition >= 0) {
+        if (fromPosition >= 0 && toPosition >= 0 && itemCount > 0) {
             itemRangeMoved(fromPosition, toPosition, itemCount)
         }
         recordItemCount()

@@ -26,7 +26,7 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
  * @author xcc
  * @date 2023/5/11
  */
-internal class NotEmptyObserver(
+internal class NotEmptyDataObserver(
     private val adapter: Adapter<*>,
     private val action: () -> Unit
 ) : RecyclerView.AdapterDataObserver() {
@@ -41,11 +41,6 @@ internal class NotEmptyObserver(
         }
     }
 
-    fun removeObserver() {
-        if (isCompleted) return
-        adapter.unregisterAdapterDataObserver(this)
-    }
-
     override fun onChanged() = tryComplete()
 
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = onChanged()
@@ -55,6 +50,13 @@ internal class NotEmptyObserver(
         removeObserver()
         isCompleted = true
         // 跟AdapterDataObserver的分发流程错开，并确保在下一帧rv布局流程之前调用action()
-        Choreographer.getInstance().postFrameCallbackDelayed({ action() }, Long.MIN_VALUE)
+        Choreographer.getInstance().postFrameCallbackDelayed({
+            if (adapter.itemCount > 0) action()
+        }, Long.MIN_VALUE)
+    }
+
+    fun removeObserver() {
+        if (isCompleted) return
+        adapter.unregisterAdapterDataObserver(this)
     }
 }
