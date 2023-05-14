@@ -4,22 +4,23 @@ import android.os.Bundle
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.doOnPreDraw
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
 import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
+import com.xiaocydx.cxrv.list.doOnListChanged
 import com.xiaocydx.cxrv.list.listCollector
 import com.xiaocydx.cxrv.list.onEach
-import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.repeatOnLifecycle
+import com.xiaocydx.sample.showToast
 import com.xiaocydx.sample.withLayoutParams
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
 
 /**
  * @author xcc
@@ -51,32 +52,31 @@ class LoopPagerActivity : AppCompatActivity() {
         controller.setAdapter(adapter)
         controller.setPadding(left = width + margin, right = width + margin)
 
-        viewPager2.offscreenPageLimit = 1
         viewPager2.setPageTransformer(CompositePageTransformer().apply {
             addTransformer(MarginPageTransformer(margin))
-            addTransformer(OverlapSliderTransformer(
-                viewPager2.orientation,
-                minScale = 0.25f,
-                unSelectedItemRotation = 0f,
-                unSelectedItemAlpha = 1f,
-                itemGap = 0f
-            ))
+            // addTransformer(OverlapSliderTransformer(
+            //     viewPager2.orientation,
+            //     minScale = 0.25f,
+            //     unSelectedItemRotation = 0f,
+            //     unSelectedItemAlpha = 1f,
+            //     itemGap = 0f
+            // ))
         })
 
         setContentView(viewPager2)
     }
 
     private fun initCollect() {
-        adapter.doOnItemClick { holder, item ->
-            controller.smoothScrollToPosition(5, LookupDirection.START)
-            // viewModel.append()
-            // showToast("item.text = ${item.text}\n" +
-            //         "layoutPosition = ${holder.layoutPosition}\n" +
-            //         "bindingAdapterPosition = ${holder.bindingAdapterPosition}")
+        adapter.doOnItemClick { _, _ ->
+            showToast("点击加载下一页，等待完成")
+            viewModel.append()
         }
-        adapter.doOnLongItemClick { holder, item ->
+        adapter.doOnLongItemClick { _, _ ->
             viewModel.refresh()
             true
+        }
+        adapter.doOnListChanged {
+            viewPager2.doOnPreDraw { viewPager2.requestTransform() }
         }
 
         viewModel.refreshEvent
