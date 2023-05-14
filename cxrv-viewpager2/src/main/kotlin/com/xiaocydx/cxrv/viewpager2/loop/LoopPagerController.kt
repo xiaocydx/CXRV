@@ -26,29 +26,43 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.xiaocydx.cxrv.internal.PreDrawListener
+import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.DEFAULT_EXTRA_PAGE_LIMIT
+import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTRA_PAGE_LIMIT
 
 /**
- * [ViewPager2]循环页面的控制器，不支持反转布局
+ * [ViewPager2]循环页面的控制器
+ *
+ * **注意**：[LoopPagerController]不支持反转布局，不处理平滑滚动时长。
+ *
+ * ```
+ * val controller = LoopPagerController(viewPager2)
+ * controller.setAdapter(adapter) // 必须调用
+ * controller.setPadding(left, top, right, bottom) // 可选调用
+ * controller.registerOnPageChangeCallback(callback) // 可选调用
+ *
+ * // 调用者可通过以下函数，自行实现轮播交互
+ * controller.smoothScrollToPosition(position)
+ * ```
  *
  * @author xcc
  * @date 2023/5/9
  */
 class LoopPagerController(private val viewPager2: ViewPager2) {
-    private var extraPageLimit = 1
+    private var extraPageLimit = DEFAULT_EXTRA_PAGE_LIMIT
     private var checker: LoopPagerChecker? = null
     private var content: LoopPagerContent? = null
     private var scroller: LoopPagerScroller? = null
-    private var observer: NotEmptyObserver? = null
+    private var observer: NotEmptyDataObserver? = null
     private var callbacks: MutableMap<OnPageChangeCallback, CallbackWrapper>? = null
     private val recyclerView = viewPager2.getChildAt(0) as RecyclerView
 
     /**
      * 对[ViewPager2]设置[adapter]的循环页面适配器
      *
-     * 1. [LoopPagerController]的实现确保`holder.bindingAdapter`是[adapter]。
-     * 2. [LoopPagerController]的实现确保`holder.bindingAdapterPosition`是[adapter]的`position`。
+     * 1. [LoopPagerController]确保`holder.bindingAdapter`是[adapter]。
+     * 2. [LoopPagerController]确保`holder.bindingAdapterPosition`是[adapter]的`position`。
      * 这表示不会对使用`holder.bindingAdapter`和`holder.bindingAdapterPosition`实现的功能造成影响，
-     * [adapter]的内部逻辑应当通过`holder.bindingAdapterPosition`访问数据源，以确保展示的内容正确。
+     * [adapter]的内部逻辑应当通过`holder.bindingAdapterPosition`访问数据源，以确保绘制内容的正确性。
      */
     fun setAdapter(adapter: Adapter<*>) {
         checker?.removeListener()
@@ -56,12 +70,12 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
         content = LoopPagerContent(viewPager2, adapter, extraPageLimit)
         scroller?.removeCallback()
         scroller = LoopPagerScroller(content!!)
-        viewPager2.adapter = LoopPagerAdapter(content!!, scroller!!::updateAnchor)
+        viewPager2.adapter = LoopPagerAdapter(content!!, scroller!!)
         scrollToPosition(0)
     }
 
     /**
-     * 对[ViewPager2]设置`paddings`，该函数用于展示多个页面的场景
+     * 对[ViewPager2]设置`paddings`，该函数用于同时展示多个页面的场景
      */
     fun setPadding(
         @Px left: Int = recyclerView.left,
@@ -71,10 +85,10 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
     ) {
         recyclerView.clipToPadding = false
         recyclerView.setPadding(left, top, right, bottom)
-        val previousLimit = extraPageLimit
+        val previous = extraPageLimit
         val hasPadding = left != 0 || right != 0 || top != 0 || bottom != 0
-        extraPageLimit = if (!hasPadding) NORMAL_EXTRA_PAGE_LIMIT else PADDING_EXTRA_PAGE_LIMIT
-        if (extraPageLimit > previousLimit) content?.adapter?.let(::setAdapter)
+        extraPageLimit = if (!hasPadding) DEFAULT_EXTRA_PAGE_LIMIT else PADDING_EXTRA_PAGE_LIMIT
+        if (extraPageLimit > previous) content?.adapter?.let(::setAdapter)
     }
 
     /**
@@ -102,8 +116,8 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
      * 优化至[ViewPager2.setCurrentItem]一样的效果，没有额外性能损耗。
      *
      * @param position  取值范围是`[0, adapter.itemCount)`，即`holder.bindingAdapterPosition`。
-     * @param direction [position]对应`item`的查找方向，以[ViewPager2]水平布局方向为例，
-     * [LookupDirection.END]向右查找[position]对应的`item`，并向右平滑滚动至[position]。
+     * @param direction [position]相应`item`的查找方向，以[ViewPager2]水平布局方向为例，
+     * [LookupDirection.END]往右查找[position]相应的`item`，并往右平滑滚动至[position]。
      */
     fun smoothScrollToPosition(position: Int, direction: LookupDirection = LookupDirection.END) {
         val content = content ?: return
@@ -112,12 +126,18 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
         scroller?.smoothScrollToPosition(content.toLayoutPosition(position), direction)
     }
 
+    /**
+     * [RecyclerView]提供的的滚动函数不会判断`adapter.itemCount`是否为0，
+     * 但[ViewPager2.setCurrentItem]会判断，因此在不为0时，调用[action]。
+     *
+     * @return 是否需要等待`adapter.itemCount`不为0。
+     */
     private fun waitNotEmptyIfNecessary(action: () -> Unit): Boolean {
         observer?.removeObserver()
         observer = null
-        val adapter = viewPager2.adapter as? LoopPagerAdapter
+        val adapter = viewPager2.adapter
         if (adapter != null && adapter.itemCount == 0) {
-            observer = NotEmptyObserver(adapter, action)
+            observer = NotEmptyDataObserver(adapter, action)
             return true
         }
         return false
@@ -178,8 +198,6 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
 
     private companion object {
         const val CHECKED_ENABLED = false
-        const val NORMAL_EXTRA_PAGE_LIMIT = 1
-        const val PADDING_EXTRA_PAGE_LIMIT = 2
     }
 }
 
@@ -187,14 +205,13 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
  * [LoopPagerController.smoothScrollToPosition]的查找方向
  */
 enum class LookupDirection {
-
     /**
-     * 开始的查找方向
+     * 往开始方向查找
      */
     START,
 
     /**
-     * 结束的查找方向
+     * 往结束方向查找
      */
     END
 }
