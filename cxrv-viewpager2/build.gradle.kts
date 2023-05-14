@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.utils.extendsFrom
+
 plugins {
     id("com.android.library")
     id("kotlin-android")
@@ -45,10 +47,21 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    testOptions {
+        unitTests { isIncludeAndroidResources = true }
+    }
+    configurations {
+        testImplementation.extendsFrom(compileOnly)
+    }
 }
 
 dependencies {
     compileOnly(project(":cxrv"))
     compileOnly("androidx.recyclerview:recyclerview:1.2.0")
     compileOnly("androidx.viewpager2:viewpager2:1.0.0")
+    testImplementation("androidx.appcompat:appcompat:1.2.0")
+    testImplementation("com.google.truth:truth:1.0")
+    testImplementation("io.mockk:mockk:1.12.0")
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("org.robolectric:robolectric:4.3.1")
 }
