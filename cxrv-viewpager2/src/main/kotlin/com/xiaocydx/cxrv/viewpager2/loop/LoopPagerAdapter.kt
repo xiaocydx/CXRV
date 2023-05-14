@@ -258,8 +258,7 @@ internal class LoopPagerAdapter(
             // 以此实现bindingAdapterPosition到layoutPosition的转换计算。
             val layoutFirst = content.firstExtraLayoutPosition(isHeader, lastContentCount) + offset
             val updateCount = bindingLast - bindingFirst + 1
-            updateExtraPage(layoutFirst, updateCount, payload)
-            return true
+            return updateExtraPage(layoutFirst, updateCount, payload)
         }
 
         private fun updateExtraPage(layoutFirst: Int, updateCount: Int, payload: Any? = PAYLOAD): Boolean {
