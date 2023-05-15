@@ -90,16 +90,18 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
 
     /**
      * 视图重建过程会有`pendingSavedState`作为锚点信息，用于恢复滚动位置，
-     * 而视图初始化阶段，通常还未开始视图树`onRestoreInstanceState()`分发，
-     * 因此在附加到Window时，确定没有`pendingSavedState`，再初始化锚点信息。
+     * 设置的初始锚点信息不应当无效`pendingSavedState`的`anchorPosition`，
+     * 在初始化阶段之后，确定没有`pendingSavedState`，才设置初始锚点信息，
+     * 对[scrollToPosition]和[smoothScrollToPosition]不需要做这样的处理。
      */
     private fun initAnchorIfNecessary() {
         val content = content ?: return
         val scroller = scroller ?: return
-        waitNotEmptyIfNecessary wait@{
-            if (viewPager2.recyclerView.pendingSavedState != null) return@wait
-            scroller.scrollToPosition(content.toLayoutPosition(0))
-        }
+        val wait = waitNotEmptyIfNecessary(::initAnchorIfNecessary)
+        if (wait || viewPager2.recyclerView.pendingSavedState != null) return
+        // 初始化阶段adapter.itemCount > 0，会直接设置初始锚点信息，不过这没有影响，
+        // LinearLayoutManager.updateAnchorInfoForLayout()仍会处理pendingSavedState。
+        scroller.scrollToPosition(content.toLayoutPosition(0))
     }
 
     private fun initCheckerIfNecessary() {
@@ -170,7 +172,8 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
         observer = null
         val adapter = viewPager2.adapter
         if (adapter != null && adapter.itemCount == 0) {
-            observer = NotEmptyDataObserver(adapter, action)
+            // 在下一帧调用action()，确保adapter.itemCount是处理附加页面后的结果
+            observer = NotEmptyDataObserver(adapter, nextFrame = true, action)
             return true
         }
         return false

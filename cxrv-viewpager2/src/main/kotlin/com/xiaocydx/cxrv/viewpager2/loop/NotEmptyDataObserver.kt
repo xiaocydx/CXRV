@@ -24,11 +24,14 @@ import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 /**
  * 当`adapter.itemCount`大于0时，调用[action]
  *
+ * [nextFrame]为`true`表示在下一帧调用[action]，这能跟[AdapterDataObserver]的分发流程错开。
+ *
  * @author xcc
  * @date 2023/5/11
  */
 internal class NotEmptyDataObserver(
     private val adapter: Adapter<*>,
+    private val nextFrame: Boolean,
     private val action: () -> Unit
 ) : AdapterDataObserver(), FrameCallback {
     private var isCompleted = false
@@ -50,8 +53,12 @@ internal class NotEmptyDataObserver(
         if (isCompleted || adapter.itemCount == 0) return
         removeObserver()
         isCompleted = true
-        // 跟AdapterDataObserver的分发流程错开，并确保在下一帧rv布局流程之前调用action()
-        Choreographer.getInstance().postFrameCallbackDelayed(this, Long.MIN_VALUE)
+        if (!nextFrame) {
+            action()
+        } else {
+            // Long.MIN_VALUE负延时确保在下一帧rv布局流程之前调用action()
+            Choreographer.getInstance().postFrameCallbackDelayed(this, Long.MIN_VALUE)
+        }
     }
 
     override fun doFrame(frameTimeNanos: Long) {
