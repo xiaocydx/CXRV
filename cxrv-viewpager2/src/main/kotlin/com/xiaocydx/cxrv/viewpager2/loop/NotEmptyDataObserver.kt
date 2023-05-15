@@ -17,8 +17,9 @@
 package com.xiaocydx.cxrv.viewpager2.loop
 
 import android.view.Choreographer
-import androidx.recyclerview.widget.RecyclerView
+import android.view.Choreographer.FrameCallback
 import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 
 /**
  * 当`adapter.itemCount`大于0时，调用[action]
@@ -29,12 +30,10 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 internal class NotEmptyDataObserver(
     private val adapter: Adapter<*>,
     private val action: () -> Unit
-) : RecyclerView.AdapterDataObserver() {
-    private var isCompleted = false
+) : AdapterDataObserver(), FrameCallback {
 
     init {
         if (adapter.itemCount > 0) {
-            isCompleted = true
             action()
         } else {
             adapter.registerAdapterDataObserver(this)
@@ -46,17 +45,18 @@ internal class NotEmptyDataObserver(
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = onChanged()
 
     private fun tryComplete() {
-        if (isCompleted || adapter.itemCount == 0) return
+        if (adapter.itemCount == 0) return
         removeObserver()
-        isCompleted = true
         // 跟AdapterDataObserver的分发流程错开，并确保在下一帧rv布局流程之前调用action()
-        Choreographer.getInstance().postFrameCallbackDelayed({
-            if (adapter.itemCount > 0) action()
-        }, Long.MIN_VALUE)
+        Choreographer.getInstance().postFrameCallbackDelayed(this, Long.MIN_VALUE)
+    }
+
+    override fun doFrame(frameTimeNanos: Long) {
+        if (adapter.itemCount > 0) action()
     }
 
     fun removeObserver() {
-        if (isCompleted) return
         adapter.unregisterAdapterDataObserver(this)
+        Choreographer.getInstance().removeFrameCallback(this)
     }
 }
