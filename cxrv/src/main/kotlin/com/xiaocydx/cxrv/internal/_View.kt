@@ -69,33 +69,49 @@ internal inline fun View.doOnPreDraw(crossinline action: (view: View) -> Unit): 
     return OneShotPreDrawListener.add(this) { action(this) }
 }
 
-internal inline fun View.doOnAttach(crossinline action: (view: View) -> Unit) {
-    if (ViewCompat.isAttachedToWindow(this)) {
+internal inline fun View.doOnAttach(crossinline action: (view: View) -> Unit): OneShotAttachStateListener? {
+    return if (ViewCompat.isAttachedToWindow(this)) {
         action(this)
+        null
     } else {
-        addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(view: View) {
-                removeOnAttachStateChangeListener(this)
-                action(view)
-            }
-
-            override fun onViewDetachedFromWindow(view: View) = Unit
-        })
+        OneShotAttachStateListener(this, isAttach = true) { action(it) }
     }
 }
 
-internal inline fun View.doOnDetach(crossinline action: (view: View) -> Unit) {
-    if (!ViewCompat.isAttachedToWindow(this)) {
+internal inline fun View.doOnDetach(crossinline action: (view: View) -> Unit): OneShotAttachStateListener? {
+    return if (!ViewCompat.isAttachedToWindow(this)) {
         action(this)
+        null
     } else {
-        addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(view: View) = Unit
+        OneShotAttachStateListener(this, isAttach = false) { action(it) }
+    }
+}
 
-            override fun onViewDetachedFromWindow(view: View) {
-                removeOnAttachStateChangeListener(this)
-                action(view)
-            }
-        })
+internal class OneShotAttachStateListener(
+    private val view: View,
+    private val isAttach: Boolean,
+    private val action: (view: View) -> Unit
+) : View.OnAttachStateChangeListener {
+
+    init {
+        view.addOnAttachStateChangeListener(this)
+    }
+
+    override fun onViewAttachedToWindow(view: View) {
+        if (isAttach) complete()
+    }
+
+    override fun onViewDetachedFromWindow(view: View) {
+        if (!isAttach) complete()
+    }
+
+    private fun complete() {
+        removeListener()
+        action(view)
+    }
+
+    fun removeListener() {
+        view.removeOnAttachStateChangeListener(this)
     }
 }
 
