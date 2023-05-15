@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
             StartItem<PagingActivity>("分页加载示例（本地测试）"),
             StartItem<ArticleListActivity>("分页加载示例（网络请求）"),
             StartItem<ViewPager2Activity>("ViewPager2共享池示例"),
-            StartItem<LoopPagerActivity>("ViewPager2页面循环示例")
+            StartItem<LoopPagerActivity>("ViewPager2循环页面示例")
         ))
     }
 

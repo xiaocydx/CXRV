@@ -1,5 +1,6 @@
 package com.xiaocydx.sample.viewpager2.loop
 
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.ViewGroup
@@ -15,6 +16,7 @@ import com.xiaocydx.sample.withLayoutParams
  * @date 2023/5/11
  */
 class ContentListAdapter : ListAdapter<ContentItem, RecyclerView.ViewHolder>() {
+    private val tag = javaClass.simpleName
 
     override fun areItemsTheSame(oldItem: ContentItem, newItem: ContentItem): Boolean {
         return oldItem.id == newItem.id
@@ -31,14 +33,25 @@ class ContentListAdapter : ListAdapter<ContentItem, RecyclerView.ViewHolder>() {
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: ContentItem) {
+        Log.d(tag, "onBindViewHolder: " +
+                "layoutPosition = ${holder.layoutPosition}，" +
+                "bindingAdapterPosition = ${holder.bindingAdapterPosition}，" +
+                "hashCode = ${System.identityHashCode(holder)}")
         (holder.itemView as TextView).text = item.text
-        println("test -> laypos = ${holder.layoutPosition}, bindingPos = ${holder.bindingAdapterPosition}, hashCode = ${holder.hashCode()}")
     }
 
-    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        super.onAttachedToRecyclerView(recyclerView)
-        recyclerView.itemAnimator = null
-        recyclerView.layoutManager?.isItemPrefetchEnabled = false
+    override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+        Log.d(tag, "onViewAttachedToWindow: " +
+                "layoutPosition = ${holder.layoutPosition}，" +
+                "bindingAdapterPosition = ${holder.bindingAdapterPosition}，" +
+                "hashCode = ${System.identityHashCode(holder)}")
+    }
+
+    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+        Log.d(tag, "onViewDetachedFromWindow: " +
+                "layoutPosition = ${holder.layoutPosition}，" +
+                "bindingAdapterPosition = ${holder.bindingAdapterPosition}，" +
+                "hashCode = ${System.identityHashCode(holder)}")
     }
 }
 

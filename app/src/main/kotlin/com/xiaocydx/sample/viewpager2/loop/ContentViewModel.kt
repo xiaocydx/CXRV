@@ -1,6 +1,5 @@
 package com.xiaocydx.sample.viewpager2.loop
 
-import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.*
@@ -21,25 +20,24 @@ class ContentViewModel : ViewModel() {
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
 
-    val vp2Id = ViewCompat.generateViewId()
     val flow = state.asFlow()
     val refreshEvent = _refreshEvent.asSharedFlow()
 
     init {
-        refresh()
+        refresh(timeMillis = 0)
     }
 
-    fun refresh() {
+    fun refresh(timeMillis: Long) {
         viewModelScope.launch {
-            delay(0)
+            delay(timeMillis)
             state.submitList((1..3).map { ContentItem(it, "Page$it") })
             _refreshEvent.tryEmit(Unit)
         }
     }
 
-    fun append() {
+    fun append(timeMillis: Long) {
         viewModelScope.launch {
-            delay(1000)
+            delay(timeMillis)
             val size = state.size
             val start = size + 1
             val end = start + 2
