@@ -19,9 +19,7 @@
 package com.xiaocydx.cxrv.viewpager2.loop
 
 import androidx.annotation.Px
-import androidx.recyclerview.widget.LoopPagerAdapter
-import androidx.recyclerview.widget.LoopPagerScroller
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.*
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
@@ -54,7 +52,6 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
     private var scroller: LoopPagerScroller? = null
     private var observer: NotEmptyDataObserver? = null
     private var callbacks: MutableMap<OnPageChangeCallback, CallbackWrapper>? = null
-    private val recyclerView = viewPager2.getChildAt(0) as RecyclerView
 
     /**
      * 对[ViewPager2]设置[adapter]的循环页面适配器
@@ -83,26 +80,44 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
      * ```
      */
     fun setAdapter(adapter: Adapter<*>) {
-        checker?.removeListener()
-        checker = if (CHECKED_ENABLED) LoopPagerChecker() else null
         content = LoopPagerContent(viewPager2, adapter, extraPageLimit)
         scroller?.removeCallback()
         scroller = LoopPagerScroller(content!!)
         viewPager2.adapter = LoopPagerAdapter(content!!, scroller!!)
-        scrollToPosition(0)
+        initAnchorIfNecessary()
+        initCheckerIfNecessary()
+    }
+
+    /**
+     * 视图重建过程会有`pendingSavedState`作为锚点信息，用于恢复滚动位置，
+     * 而视图初始化阶段，通常还未开始视图树`onRestoreInstanceState()`分发，
+     * 因此在附加到Window时，确定没有`pendingSavedState`，再初始化锚点信息。
+     */
+    private fun initAnchorIfNecessary() {
+        val content = content ?: return
+        val scroller = scroller ?: return
+        waitNotEmptyIfNecessary wait@{
+            if (viewPager2.recyclerView.pendingSavedState != null) return@wait
+            scroller.scrollToPosition(content.toLayoutPosition(0))
+        }
+    }
+
+    private fun initCheckerIfNecessary() {
+        checker?.removeListener()
+        checker = if (CHECKED_ENABLED) LoopPagerChecker() else null
     }
 
     /**
      * 对[ViewPager2]设置`paddings`，该函数用于同时展示多个页面的场景
      */
     fun setPadding(
-        @Px left: Int = recyclerView.left,
-        @Px top: Int = recyclerView.top,
-        @Px right: Int = recyclerView.right,
-        @Px bottom: Int = recyclerView.bottom
+        @Px left: Int = viewPager2.recyclerView.left,
+        @Px top: Int = viewPager2.recyclerView.top,
+        @Px right: Int = viewPager2.recyclerView.right,
+        @Px bottom: Int = viewPager2.recyclerView.bottom
     ) {
-        recyclerView.clipToPadding = false
-        recyclerView.setPadding(left, top, right, bottom)
+        viewPager2.recyclerView.clipToPadding = false
+        viewPager2.recyclerView.setPadding(left, top, right, bottom)
         val previous = extraPageLimit
         val hasPadding = left != 0 || right != 0 || top != 0 || bottom != 0
         extraPageLimit = if (!hasPadding) DEFAULT_EXTRA_PAGE_LIMIT else PADDING_EXTRA_PAGE_LIMIT
