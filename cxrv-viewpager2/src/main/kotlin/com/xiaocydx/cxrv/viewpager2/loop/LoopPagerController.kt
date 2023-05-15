@@ -63,6 +63,24 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
      * 2. [LoopPagerController]确保`holder.bindingAdapterPosition`是[adapter]的`position`。
      * 这表示不会对使用`holder.bindingAdapter`和`holder.bindingAdapterPosition`实现的功能造成影响，
      * [adapter]的内部逻辑应当通过`holder.bindingAdapterPosition`访问数据源，以确保绘制内容的正确性。
+     *
+     * @param adapter 请在同类型更新操作修改`adapter.itemCount`后，立即调用`adapter.notifyXXX()`函数，
+     * [LoopPagerController]基于这个前提实现页面更新逻辑，若不满足这个前提，则无法确保绘制内容的正确性，
+     * 通常是`adapter.itemCount = data.size`，因此主要关注数据源的`add`和`remove`这两种更新操作，例如：
+     * ```
+     * data.removeAt(0)
+     * adapter.notifyItemRemoved(0) // 满足前提
+     *
+     * data.removeAt(0)
+     * data.removeAt(0)
+     * adapter.notifyItemRangeRemoved(0, 2) // 满足前提
+     *
+     * adapter.notifyDataSetChanged() // 不满足前提
+     * data.removeAt(0)
+     *
+     * adapter.notifyItemRemoved(0) // 不满足前提
+     * data.removeAt(0)
+     * ```
      */
     fun setAdapter(adapter: Adapter<*>) {
         checker?.removeListener()
