@@ -28,13 +28,33 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
  * @date 2023/5/14
  */
 internal class TestAdapter(var count: Int) : RecyclerView.Adapter<ViewHolder>() {
+    var callback: AdapterCallback? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = View(parent.context)
         view.layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
         return object : ViewHolder(view) {}
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) = Unit
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) = error("")
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>) {
+        callback?.onBindViewHolder(holder, position, payloads)
+    }
+
+    override fun onViewAttachedToWindow(holder: ViewHolder) {
+        callback?.onViewAttachedToWindow(holder)
+    }
+
+    override fun onViewDetachedFromWindow(holder: ViewHolder) {
+        callback?.onViewDetachedFromWindow(holder)
+    }
 
     override fun getItemCount(): Int = count
+}
+
+internal interface AdapterCallback {
+    fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>)
+    fun onViewAttachedToWindow(holder: ViewHolder)
+    fun onViewDetachedFromWindow(holder: ViewHolder)
 }

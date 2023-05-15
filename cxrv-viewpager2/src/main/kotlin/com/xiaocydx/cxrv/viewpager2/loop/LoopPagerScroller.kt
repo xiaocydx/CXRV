@@ -20,6 +20,7 @@
 package androidx.recyclerview.widget
 
 import android.view.View
+import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
@@ -141,6 +142,12 @@ internal class LoopPagerScroller(
     }
 }
 
+@VisibleForTesting
+internal var OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED = true
+
+@VisibleForTesting
+internal var OPTIMIZE_NEXT_FRAME_RESTORE_ENABLED = true
+
 /**
  * ### 优化初衷
  * 当滚动到起始端和结束端的附加页面时，再次触发滚动，会更新锚点信息，
@@ -156,12 +163,15 @@ internal class LoopPagerScroller(
  * 绑定新的[ViewHolder]。
  */
 private fun ViewPager2.optimizeNextFrameScroll(content: LoopPagerContent) {
+    if (!OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED) return
     val recyclerView = getChildAt(0) as? RecyclerView ?: return
     val original = recyclerView.getViewCacheExtensionOrNull()
     if (original is GetScrapOrCachedViewForPosition) return
     val extension = GetScrapOrCachedViewForPosition(content, recyclerView, original)
     recyclerView.setViewCacheExtension(extension)
-    doOnPreDraw { recyclerView.setViewCacheExtension(original) }
+    if (OPTIMIZE_NEXT_FRAME_RESTORE_ENABLED) {
+        doOnPreDraw { recyclerView.setViewCacheExtension(original) }
+    }
 }
 
 private class GetScrapOrCachedViewForPosition(

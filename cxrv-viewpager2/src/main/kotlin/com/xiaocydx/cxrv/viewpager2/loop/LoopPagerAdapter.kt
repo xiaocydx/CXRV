@@ -290,7 +290,6 @@ internal class LoopPagerAdapter(
     }
 
     private companion object {
-        // TODO: 是否需要合并去重？
         val PAYLOAD = Payload { add(Payload.value(31)) }
     }
 }

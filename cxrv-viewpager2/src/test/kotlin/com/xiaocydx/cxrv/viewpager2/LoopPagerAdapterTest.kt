@@ -37,8 +37,6 @@ import org.robolectric.annotation.Config
 /**
  * [LoopPagerAdapter]的单元测试
  *
- * // TODO: 2023/5/15 添加复合更新（包含锚点信息）的测试用例
- *
  * @author xcc
  * @date 2023/5/14
  */
@@ -131,7 +129,8 @@ internal class LoopPagerAdapterTest {
      * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
      * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
      *
-     * -> {C* ，D* ，A ，B ，C ，D ，A* ，B*}
+     * -> insert D
+     * {C* ，D* ，A ，B ，C ，D ，A* ，B*}
      * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6 ，7}
      * bindingAdapterPositions = {2 ，3 ，0 ，1 ，2 ，3 ，0 ，1}
      * ```
@@ -152,7 +151,8 @@ internal class LoopPagerAdapterTest {
      * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
      * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
      *
-     * -> {A* ，B* ，A ，B ，A* ，B*}
+     * -> remove C
+     * {A* ，B* ，A ，B ，A* ，B*}
      * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5}
      * bindingAdapterPositions = {0 ，1 ，0 ，1 ，0 ，1}
      * ```
@@ -173,7 +173,8 @@ internal class LoopPagerAdapterTest {
      * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
      * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
      *
-     * -> {A* ，B* ，C ，A ，B ，C* ，A*}
+     * -> move C to A
+     * {A* ，B* ，C ，A ，B ，C* ，A*}
      * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
      * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
      * ```
@@ -259,57 +260,6 @@ internal class LoopPagerAdapterTest {
      * {B* ，C* ，A ，B ，C ，A* ，B*}
      * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
      * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
-     * footerBindingAdapterPositionRange = [0, 1]
-     *
-     * positionStart > 1，无需更新
-     * ```
-     */
-    @Test
-    fun updateFooterForInserted1() {
-        contentAdapter.count += 1
-        contentAdapter.notifyItemRangeInserted(2, 1)
-        verify(exactly = 0) { loopPagerObserver.onItemRangeChanged(5, any(), any()) }
-    }
-
-    /**
-     * ```
-     * {B* ，C* ，A ，B ，C ，A* ，B*}
-     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
-     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
-     * footerBindingAdapterPositionRange = [0, 1]
-     *
-     * positionStart = 1，更新layoutPositionRange = [6, 6]
-     * ```
-     */
-    @Test
-    fun updateFooterForInserted2() {
-        contentAdapter.count += 1
-        contentAdapter.notifyItemRangeInserted(1, 1)
-        verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(6, 1, any()) }
-    }
-
-    /**
-     * ```
-     * {B* ，C* ，A ，B ，C ，A* ，B*}
-     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
-     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
-     * footerBindingAdapterPositionRange = [0, 1]
-     *
-     * positionStart = 0，更新layoutPositionRange = [5, 6]
-     * ```
-     */
-    @Test
-    fun updateFooterForInserted3() {
-        contentAdapter.count += 1
-        contentAdapter.notifyItemRangeInserted(0, 1)
-        verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(5, 2, any()) }
-    }
-
-    /**
-     * ```
-     * {B* ，C* ，A ，B ，C ，A* ，B*}
-     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
-     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
      * headerBindingAdapterPositionRange = [1, 2]
      *
      * positionStart = 0，无需更新
@@ -354,6 +304,123 @@ internal class LoopPagerAdapterTest {
         contentAdapter.count -= 1
         contentAdapter.notifyItemRangeRemoved(2, 1)
         verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(0, 2, any()) }
+    }
+
+    /**
+     * ```
+     * {B* ，C* ，A ，B ，C ，A* ，B*}
+     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
+     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
+     * headerBindingAdapterPositionRange = [1, 2]
+     *
+     * fromPosition = 0，toPosition = 0，无需更新
+     * ```
+     */
+    @Test
+    fun updateHeaderForMoved1() {
+        contentAdapter.notifyItemMoved(0, 0)
+        verify(exactly = 0) { loopPagerObserver.onItemRangeChanged(0, any(), any()) }
+    }
+
+    /**
+     * ```
+     * {B* ，C* ，A ，B ，C ，A* ，B*}
+     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
+     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
+     * headerBindingAdapterPositionRange = [1, 2]
+     *
+     * fromPosition = 0，toPosition = 1，更新layoutPositionRange = [0, 0]
+     * ```
+     */
+    @Test
+    fun updateHeaderForMoved2() {
+        contentAdapter.notifyItemMoved(0, 1)
+        verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(0, 1, any()) }
+    }
+
+    /**
+     * ```
+     * {B* ，C* ，A ，B ，C ，A* ，B*}
+     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
+     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
+     * headerBindingAdapterPositionRange = [1, 2]
+     *
+     * fromPosition = 0，toPosition = 2，更新layoutPositionRange = [0, 1]
+     * ```
+     */
+    @Test
+    fun updateHeaderForMoved3() {
+        contentAdapter.notifyItemMoved(0, 2)
+        verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(0, 2, any()) }
+    }
+
+    /**
+     * ```
+     * {B* ，C* ，A ，B ，C ，A* ，B*}
+     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
+     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
+     * headerBindingAdapterPositionRange = [1, 2]
+     *
+     * remove C -> move A to B
+     * ```
+     */
+    @Test
+    fun updateHeaderForComplex() {
+        contentAdapter.count -= 1
+        contentAdapter.notifyItemRemoved(2)
+        contentAdapter.notifyItemMoved(0, 1)
+        verify(exactly = 2) { loopPagerObserver.onItemRangeChanged(0, 2, any()) }
+    }
+
+    /**
+     * ```
+     * {B* ，C* ，A ，B ，C ，A* ，B*}
+     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
+     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
+     * footerBindingAdapterPositionRange = [0, 1]
+     *
+     * positionStart > 1，无需更新
+     * ```
+     */
+    @Test
+    fun updateFooterForInserted1() {
+        contentAdapter.count += 1
+        contentAdapter.notifyItemRangeInserted(2, 1)
+        verify(exactly = 0) { loopPagerObserver.onItemRangeChanged(5, any(), any()) }
+    }
+
+    /**
+     * ```
+     * {B* ，C* ，A ，B ，C ，A* ，B*}
+     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
+     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
+     * footerBindingAdapterPositionRange = [0, 1]
+     *
+     * positionStart = 1，更新layoutPositionRange = [6, 6]
+     * ```
+     */
+    @Test
+    fun updateFooterForInserted2() {
+        contentAdapter.count += 1
+        contentAdapter.notifyItemRangeInserted(1, 1)
+        verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(6, 1, any()) }
+    }
+
+    /**
+     * ```
+     * {B* ，C* ，A ，B ，C ，A* ，B*}
+     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
+     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
+     * footerBindingAdapterPositionRange = [0, 1]
+     *
+     * positionStart = 0，更新layoutPositionRange = [5, 6]
+     * ```
+     */
+    @Test
+    fun updateFooterForInserted3() {
+        contentAdapter.count += 1
+        contentAdapter.notifyItemRangeInserted(0, 1)
+        verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(5, 2, any()) }
     }
 
     /**
@@ -412,54 +479,6 @@ internal class LoopPagerAdapterTest {
      * {B* ，C* ，A ，B ，C ，A* ，B*}
      * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
      * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
-     * headerBindingAdapterPositionRange = [1, 2]
-     *
-     * fromPosition = 0，toPosition = 0，无需更新
-     * ```
-     */
-    @Test
-    fun updateHeaderForMoved1() {
-        contentAdapter.notifyItemMoved(0, 0)
-        verify(exactly = 0) { loopPagerObserver.onItemRangeChanged(0, any(), any()) }
-    }
-
-    /**
-     * ```
-     * {B* ，C* ，A ，B ，C ，A* ，B*}
-     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
-     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
-     * headerBindingAdapterPositionRange = [1, 2]
-     *
-     * fromPosition = 0，toPosition = 1，更新layoutPositionRange = [0, 0]
-     * ```
-     */
-    @Test
-    fun updateHeaderForMoved2() {
-        contentAdapter.notifyItemMoved(0, 1)
-        verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(0, 1, any()) }
-    }
-
-    /**
-     * ```
-     * {B* ，C* ，A ，B ，C ，A* ，B*}
-     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
-     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
-     * headerBindingAdapterPositionRange = [1, 2]
-     *
-     * fromPosition = 0，toPosition = 2，更新layoutPositionRange = [0, 1]
-     * ```
-     */
-    @Test
-    fun updateHeaderForMoved3() {
-        contentAdapter.notifyItemMoved(0, 2)
-        verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(0, 2, any()) }
-    }
-
-    /**
-     * ```
-     * {B* ，C* ，A ，B ，C ，A* ，B*}
-     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
-     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
      * footerBindingAdapterPositionRange = [0, 1]
      *
      * fromPosition = 2，toPosition = 2，无需更新
@@ -500,6 +519,25 @@ internal class LoopPagerAdapterTest {
     @Test
     fun updateFooterForMoved3() {
         contentAdapter.notifyItemMoved(2, 0)
+        verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(5, 2, any()) }
+    }
+
+    /**
+     * ```
+     * {B* ，C* ，A ，B ，C ，A* ，B*}
+     * layoutPositions = {0 ，1 ，2 ，3 ，4 ，5 ，6}
+     * bindingAdapterPositions = {1 ，2 ，0 ，1 ，2 ，0 ，1}
+     * headerBindingAdapterPositionRange = [1, 2]
+     *
+     * remove A -> move C to B
+     * ```
+     */
+    @Test
+    fun updateFooterForComplex() {
+        contentAdapter.count -= 1
+        contentAdapter.notifyItemRemoved(0)
+        contentAdapter.notifyItemMoved(1, 0)
+        verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(5, 2) }
         verify(exactly = 1) { loopPagerObserver.onItemRangeChanged(5, 2, any()) }
     }
 
