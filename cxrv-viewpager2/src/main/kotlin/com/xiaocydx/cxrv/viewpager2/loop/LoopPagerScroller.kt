@@ -19,7 +19,7 @@
 
 package androidx.recyclerview.widget
 
-import android.util.SparseIntArray
+import android.util.SparseArray
 import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView.*
@@ -191,16 +191,16 @@ private class GetScrapForBindingAdapterPosition(
         val cachedViews = recyclerView.mRecycler.mCachedViews ?: return
 
         @Suppress("UNCHECKED_CAST")
-        var tempCachedViews = recyclerView.getTag(R.id.tag_vp2_temp_cached_views) as? SparseIntArray
+        var tempCachedViews = recyclerView.getTag(R.id.tag_vp2_temp_cached_views) as? SparseArray<ViewHolder>
         if (tempCachedViews == null) {
-            tempCachedViews = SparseIntArray()
+            tempCachedViews = SparseArray<ViewHolder>()
             recyclerView.setTag(R.id.tag_vp2_temp_cached_views, tempCachedViews)
         }
 
         for (index in cachedViews.indices) {
             val holder = cachedViews[index]
             val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
-            tempCachedViews.put(bindingAdapterPosition, index)
+            tempCachedViews.put(bindingAdapterPosition, holder)
         }
 
         if (tempCachedViews.size() > 0) {
@@ -208,9 +208,9 @@ private class GetScrapForBindingAdapterPosition(
                 val child = recyclerView.getChildAt(index)
                 val holder = recyclerView.getChildViewHolder(child) ?: continue
                 val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
-                // 若离屏缓存包含bindingAdapterPosition，则将离屏缓存的holder回收进RecycledViewPool
-                tempCachedViews.get(bindingAdapterPosition, -1)
-                    .takeIf { it != -1 }?.let(recyclerView.mRecycler::recycleCachedViewAt)
+                // 若离屏缓存包含bindingAdapterPosition，则将cachedView回收进RecycledViewPool
+                val cachedView = tempCachedViews.get(bindingAdapterPosition) ?: continue
+                recyclerView.mRecycler.recycleCachedViewAt(cachedViews.indexOf(cachedView))
             }
         }
         tempCachedViews.clear()
