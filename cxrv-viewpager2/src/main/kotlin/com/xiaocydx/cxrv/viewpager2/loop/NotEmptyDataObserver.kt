@@ -31,9 +31,11 @@ internal class NotEmptyDataObserver(
     private val adapter: Adapter<*>,
     private val action: () -> Unit
 ) : AdapterDataObserver(), FrameCallback {
+    private var isCompleted = false
 
     init {
         if (adapter.itemCount > 0) {
+            isCompleted = true
             action()
         } else {
             adapter.registerAdapterDataObserver(this)
@@ -45,8 +47,9 @@ internal class NotEmptyDataObserver(
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = onChanged()
 
     private fun tryComplete() {
-        if (adapter.itemCount == 0) return
+        if (isCompleted || adapter.itemCount == 0) return
         removeObserver()
+        isCompleted = true
         // 跟AdapterDataObserver的分发流程错开，并确保在下一帧rv布局流程之前调用action()
         Choreographer.getInstance().postFrameCallbackDelayed(this, Long.MIN_VALUE)
     }
@@ -56,7 +59,10 @@ internal class NotEmptyDataObserver(
     }
 
     fun removeObserver() {
-        adapter.unregisterAdapterDataObserver(this)
+        if (!isCompleted) {
+            // isCompleted用于避免抛出IllegalStateException
+            adapter.unregisterAdapterDataObserver(this)
+        }
         Choreographer.getInstance().removeFrameCallback(this)
     }
 }
