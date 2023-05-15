@@ -21,8 +21,7 @@ package androidx.recyclerview.widget
 
 import android.view.View
 import android.view.ViewGroup
-import androidx.recyclerview.widget.RecyclerView.LayoutParams
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.concat.ViewAdapter
 
 internal val View.holder: ViewHolder?
@@ -55,4 +54,22 @@ internal class SimpleViewHolder(itemView: View) : ViewHolder(itemView) {
         if (changedScrap.isNullOrEmpty()) return false
         return changedScrap.firstOrNull { it.itemView === itemView } != null
     }
+}
+
+/**
+ * ```
+ * public final class Recycler {
+ *     private ViewCacheExtension mViewCacheExtension;
+ * }
+ * ```
+ */
+private val mViewCacheExtensionField by lazy {
+    runCatching {
+        val clazz = Class.forName("androidx.recyclerview.widget.RecyclerView\$Recycler")
+        clazz.getDeclaredField("mViewCacheExtension").apply { isAccessible = true }
+    }.getOrNull()
+}
+
+internal fun RecyclerView.getViewCacheExtensionOrNull(): ViewCacheExtension? {
+    return runCatching { mViewCacheExtensionField?.get(mRecycler) }.getOrNull() as? ViewCacheExtension
 }

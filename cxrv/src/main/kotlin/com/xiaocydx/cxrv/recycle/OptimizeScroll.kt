@@ -22,31 +22,19 @@ package androidx.recyclerview.widget
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.internal.doOnPreDraw
-import java.lang.reflect.Field
 
 /**
  * 调用[RecyclerView.scrollToPosition]之后，调用该函数，
  * 减少下一帧[RecyclerView]布局的耗时，适用于联动性交互场景。
  */
 fun RecyclerView.optimizeNextFrameScroll() {
-    // reflect < 1ms
     val original = getViewCacheExtensionOrNull()
-    if (original is GetScrapOrCachedViewForTypeExtension) return
-    setViewCacheExtension(GetScrapOrCachedViewForTypeExtension(this, original))
+    if (original is GetScrapOrCachedViewForType) return
+    setViewCacheExtension(GetScrapOrCachedViewForType(this, original))
     doOnPreDraw { setViewCacheExtension(original) }
 }
 
-private fun RecyclerView.getViewCacheExtensionOrNull(): ViewCacheExtension? {
-    val mViewCacheExtensionField: Field = try {
-        mRecycler.javaClass.getDeclaredField("mViewCacheExtension")
-    } catch (e: NoSuchFieldException) {
-        return null
-    }
-    mViewCacheExtensionField.isAccessible = true
-    return mViewCacheExtensionField.get(mRecycler) as? ViewCacheExtension
-}
-
-private class GetScrapOrCachedViewForTypeExtension(
+private class GetScrapOrCachedViewForType(
     private val recyclerView: RecyclerView,
     private val original: ViewCacheExtension?
 ) : ViewCacheExtension() {

@@ -157,23 +157,14 @@ internal class LoopPagerScroller(
  */
 private fun ViewPager2.optimizeNextFrameScroll(content: LoopPagerContent) {
     val recyclerView = getChildAt(0) as? RecyclerView ?: return
-    // reflect < 1ms
     val original = recyclerView.getViewCacheExtensionOrNull()
-    if (original is GetScrapOrCachedViewExtension) return
-    val extension = GetScrapOrCachedViewExtension(content, recyclerView, original)
+    if (original is GetScrapOrCachedViewForPosition) return
+    val extension = GetScrapOrCachedViewForPosition(content, recyclerView, original)
     recyclerView.setViewCacheExtension(extension)
     doOnPreDraw { recyclerView.setViewCacheExtension(original) }
 }
 
-// TODO: 统一mViewCacheExtensionField的缓存
-private fun RecyclerView.getViewCacheExtensionOrNull(): ViewCacheExtension? {
-    val mViewCacheExtensionField = runCatching {
-        mRecycler.javaClass.getDeclaredField("mViewCacheExtension")
-    }.getOrNull()?.apply { isAccessible = true } ?: return null
-    return mViewCacheExtensionField.get(mRecycler) as? ViewCacheExtension
-}
-
-private class GetScrapOrCachedViewExtension(
+private class GetScrapOrCachedViewForPosition(
     private val content: LoopPagerContent,
     private val recyclerView: RecyclerView,
     private val original: ViewCacheExtension?
