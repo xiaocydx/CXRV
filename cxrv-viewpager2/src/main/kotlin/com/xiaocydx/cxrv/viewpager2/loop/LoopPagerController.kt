@@ -167,13 +167,16 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
      *
      * @return 是否需要等待`adapter.itemCount`不为0。
      */
-    private fun waitNotEmptyIfNecessary(action: () -> Unit): Boolean {
+    private inline fun waitNotEmptyIfNecessary(crossinline action: () -> Unit): Boolean {
         observer?.removeObserver()
         observer = null
         val adapter = viewPager2.adapter
         if (adapter != null && adapter.itemCount == 0) {
             // 在下一帧调用action()，确保adapter.itemCount是处理附加页面后的结果
-            observer = NotEmptyDataObserver(adapter, nextFrame = true, action)
+            observer = NotEmptyDataObserver(adapter, nextFrame = true) {
+                observer = null
+                action()
+            }
             return true
         }
         return false
