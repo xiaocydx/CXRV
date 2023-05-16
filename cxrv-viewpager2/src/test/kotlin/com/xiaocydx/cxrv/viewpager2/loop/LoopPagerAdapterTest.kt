@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.viewpager2
+package com.xiaocydx.cxrv.viewpager2.loop
 
 import android.os.Build
 import androidx.lifecycle.Lifecycle.State.CREATED
@@ -24,7 +24,8 @@ import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario.launch
 import com.google.common.truth.Truth.assertThat
-import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent
+import com.xiaocydx.cxrv.viewpager2.TestActivity
+import com.xiaocydx.cxrv.viewpager2.TestAdapter
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTRA_PAGE_LIMIT
 import io.mockk.spyk
 import io.mockk.verify
