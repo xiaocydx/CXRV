@@ -52,33 +52,39 @@ internal class LoopPagerScroller(
         // TODO: 需要在平滑滚动结束前，更新锚点信息调整位置，
         //  结束后更新，对Padding场景而言，有一帧未填充附加页面。
         if (state == SCROLL_STATE_DRAGGING) {
-            updateAnchor(offset = 0, content.currentCount)
+            updateAnchor(content.currentCount)
         }
     }
 
-    override fun updateAnchor(offset: Int, contentCount: Int) {
-        if (!content.supportLoop(contentCount)) return
+    override fun updateAnchor(contentCount: Int) {
+        val anchorPosition = getNewAnchorPositionForCurrent(contentCount)
+        if (anchorPosition == NO_POSITION) return
+        viewPager2.optimizeNewAnchorPositionLayoutForCurrent(content)
+        viewPager2.setCurrentItem(anchorPosition, false)
+    }
+
+    private fun getNewAnchorPositionForCurrent(contentCount: Int): Int {
+        if (!content.supportLoop(contentCount)) return NO_POSITION
         val headerFirst = content.firstExtraLayoutPosition(isHeader = true, contentCount)
         val headerLast = content.lastExtraLayoutPosition(isHeader = true, contentCount)
         val footerFirst = content.firstExtraLayoutPosition(isHeader = false, contentCount)
         val footerLast = content.lastExtraLayoutPosition(isHeader = false, contentCount)
-        val anchorPosition = when (val currentItem = viewPager2.currentItem) {
-            in headerFirst..headerLast -> currentItem + contentCount + offset
-            in footerFirst..footerLast -> currentItem - contentCount + offset
-            else -> return
+        return when (val currentItem = viewPager2.currentItem) {
+            in headerFirst..headerLast -> currentItem + contentCount
+            in footerFirst..footerLast -> currentItem - contentCount
+            else -> return NO_POSITION
         }
-        scrollToPosition(anchorPosition)
     }
 
     /**
      * [ViewPager2]非平滑滚动至[layoutPosition]
-     *
-     * [LoopPagerAdapter]确保同步更新离屏缓存，因此非平滑滚动都可以用[optimizeNextFrameScroll]。
      */
     fun scrollToPosition(layoutPosition: Int) {
         if (layoutPosition == NO_POSITION || viewPager2.currentItem == layoutPosition) return
         removeRunnable()
-        viewPager2.optimizeNextFrameScroll(content)
+        if (layoutPosition == getNewAnchorPositionForCurrent(content.currentCount)) {
+            viewPager2.optimizeNewAnchorPositionLayoutForCurrent(content)
+        }
         viewPager2.setCurrentItem(layoutPosition, false)
     }
 
@@ -144,73 +150,139 @@ internal class LoopPagerScroller(
 }
 
 @set:VisibleForTesting
-internal var OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED = true
+internal var OPTIMIZE_ENABLED = true
 
 /**
  * ### 优化初衷
  * 当滚动到开始端和结束端的附加页面时，再次触发滚动，会更新锚点信息，
  * 更新锚点信息是通过非平滑滚动实现，这会导致可见的`itemView`被移除，
- * 下一帧[RecyclerView]按更新后的锚点信息布局，填充新的[ViewHolder]，
+ * [RecyclerView]按更新后的锚点信息进行布局，填充新的[ViewHolder]，
  * 对图片内容而言，通常有图片缓存，因此更新锚点信息产生的影响较小，
  * 但对视频内容而言，可见的`itemView`被移除、绑定新的[ViewHolder]，
  * 产生的影响较大。
  *
  * ### 优化方案
- * 1. 若`adapter.hasStableIds()`为`true`，则下一帧布局能根据`itemId`，
- * 从[Recycler]的暂存区获取`holder`。
+ * 1. 若`adapter.hasStableIds()`为`true`，则布局流程能根据`itemId`，
+ * 从[Recycler.mAttachedScrap]获取`scrap`。
  * 2. 若`adapter.hasStableIds()`为`false`，则利用[ViewCacheExtension]，
- * 下一帧布局根据`bindingAdapterPosition`，从[Recycler]的暂存区获取`holder`。
+ * 布局流程根据`bindingAdapterPosition`，从[Recycler.mAttachedScrap]获取`scrap`。
  *
  * 这两个优化方案都能避免可见的`itemView`被移除、绑定新的[ViewHolder]，
  * 优化方案1由调用者自行启用，优化方案2作为默认实现。
  */
-private fun ViewPager2.optimizeNextFrameScroll(content: LoopPagerContent) {
-    if (!OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED) {
+private fun ViewPager2.optimizeNewAnchorPositionLayoutForCurrent(content: LoopPagerContent) {
+    if (!OPTIMIZE_ENABLED) {
         recyclerView.setViewCacheExtension(null)
         return
     }
+    viewHolderStore.removeAndRecycleViewsIfNecessary(content)
+    viewHolderStore.recycleCachedViewsIfNecessary(content)
     var extension = recyclerView.getViewCacheExtensionOrNull()
     if (extension !is GetScrapOrCachedViewForBindingAdapterPosition) {
         extension = GetScrapOrCachedViewForBindingAdapterPosition(content, extension)
         recyclerView.setViewCacheExtension(extension)
     }
-    recycleCachedViewForCurrentViews(content)
 }
 
-/**
- * 下一帧[RecyclerView]的布局流程会调用[Recycler.tryGetViewHolderForPositionByDeadline]填充子View，
- * 若从离屏缓存获取到`cachedView`，则不会根据`itemId`或者`bindingAdapterPosition`获取当前`itemView`，
- * 进而导致当前`itemView`不会挪到新的锚点位置，这不符合优化方案的预期，需要回收离屏缓存的`cachedView`。
- */
-private fun ViewPager2.recycleCachedViewForCurrentViews(content: LoopPagerContent) {
-    val recyclerView = recyclerView
-    val recycler = recyclerView.mRecycler ?: return
-    val cachedViews = recycler.mCachedViews ?: return
-
-    @Suppress("UNCHECKED_CAST")
-    var tempCachedViews = getTag(R.id.tag_vp2_temp_cached_views) as? SparseArray<ViewHolder>
-    if (tempCachedViews == null) {
-        tempCachedViews = SparseArray<ViewHolder>()
-        setTag(R.id.tag_vp2_temp_cached_views, tempCachedViews)
+private val ViewPager2.viewHolderStore: ViewHolderStore
+    get() {
+        var store = getTag(R.id.tag_vp2_view_holder_store) as? ViewHolderStore
+        if (store == null) {
+            store = ViewHolderStore()
+            setTag(R.id.tag_vp2_view_holder_store, store)
+        }
+        return store
     }
 
-    for (index in cachedViews.indices) {
-        val holder = cachedViews[index]
-        val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
-        tempCachedViews.put(bindingAdapterPosition, holder)
+private class ViewHolderStore {
+    private val tempViewHolders = SparseArray<ViewHolder>()
+    private val pendingRemovals = mutableSetOf<ViewHolder>()
+
+    /**
+     * [RecyclerView]的布局流程会调用[Recycler.tryGetViewHolderForPositionByDeadline]填充`itemView`，
+     * 若从`mAttachedScrap`获取到`scrap`，则不会根据`itemId`或`bindingAdapterPosition`获取当前`itemView`，
+     * 进而导致当前`itemView`不会挪到新的锚点位置，这不符合优化方案的预期，需要回收`mAttachedScrap`的`scrap`。
+     *
+     * **注意**：当`ViewPager2.getOffscreenPageLimit > 0`时才会出现这个问题。
+     */
+    fun removeAndRecycleViewsIfNecessary(content: LoopPagerContent) {
+        val current = content.viewPager2.currentItem
+        val first = content.firstLayoutPosition()
+        addPendingRemovals(first, last = current - 1, content)
+        val last = content.lastLayoutPosition()
+        addPendingRemovals(first = current, last, content)
+        consumePendingRemovals(content)
+        clear()
     }
 
-    if (tempCachedViews.size() > 0) {
+    /**
+     * 基于`ViewPager2.currentItem`，往开始端和结束端查找，若同一个`bindingAdapterPosition`查找到两次，
+     * 则表示`ViewPager2.getOffscreenPageLimit > 0`，将第二次查找到的`holder`添加至[pendingRemovals]。
+     */
+    private fun addPendingRemovals(first: Int, last: Int, content: LoopPagerContent) {
+        val recyclerView = content.viewPager2.recyclerView
+        for (position in first..last) {
+            val holder = recyclerView.findViewHolderForLayoutPosition(position) ?: break
+            val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
+            if (tempViewHolders[bindingAdapterPosition] != null) {
+                pendingRemovals.add(holder)
+            } else {
+                tempViewHolders.put(bindingAdapterPosition, holder)
+            }
+        }
+    }
+
+    /**
+     * 移除并回收[pendingRemovals]，确保[RecyclerView]的布局流程，
+     * 根据`itemId`或`bindingAdapterPosition`获取当前`itemView`。
+     */
+    private fun consumePendingRemovals(content: LoopPagerContent) {
+        val recyclerView = content.viewPager2.recyclerView
+        val layoutManager = recyclerView.layoutManager ?: return
+        val recycler = recyclerView.mRecycler ?: return
+        if (pendingRemovals.isNotEmpty()) {
+            pendingRemovals.forEach { holder ->
+                // 对holder添加FLAG_INVALID，将无法回收进离屏缓存
+                holder.addFlags(ViewHolder.FLAG_INVALID)
+                layoutManager.removeAndRecycleView(holder.itemView, recycler)
+            }
+            pendingRemovals.clear()
+        }
+    }
+
+    /**
+     * [RecyclerView]的布局流程会调用[Recycler.tryGetViewHolderForPositionByDeadline]填充`itemView`，
+     * 若从离屏缓存获取到`cachedView`，则不会根据`itemId`或`bindingAdapterPosition`获取当前`itemView`，
+     * 进而导致当前`itemView`不会挪到新的锚点位置，这不符合优化方案的预期，需要回收离屏缓存的`cachedView`。
+     */
+    fun recycleCachedViewsIfNecessary(content: LoopPagerContent) {
+        val recyclerView = content.viewPager2.recyclerView
+        val recycler = recyclerView.mRecycler ?: return
+        val cachedViews = recycler.mCachedViews ?: return
+
+        for (index in cachedViews.indices) {
+            val holder = cachedViews[index]
+            val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
+            tempViewHolders.put(bindingAdapterPosition, holder)
+        }
+
         for (index in 0 until recyclerView.childCount) {
+            if (tempViewHolders.size() == 0) break
             val child = recyclerView.getChildAt(index)
             val holder = recyclerView.getChildViewHolder(child) ?: continue
             val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
             // 若离屏缓存包含bindingAdapterPosition，则将cachedView回收进RecycledViewPool
-            val cachedView = tempCachedViews.get(bindingAdapterPosition) ?: continue
+            val cachedView = tempViewHolders.get(bindingAdapterPosition) ?: continue
+            tempViewHolders.remove(bindingAdapterPosition)
             recycler.recycleCachedViewAt(cachedViews.indexOf(cachedView))
         }
+        clear()
     }
-    tempCachedViews.clear()
+
+    private fun clear() {
+        if (tempViewHolders.size() > 0) tempViewHolders.clear()
+        if (pendingRemovals.isNotEmpty()) pendingRemovals.clear()
+    }
 }
 
 /**
@@ -252,7 +324,6 @@ private class GetScrapOrCachedViewForBindingAdapterPosition(
             }
         }
 
-        // recycleCachedViewForCurrentViews()仅回收了一部分holder
         val cachedViews = mCachedViews ?: emptyList<ViewHolder>()
         for (index in cachedViews.indices) {
             val holder = cachedViews[index]
