@@ -4,20 +4,20 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
-import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.viewpager2.widget.MarginPageTransformer
+import com.xiaocydx.cxrv.binding.bindingAdapter
+import com.xiaocydx.cxrv.divider.Edge
+import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
-import com.xiaocydx.cxrv.list.doOnListChanged
-import com.xiaocydx.cxrv.list.listCollector
-import com.xiaocydx.cxrv.list.onEach
+import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.sample.databinding.ActivityLoopPagerBinding
+import com.xiaocydx.sample.databinding.ItemButtonBinding
 import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.onClick
 import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.showToast
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 
 /**
  * [LoopPagerController]的示例代码
@@ -40,16 +40,6 @@ class LoopPagerActivity : AppCompatActivity() {
     }
 
     private fun initView() = with(binding) {
-        val timeMillis = 1000L
-        btnRefresh.onClick {
-            viewModel.refresh(timeMillis)
-            showToast("点击刷新，等待${timeMillis / 1000}s")
-        }
-        btnAppend.onClick {
-            viewModel.append(timeMillis)
-            showToast("点击添加，等待${timeMillis / 1000}s")
-        }
-
         adapter = ContentListAdapter()
         adapter.doOnItemClick { holder, item ->
             showToast("item.text = ${item.text}\n" +
@@ -65,16 +55,60 @@ class LoopPagerActivity : AppCompatActivity() {
         controller = LoopPagerController(viewPager2)
         controller.setAdapter(adapter)
         controller.setPadding(left = 40.dp, right = 40.dp)
+
+        rvAction
+            .linear(orientation = HORIZONTAL)
+            .divider(5.dp, 5.dp) { edge(Edge.horizontal()) }
+            .adapter(bindingAdapter(
+                uniqueId = LoopPagerAction::ordinal,
+                inflate = ItemButtonBinding::inflate
+            ) {
+                initLoopPagerAction()
+                onBindView { root.text = it.text }
+            })
     }
 
     private fun initCollect() {
-        viewModel.refreshEvent
-            .onEach { controller.scrollToPosition(0) }
-            .launchIn(lifecycleScope)
-
+        adapter.doOnListChanged changed@{
+            if (!viewModel.consumeScrollToFirst()) return@changed
+            controller.scrollToPosition(0)
+        }
         viewModel.flow
             .onEach(adapter.listCollector)
             .repeatOnLifecycle(lifecycle)
             .launchInLifecycleScope()
     }
+
+    private fun ListAdapter<LoopPagerAction, *>.initLoopPagerAction() {
+        val position = 0
+        val timeMillis = 1000L
+        doOnItemClick { _, item ->
+            when (item) {
+                LoopPagerAction.REFRESH -> {
+                    viewModel.refresh(timeMillis)
+                    showToast("${timeMillis / 1000}s后刷新")
+                }
+                LoopPagerAction.APPEND -> {
+                    viewModel.append(timeMillis)
+                    showToast("${timeMillis / 1000}s后添加")
+                }
+                LoopPagerAction.SCROLL -> {
+                    controller.scrollToPosition(position)
+                    showToast("非平滑滚动至bindingAdapterPosition = $position")
+                }
+                LoopPagerAction.SMOOTH_SCROLL -> {
+                    controller.smoothScrollToPosition(position, LookupDirection.START)
+                    showToast("平滑滚动至bindingAdapterPosition = $position")
+                }
+            }
+        }
+        submitList(LoopPagerAction.values().toList())
+    }
+}
+
+enum class LoopPagerAction(val text: String) {
+    REFRESH("Refresh"),
+    APPEND("Append"),
+    SCROLL("Scroll"),
+    SMOOTH_SCROLL("SmoothScroll")
 }

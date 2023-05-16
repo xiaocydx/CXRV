@@ -6,7 +6,7 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.withLayoutParams
@@ -15,24 +15,24 @@ import com.xiaocydx.sample.withLayoutParams
  * @author xcc
  * @date 2023/5/11
  */
-class ContentListAdapter : ListAdapter<ContentItem, RecyclerView.ViewHolder>() {
+class ContentListAdapter : ListAdapter<ContentItem, ViewHolder>() {
     private val tag = javaClass.simpleName
 
     override fun areItemsTheSame(oldItem: ContentItem, newItem: ContentItem): Boolean {
         return oldItem.id == newItem.id
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val textView = AppCompatTextView(parent.context).apply {
             gravity = Gravity.CENTER
             setBackgroundColor(0xFFBFD5CC.toInt())
             setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15f)
             withLayoutParams(matchParent, matchParent)
         }
-        return object : RecyclerView.ViewHolder(textView) {}
+        return object : ViewHolder(textView) {}
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: ContentItem) {
+    override fun onBindViewHolder(holder: ViewHolder, item: ContentItem) {
         Log.d(tag, "onBindViewHolder: " +
                 "layoutPosition = ${holder.layoutPosition}，" +
                 "bindingAdapterPosition = ${holder.bindingAdapterPosition}，" +
@@ -40,14 +40,14 @@ class ContentListAdapter : ListAdapter<ContentItem, RecyclerView.ViewHolder>() {
         (holder.itemView as TextView).text = item.text
     }
 
-    override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+    override fun onViewAttachedToWindow(holder: ViewHolder) {
         Log.d(tag, "onViewAttachedToWindow: " +
                 "layoutPosition = ${holder.layoutPosition}，" +
                 "bindingAdapterPosition = ${holder.bindingAdapterPosition}，" +
                 "hashCode = ${System.identityHashCode(holder)}")
     }
 
-    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+    override fun onViewDetachedFromWindow(holder: ViewHolder) {
         Log.d(tag, "onViewDetachedFromWindow: " +
                 "layoutPosition = ${holder.layoutPosition}，" +
                 "bindingAdapterPosition = ${holder.bindingAdapterPosition}，" +

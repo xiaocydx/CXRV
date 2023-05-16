@@ -3,10 +3,7 @@ package com.xiaocydx.sample.viewpager2.loop
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.*
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -15,13 +12,8 @@ import kotlinx.coroutines.launch
  */
 class ContentViewModel : ViewModel() {
     private val state = ListState<ContentItem>()
-    private val _refreshEvent = MutableSharedFlow<Unit>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-
+    private var pendingScrollToFirst = false
     val flow = state.asFlow()
-    val refreshEvent = _refreshEvent.asSharedFlow()
 
     init {
         refresh(timeMillis = 0)
@@ -30,8 +22,8 @@ class ContentViewModel : ViewModel() {
     fun refresh(timeMillis: Long) {
         viewModelScope.launch {
             delay(timeMillis)
+            pendingScrollToFirst = true
             state.submitList((1..3).map { ContentItem(it, "Page$it") })
-            _refreshEvent.tryEmit(Unit)
         }
     }
 
@@ -44,4 +36,6 @@ class ContentViewModel : ViewModel() {
             state.addItems(size, (start..end).map { ContentItem(it, "Page$it") })
         }
     }
+
+    fun consumeScrollToFirst() = pendingScrollToFirst.also { pendingScrollToFirst = false }
 }
