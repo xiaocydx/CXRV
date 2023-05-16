@@ -25,7 +25,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
-import com.xiaocydx.cxrv.internal.doOnPreDraw
 import com.xiaocydx.cxrv.viewpager2.R
 import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
 import com.xiaocydx.cxrv.viewpager2.loop.LoopAnchorUpdater
@@ -79,8 +78,8 @@ internal class LoopPagerScroller(
     fun scrollToPosition(layoutPosition: Int) {
         if (layoutPosition == NO_POSITION || viewPager2.currentItem == layoutPosition) return
         removeRunnable()
-        viewPager2.setCurrentItem(layoutPosition, false)
         viewPager2.optimizeNextFrameScroll(content)
+        viewPager2.setCurrentItem(layoutPosition, false)
     }
 
     /**
@@ -144,15 +143,12 @@ internal class LoopPagerScroller(
     }
 }
 
-@VisibleForTesting
+@set:VisibleForTesting
 internal var OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED = true
-
-@VisibleForTesting
-internal var OPTIMIZE_NEXT_FRAME_RESTORE_ENABLED = true
 
 /**
  * ### 优化初衷
- * 当滚动到起始端和结束端的附加页面时，再次触发滚动，会更新锚点信息，
+ * 当滚动到开始端和结束端的附加页面时，再次触发滚动，会更新锚点信息，
  * 更新锚点信息是通过非平滑滚动实现，这会导致可见的`itemView`被移除，
  * 下一帧[RecyclerView]按更新后的锚点信息布局，填充新的[ViewHolder]，
  * 对图片内容而言，通常有图片缓存，因此更新锚点信息产生的影响较小，
@@ -160,79 +156,96 @@ internal var OPTIMIZE_NEXT_FRAME_RESTORE_ENABLED = true
  * 产生的影响较大。
  *
  * ### 优化方案
- * 利用[ViewCacheExtension]解决上述问题，下一帧布局从[Recycler]的暂存区和离屏缓存，
- * 获取`bindingAdapterPosition`一致的[ViewHolder]，以此避免可见的`itemView`被移除、
- * 绑定新的[ViewHolder]。
+ * 1. 若`adapter.hasStableIds()`为`true`，则下一帧布局能根据`itemId`，
+ * 从[Recycler]的暂存区获取`holder`。
+ * 2. 若`adapter.hasStableIds()`为`false`，则利用[ViewCacheExtension]，
+ * 下一帧布局根据`bindingAdapterPosition`，从[Recycler]的暂存区获取`holder`。
+ *
+ * 这两个优化方案都能避免可见的`itemView`被移除、绑定新的[ViewHolder]，
+ * 优化方案1由调用者自行启用，优化方案2作为默认实现。
  */
 private fun ViewPager2.optimizeNextFrameScroll(content: LoopPagerContent) {
-    if (!OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED) return
-    val original = recyclerView.getViewCacheExtensionOrNull()
-    if (original is GetScrapForBindingAdapterPosition) return
-    val extension = GetScrapForBindingAdapterPosition(content, recyclerView, original)
-    extension.recycleCachedViewForCurrentViews()
-    recyclerView.setViewCacheExtension(extension)
-    if (OPTIMIZE_NEXT_FRAME_RESTORE_ENABLED) {
-        doOnPreDraw { recyclerView.setViewCacheExtension(original) }
+    if (!OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED) {
+        recyclerView.setViewCacheExtension(null)
+        return
     }
+    var extension = recyclerView.getViewCacheExtensionOrNull()
+    if (extension !is GetScrapOrCachedViewForBindingAdapterPosition) {
+        extension = GetScrapOrCachedViewForBindingAdapterPosition(content, extension)
+        recyclerView.setViewCacheExtension(extension)
+    }
+    recycleCachedViewForCurrentViews(content)
 }
 
-private class GetScrapForBindingAdapterPosition(
+/**
+ * 下一帧[RecyclerView]的布局流程会调用[Recycler.tryGetViewHolderForPositionByDeadline]填充子View，
+ * 若从离屏缓存获取到`cachedView`，则不会根据`itemId`或者`bindingAdapterPosition`获取当前`itemView`，
+ * 进而导致当前`itemView`不会挪到新的锚点位置，这不符合优化方案的预期，需要回收离屏缓存的`cachedView`。
+ */
+private fun ViewPager2.recycleCachedViewForCurrentViews(content: LoopPagerContent) {
+    val recyclerView = recyclerView
+    val recycler = recyclerView.mRecycler ?: return
+    val cachedViews = recycler.mCachedViews ?: return
+
+    @Suppress("UNCHECKED_CAST")
+    var tempCachedViews = getTag(R.id.tag_vp2_temp_cached_views) as? SparseArray<ViewHolder>
+    if (tempCachedViews == null) {
+        tempCachedViews = SparseArray<ViewHolder>()
+        setTag(R.id.tag_vp2_temp_cached_views, tempCachedViews)
+    }
+
+    for (index in cachedViews.indices) {
+        val holder = cachedViews[index]
+        val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
+        tempCachedViews.put(bindingAdapterPosition, holder)
+    }
+
+    if (tempCachedViews.size() > 0) {
+        for (index in 0 until recyclerView.childCount) {
+            val child = recyclerView.getChildAt(index)
+            val holder = recyclerView.getChildViewHolder(child) ?: continue
+            val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
+            // 若离屏缓存包含bindingAdapterPosition，则将cachedView回收进RecycledViewPool
+            val cachedView = tempCachedViews.get(bindingAdapterPosition) ?: continue
+            recycler.recycleCachedViewAt(cachedViews.indexOf(cachedView))
+        }
+    }
+    tempCachedViews.clear()
+}
+
+/**
+ * [Recycler.tryGetViewHolderForPositionByDeadline]：
+ * 1. [Recycler.getScrapOrHiddenOrCachedHolderForPosition]
+ * 2. [Recycler.getScrapOrCachedViewForId]
+ * 3. [getScrapOrCachedViewForBindingAdapterPosition]
+ *
+ * 若第1步未获取到`holder`，且`adapter.hasStableIds()`为`true`，
+ * 则调用第2步根据`itemId`获取`holder`，并更新`holder.mPosition`，
+ * 若第2步获取到`holder`，则不会调用第3步[getScrapOrCachedViewForBindingAdapterPosition]。
+ */
+private class GetScrapOrCachedViewForBindingAdapterPosition(
     private val content: LoopPagerContent,
-    private val recyclerView: RecyclerView,
     private val original: ViewCacheExtension?
 ) : ViewCacheExtension() {
 
-    /**
-     * 下一帧[RecyclerView]布局流程调用`RecyclerView.tryGetViewHolderForPositionByDeadline()`，
-     * 若从离屏缓存获取了可用的`holder`，则不会调用[getViewForPositionAndType]填充当前`itemView`，
-     * 进而导致当前`itemView`不会挪到新的锚点位置，这不符合优化方案的预期，因此需要回收离屏缓存。
-     */
-    fun recycleCachedViewForCurrentViews() {
-        val cachedViews = recyclerView.mRecycler.mCachedViews ?: return
-
-        @Suppress("UNCHECKED_CAST")
-        var tempCachedViews = recyclerView.getTag(R.id.tag_vp2_temp_cached_views) as? SparseArray<ViewHolder>
-        if (tempCachedViews == null) {
-            tempCachedViews = SparseArray<ViewHolder>()
-            recyclerView.setTag(R.id.tag_vp2_temp_cached_views, tempCachedViews)
-        }
-
-        for (index in cachedViews.indices) {
-            val holder = cachedViews[index]
-            val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
-            tempCachedViews.put(bindingAdapterPosition, holder)
-        }
-
-        if (tempCachedViews.size() > 0) {
-            for (index in 0 until recyclerView.childCount) {
-                val child = recyclerView.getChildAt(index)
-                val holder = recyclerView.getChildViewHolder(child) ?: continue
-                val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
-                // 若离屏缓存包含bindingAdapterPosition，则将cachedView回收进RecycledViewPool
-                val cachedView = tempCachedViews.get(bindingAdapterPosition) ?: continue
-                recyclerView.mRecycler.recycleCachedViewAt(cachedViews.indexOf(cachedView))
-            }
-        }
-        tempCachedViews.clear()
-    }
-
     override fun getViewForPositionAndType(recycler: Recycler, position: Int, type: Int): View? {
-        val runAnimations = recyclerView.mState.willRunSimpleAnimations()
-        val view = if (runAnimations) null else recycler.getScrapForBindingAdapterPosition(position)
+        val view = recycler.getScrapOrCachedViewForBindingAdapterPosition(position)
         return view ?: original?.getViewForPositionAndType(recycler, position, type)
     }
 
     /**
      * 判断逻辑参考自[Recycler.getScrapOrHiddenOrCachedHolderForPosition]
      */
-    private fun Recycler.getScrapForBindingAdapterPosition(position: Int): View? {
+    private fun Recycler.getScrapOrCachedViewForBindingAdapterPosition(position: Int): View? {
+        if (content.viewPager2.recyclerView.mState.willRunSimpleAnimations()) return null
+
         val attachedScrap = mAttachedScrap ?: emptyList<ViewHolder>()
         for (index in attachedScrap.indices) {
             val holder = attachedScrap[index]
             if (!holder.wasReturnedFromScrap()
                     && holder.isSameBindingAdapterPosition(position)
                     && !holder.isInvalid && !holder.isRemoved) {
-                // 修正layoutPosition，确保后续能消费滚动偏移
+                // 更新layoutPosition，确保后续能消费滚动偏移
                 holder.mPosition = position
                 holder.addFlags(ViewHolder.FLAG_RETURNED_FROM_SCRAP)
                 return holder.itemView
@@ -246,7 +259,7 @@ private class GetScrapForBindingAdapterPosition(
             if (!holder.isInvalid
                     && holder.isSameBindingAdapterPosition(position)
                     && !holder.isAttachedToTransitionOverlay) {
-                // 修正layoutPosition，确保后续能消费滚动偏移
+                // 更新layoutPosition，确保后续能消费滚动偏移
                 holder.mPosition = position
                 mCachedViews?.removeAt(index)
                 return holder.itemView

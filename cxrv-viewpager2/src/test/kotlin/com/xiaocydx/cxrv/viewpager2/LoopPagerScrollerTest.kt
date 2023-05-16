@@ -131,7 +131,7 @@ internal class LoopPagerScrollerTest {
      * ```
      */
     @Test
-    fun defaultUpdateAnchorWithOptimization() = withOptimization {
+    fun defaultUpdateAnchorWithOptimization() {
         verify(exactly = 0) { contentCallback.onBindViewHolder(any(), 2, any()) }
         loopPagerScroller.scrollToPosition(1)
 
@@ -212,7 +212,7 @@ internal class LoopPagerScrollerTest {
      * ```
      */
     @Test
-    fun paddingUpdateAnchorWithOptimization() = withOptimization {
+    fun paddingUpdateAnchorWithOptimization() {
         content.setupPadding()
         loopPagerScroller.scrollToPosition(1)
 
@@ -255,16 +255,11 @@ internal class LoopPagerScrollerTest {
         content.restorePadding()
     }
 
-    private inline fun withOptimization(block: () -> Unit) {
-        OPTIMIZE_NEXT_FRAME_RESTORE_ENABLED = false
-        block()
-        OPTIMIZE_NEXT_FRAME_RESTORE_ENABLED = true
-    }
-
     private inline fun withoutOptimization(block: () -> Unit) {
+        val previous = OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED
         OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED = false
         block()
-        OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED = true
+        OPTIMIZE_NEXT_FRAME_SCROLL_ENABLED = previous
     }
 
     private val LoopPagerContent.recyclerView: RecyclerView
