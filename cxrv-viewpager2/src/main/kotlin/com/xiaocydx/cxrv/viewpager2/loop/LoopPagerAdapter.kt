@@ -204,7 +204,7 @@ internal class LoopPagerAdapter(
             if (updateRangeExtraPage(start, updateCount)) {
                 // 如果viewPager.currentItem是附加页面，那么更新会导致当前可见内容发生变化，
                 // 这不符合预期，需要更新锚点信息，可以理解为将当前内容，挪到新的锚点进行展示。
-                updater.updateAnchor(offset = 0, lastContentCount)
+                updater.updateAnchor(lastContentCount)
             }
         }
 
@@ -224,9 +224,7 @@ internal class LoopPagerAdapter(
             // 更新header和footer，需要先算出更新范围，再计算交集
             val start = min(fromPosition, toPosition)
             val end = max(fromPosition, toPosition)
-            if (updateRangeExtraPage(start, itemCount = end - start + 1)) {
-                updater.updateAnchor(offset = if (isHeader) -1 else 1, lastContentCount)
-            }
+            updateRangeExtraPage(start, itemCount = end - start + 1)
         }
 
         private fun updateAllExtraPage(): Boolean {

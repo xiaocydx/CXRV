@@ -77,7 +77,7 @@ internal class LoopPagerAdapterTest {
                     adapter = contentAdapter,
                     extraPageLimit = PADDING_EXTRA_PAGE_LIMIT
                 )
-                loopPagerAdapter = LoopPagerAdapter(content) { _, _ -> }
+                loopPagerAdapter = LoopPagerAdapter(content) { }
                 loopPagerAdapter.registerAdapterDataObserver(loopPagerObserver)
                 it.viewPager2.adapter = loopPagerAdapter
             }

@@ -43,12 +43,10 @@ internal fun interface LoopAnchorUpdater {
      * 优化效果可以理解为将`B*`的`itemView`，挪到`B`处，
      * `itemView`不会被移除，也不会绑定新的[ViewHolder]。
      *
-     * @param offset 锚点位置的偏移，当对数据源进行`move`更新时，会有偏移值。
      * @param contentCount 内容`item`数量，当数据源更新时，会同步更新附加页面，
-     * 同步更新的初衷是更新离屏缓存，但如果`viewPager.currentItem`是附加页面，
-     * 那么会导致当前可见内容发生变化，这不符合预期，这种情况也需要更新锚点信息，
-     * 此时`adapter.itemCount`是最新值，且未布局完成，因此需要传入之前的数量，
-     * 数据源更新后的处理由[LoopPagerAdapter]完成。
+     * 如果`viewPager.currentItem`是附加页面，那么会导致当前可见内容发生变化，
+     * 这不符合预期，这种情况也需要更新锚点信息，此时`adapter.itemCount`是最新值，
+     * 且未布局完成，需要传入之前的数量，数据源更新后的处理由[LoopPagerAdapter]完成。
      */
-    fun updateAnchor(offset: Int, contentCount: Int)
+    fun updateAnchor(contentCount: Int)
 }
