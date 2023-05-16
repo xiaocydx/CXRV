@@ -191,7 +191,9 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
      */
     fun registerOnPageChangeCallback(callback: OnPageChangeCallback) {
         if (getCallbacks().containsKey(callback)) return
-        viewPager2.registerOnPageChangeCallback(callback)
+        val wrapper = CallbackWrapper(callback)
+        getCallbacks()[callback] = wrapper
+        viewPager2.registerOnPageChangeCallback(wrapper)
     }
 
     /**
