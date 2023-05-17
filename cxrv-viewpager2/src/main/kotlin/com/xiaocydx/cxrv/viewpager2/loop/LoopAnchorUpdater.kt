@@ -16,7 +16,6 @@
 
 package com.xiaocydx.cxrv.viewpager2.loop
 
-import androidx.recyclerview.widget.LoopPagerAdapter
 import androidx.recyclerview.widget.LoopPagerScroller
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewpager2.widget.ViewPager2
@@ -27,10 +26,10 @@ import androidx.viewpager2.widget.ViewPager2
  * @author xcc
  * @date 2023/5/13
  */
-internal fun interface LoopAnchorUpdater {
+internal interface LoopAnchorUpdater {
 
     /**
-     * 更新锚点信息
+     * 若`viewPager.currentItem`是附加页面，则更新锚点信息
      *
      * 以A和B是原始页面，`B*`和`A*`是附加页面为例：
      * ```
@@ -42,11 +41,17 @@ internal fun interface LoopAnchorUpdater {
      * 实现类会优化更新锚点信息的过程，避免产生其他影响，
      * 优化效果可以理解为将`B*`的`itemView`，挪到`B`处，
      * `itemView`不会被移除，也不会绑定新的[ViewHolder]。
-     *
-     * @param contentCount 内容`item`数量，当数据源更新时，会同步更新附加页面，
-     * 如果`viewPager.currentItem`是附加页面，那么会导致当前可见内容发生变化，
-     * 这不符合预期，这种情况也需要更新锚点信息，此时`adapter.itemCount`是最新值，
-     * 且未布局完成，需要传入之前的数量，数据源更新后的处理由[LoopPagerAdapter]完成。
      */
-    fun updateAnchor(contentCount: Int)
+    fun updateAnchorForCurrent()
+
+    /**
+     * 若`viewPager.currentItem`是附加页面，则更新锚点信息
+     *
+     * **注意**：该函数仅支持一帧内一次插入更新的场景，且没有[updateAnchorForCurrent]的优化效果。
+     *
+     * @param lastContentCount 之前的内容`item`数量
+     * @param positionStart    插入的`bindingAdapterPosition`
+     * @param itemCount        插入的`item`数量
+     */
+    fun updateAnchorForInserted(lastContentCount: Int, positionStart: Int, itemCount: Int)
 }

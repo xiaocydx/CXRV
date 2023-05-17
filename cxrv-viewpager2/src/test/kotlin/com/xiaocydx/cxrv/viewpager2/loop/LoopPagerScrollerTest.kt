@@ -113,7 +113,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 1) { contentCallback.onViewAttachedToWindow(previous) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previous) }
 
-        loopPagerScroller.updateAnchor(content.currentCount)
+        loopPagerScroller.updateAnchorForCurrent()
 
         // currentItem = 1 -> currentItem = 4，移除itemView，绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -142,7 +142,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 1) { contentCallback.onViewAttachedToWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
 
-        loopPagerScroller.updateAnchor(content.currentCount)
+        loopPagerScroller.updateAnchorForCurrent()
 
         // currentItem = 1 -> currentItem = 4，不移除itemView，不绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -180,7 +180,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousA) }
 
-        loopPagerScroller.updateAnchor(content.currentCount)
+        loopPagerScroller.updateAnchorForCurrent()
 
         // currentItem = 1 -> currentItem = 4，移除itemView，绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -232,7 +232,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousA) }
 
-        loopPagerScroller.updateAnchor(content.currentCount)
+        loopPagerScroller.updateAnchorForCurrent()
 
         // currentItem = 1 -> currentItem = 4，不移除itemView，不绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -258,10 +258,10 @@ internal class LoopPagerScrollerTest {
     }
 
     private inline fun withoutOptimization(block: () -> Unit) {
-        val previous = OPTIMIZE_ENABLED
-        OPTIMIZE_ENABLED = false
+        val previous = ANCHOR_OPTIMIZATION_ENABLED
+        ANCHOR_OPTIMIZATION_ENABLED = false
         block()
-        OPTIMIZE_ENABLED = previous
+        ANCHOR_OPTIMIZATION_ENABLED = previous
     }
 
     private val LoopPagerContent.recyclerView: RecyclerView
@@ -279,5 +279,28 @@ internal class LoopPagerScrollerTest {
 
     private fun LoopPagerContent.findViewHolderForLayoutPosition(layoutPosition: Int): ViewHolder {
         return requireNotNull(recyclerView.findViewHolderForLayoutPosition(layoutPosition))
+    }
+
+    private class TestTempAttachedScrap : TempAttachedScrap {
+        private val mutableMap = mutableMapOf<Int, ViewHolder>()
+
+        override val size: Int
+            get() = mutableMap.size
+
+        override fun get(bindingAdapterPosition: Int): ViewHolder? {
+            return mutableMap[bindingAdapterPosition]
+        }
+
+        override fun set(bindingAdapterPosition: Int, holder: ViewHolder) {
+            mutableMap[bindingAdapterPosition] = holder
+        }
+
+        override fun clear() = mutableMap.clear()
+    }
+
+    private companion object {
+        init {
+            tempAttachedScrapProvider = { TestTempAttachedScrap() }
+        }
     }
 }

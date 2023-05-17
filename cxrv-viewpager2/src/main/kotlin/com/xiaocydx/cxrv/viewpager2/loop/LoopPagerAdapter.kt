@@ -190,7 +190,6 @@ internal class LoopPagerAdapter(
         }
 
         override fun itemRangeInserted(positionStart: Int, itemCount: Int) {
-            val updateCount = content.extraPageLimit
             // 更新footer，跟itemRangeChanged()计算交集的过程一致，
             // 更新header，需要偏移positionStart，再计算交集，例如：
             // extraPageLimit = 2, {B* ，C* ，A ，B ，C ，A* ，B*}
@@ -200,11 +199,12 @@ internal class LoopPagerAdapter(
             // 2. positionStart = 2，更新headerBindingAdapterPositionRange = [1, 1]
             // 3. positionStart = 3，更新headerBindingAdapterPositionRange = [1, 2]
             // positionStart - updateCount能让updateRangeExtraPage()计算出预期的交集。
+            val updateCount = content.extraPageLimit
             val start = if (isHeader) positionStart - updateCount else positionStart
             if (updateRangeExtraPage(start, updateCount)) {
                 // 如果viewPager.currentItem是附加页面，那么更新会导致当前可见内容发生变化，
                 // 这不符合预期，需要更新锚点信息，可以理解为将当前内容，挪到新的锚点进行展示。
-                updater.updateAnchor(lastContentCount)
+                updater.updateAnchorForInserted(lastContentCount, positionStart, itemCount)
             }
         }
 

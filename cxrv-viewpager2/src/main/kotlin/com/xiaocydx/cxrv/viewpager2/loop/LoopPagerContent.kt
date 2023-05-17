@@ -144,8 +144,8 @@ internal class LoopPagerContent(
         val last = lastLayoutPosition(contentCount)
         if (first == NO_POSITION || layoutPosition !in first..last) return NO_POSITION
         if (!supportLoop(contentCount)) return layoutPosition
-        var bindingAdapterPosition = (layoutPosition - extraPageLimit) % currentCount
-        if (bindingAdapterPosition < 0) bindingAdapterPosition += currentCount
+        var bindingAdapterPosition = (layoutPosition - extraPageLimit) % contentCount
+        if (bindingAdapterPosition < 0) bindingAdapterPosition += contentCount
         return bindingAdapterPosition
     }
 
