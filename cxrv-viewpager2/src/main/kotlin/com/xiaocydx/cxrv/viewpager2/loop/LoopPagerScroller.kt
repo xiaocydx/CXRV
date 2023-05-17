@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.RecyclerView.ViewHolder.FLAG_RETURNED_FROM_SCRAP
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
+import androidx.viewpager2.widget.setCurrentItemDirect
 import com.xiaocydx.cxrv.viewpager2.R
 import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
 import com.xiaocydx.cxrv.viewpager2.loop.LoopAnchorUpdater
@@ -125,7 +126,7 @@ internal class LoopPagerScroller(
         val anchorPosition = getNewAnchorPositionForCurrent()
         if (anchorPosition == NO_POSITION) return
         optimization.optimizeLayoutForCurrent(anchorPosition)
-        viewPager2.setCurrentItem(anchorPosition, false)
+        optimization.optimizeScrollToPosition(anchorPosition)
     }
 
     private fun getNewAnchorPositionForCurrent(): Int {
@@ -168,12 +169,6 @@ internal class LoopPagerScroller(
     }
 }
 
-@set:VisibleForTesting
-internal var ANCHOR_OPTIMIZATION_ENABLED = true
-
-@set:VisibleForTesting
-internal var tempAttachedScrapProvider: () -> TempAttachedScrap = { DefaultTempAttachedScrap() }
-
 /**
  * ### 优化初衷
  * 当滚动到开始端和结束端的附加页面时，再次触发滚动，会更新锚点信息，
@@ -184,13 +179,11 @@ internal var tempAttachedScrapProvider: () -> TempAttachedScrap = { DefaultTempA
  * 产生的影响较大。
  *
  * ### 优化方案
- * 利用[ViewCacheExtension]填充目标位置的`itemView`，
- * 避免可见的`itemView`被移除、绑定新的[ViewHolder]：
- * 1. [prepareAttachedScrap]标记目标位置`itemView`。
- * 2. [removeAndRecycleViewsIfNecessary]处理离屏页面。
- * 3. [recycleCachedViewsIfNecessary]处理离屏缓存。
+ * 1. [optimizeLayoutForCurrent]标记目标位置`itemView`，处理离屏页面和离屏缓存。
+ * 2. [optimizeScrollToPosition]处理[ViewPager2.setCurrentItem]的滚动状态。
+ * 3. [GetScrapForBindingAdapterPosition]获取目标位置的`itemView`。
  */
-private class AnchorOptimization(private val content: LoopPagerContent) : RecyclerListener {
+internal class AnchorOptimization(private val content: LoopPagerContent) : RecyclerListener {
     private val tempAttachedScrap = tempAttachedScrapProvider()
     private val pendingRemovals = mutableSetOf<ViewHolder>()
 
@@ -204,7 +197,7 @@ private class AnchorOptimization(private val content: LoopPagerContent) : Recycl
 
     /**
      * [RecyclerView.dispatchLayoutStep3]会回收[Recycler.mAttachedScrap]，
-     * 此时可以检查[tempAttachedScrap]是否已被填充，若未被填充，则重置属性。
+     * 此时重置[tempAttachedScrap]未填充`holder`的[viewCacheExtensionPosition]。
      */
     override fun onViewRecycled(holder: ViewHolder) {
         if (holder.isViewCacheExtensionScrap) {
@@ -227,6 +220,23 @@ private class AnchorOptimization(private val content: LoopPagerContent) : Recycl
         removeAndRecycleViewsIfNecessary()
         recycleCachedViewsIfNecessary()
         clear()
+    }
+
+    /**
+     * 当[RecyclerView.onInterceptTouchEvent]将滚动状态设为[SCROLL_STATE_DRAGGING]时，
+     * 会对[OnScrollListener]分发新的滚动状态，此时需要在[optimizeLayoutForCurrent]之后，
+     * 调用[ViewPager2.setCurrentItem]更新锚点信息，但该函数会调用至[RecyclerView.stopScroll]，
+     * 将滚动状态设为[SCROLL_STATE_IDLE]，导致[RecyclerView.onInterceptTouchEvent]返回`false`，
+     * 在实际场景中，手势滚动可能会因为这次触摸事件拦截失败，而出现交互不流畅的问题。
+     */
+    fun optimizeScrollToPosition(anchorPosition: Int) {
+        val viewPager2 = content.viewPager2
+        if (ANCHOR_OPTIMIZATION_ENABLED && viewPager2.scrollState == SCROLL_STATE_DRAGGING) {
+            viewPager2.setCurrentItemDirect(anchorPosition)
+            viewPager2.recyclerView.layoutManager?.scrollToPosition(anchorPosition)
+        } else {
+            viewPager2.setCurrentItem(anchorPosition, false)
+        }
     }
 
     private fun prepareAttachedScrap(anchorPosition: Int) {
@@ -274,7 +284,7 @@ private class AnchorOptimization(private val content: LoopPagerContent) : Recycl
      * 若从离屏缓存获取到`cachedView`，则不会根据`itemId`或`bindingAdapterPosition`获取当前`itemView`，
      * 进而导致当前`itemView`不会挪到新的锚点位置，这不符合优化方案的预期，需要回收离屏缓存的`cachedView`。
      */
-    fun recycleCachedViewsIfNecessary() {
+    private fun recycleCachedViewsIfNecessary() {
         val recyclerView = content.viewPager2.recyclerView
         val recycler = recyclerView.mRecycler ?: return
         val cachedViews = recycler.mCachedViews ?: return
@@ -298,40 +308,29 @@ private class AnchorOptimization(private val content: LoopPagerContent) : Recycl
         if (tempAttachedScrap.size > 0) tempAttachedScrap.clear()
         if (pendingRemovals.isNotEmpty()) pendingRemovals.clear()
     }
+
+    companion object {
+        @set:VisibleForTesting
+        internal var ANCHOR_OPTIMIZATION_ENABLED = true
+
+        @set:VisibleForTesting
+        internal var tempAttachedScrapProvider: () -> TempAttachedScrap = { DefaultTempAttachedScrap() }
+    }
 }
 
 /**
- * 兼容单元测试
+ * 是否设置了[viewCacheExtensionPosition]
  */
-internal interface TempAttachedScrap {
-    val size: Int
-    operator fun get(bindingAdapterPosition: Int): ViewHolder?
-    operator fun set(bindingAdapterPosition: Int, holder: ViewHolder)
-    fun clear()
-}
-
-private class DefaultTempAttachedScrap : TempAttachedScrap {
-    private val sparseArray = SparseArray<ViewHolder>()
-
-    override val size: Int
-        get() = sparseArray.size()
-
-    override fun get(bindingAdapterPosition: Int): ViewHolder? {
-        return sparseArray[bindingAdapterPosition]
-    }
-
-    override fun set(bindingAdapterPosition: Int, holder: ViewHolder) {
-        sparseArray[bindingAdapterPosition] = holder
-    }
-
-    override fun clear() = sparseArray.clear()
-}
+private val ViewHolder.isViewCacheExtensionScrap: Boolean
+    get() = viewCacheExtensionPosition != NO_POSITION
 
 /**
  * [Recycler.tryGetViewHolderForPositionByDeadline]：
  * 1. [Recycler.getScrapOrHiddenOrCachedHolderForPosition]
  * 2. [Recycler.getScrapOrCachedViewForId]
- * 添加[FLAG_RETURNED_FROM_SCRAP]，让这两步不能获取到`scrap`。
+ *
+ * 添加的[FLAG_RETURNED_FROM_SCRAP]，让这两步不能获取当前[ViewHolder]，
+ * 以此确保[GetScrapForBindingAdapterPosition]获取到当前[ViewHolder]。
  */
 private var ViewHolder.viewCacheExtensionPosition: Int
     get() {
@@ -342,9 +341,6 @@ private var ViewHolder.viewCacheExtensionPosition: Int
         itemView.setTag(R.id.tag_vp2_view_cache_extension_scrap, value)
         if (value != NO_POSITION) addFlags(FLAG_RETURNED_FROM_SCRAP) else clearReturnedFromScrapFlag()
     }
-
-private val ViewHolder.isViewCacheExtensionScrap: Boolean
-    get() = viewCacheExtensionPosition != NO_POSITION
 
 private class GetScrapForBindingAdapterPosition(
     private val content: LoopPagerContent,
@@ -380,4 +376,31 @@ private class GetScrapForBindingAdapterPosition(
     private fun ViewHolder.isSameBindingAdapterPosition(position: Int): Boolean {
         return content.toBindingAdapterPosition(layoutPosition) == content.toBindingAdapterPosition(position)
     }
+}
+
+/**
+ * 使用[SparseArray]会让单元测试报错（未找到原因），因此用接口进行兼容
+ */
+internal interface TempAttachedScrap {
+    val size: Int
+    operator fun get(bindingAdapterPosition: Int): ViewHolder?
+    operator fun set(bindingAdapterPosition: Int, holder: ViewHolder)
+    fun clear()
+}
+
+private class DefaultTempAttachedScrap : TempAttachedScrap {
+    private val sparseArray = SparseArray<ViewHolder>()
+
+    override val size: Int
+        get() = sparseArray.size()
+
+    override fun get(bindingAdapterPosition: Int): ViewHolder? {
+        return sparseArray[bindingAdapterPosition]
+    }
+
+    override fun set(bindingAdapterPosition: Int, holder: ViewHolder) {
+        sparseArray[bindingAdapterPosition] = holder
+    }
+
+    override fun clear() = sparseArray.clear()
 }

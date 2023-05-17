@@ -258,10 +258,10 @@ internal class LoopPagerScrollerTest {
     }
 
     private inline fun withoutOptimization(block: () -> Unit) {
-        val previous = ANCHOR_OPTIMIZATION_ENABLED
-        ANCHOR_OPTIMIZATION_ENABLED = false
+        val previous = AnchorOptimization.ANCHOR_OPTIMIZATION_ENABLED
+        AnchorOptimization.ANCHOR_OPTIMIZATION_ENABLED = false
         block()
-        ANCHOR_OPTIMIZATION_ENABLED = previous
+        AnchorOptimization.ANCHOR_OPTIMIZATION_ENABLED = previous
     }
 
     private val LoopPagerContent.recyclerView: RecyclerView
@@ -300,7 +300,7 @@ internal class LoopPagerScrollerTest {
 
     private companion object {
         init {
-            tempAttachedScrapProvider = { TestTempAttachedScrap() }
+            AnchorOptimization.tempAttachedScrapProvider = { TestTempAttachedScrap() }
         }
     }
 }
