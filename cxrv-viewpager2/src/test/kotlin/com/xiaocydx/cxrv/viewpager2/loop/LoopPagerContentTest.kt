@@ -79,7 +79,7 @@ internal class LoopPagerContentTest {
      */
     @Test
     fun currentCount() {
-        assertThat(content.currentCount).isEqualTo(3)
+        assertThat(content.count).isEqualTo(3)
     }
 
     /**
@@ -120,7 +120,6 @@ internal class LoopPagerContentTest {
     @Test
     fun firstLayoutPosition() {
         assertThat(content.firstLayoutPosition()).isEqualTo(0)
-        assertThat(content.firstLayoutPosition(contentCount = 0)).isEqualTo(NO_POSITION)
     }
 
     /**
@@ -133,7 +132,6 @@ internal class LoopPagerContentTest {
     @Test
     fun lastLayoutPosition() {
         assertThat(content.lastLayoutPosition()).isEqualTo(6)
-        assertThat(content.lastLayoutPosition(contentCount = 0)).isEqualTo(NO_POSITION)
     }
 
     /**
@@ -148,8 +146,6 @@ internal class LoopPagerContentTest {
     fun firstExtraLayoutPosition() {
         assertThat(content.firstExtraLayoutPosition(isHeader = true)).isEqualTo(0)
         assertThat(content.firstExtraLayoutPosition(isHeader = false)).isEqualTo(5)
-        assertThat(content.firstExtraLayoutPosition(isHeader = true, contentCount = 0)).isEqualTo(NO_POSITION)
-        assertThat(content.firstExtraLayoutPosition(isHeader = false, contentCount = 0)).isEqualTo(NO_POSITION)
     }
 
     /**
@@ -164,8 +160,6 @@ internal class LoopPagerContentTest {
     fun lastExtraLayoutPosition() {
         assertThat(content.lastExtraLayoutPosition(isHeader = true)).isEqualTo(1)
         assertThat(content.lastExtraLayoutPosition(isHeader = false)).isEqualTo(6)
-        assertThat(content.lastExtraLayoutPosition(isHeader = true, contentCount = 0)).isEqualTo(NO_POSITION)
-        assertThat(content.lastExtraLayoutPosition(isHeader = false, contentCount = 0)).isEqualTo(NO_POSITION)
     }
 
     /**
@@ -195,7 +189,6 @@ internal class LoopPagerContentTest {
     @Test
     fun firstBindingAdapterPosition() {
         assertThat(content.firstBindingAdapterPosition()).isEqualTo(0)
-        assertThat(content.firstBindingAdapterPosition(contentCount = 0)).isEqualTo(NO_POSITION)
     }
 
     /**
@@ -208,7 +201,6 @@ internal class LoopPagerContentTest {
     @Test
     fun lastBindingAdapterPosition() {
         assertThat(content.lastBindingAdapterPosition()).isEqualTo(2)
-        assertThat(content.lastBindingAdapterPosition(contentCount = 0)).isEqualTo(NO_POSITION)
     }
 
     /**
@@ -223,8 +215,6 @@ internal class LoopPagerContentTest {
     fun firstExtraBindingAdapterPosition() {
         assertThat(content.firstExtraBindingAdapterPosition(isHeader = true)).isEqualTo(1)
         assertThat(content.firstExtraBindingAdapterPosition(isHeader = false)).isEqualTo(0)
-        assertThat(content.firstExtraBindingAdapterPosition(isHeader = true, contentCount = 0)).isEqualTo(NO_POSITION)
-        assertThat(content.firstExtraBindingAdapterPosition(isHeader = false, contentCount = 0)).isEqualTo(NO_POSITION)
     }
 
     /**
@@ -239,7 +229,5 @@ internal class LoopPagerContentTest {
     fun lastExtraBindingAdapterPosition() {
         assertThat(content.lastExtraBindingAdapterPosition(isHeader = true)).isEqualTo(2)
         assertThat(content.lastExtraBindingAdapterPosition(isHeader = false)).isEqualTo(1)
-        assertThat(content.lastExtraBindingAdapterPosition(isHeader = true, contentCount = 0)).isEqualTo(NO_POSITION)
-        assertThat(content.lastExtraBindingAdapterPosition(isHeader = false, contentCount = 0)).isEqualTo(NO_POSITION)
     }
 }

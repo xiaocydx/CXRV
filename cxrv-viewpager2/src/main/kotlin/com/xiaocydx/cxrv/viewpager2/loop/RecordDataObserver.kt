@@ -20,62 +20,23 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 
 /**
- * 在每次更新时，记录`adapter.itemCount`为`lastItemCount`
+ * 在每次更新时，记录`adapter.itemCount`为[lastItemCount]
  *
  * @author xcc
  * @date 2023/5/11
  */
-internal abstract class RecordDataObserver(private val adapter: Adapter<*>) : AdapterDataObserver() {
-    protected var lastItemCount = adapter.itemCount
+internal class RecordDataObserver(private val adapter: Adapter<*>) : AdapterDataObserver() {
+    var lastItemCount = adapter.itemCount
         private set
 
-    protected fun recordItemCount() {
+    private fun recordItemCount() {
         lastItemCount = adapter.itemCount
     }
 
-    final override fun onChanged() {
-        changed()
-        recordItemCount()
-    }
-
-    final override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
-        if (positionStart >= 0 && itemCount > 0) {
-            onItemRangeChanged(positionStart, itemCount, null)
-        }
-        recordItemCount()
-    }
-
-    final override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
-        if (positionStart >= 0 && itemCount > 0) {
-            itemRangeChanged(positionStart, itemCount, payload)
-        }
-        recordItemCount()
-    }
-
-    final override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-        if (positionStart >= 0 && itemCount > 0) {
-            itemRangeInserted(positionStart, itemCount)
-        }
-        recordItemCount()
-    }
-
-    final override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-        if (positionStart >= 0 && itemCount > 0) {
-            itemRangeRemoved(positionStart, itemCount)
-        }
-        recordItemCount()
-    }
-
-    final override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
-        if (fromPosition >= 0 && toPosition >= 0 && itemCount > 0) {
-            itemRangeMoved(fromPosition, toPosition, itemCount)
-        }
-        recordItemCount()
-    }
-
-    protected open fun changed() = Unit
-    protected open fun itemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) = Unit
-    protected open fun itemRangeInserted(positionStart: Int, itemCount: Int) = Unit
-    protected open fun itemRangeRemoved(positionStart: Int, itemCount: Int) = Unit
-    protected open fun itemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) = Unit
+    override fun onChanged() = recordItemCount()
+    override fun onItemRangeChanged(positionStart: Int, itemCount: Int) = onChanged()
+    override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) = onChanged()
+    override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = onChanged()
+    override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) = onChanged()
+    override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) = onChanged()
 }
