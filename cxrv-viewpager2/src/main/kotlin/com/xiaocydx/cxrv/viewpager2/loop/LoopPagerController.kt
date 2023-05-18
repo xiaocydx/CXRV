@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER", "CANNOT_OVERRIDE_INVISIBLE_MEMBER")
-
 package com.xiaocydx.cxrv.viewpager2.loop
 
 import androidx.annotation.Px
-import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.LoopPagerAdapter
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.pendingSavedState
+import androidx.recyclerview.widget.recyclerView
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
-import com.xiaocydx.cxrv.internal.PreDrawListener
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.DEFAULT_EXTRA_PAGE_LIMIT
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTRA_PAGE_LIMIT
 
@@ -47,7 +47,6 @@ import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTR
  */
 class LoopPagerController(private val viewPager2: ViewPager2) {
     private var extraPageLimit = DEFAULT_EXTRA_PAGE_LIMIT
-    private var checker: LoopPagerChecker? = null
     private var content: LoopPagerContent? = null
     private var scroller: LoopPagerScroller? = null
     private var observer: NotEmptyDataObserver? = null
@@ -80,12 +79,12 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
      * ```
      */
     fun setAdapter(adapter: Adapter<*>) {
+        content?.removeObserver()
         content = LoopPagerContent(viewPager2, adapter, extraPageLimit)
         scroller?.removeCallback()
         scroller = LoopPagerScroller(content!!)
         viewPager2.adapter = LoopPagerAdapter(content!!, scroller!!)
         initAnchorIfNecessary()
-        initCheckerIfNecessary()
     }
 
     /**
@@ -102,11 +101,6 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
         // 初始化阶段adapter.itemCount > 0，会直接设置初始锚点信息，不过这没有影响，
         // LinearLayoutManager.updateAnchorInfoForLayout()仍会处理pendingSavedState。
         scroller.scrollToPosition(content.toLayoutPosition(0))
-    }
-
-    private fun initCheckerIfNecessary() {
-        checker?.removeListener()
-        checker = if (CHECKED_ENABLED) LoopPagerChecker() else null
     }
 
     /**
@@ -209,16 +203,6 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
         return callbacks!!
     }
 
-    private inner class LoopPagerChecker : PreDrawListener(viewPager2) {
-
-        override fun onPreDraw(): Boolean {
-            require(viewPager2.adapter is LoopPagerAdapter) {
-                "ViewPager的adapter被替换，无法支持循环页面"
-            }
-            return super.onPreDraw()
-        }
-    }
-
     private inner class CallbackWrapper(private val delegate: OnPageChangeCallback) : OnPageChangeCallback() {
 
         override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
@@ -235,10 +219,6 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
             content ?: return
             delegate.onPageScrollStateChanged(state)
         }
-    }
-
-    private companion object {
-        const val CHECKED_ENABLED = false
     }
 }
 

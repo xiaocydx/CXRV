@@ -104,7 +104,7 @@ internal class LoopPagerScrollerTest {
      * ```
      */
     @Test
-    fun defaultUpdateAnchorWithoutOptimization() {
+    fun defaultUpdateAnchorWithoutOptimization() = withoutOptimization {
         verify(exactly = 0) { contentCallback.onBindViewHolder(any(), 2, any()) }
         loopPagerScroller.scrollToPosition(1)
 
@@ -113,7 +113,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 1) { contentCallback.onViewAttachedToWindow(previous) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previous) }
 
-        loopPagerScroller.updateAnchorForCurrent()
+        loopPagerScroller.updateAnchorInfo(fromNotify = false, content)
 
         // currentItem = 1 -> currentItem = 4，移除itemView，绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -133,7 +133,7 @@ internal class LoopPagerScrollerTest {
      * ```
      */
     @Test
-    fun defaultUpdateAnchorWithOptimization() = withOptimization {
+    fun defaultUpdateAnchorWithOptimization() {
         verify(exactly = 0) { contentCallback.onBindViewHolder(any(), 2, any()) }
         loopPagerScroller.scrollToPosition(1)
 
@@ -142,7 +142,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 1) { contentCallback.onViewAttachedToWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
 
-        loopPagerScroller.updateAnchorForCurrent()
+        loopPagerScroller.updateAnchorInfo(fromNotify = false, content)
 
         // currentItem = 1 -> currentItem = 4，不移除itemView，不绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -162,7 +162,7 @@ internal class LoopPagerScrollerTest {
      * ```
      */
     @Test
-    fun paddingUpdateAnchorWithoutOptimization() {
+    fun paddingUpdateAnchorWithoutOptimization() = withoutOptimization {
         content.setupPadding()
         loopPagerScroller.scrollToPosition(1)
 
@@ -180,7 +180,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousA) }
 
-        loopPagerScroller.updateAnchorForCurrent()
+        loopPagerScroller.updateAnchorInfo(fromNotify = false, content)
 
         // currentItem = 1 -> currentItem = 4，移除itemView，绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -214,7 +214,7 @@ internal class LoopPagerScrollerTest {
      * ```
      */
     @Test
-    fun paddingUpdateAnchorWithOptimization() = withOptimization {
+    fun paddingUpdateAnchorWithOptimization() {
         content.setupPadding()
         loopPagerScroller.scrollToPosition(1)
 
@@ -232,7 +232,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousA) }
 
-        loopPagerScroller.updateAnchorForCurrent()
+        loopPagerScroller.updateAnchorInfo(fromNotify = false, content)
 
         // currentItem = 1 -> currentItem = 4，不移除itemView，不绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -257,11 +257,11 @@ internal class LoopPagerScrollerTest {
         content.restorePadding()
     }
 
-    private inline fun withOptimization(block: () -> Unit) {
-        val previous = AnchorOptimization.CHECK_SCROLL_STATE
-        AnchorOptimization.CHECK_SCROLL_STATE = false
+    private inline fun withoutOptimization(block: () -> Unit) {
+        val previous = LoopAnchorUpdaterImpl.OPTIMIZATION_ENABLED
+        LoopAnchorUpdaterImpl.OPTIMIZATION_ENABLED = false
         block()
-        AnchorOptimization.CHECK_SCROLL_STATE = previous
+        LoopAnchorUpdaterImpl.OPTIMIZATION_ENABLED = previous
     }
 
     private val LoopPagerContent.recyclerView: RecyclerView
@@ -305,7 +305,7 @@ internal class LoopPagerScrollerTest {
 
     private companion object {
         init {
-            AnchorOptimization.targetScrapStoreProvider = { TestTargetScrapStore() }
+            LoopAnchorUpdaterImpl.targetScrapStoreProvider = { TestTargetScrapStore() }
         }
     }
 }
