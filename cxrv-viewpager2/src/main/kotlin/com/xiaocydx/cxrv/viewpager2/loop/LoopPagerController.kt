@@ -137,7 +137,7 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
     fun scrollToPosition(position: Int) {
         val content = content ?: return
         val wait = waitNotEmptyIfNecessary { scrollToPosition(position) }
-        if (wait) return
+        if (wait || position == content.toBindingAdapterPosition(viewPager2.currentItem)) return
         scroller?.scrollToPosition(content.toLayoutPosition(position))
     }
 
@@ -157,7 +157,7 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
     fun smoothScrollToPosition(position: Int, direction: LookupDirection = LookupDirection.END) {
         val content = content ?: return
         val wait = waitNotEmptyIfNecessary { smoothScrollToPosition(position, direction) }
-        if (wait) return
+        if (wait || position == content.toBindingAdapterPosition(viewPager2.currentItem)) return
         scroller?.smoothScrollToPosition(content.toLayoutPosition(position), direction)
     }
 

@@ -104,7 +104,7 @@ internal class LoopPagerScrollerTest {
      * ```
      */
     @Test
-    fun defaultUpdateAnchorWithoutOptimization() = withoutOptimization {
+    fun defaultUpdateAnchorWithoutOptimization() {
         verify(exactly = 0) { contentCallback.onBindViewHolder(any(), 2, any()) }
         loopPagerScroller.scrollToPosition(1)
 
@@ -133,7 +133,7 @@ internal class LoopPagerScrollerTest {
      * ```
      */
     @Test
-    fun defaultUpdateAnchorWithOptimization() {
+    fun defaultUpdateAnchorWithOptimization() = withOptimization {
         verify(exactly = 0) { contentCallback.onBindViewHolder(any(), 2, any()) }
         loopPagerScroller.scrollToPosition(1)
 
@@ -162,7 +162,7 @@ internal class LoopPagerScrollerTest {
      * ```
      */
     @Test
-    fun paddingUpdateAnchorWithoutOptimization() = withoutOptimization {
+    fun paddingUpdateAnchorWithoutOptimization() {
         content.setupPadding()
         loopPagerScroller.scrollToPosition(1)
 
@@ -214,7 +214,7 @@ internal class LoopPagerScrollerTest {
      * ```
      */
     @Test
-    fun paddingUpdateAnchorWithOptimization() {
+    fun paddingUpdateAnchorWithOptimization() = withOptimization {
         content.setupPadding()
         loopPagerScroller.scrollToPosition(1)
 
@@ -257,11 +257,11 @@ internal class LoopPagerScrollerTest {
         content.restorePadding()
     }
 
-    private inline fun withoutOptimization(block: () -> Unit) {
-        val previous = AnchorOptimization.ANCHOR_OPTIMIZATION_ENABLED
-        AnchorOptimization.ANCHOR_OPTIMIZATION_ENABLED = false
+    private inline fun withOptimization(block: () -> Unit) {
+        val previous = AnchorOptimization.CHECK_SCROLL_STATE
+        AnchorOptimization.CHECK_SCROLL_STATE = false
         block()
-        AnchorOptimization.ANCHOR_OPTIMIZATION_ENABLED = previous
+        AnchorOptimization.CHECK_SCROLL_STATE = previous
     }
 
     private val LoopPagerContent.recyclerView: RecyclerView
@@ -281,7 +281,7 @@ internal class LoopPagerScrollerTest {
         return requireNotNull(recyclerView.findViewHolderForLayoutPosition(layoutPosition))
     }
 
-    private class TestTempAttachedScrap : TempAttachedScrap {
+    private class TestTargetScrapStore : TargetScrapStore {
         private val mutableMap = mutableMapOf<Int, ViewHolder>()
 
         override val size: Int
@@ -295,12 +295,17 @@ internal class LoopPagerScrollerTest {
             mutableMap[bindingAdapterPosition] = holder
         }
 
+        override fun valueAt(index: Int): ViewHolder {
+            mutableMap.onEachIndexed { i, entry -> if (i == index) return entry.value }
+            throw ArrayIndexOutOfBoundsException(index)
+        }
+
         override fun clear() = mutableMap.clear()
     }
 
     private companion object {
         init {
-            AnchorOptimization.tempAttachedScrapProvider = { TestTempAttachedScrap() }
+            AnchorOptimization.targetScrapStoreProvider = { TestTargetScrapStore() }
         }
     }
 }

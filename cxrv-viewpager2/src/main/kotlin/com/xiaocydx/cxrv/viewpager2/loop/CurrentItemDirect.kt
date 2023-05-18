@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:JvmName("CurrentItemDirtyInternalKt")
+@file:JvmName("CurrentItemDirectInternalKt")
 @file:Suppress("PackageDirectoryMismatch")
 
 package androidx.viewpager2.widget
