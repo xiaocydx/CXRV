@@ -201,8 +201,7 @@ internal class AnchorOptimization(private val content: LoopPagerContent) {
      */
     private fun updateAnchorInfoInNextLayout(anchorPosition: Int) {
         val recyclerView = content.viewPager2.recyclerView
-        val recycler = recyclerView.mRecycler ?: return
-        val cachedViews = recycler.mCachedViews ?: return
+        val cachedViews = recyclerView.mRecycler?.mCachedViews ?: return
 
         // 查找当前targetScrap，并基于新锚点设置layoutPosition
         val current = content.viewPager2.currentItem
