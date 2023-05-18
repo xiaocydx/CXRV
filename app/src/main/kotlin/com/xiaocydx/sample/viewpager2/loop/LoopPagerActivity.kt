@@ -5,6 +5,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
+import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.Edge
@@ -51,10 +52,13 @@ class LoopPagerActivity : AppCompatActivity() {
             viewPager2.doOnPreDraw { viewPager2.requestTransform() }
         }
 
-        viewPager2.setPageTransformer(MarginPageTransformer(10.dp))
         controller = LoopPagerController(viewPager2)
         controller.setAdapter(adapter)
-        controller.setPadding(left = 40.dp, right = 40.dp)
+        controller.setPadding(left = 50.dp, right = 50.dp)
+        viewPager2.setPageTransformer(CompositePageTransformer().apply {
+            addTransformer(ScaleInTransformer())
+            addTransformer(MarginPageTransformer(10.dp))
+        })
 
         rvAction
             .linear(orientation = HORIZONTAL)
