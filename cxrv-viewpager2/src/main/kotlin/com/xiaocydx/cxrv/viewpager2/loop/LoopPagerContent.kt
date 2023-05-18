@@ -61,10 +61,10 @@ internal class LoopPagerContent private constructor(
             this(viewPager2, adapter, extraPageLimit, observer = null)
 
     /**
-     * 之前的内容`item`数量
+     * 之前的内容，仅[itemCount]有差异
      *
      * [Adapter]对[AdapterDataObserver]是反向遍历分发，[RecordDataObserver]最先添加，最后分发，
-     * `previous.count`仅在分发过程表示之前的内容`item`数量，分发完成后`previous,count`为最新值。
+     * `previous.itemCount`仅在分发过程表示之前的数量，分发完成后`previous.itemCount`为最新值。
      */
     val previous = when (observer) {
         null -> LoopPagerContent(
@@ -79,7 +79,7 @@ internal class LoopPagerContent private constructor(
     /**
      * 内容`item`数量
      */
-    val count: Int
+    val itemCount: Int
         get() = observer?.lastItemCount ?: adapter.itemCount
 
     fun removeObserver() {
@@ -91,7 +91,7 @@ internal class LoopPagerContent private constructor(
     /**
      * 是否支持循环
      */
-    fun supportLoop() = count > 1
+    fun supportLoop() = itemCount > 1
 
     /**
      * 将`bindingAdapterPosition`转换为`layoutPosition`
@@ -111,43 +111,43 @@ internal class LoopPagerContent private constructor(
     /**
      * `layoutPosition`取值范围第一个值
      *
-     * @return 若[count]小于等于0，则返回[NO_POSITION]。
+     * @return 若[itemCount]小于等于0，则返回[NO_POSITION]。
      */
     fun firstLayoutPosition(): Int {
-        return if (count <= 0) NO_POSITION else 0
+        return if (itemCount <= 0) NO_POSITION else 0
     }
 
     /**
      * `layoutPosition`取值范围最后的值
      *
-     * @return 若[count]小于等于0，则返回[NO_POSITION]。
+     * @return 若[itemCount]小于等于0，则返回[NO_POSITION]。
      */
     fun lastLayoutPosition(): Int {
-        if (count <= 0) return NO_POSITION
+        if (itemCount <= 0) return NO_POSITION
         val extraCount = if (!supportLoop()) 0 else extraPageLimit * 2
-        return count + extraCount - 1
+        return itemCount + extraCount - 1
     }
 
     /**
      * 附加页面的`layoutPosition`取值范围第一个值
      *
      * @param isHeader `true`-头部，`false`-尾部
-     * @return 若[count]小于等于0或不支持循环，则返回[NO_POSITION]。
+     * @return 若[itemCount]小于等于0或不支持循环，则返回[NO_POSITION]。
      */
     fun firstExtraLayoutPosition(isHeader: Boolean): Int {
-        if (count <= 0 || !supportLoop()) return NO_POSITION
-        return if (isHeader) 0 else extraPageLimit + count
+        if (itemCount <= 0 || !supportLoop()) return NO_POSITION
+        return if (isHeader) 0 else extraPageLimit + itemCount
     }
 
     /**
      * 附加页面的`layoutPosition`取值范围最后的值
      *
      * @param isHeader `true`-头部，`false`-尾部
-     * @return 若[count]小于等于0或不支持循环，则返回[NO_POSITION]。
+     * @return 若[itemCount]小于等于0或不支持循环，则返回[NO_POSITION]。
      */
     fun lastExtraLayoutPosition(isHeader: Boolean): Int {
-        if (count <= 0 || !supportLoop()) return NO_POSITION
-        return if (isHeader) extraPageLimit - 1 else extraPageLimit + count + extraPageLimit - 1
+        if (itemCount <= 0 || !supportLoop()) return NO_POSITION
+        return if (isHeader) extraPageLimit - 1 else extraPageLimit + itemCount + extraPageLimit - 1
     }
 
     /**
@@ -161,49 +161,49 @@ internal class LoopPagerContent private constructor(
         val last = lastLayoutPosition()
         if (first == NO_POSITION || layoutPosition !in first..last) return NO_POSITION
         if (!supportLoop()) return layoutPosition
-        var bindingAdapterPosition = (layoutPosition - extraPageLimit) % count
-        if (bindingAdapterPosition < 0) bindingAdapterPosition += count
+        var bindingAdapterPosition = (layoutPosition - extraPageLimit) % itemCount
+        if (bindingAdapterPosition < 0) bindingAdapterPosition += itemCount
         return bindingAdapterPosition
     }
 
     /**
      * `bindingAdapterPosition`取值范围第一个值
      *
-     * @return 若[count]小于等于0，则返回[NO_POSITION]。
+     * @return 若[itemCount]小于等于0，则返回[NO_POSITION]。
      */
     fun firstBindingAdapterPosition(): Int {
-        return if (count <= 0) NO_POSITION else 0
+        return if (itemCount <= 0) NO_POSITION else 0
     }
 
     /**
      * `bindingAdapterPosition`取值范围最后的值
      *
-     * @return 若[count]小于等于0，则返回[NO_POSITION]。
+     * @return 若[itemCount]小于等于0，则返回[NO_POSITION]。
      */
     fun lastBindingAdapterPosition(): Int {
-        return if (count <= 0) NO_POSITION else count - 1
+        return if (itemCount <= 0) NO_POSITION else itemCount - 1
     }
 
     /**
      * 附加页面的`bindingAdapterPosition`取值范围第一个值
      *
      * @param isHeader `true`-头部，`false`-尾部
-     * @return 若[count]小于等于0或不支持循环，则返回[NO_POSITION]。
+     * @return 若[itemCount]小于等于0或不支持循环，则返回[NO_POSITION]。
      */
     fun firstExtraBindingAdapterPosition(isHeader: Boolean): Int {
-        if (count <= 0 || !supportLoop()) return NO_POSITION
-        return if (isHeader) count - extraPageLimit else 0
+        if (itemCount <= 0 || !supportLoop()) return NO_POSITION
+        return if (isHeader) itemCount - extraPageLimit else 0
     }
 
     /**
      * 附加页面的`bindingAdapterPosition`取值范围最后的值
      *
      * @param isHeader `true`-头部，`false`-尾部
-     * @return 若[count]小于等于0或不支持循环，则返回[NO_POSITION]。
+     * @return 若[itemCount]小于等于0或不支持循环，则返回[NO_POSITION]。
      */
     fun lastExtraBindingAdapterPosition(isHeader: Boolean): Int {
-        if (count <= 0 || !supportLoop()) return NO_POSITION
-        return if (isHeader) count - 1 else extraPageLimit - 1
+        if (itemCount <= 0 || !supportLoop()) return NO_POSITION
+        return if (isHeader) itemCount - 1 else extraPageLimit - 1
     }
 
     companion object {

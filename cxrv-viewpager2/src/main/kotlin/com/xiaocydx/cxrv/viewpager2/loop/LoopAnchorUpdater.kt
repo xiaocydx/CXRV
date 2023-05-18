@@ -92,8 +92,8 @@ internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
         val footerFirst = content.firstExtraLayoutPosition(isHeader = false)
         val footerLast = content.lastExtraLayoutPosition(isHeader = false)
         return when (val currentItem = content.viewPager2.currentItem) {
-            in headerFirst..headerLast -> currentItem + content.count
-            in footerFirst..footerLast -> currentItem - content.count
+            in headerFirst..headerLast -> currentItem + content.itemCount
+            in footerFirst..footerLast -> currentItem - content.itemCount
             else -> NO_POSITION
         }
     }

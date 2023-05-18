@@ -25,9 +25,7 @@ import androidx.recyclerview.widget.RecyclerView.*
 import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.payload.Payload
 import com.xiaocydx.cxrv.payload.value
-import com.xiaocydx.cxrv.viewpager2.loop.LoopAnchorUpdater
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent
-import com.xiaocydx.cxrv.viewpager2.loop.RecordDataObserver
 import java.lang.Integer.min
 import kotlin.math.max
 
@@ -91,7 +89,7 @@ internal class LoopPagerAdapter(
     }
 
     override fun getItemCount(): Int {
-        return header.itemCount + content.currentCount + footer.itemCount
+        return header.itemCount + content.itemCount + footer.itemCount
     }
 
     override fun onViewRecycled(holder: ViewHolder) {
@@ -111,8 +109,6 @@ internal class LoopPagerAdapter(
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        header.recordContentCount()
-        footer.recordContentCount()
         contentAdapter.apply {
             registerAdapterDataObserver(header)
             registerAdapterDataObserver(footer)
@@ -140,6 +136,7 @@ internal class LoopPagerAdapter(
         @SuppressLint("NotifyDataSetChanged")
         override fun onChanged() {
             this@LoopPagerAdapter.notifyDataSetChanged()
+            updateAnchorInfo()
         }
 
         override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
@@ -149,47 +146,51 @@ internal class LoopPagerAdapter(
         override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
             val start = positionStart + header.itemCount
             this@LoopPagerAdapter.notifyItemRangeChanged(start, itemCount, payload)
+            updateAnchorInfo()
         }
 
         override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
             val start = positionStart + header.itemCount
             this@LoopPagerAdapter.notifyItemRangeInserted(start, itemCount)
+            updateAnchorInfo()
         }
 
         override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
             val start = positionStart + header.itemCount
             this@LoopPagerAdapter.notifyItemRangeRemoved(start, itemCount)
+            updateAnchorInfo()
         }
 
         override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
             val from = fromPosition + header.itemCount
             val to = toPosition + header.itemCount
             this@LoopPagerAdapter.notifyItemMoved(from, to)
+            updateAnchorInfo()
         }
+
+        /**
+         * 若`viewPager.currentItem`是附加页面，则更新可能导致当前可见内容发生变化，
+         * 这不符合预期，需要更新锚点信息，可以理解为将当前内容，挪到新的锚点进行展示。
+         */
+        private fun updateAnchorInfo() = updater.updateAnchorInfo(fromNotify = true, content)
     }
 
-    private inner class ContentExtraPage(
-        private val isHeader: Boolean
-    ) : RecordDataObserver(content.adapter) {
+    private inner class ContentExtraPage(private val isHeader: Boolean) : AdapterDataObserver() {
         private var currentAsItem = content.supportLoop()
         private var previousAsItem = currentAsItem
-        private val lastContentCount: Int
-            get() = lastItemCount
 
         val itemCount: Int
             get() = if (currentAsItem) content.extraPageLimit else 0
 
-        fun recordContentCount() = recordItemCount()
-
-        override fun changed() {
+        override fun onChanged() {
             updateAllExtraPage()
         }
 
-        override fun itemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
+        override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
             updateRangeExtraPage(positionStart, itemCount, payload)
         }
 
-        override fun itemRangeInserted(positionStart: Int, itemCount: Int) {
+        override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
             // 更新footer，跟itemRangeChanged()计算交集的过程一致，
             // 更新header，需要偏移positionStart，再计算交集，例如：
             // extraPageLimit = 2, {B* ，C* ，A ，B ，C ，A* ，B*}
@@ -201,16 +202,12 @@ internal class LoopPagerAdapter(
             // positionStart - updateCount能让updateRangeExtraPage()计算出预期的交集。
             val updateCount = content.extraPageLimit
             val start = if (isHeader) positionStart - updateCount else positionStart
-            if (updateRangeExtraPage(start, updateCount)) {
-                // 如果viewPager.currentItem是附加页面，那么更新会导致当前可见内容发生变化，
-                // 这不符合预期，需要更新锚点信息，可以理解为将当前内容，挪到新的锚点进行展示。
-                updater.updateAnchorForInserted(lastContentCount, positionStart, itemCount)
-            }
+            updateRangeExtraPage(start, updateCount)
         }
 
-        override fun itemRangeRemoved(positionStart: Int, itemCount: Int) {
-            val bindingFirst = content.firstExtraBindingAdapterPosition(isHeader, lastContentCount)
-            val bindingLast = content.lastExtraBindingAdapterPosition(isHeader, lastContentCount)
+        override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+            val bindingFirst = content.previous.firstExtraBindingAdapterPosition(isHeader)
+            val bindingLast = content.previous.lastExtraBindingAdapterPosition(isHeader)
             when {
                 // 更新header，未移除最后一个，跟itemRangeChanged()计算交集的过程一致
                 isHeader && positionStart < bindingLast -> updateRangeExtraPage(positionStart, itemCount)
@@ -220,21 +217,21 @@ internal class LoopPagerAdapter(
             }
         }
 
-        override fun itemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
+        override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
             // 更新header和footer，需要先算出更新范围，再计算交集
             val start = min(fromPosition, toPosition)
             val end = max(fromPosition, toPosition)
             updateRangeExtraPage(start, itemCount = end - start + 1)
         }
 
-        private fun updateAllExtraPage(): Boolean {
-            val layoutFirst = content.firstExtraLayoutPosition(isHeader, lastContentCount)
-            return updateExtraPage(layoutFirst, updateCount = itemCount)
+        private fun updateAllExtraPage() {
+            val layoutFirst = content.previous.firstExtraLayoutPosition(isHeader)
+            updateExtraPage(layoutFirst, updateCount = itemCount)
         }
 
-        private fun updateRangeExtraPage(positionStart: Int, itemCount: Int, payload: Any? = PAYLOAD): Boolean {
-            var bindingFirst = content.firstExtraBindingAdapterPosition(isHeader, lastContentCount)
-            var bindingLast = content.lastExtraBindingAdapterPosition(isHeader, lastContentCount)
+        private fun updateRangeExtraPage(positionStart: Int, itemCount: Int, payload: Any? = PAYLOAD) {
+            var bindingFirst = content.previous.firstExtraBindingAdapterPosition(isHeader)
+            var bindingLast = content.previous.lastExtraBindingAdapterPosition(isHeader)
             if (bindingFirst == NO_POSITION) {
                 // 之前没有附加页面，当前可能有附加页面，按当前数值更新
                 return updateExtraPage(NO_POSITION, updateCount = 0)
@@ -243,7 +240,7 @@ internal class LoopPagerAdapter(
             val positionEnd = positionStart + itemCount - 1
             if (positionStart > bindingLast || positionEnd < bindingFirst) {
                 // first..last跟positionStart..positionEnd之间没有交集
-                return false
+                return
             }
 
             // 配置属性确保first..last小于等于positionStart..positionEnd
@@ -254,14 +251,13 @@ internal class LoopPagerAdapter(
 
             // 对比前后bindingFirst得出的offset，也是layoutFirst的offset，
             // 以此实现bindingAdapterPosition到layoutPosition的转换计算。
-            val layoutFirst = content.firstExtraLayoutPosition(isHeader, lastContentCount) + offset
+            val layoutFirst = content.previous.firstExtraLayoutPosition(isHeader) + offset
             val updateCount = bindingLast - bindingFirst + 1
-            return updateExtraPage(layoutFirst, updateCount, payload)
+            updateExtraPage(layoutFirst, updateCount, payload)
         }
 
-        private fun updateExtraPage(layoutFirst: Int, updateCount: Int, payload: Any? = PAYLOAD): Boolean {
+        private fun updateExtraPage(layoutFirst: Int, updateCount: Int, payload: Any? = PAYLOAD) {
             currentAsItem = content.supportLoop()
-            var updated = true
             var first = layoutFirst
             var count = updateCount
             if (currentAsItem && first == NO_POSITION) {
@@ -270,7 +266,7 @@ internal class LoopPagerAdapter(
                 count = itemCount
             }
             when {
-                first == NO_POSITION -> updated = false
+                first == NO_POSITION -> previousAsItem = currentAsItem
                 !previousAsItem && currentAsItem -> {
                     this@LoopPagerAdapter.notifyItemRangeInserted(first, count)
                 }
@@ -280,10 +276,8 @@ internal class LoopPagerAdapter(
                 previousAsItem && currentAsItem -> {
                     this@LoopPagerAdapter.notifyItemRangeChanged(first, count, payload)
                 }
-                else -> updated = false
             }
             previousAsItem = currentAsItem
-            return updated
         }
     }
 

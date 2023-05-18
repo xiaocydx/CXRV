@@ -81,9 +81,9 @@ internal class LoopPagerScroller(
             if (viewPager2.currentItem < layoutPosition) {
                 // layoutPosition在结束方向范围内，直接平滑滚动
                 viewPager2.currentItem = layoutPosition
-            } else if (layoutPosition + content.count in layoutFirst..layoutLast) {
+            } else if (layoutPosition + content.itemCount in layoutFirst..layoutLast) {
                 // layoutPosition + contentCount（附加页面）在结束方向范围内，直接平滑滚动
-                viewPager2.currentItem = layoutPosition + content.count
+                viewPager2.currentItem = layoutPosition + content.itemCount
             } else {
                 // layoutPosition在开始方向范围内，先非平滑滚动至layoutPosition - 3，
                 // 同步屏障被移除后，再从layoutPosition - 3平滑滚动至layoutPosition。
@@ -95,9 +95,9 @@ internal class LoopPagerScroller(
             if (layoutPosition < viewPager2.currentItem) {
                 // layoutPosition在开始方向范围内，直接平滑滚动
                 viewPager2.currentItem = layoutPosition
-            } else if (layoutPosition - content.count in layoutFirst..layoutLast) {
+            } else if (layoutPosition - content.itemCount in layoutFirst..layoutLast) {
                 // layoutPosition - contentCount（附加页面）在开始方向范围内，直接平滑滚动
-                viewPager2.currentItem = layoutPosition - content.count
+                viewPager2.currentItem = layoutPosition - content.itemCount
             } else {
                 // layoutPosition在结束方向范围内，先非平滑滚动至layoutPosition + 3，
                 // 同步屏障被移除后，再从layoutPosition + 3平滑滚动至layoutPosition。

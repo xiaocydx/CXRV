@@ -78,8 +78,8 @@ internal class LoopPagerContentTest {
      * ```
      */
     @Test
-    fun currentCount() {
-        assertThat(content.count).isEqualTo(3)
+    fun itemCount() {
+        assertThat(content.itemCount).isEqualTo(3)
     }
 
     /**
