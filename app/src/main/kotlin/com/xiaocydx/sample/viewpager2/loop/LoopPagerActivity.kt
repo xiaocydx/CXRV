@@ -5,7 +5,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
-import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.Edge
@@ -19,6 +18,7 @@ import com.xiaocydx.sample.databinding.ItemButtonBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.showToast
+import kotlinx.coroutines.Job
 
 /**
  * [LoopPagerController]的示例代码
@@ -31,6 +31,7 @@ class LoopPagerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoopPagerBinding
     private lateinit var adapter: ContentListAdapter
     private lateinit var controller: LoopPagerController
+    private var bannerJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,13 +53,11 @@ class LoopPagerActivity : AppCompatActivity() {
             viewPager2.doOnPreDraw { viewPager2.requestTransform() }
         }
 
-        controller = LoopPagerController(viewPager2)
-        controller.setAdapter(adapter)
-        controller.setPadding(left = 50.dp, right = 50.dp)
-        viewPager2.setPageTransformer(CompositePageTransformer().apply {
-            addTransformer(ScaleInTransformer())
-            addTransformer(MarginPageTransformer(10.dp))
-        })
+        controller = LoopPagerController(viewPager2).apply {
+            setAdapter(adapter)
+            setPadding(left = 50.dp, right = 50.dp)
+            setPageTransformer(ScaleInTransformer(), MarginPageTransformer(10.dp))
+        }
 
         rvAction
             .linear(orientation = HORIZONTAL)
@@ -104,6 +103,15 @@ class LoopPagerActivity : AppCompatActivity() {
                     controller.smoothScrollToPosition(position, LookupDirection.START)
                     showToast("平滑滚动至bindingAdapterPosition = $position")
                 }
+                LoopPagerAction.LAUNCH_BANNER -> {
+                    bannerJob = controller.launchBanner(adapter, lifecycle)
+                    showToast("启动Banner轮播交互")
+                }
+                LoopPagerAction.CANCEL_BANNER -> {
+                    bannerJob?.cancel()
+                    bannerJob = null
+                    showToast("取消Banner轮播交互")
+                }
             }
         }
         submitList(LoopPagerAction.values().toList())
@@ -114,5 +122,7 @@ enum class LoopPagerAction(val text: String) {
     REFRESH("Refresh"),
     APPEND("Append"),
     SCROLL("Scroll"),
-    SMOOTH_SCROLL("SmoothScroll")
+    SMOOTH_SCROLL("SmoothScroll"),
+    LAUNCH_BANNER("LaunchBanner"),
+    CANCEL_BANNER("CancelBanner")
 }
