@@ -30,7 +30,24 @@ import java.lang.Integer.min
 import kotlin.math.max
 
 /**
- * [ViewPager2]循环页面的适配器，负责实现附加页面和同步更新离屏缓存
+ * [ViewPager2]循环页面的适配器，负责实现附加页面和同步更新内容
+ *
+ * [Adapter]对[AdapterDataObserver]是进行反向遍历分发，
+ * 先添加[AdapterDataObserver]的后分发，因此分发顺序为：
+ * 1. [footer]
+ * 2. [header]
+ * 3. [observer]
+ * 4. `RecyclerView.mObserver`
+ *
+ * 以一次`UpdateOp.ADD`更新为例：
+ * ```
+ * val position = data.size
+ * data.add(position, element)
+ * content.adapter.notifyItemInserted(position)
+ * ```
+ * 最后`RecyclerView.mObserver`添加的更新操作，在下一帧布局有`layoutPosition`偏移值，
+ * 会在[footer]和[header]根据[LoopPagerContent.previous]计算的更新操作之后进行偏移，
+ * 详细源码可以看[RecyclerView.offsetPositionRecordsForInsert]。
  *
  * @author xcc
  * @date 2023/5/11
@@ -110,18 +127,18 @@ internal class LoopPagerAdapter(
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         contentAdapter.apply {
+            registerAdapterDataObserver(observer)
             registerAdapterDataObserver(header)
             registerAdapterDataObserver(footer)
-            registerAdapterDataObserver(observer)
             onAttachedToRecyclerView(recyclerView)
         }
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         contentAdapter.apply {
+            unregisterAdapterDataObserver(observer)
             unregisterAdapterDataObserver(header)
             unregisterAdapterDataObserver(footer)
-            unregisterAdapterDataObserver(observer)
             onDetachedFromRecyclerView(recyclerView)
         }
     }
@@ -170,7 +187,7 @@ internal class LoopPagerAdapter(
 
         /**
          * 若`viewPager.currentItem`是附加页面，则更新可能导致当前可见内容发生变化，
-         * 这不符合预期，需要更新锚点信息，可以理解为将当前内容，挪到新的锚点进行展示。
+         * 这不符合预期，需要更新锚点信息，可以理解为将当前内容，挪到新锚点进行展示。
          */
         private fun updateAnchorInfo() = updater.updateAnchorInfo(fromNotify = true, content)
     }
@@ -282,6 +299,10 @@ internal class LoopPagerAdapter(
     }
 
     private companion object {
+        /**
+         * 同步更新可能会添加多个[PAYLOAD]，若调用者使用[Payload]构建对象，
+         * 则提取[Payload]的过程可以合并多个[PAYLOAD]，仅执行一次全量更新。
+         */
         val PAYLOAD = Payload { add(Payload.value(31)) }
     }
 }
