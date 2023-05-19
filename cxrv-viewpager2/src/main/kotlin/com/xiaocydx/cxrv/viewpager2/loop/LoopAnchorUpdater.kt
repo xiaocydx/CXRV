@@ -107,6 +107,8 @@ internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
     }
 
     private fun addUpdateAnchorInfoPending(content: LoopPagerContent) {
+        // 当通知局部更新时，若RecyclerView.hasFixedSize()为true，并且下一帧条件满足，
+        // 则是在Animation回调执行布局流程，此时不能靠同步屏障被移除断言布局流程已完成。
         preDrawListener = content.viewPager2.doOnPreDraw { preDrawListener = null }
     }
 

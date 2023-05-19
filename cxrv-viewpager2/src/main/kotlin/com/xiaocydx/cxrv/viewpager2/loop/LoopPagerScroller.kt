@@ -75,37 +75,54 @@ internal class LoopPagerScroller(
     fun smoothScrollToPosition(layoutPosition: Int, direction: LookupDirection = LookupDirection.END) {
         if (layoutPosition == NO_POSITION || viewPager2.currentItem == layoutPosition) return
         removeRunnable()
-        val layoutFirst = content.firstLayoutPosition()
-        val layoutLast = content.lastLayoutPosition()
-        if (direction === LookupDirection.END) {
-            // 往结束方向查找
-            if (viewPager2.currentItem < layoutPosition) {
-                // layoutPosition在结束方向范围内，直接平滑滚动
-                viewPager2.currentItem = layoutPosition
-            } else if (layoutPosition + content.itemCount in layoutFirst..layoutLast) {
-                // layoutPosition + contentCount（附加页面）在结束方向范围内，直接平滑滚动
-                viewPager2.currentItem = layoutPosition + content.itemCount
-            } else {
-                // layoutPosition在开始方向范围内，先非平滑滚动至layoutPosition - 3，
-                // 同步屏障被移除后，再从layoutPosition - 3平滑滚动至layoutPosition。
-                scrollToPosition((layoutPosition - 3).coerceAtLeast(layoutFirst))
-                viewPager2.post(SmoothScrollRunnable(layoutPosition).also { runnable = it })
-            }
-        } else {
+        val current = viewPager2.currentItem
+        val contentCount = content.itemCount
+        val headerLayoutLast = content.lastExtraLayoutPosition(isHeader = true)
+        val footerLayoutFirst = content.firstExtraLayoutPosition(isHeader = false)
+        when (direction) {
             // 往开始方向查找
-            if (layoutPosition < viewPager2.currentItem) {
-                // layoutPosition在开始方向范围内，直接平滑滚动
-                viewPager2.currentItem = layoutPosition
-            } else if (layoutPosition - content.itemCount in layoutFirst..layoutLast) {
-                // layoutPosition - contentCount（附加页面）在开始方向范围内，直接平滑滚动
-                viewPager2.currentItem = layoutPosition - content.itemCount
-            } else {
-                // layoutPosition在结束方向范围内，先非平滑滚动至layoutPosition + 3，
-                // 同步屏障被移除后，再从layoutPosition + 3平滑滚动至layoutPosition。
-                scrollToPosition((layoutPosition + 3).coerceAtMost(layoutLast))
-                viewPager2.post(SmoothScrollRunnable(layoutPosition).also { runnable = it })
+            LookupDirection.START -> when {
+                current == headerLayoutLast -> {
+                    updateAnchorInfo(fromNotify = false, content)
+                    smoothScrollToPositionAfterRemoveSyncBarrier(layoutPosition)
+                }
+                layoutPosition in headerLayoutLast until current -> {
+                    // layoutPosition在开始方向范围内，直接平滑滚动
+                    viewPager2.currentItem = layoutPosition
+                }
+                layoutPosition - contentCount == headerLayoutLast -> {
+                    // layoutPosition - contentCount为附加页面，直接平滑滚动
+                    viewPager2.currentItem = layoutPosition - contentCount
+                }
+                else -> {
+                    scrollToPosition((layoutPosition + 3).coerceAtMost(footerLayoutFirst))
+                    smoothScrollToPositionAfterRemoveSyncBarrier(layoutPosition)
+                }
+            }
+            // 往结束方向查找
+            LookupDirection.END -> when {
+                current == footerLayoutFirst -> {
+                    updateAnchorInfo(fromNotify = false, content)
+                    smoothScrollToPositionAfterRemoveSyncBarrier(layoutPosition)
+                }
+                layoutPosition in (current + 1) until footerLayoutFirst -> {
+                    // layoutPosition在结束方向范围内，直接平滑滚动
+                    viewPager2.currentItem = layoutPosition
+                }
+                layoutPosition + contentCount == footerLayoutFirst -> {
+                    // layoutPosition + contentCount为附加页面，直接平滑滚动
+                    viewPager2.currentItem = layoutPosition + contentCount
+                }
+                else -> {
+                    scrollToPosition((layoutPosition - 3).coerceAtLeast(headerLayoutLast))
+                    smoothScrollToPositionAfterRemoveSyncBarrier(layoutPosition)
+                }
             }
         }
+    }
+
+    private fun smoothScrollToPositionAfterRemoveSyncBarrier(layoutPosition: Int) {
+        viewPager2.post(SmoothScrollRunnable(layoutPosition).also { runnable = it })
     }
 
     private inner class SmoothScrollRunnable(private val layoutPosition: Int) : Runnable {
