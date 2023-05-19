@@ -60,8 +60,10 @@ class LoopPagerActivity : AppCompatActivity() {
         }
 
         rvAction
-            .linear(orientation = HORIZONTAL)
-            .divider(5.dp, 5.dp) { edge(Edge.horizontal()) }
+            .linear(HORIZONTAL)
+            .divider(10.dp, 10.dp) {
+                edge(Edge.all())
+            }
             .adapter(bindingAdapter(
                 uniqueId = LoopPagerAction::ordinal,
                 inflate = ItemButtonBinding::inflate
@@ -116,13 +118,13 @@ class LoopPagerActivity : AppCompatActivity() {
         }
         submitList(LoopPagerAction.values().toList())
     }
-}
 
-enum class LoopPagerAction(val text: String) {
-    REFRESH("Refresh"),
-    APPEND("Append"),
-    SCROLL("Scroll"),
-    SMOOTH_SCROLL("SmoothScroll"),
-    LAUNCH_BANNER("LaunchBanner"),
-    CANCEL_BANNER("CancelBanner")
+    private enum class LoopPagerAction(val text: String) {
+        REFRESH("Refresh"),
+        APPEND("Append"),
+        SCROLL("Scroll"),
+        SMOOTH_SCROLL("SmoothScroll"),
+        LAUNCH_BANNER("LaunchBanner"),
+        CANCEL_BANNER("CancelBanner")
+    }
 }

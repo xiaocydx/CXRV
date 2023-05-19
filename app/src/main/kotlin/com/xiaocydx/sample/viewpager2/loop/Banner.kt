@@ -83,8 +83,12 @@ private suspend fun LoopPagerController.awaitScrollIdle() {
     var callback: OnPageChangeCallback? = null
     suspendCancellableCoroutine { cont ->
         callback = object : OnPageChangeCallback() {
+            private var isResumed = false
+
             override fun onPageScrollStateChanged(state: Int) {
-                if (state == SCROLL_STATE_IDLE) cont.resume(Unit)
+                if (isResumed || state != SCROLL_STATE_IDLE) return
+                isResumed = true
+                cont.resume(Unit)
             }
         }
         registerOnPageChangeCallback(callback!!)

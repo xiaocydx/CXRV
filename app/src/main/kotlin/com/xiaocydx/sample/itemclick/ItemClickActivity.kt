@@ -29,11 +29,12 @@ class ItemClickActivity : AppCompatActivity() {
     private fun ActivityItemClickBinding.initView() = apply {
         val list = ItemClickScenesList()
         var disposable = list.first().apply(rvClick)
-
         rvClick.linear()
         rvScenes
-            .linear(orientation = HORIZONTAL)
-            .divider(5.dp, 5.dp) { edge(Edge.horizontal()) }
+            .linear(HORIZONTAL)
+            .divider(10.dp, 10.dp) {
+                edge(Edge.all())
+            }
             .adapter(bindingAdapter(
                 uniqueId = ItemClickScenes::text,
                 inflate = ItemButtonBinding::inflate

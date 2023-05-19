@@ -71,8 +71,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private data class StartItem(val text: String, val clazz: Class<out Activity>) {
-        fun start(context: Context) {
-            context.startActivity(Intent(context, clazz))
-        }
+        fun start(context: Context) = context.startActivity(Intent(context, clazz))
     }
 }

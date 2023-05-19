@@ -49,12 +49,11 @@ class HeaderFooterActivity : AppCompatActivity() {
         val fooAdapter = FooListAdapter().apply {
             submitList((1..3).map(::createFoo))
         }
-        // 注意：先设置footer，再添加header和footer，
-        // 因为要先确定内容区，才能连接header和footer。
+        // 注意：先设置fooAdapter确定内容区，再添加header和footer
         rvFoo.linear().divider(height = 5.dp).adapter(fooAdapter)
 
-        // 对于初始化时不添加header和footer，而是后续动态添加/移除的场景，
-        // 先设置HeaderFooterConcatAdapter，这能让首次添加有动画效果且性能更高。
+        // 对初始化阶段不添加header和footer，而是后续动态添加和移除的场景而言，
+        // 先设置HeaderFooterConcatAdapter，能让首次添加有动画效果且性能更高。
         // rvFoo.adapter(HeaderFooterConcatAdapter(fooAdapter))
         rvFoo.addHeader(header)
         rvFoo.addFooter(footer)
