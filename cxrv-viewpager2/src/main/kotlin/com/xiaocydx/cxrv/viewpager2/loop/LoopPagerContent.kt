@@ -49,16 +49,18 @@ internal class LoopPagerContent private constructor(
     val viewPager2: ViewPager2,
     val adapter: Adapter<*>,
     val extraPageLimit: Int,
+    private val supportLoopCount: Int,
     private var observer: RecordDataObserver?
 ) {
     init {
         require(extraPageLimit == DEFAULT_EXTRA_PAGE_LIMIT
                 || extraPageLimit == PADDING_EXTRA_PAGE_LIMIT)
+        require(supportLoopCount >= DEFAULT_SUPPORT_LOOP_COUNT)
         observer?.let(adapter::registerAdapterDataObserver)
     }
 
-    constructor(viewPager2: ViewPager2, adapter: Adapter<*>, extraPageLimit: Int) :
-            this(viewPager2, adapter, extraPageLimit, observer = null)
+    constructor(viewPager2: ViewPager2, adapter: Adapter<*>, extraPageLimit: Int, supportLoopCount: Int) :
+            this(viewPager2, adapter, extraPageLimit, supportLoopCount, observer = null)
 
     /**
      * 之前的内容，仅[itemCount]有差异
@@ -71,6 +73,7 @@ internal class LoopPagerContent private constructor(
             viewPager2,
             adapter,
             extraPageLimit,
+            supportLoopCount,
             RecordDataObserver(adapter)
         )
         else -> this
@@ -91,7 +94,7 @@ internal class LoopPagerContent private constructor(
     /**
      * 是否支持循环
      */
-    fun supportLoop() = itemCount > 1
+    fun supportLoop() = itemCount >= supportLoopCount
 
     /**
      * 将`bindingAdapterPosition`转换为`layoutPosition`
@@ -209,5 +212,6 @@ internal class LoopPagerContent private constructor(
     companion object {
         const val DEFAULT_EXTRA_PAGE_LIMIT = 1
         const val PADDING_EXTRA_PAGE_LIMIT = 2
+        const val DEFAULT_SUPPORT_LOOP_COUNT = 2
     }
 }

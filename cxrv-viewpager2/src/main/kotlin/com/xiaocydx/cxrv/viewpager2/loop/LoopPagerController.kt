@@ -20,11 +20,14 @@ import androidx.annotation.Px
 import androidx.recyclerview.widget.LoopPagerAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.pendingSavedState
 import androidx.recyclerview.widget.recyclerView
+import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.ViewPager2
-import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
+import androidx.viewpager2.widget.ViewPager2.*
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.DEFAULT_EXTRA_PAGE_LIMIT
+import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.DEFAULT_SUPPORT_LOOP_COUNT
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTRA_PAGE_LIMIT
 
 /**
@@ -45,12 +48,36 @@ import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTR
  * @author xcc
  * @date 2023/5/9
  */
-class LoopPagerController(private val viewPager2: ViewPager2) {
+class LoopPagerController(
+    private val viewPager2: ViewPager2,
+    supportLoopCount: Int = DEFAULT_SUPPORT_LOOP_COUNT
+) {
     private var extraPageLimit = DEFAULT_EXTRA_PAGE_LIMIT
     private var content: LoopPagerContent? = null
     private var scroller: LoopPagerScroller? = null
     private var observer: NotEmptyDataObserver? = null
     private var callbacks: MutableMap<OnPageChangeCallback, CallbackWrapper>? = null
+
+    /**
+     * [ViewPager2]的滚动状态，等同于`ViewPager2.scrollState`
+     */
+    @ScrollState
+    val scrollState: Int
+        get() = viewPager2.scrollState
+
+    /**
+     * 当前选择的位置
+     *
+     * 该属性的取值范围是`[0, adapter.itemCount)`，即`holder.bindingAdapterPosition`，
+     * 若未调用[setAdapter]设置`adapter`或者`adapter.itemCount`为0，则返回[NO_POSITION]。
+     */
+    val currentPosition: Int
+        get() = content?.toBindingAdapterPosition(viewPager2.currentItem) ?: NO_POSITION
+
+    /**
+     * 支持循环的`adapter.itemCount`至少数量，该属性不会小于[DEFAULT_SUPPORT_LOOP_COUNT]
+     */
+    val supportLoopCount = supportLoopCount.coerceAtLeast(DEFAULT_SUPPORT_LOOP_COUNT)
 
     /**
      * 对[ViewPager2]设置[adapter]的循环页面适配器
@@ -80,7 +107,10 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
      */
     fun setAdapter(adapter: Adapter<*>) {
         content?.removeObserver()
-        content = LoopPagerContent(viewPager2, adapter, extraPageLimit)
+        content = LoopPagerContent(
+            viewPager2, adapter,
+            extraPageLimit, supportLoopCount
+        )
         scroller?.removeCallback()
         scroller = LoopPagerScroller(content!!)
         viewPager2.adapter = LoopPagerAdapter(content!!, scroller!!)
@@ -196,6 +226,14 @@ class LoopPagerController(private val viewPager2: ViewPager2) {
     fun unregisterOnPageChangeCallback(callback: OnPageChangeCallback) {
         val wrapper = getCallbacks().remove(callback) ?: return
         viewPager2.unregisterOnPageChangeCallback(wrapper)
+    }
+
+    /**
+     * 设置多个[PageTransformer]的简化函数
+     */
+    fun setPageTransformer(vararg transformers: PageTransformer) {
+        viewPager2.setPageTransformer(CompositePageTransformer()
+            .apply { transformers.forEach(::addTransformer) })
     }
 
     private fun getCallbacks(): MutableMap<OnPageChangeCallback, CallbackWrapper> {

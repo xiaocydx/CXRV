@@ -81,9 +81,9 @@ internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
     override fun updateAnchorInfo(fromNotify: Boolean, content: LoopPagerContent) {
         val anchorPosition: Int
         if (content.supportLoop() != content.previous.supportLoop()) {
-            // 支持循环和不支持循环的相互转换过程，新锚点都是第一个原始页面
+            // 支持循环和不支持循环的相互转换过程
             removeUpdateAnchorInfoPending()
-            anchorPosition = content.firstBindingAdapterPosition().let(content::toLayoutPosition)
+            anchorPosition = content.toLayoutPosition(content.viewPager2.currentItem)
             updateAnchorInfoByScrollToPosition(anchorPosition, content)
             addUpdateAnchorInfoPending(content)
             return
