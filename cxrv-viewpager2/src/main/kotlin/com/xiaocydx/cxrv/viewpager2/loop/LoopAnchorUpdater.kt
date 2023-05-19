@@ -15,16 +15,18 @@
  */
 
 @file:JvmName("LoopAnchorUpdaterInternalKt")
-@file:Suppress("PackageDirectoryMismatch")
+@file:Suppress("PackageDirectoryMismatch", "INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
 
 
 package androidx.recyclerview.widget
 
 import android.util.SparseArray
 import androidx.annotation.VisibleForTesting
+import androidx.core.view.OneShotPreDrawListener
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.setCurrentItemDirect
+import com.xiaocydx.cxrv.internal.doOnPreDraw
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent
 
 /**
@@ -38,53 +40,84 @@ internal interface LoopAnchorUpdater {
     /**
      * 若`viewPager.currentItem`是附加页面，则更新锚点信息
      *
-     * 以A和B是原始页面，`B*`和`A*`是附加页面为例：
+     * 例如A、B、C是原始页面，带`*`的是附加页面，`content.extraPageLimit = 2`：
      * ```
-     * {B* ，A ，B ，A*}
+     * {B* ，C* ，A ，B ，C ，A* ，B*}
      * ```
-     * 假设`viewPager.currentItem`为`B*`，当开始滚动`B*`时，
-     * 会更新锚点信息，下一帧以`B`为锚点，往两侧填充子View。
+     * 假设`viewPager.currentItem`为`C*`，更新锚点信息，
+     * 下一帧布局流程以`C`为锚点，往两侧填充`itemView`。
      *
-     * 实现类会优化更新锚点信息的过程，避免产生其他影响，
-     * 优化效果可以理解为将`B*`的`itemView`，挪到`B`处，
-     * `itemView`不会被移除，也不会绑定新的[ViewHolder]。
+     * 实现类会优化更新锚点信息的过程，避免移除`itemView`，绑定新的[ViewHolder]，
+     * 优化效果可以理解为将`B*、C*、A`的`itemView`，挪到`B、C，A*`的位置进行展示，
+     *
+     * @param fromNotify 是否调用自[AdapterDataObserver]的分发过程
+     * @param content    若[fromNotify]为`true`，则根据`content.previous`计算新锚点，
+     * 使用`content.previous`而不是`content`的原因可以看[LoopPagerAdapter]的注释描述。
      */
     fun updateAnchorInfo(fromNotify: Boolean, content: LoopPagerContent)
+
+    /**
+     * 移除[updateAnchorInfo]添加的待处理操作
+     */
+    fun removeUpdateAnchorInfoPending()
 }
 
 /**
  * ### 优化初衷
  * 当滚动到开始端和结束端的附加页面时，再次触发滚动，会更新锚点信息，
  * 更新锚点信息若通过非平滑滚动实现，则会导致可见的`itemView`被移除，
- * [RecyclerView]按更新后的锚点信息进行布局，填充新的[ViewHolder]，
+ * [RecyclerView]按更新后的锚点信息进行布局，绑定新的[ViewHolder]，
  * 对图片内容而言，通常有图片缓存，因此更新锚点信息产生的影响较小，
  * 但对视频内容而言，可见的`itemView`被移除、绑定新的[ViewHolder]，
  * 产生的影响较大。
  *
  * ### 优化方案
- * 1. [updateAnchorInfoInNextLayout]查找目标`itemView`，处理跟离屏页面和离屏缓存的冲突。
- * 2. [updateAnchorInfoByScrollToPosition]处理[ViewPager2.setCurrentItem]的滚动状态。
+ * [updateAnchorInfoInNextLayout]查找目标`itemView`，处理跟离屏页面和离屏缓存的冲突。
  */
 internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
     private val targetScrapStore = targetScrapStoreProvider()
+    private var preDrawListener: OneShotPreDrawListener? = null
 
     override fun updateAnchorInfo(fromNotify: Boolean, content: LoopPagerContent) {
         val anchorPosition: Int
         if (content.supportLoop() != content.previous.supportLoop()) {
+            // 支持循环和不支持循环的相互转换过程，新锚点都是第一个原始页面
+            removeUpdateAnchorInfoPending()
             anchorPosition = content.firstBindingAdapterPosition().let(content::toLayoutPosition)
             updateAnchorInfoByScrollToPosition(anchorPosition, content)
+            addUpdateAnchorInfoPending(content)
             return
         }
 
-        val finalContent = if (!fromNotify) content else content.previous
-        anchorPosition = getNewAnchorPositionForContent(finalContent)
+        // 在下一次布局完成之前，不需要再通过优化方案更新锚点信息
+        if (hasUpdateAnchorInfoPending()) return
+        val anchorContent = if (!fromNotify) content else content.previous
+        anchorPosition = getNewAnchorPositionForContent(anchorContent)
         when {
             anchorPosition == NO_POSITION -> return
-            !OPTIMIZATION_ENABLED -> updateAnchorInfoByScrollToPosition(anchorPosition, finalContent)
-            else -> updateAnchorInfoInNextLayout(anchorPosition, fromNotify, finalContent)
+            // OPTIMIZATION_ENABLED = false用于单元测试，对比优化前和优化后的效果
+            !OPTIMIZATION_ENABLED -> updateAnchorInfoByScrollToPosition(anchorPosition, anchorContent)
+            else -> updateAnchorInfoInNextLayout(anchorPosition, fromNotify, anchorContent)
         }
+        addUpdateAnchorInfoPending(content)
     }
 
+    private fun hasUpdateAnchorInfoPending(): Boolean {
+        return preDrawListener != null
+    }
+
+    private fun addUpdateAnchorInfoPending(content: LoopPagerContent) {
+        preDrawListener = content.viewPager2.doOnPreDraw { preDrawListener = null }
+    }
+
+    override fun removeUpdateAnchorInfoPending() {
+        preDrawListener?.removeListener()
+        preDrawListener = null
+    }
+
+    /**
+     * 若`viewPager.currentItem`是附加页面，则返回对应原始页面的`layoutPosition`
+     */
     private fun getNewAnchorPositionForContent(content: LoopPagerContent): Int {
         if (!content.supportLoop()) return NO_POSITION
         val headerFirst = content.firstExtraLayoutPosition(isHeader = true)
@@ -106,9 +139,8 @@ internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
      * 手势滚动可能会因为这次触摸事件拦截失败，而出现交互不流畅的问题。
      */
     private fun updateAnchorInfoByScrollToPosition(anchorPosition: Int, content: LoopPagerContent) {
-        val viewPager2 = content.viewPager2
-        viewPager2.setCurrentItemDirect(anchorPosition)
-        viewPager2.recyclerView.layoutManager?.scrollToPosition(anchorPosition)
+        content.viewPager2.setCurrentItemDirect(anchorPosition)
+        content.viewPager2.recyclerView.layoutManager?.scrollToPosition(anchorPosition)
     }
 
     /**

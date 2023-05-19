@@ -42,6 +42,7 @@ internal class LoopPagerScroller(
 
     fun removeCallback() {
         removeRunnable()
+        removeUpdateAnchorInfoPending()
         viewPager2.unregisterOnPageChangeCallback(this)
     }
 
