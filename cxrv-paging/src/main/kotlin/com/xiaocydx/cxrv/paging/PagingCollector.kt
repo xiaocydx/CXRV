@@ -286,7 +286,7 @@ class PagingCollector<T : Any> internal constructor(
 
         // 若mediator的类型是ListMediator，则version < newVersion时才更新列表
         if (op != null && (listMediator == null || version < newVersion)) {
-            adapter.awaitUpdateList(op, dispatch = false)
+            adapter.updateList(op, dispatch = false).await()
             // 更新列表完成后才保存版本号
             version = newVersion
         }

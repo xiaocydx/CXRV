@@ -121,7 +121,7 @@ class ListCollector<T : Any> internal constructor(
         value.flow.collect { event ->
             val newVersion = event.version
             if (newVersion <= version) return@collect
-            adapter.awaitUpdateList(event.op, dispatch = false)
+            adapter.updateList(event.op, dispatch = false).await()
             // 更新列表完成后才保存版本号
             version = newVersion
         }

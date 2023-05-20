@@ -111,9 +111,9 @@ internal class MultiTypeAdapterTest {
 
         val oldItem = TypeTestItem(TestType.TYPE_A)
         val newItem = TypeTestItem(TestType.TYPE_B)
-        adapter.awaitUpdateList(UpdateOp.SubmitList(listOf(oldItem)))
+        adapter.updateList(UpdateOp.SubmitList(listOf(oldItem)), dispatch = true).await()
         // 首位插入typeAItem
-        adapter.awaitUpdateList(UpdateOp.SubmitList(listOf(newItem, oldItem)))
+        adapter.updateList(UpdateOp.SubmitList(listOf(newItem, oldItem)), dispatch = true).await()
 
         verify(exactly = 1) { typeADelegate.areItemsTheSame(oldItem, newItem) }
         verify(atLeast = 1) { typeADelegate.areItemsTheSame(oldItem, oldItem) }

@@ -39,7 +39,7 @@ import kotlinx.coroutines.Dispatchers
  * @author xcc
  * @date 2021/9/9
  */
-abstract class ListAdapter<ITEM : Any, VH : ViewHolder>() :
+abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
         Adapter<VH>(), ListOwner<ITEM>, SpanSizeProvider {
     private var tags: HashMap<String, Any?>? = null
     private var callbacks: ArrayList<AdapterAttachCallback>? = null
@@ -145,8 +145,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>() :
 
     @MainThread
     final override fun updateList(op: UpdateOp<ITEM>) {
-        assertMainThread()
-        differ.updateList(op, dispatch = true)
+        updateList(op, dispatch = true)
     }
 
     /**
@@ -266,8 +265,10 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder>() :
         differ.removeListExecuteListener(listener)
     }
 
-    internal suspend fun awaitUpdateList(op: UpdateOp<ITEM>, dispatch: Boolean = true) {
-        differ.awaitUpdateList(op, dispatch)
+    @MainThread
+    internal fun updateList(op: UpdateOp<ITEM>, dispatch: Boolean): UpdateResult {
+        assertMainThread()
+        return differ.updateList(op, dispatch)
     }
 
     private inner class InternalDiffItemCallback : DiffUtil.ItemCallback<ITEM>() {

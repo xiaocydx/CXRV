@@ -26,7 +26,7 @@ import androidx.viewpager2.widget.ViewPager2
  * @author xcc
  * @date 2023/5/14
  */
-class TestActivity : AppCompatActivity() {
+internal class TestActivity : AppCompatActivity() {
     lateinit var viewPager2: ViewPager2
 
     override fun onCreate(savedInstanceState: Bundle?) {
