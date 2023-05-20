@@ -247,12 +247,13 @@ internal class LoopPagerAdapter(
         }
 
         private fun updateRangeExtraPage(positionStart: Int, itemCount: Int, payload: Any? = PAYLOAD) {
+            if (content.supportLoop() != content.previous.supportLoop()) {
+                return updateAllExtraPage()
+            }
+
             var bindingFirst = content.previous.firstExtraBindingAdapterPosition(isHeader)
             var bindingLast = content.previous.lastExtraBindingAdapterPosition(isHeader)
-            if (bindingFirst == NO_POSITION) {
-                // 之前没有附加页面，当前可能有附加页面，按当前数值更新
-                return updateExtraPage(NO_POSITION, updateCount = 0)
-            }
+            if (bindingFirst == NO_POSITION || bindingLast == NO_POSITION) return
 
             val positionEnd = positionStart + itemCount - 1
             if (positionStart > bindingLast || positionEnd < bindingFirst) {
@@ -274,13 +275,21 @@ internal class LoopPagerAdapter(
         }
 
         private fun updateExtraPage(layoutFirst: Int, updateCount: Int, payload: Any? = PAYLOAD) {
-            currentAsItem = content.supportLoop()
             var first = layoutFirst
             var count = updateCount
-            if (currentAsItem && first == NO_POSITION) {
-                // 之前没有附加页面，当前有附加页面，按当前数值更新
-                first = content.firstExtraLayoutPosition(isHeader)
-                count = itemCount
+            val previousCount = itemCount
+            currentAsItem = content.supportLoop()
+            when {
+                !content.previous.supportLoop() && content.supportLoop() -> {
+                    // 之前没有附加页面，当前有附加页面，按当前数值更新
+                    first = content.firstExtraLayoutPosition(isHeader)
+                    count = itemCount
+                }
+                content.previous.supportLoop() && !content.supportLoop() -> {
+                    // 之前有附加页面，当前没有附加页面，按之前数值更新
+                    first = content.previous.firstExtraLayoutPosition(isHeader)
+                    count = previousCount
+                }
             }
             when {
                 first == NO_POSITION -> previousAsItem = currentAsItem

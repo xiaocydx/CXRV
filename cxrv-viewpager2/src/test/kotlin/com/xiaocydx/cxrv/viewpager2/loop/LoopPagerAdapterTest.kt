@@ -26,6 +26,7 @@ import androidx.test.core.app.ActivityScenario.launch
 import com.google.common.truth.Truth.assertThat
 import com.xiaocydx.cxrv.viewpager2.TestActivity
 import com.xiaocydx.cxrv.viewpager2.TestAdapter
+import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.DEFAULT_SUPPORT_LOOP_COUNT
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTRA_PAGE_LIMIT
 import io.mockk.spyk
 import io.mockk.verify
@@ -75,7 +76,8 @@ internal class LoopPagerAdapterTest {
                 content = LoopPagerContent(
                     viewPager2 = it.viewPager2,
                     adapter = contentAdapter,
-                    extraPageLimit = PADDING_EXTRA_PAGE_LIMIT
+                    extraPageLimit = PADDING_EXTRA_PAGE_LIMIT,
+                    supportLoopCount = DEFAULT_SUPPORT_LOOP_COUNT
                 )
                 loopPagerAdapter = LoopPagerAdapter(content, spyk())
                 loopPagerAdapter.registerAdapterDataObserver(loopPagerObserver)

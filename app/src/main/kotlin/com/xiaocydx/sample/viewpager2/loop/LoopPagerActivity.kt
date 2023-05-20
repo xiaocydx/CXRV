@@ -56,6 +56,8 @@ class LoopPagerActivity : AppCompatActivity() {
         controller = LoopPagerController(viewPager2).apply {
             setAdapter(adapter)
             setPadding(left = 50.dp, right = 50.dp)
+            // 注意：LoopPagerController支持全部局部更新操作和RecyclerView.ItemAnimator，
+            // 而示例代码不会运行动画，是因为设置PageTransformer会将ItemAnimator置为null。
             setPageTransformer(ScaleInTransformer(), MarginPageTransformer(10.dp))
         }
 
