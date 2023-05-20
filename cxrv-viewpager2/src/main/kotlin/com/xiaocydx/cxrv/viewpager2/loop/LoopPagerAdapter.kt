@@ -194,7 +194,6 @@ internal class LoopPagerAdapter(
 
     private inner class ContentExtraPage(private val isHeader: Boolean) : AdapterDataObserver() {
         private var currentAsItem = content.supportLoop()
-        private var previousAsItem = currentAsItem
 
         val itemCount: Int
             get() = if (currentAsItem) content.extraPageLimit else 0
@@ -278,6 +277,7 @@ internal class LoopPagerAdapter(
             var first = layoutFirst
             var count = updateCount
             val previousCount = itemCount
+            val previousAsItem = currentAsItem
             currentAsItem = content.supportLoop()
             when {
                 !content.previous.supportLoop() && content.supportLoop() -> {
@@ -291,19 +291,13 @@ internal class LoopPagerAdapter(
                     count = previousCount
                 }
             }
+            val adapter = this@LoopPagerAdapter
             when {
-                first == NO_POSITION -> previousAsItem = currentAsItem
-                !previousAsItem && currentAsItem -> {
-                    this@LoopPagerAdapter.notifyItemRangeInserted(first, count)
-                }
-                previousAsItem && !currentAsItem -> {
-                    this@LoopPagerAdapter.notifyItemRangeRemoved(first, count)
-                }
-                previousAsItem && currentAsItem -> {
-                    this@LoopPagerAdapter.notifyItemRangeChanged(first, count, payload)
-                }
+                first == NO_POSITION -> return
+                !previousAsItem && currentAsItem -> adapter.notifyItemRangeInserted(first, count)
+                previousAsItem && !currentAsItem -> adapter.notifyItemRangeRemoved(first, count)
+                previousAsItem && currentAsItem -> adapter.notifyItemRangeChanged(first, count, payload)
             }
-            previousAsItem = currentAsItem
         }
     }
 

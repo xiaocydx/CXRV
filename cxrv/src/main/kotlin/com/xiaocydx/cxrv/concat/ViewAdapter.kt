@@ -38,7 +38,6 @@ abstract class ViewAdapter<VH : ViewHolder>(
     private var currentAsItem: Boolean = false
 ) : Adapter<VH>(), SpanSizeProvider {
     private val controller = ViewController()
-    private var previousAsItem = currentAsItem
     protected val viewHolder: ViewHolder?
         get() = controller.viewHolder
     protected val recyclerView: RecyclerView?
@@ -101,6 +100,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
      * @param anim 支持的动画，详细描述[NeedAnim]
      */
     protected fun updateItem(show: Boolean, anim: NeedAnim = NeedAnim.ALL) {
+        val previousAsItem = currentAsItem
         currentAsItem = show
         when {
             !previousAsItem && currentAsItem -> when (anim) {
@@ -119,7 +119,6 @@ abstract class ViewAdapter<VH : ViewHolder>(
                 NeedAnim.NOT_ALL -> notifyItemChanged(0, this)
             }
         }
-        previousAsItem = currentAsItem
     }
 
     private inline fun withoutAnim(block: () -> Unit) {
