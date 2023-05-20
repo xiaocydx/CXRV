@@ -10,10 +10,10 @@ import com.xiaocydx.cxrv.list.emptyDisposable
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
 import com.xiaocydx.sample.databinding.ItemTextTypeBinding
-import com.xiaocydx.sample.extension.TextItem
-import com.xiaocydx.sample.extension.getTextType1Delegate
-import com.xiaocydx.sample.extension.getTextType2Delegate
-import com.xiaocydx.sample.extension.initMultiTypeTextItems
+import com.xiaocydx.sample.extensions.TextItem
+import com.xiaocydx.sample.extensions.getTextType1Delegate
+import com.xiaocydx.sample.extensions.getTextType2Delegate
+import com.xiaocydx.sample.extensions.initMultiTypeTextItems
 import com.xiaocydx.sample.showToast
 
 /**

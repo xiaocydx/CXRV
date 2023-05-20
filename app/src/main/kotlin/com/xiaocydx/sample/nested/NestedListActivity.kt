@@ -27,8 +27,8 @@ class NestedListActivity : AppCompatActivity() {
         adapter = OuterAdapter().apply {
             submitList(getItems(15))
         }
-        linear().fixedSize()
         overScrollNever()
+        linear().fixedSize()
         withLayoutParams(matchParent, matchParent)
     }
 

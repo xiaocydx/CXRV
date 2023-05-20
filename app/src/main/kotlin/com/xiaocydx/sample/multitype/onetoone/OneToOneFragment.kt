@@ -6,12 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
-import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.list.fixedSize
-import com.xiaocydx.cxrv.list.linear
-import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.cxrv.list.*
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
 import com.xiaocydx.sample.*
@@ -27,21 +23,22 @@ class OneToOneFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
-        adapter = listAdapter<OneToOneMessage> {
-            register(OneToOneTextDelegate().apply {
-                doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
-            })
-            register(OneToOneImageDelegate().apply {
-                doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
-            })
-        }.initMessages()
+        val textDelegate = OneToOneTextDelegate()
+        val imageDelegate = OneToOneImageDelegate()
+        textDelegate.doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
+        imageDelegate.doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
 
         linear().fixedSize()
+        adapter(listAdapter<OneToOneMessage> {
+            register(textDelegate)
+            register(imageDelegate)
+            listAdapter.initOneToOneMessages()
+        })
         overScrollNever()
         withLayoutParams(matchParent, matchParent)
     }
 
-    private fun ListAdapter<OneToOneMessage, *>.initMessages(): Adapter<*> {
+    private fun ListAdapter<OneToOneMessage, *>.initOneToOneMessages() = apply {
         val username = "用户A"
         val avatar = R.mipmap.ic_launcher_round
         val messages = (1..10).map {
@@ -54,7 +51,6 @@ class OneToOneFragment : Fragment() {
             }
         }
         submitList(messages)
-        return this
     }
 
     private fun loremText(): String {

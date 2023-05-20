@@ -39,12 +39,10 @@ class SingleSelectionActivity : AppCompatActivity() {
 
     private fun contentView() = RecyclerView(this).apply {
         id = viewModel.rvId
-        adapter = SingleSelectionBindingAdapter()
-        // adapter = SingleSelectionAdapter()
         linear().fixedSize()
-        divider(height = 0.5f.dp) {
-            color(0xFF7E7AAA.toInt())
-        }
+        divider(height = 0.5f.dp) { color(0xFF7E7AAA.toInt()) }
+        adapter(SingleSelectionBindingAdapter())
+        // adapter(SingleSelectionAdapter())
         overScrollNever()
         withLayoutParams(matchParent, matchParent)
     }

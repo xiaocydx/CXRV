@@ -7,10 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
-import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.list.fixedSize
-import com.xiaocydx.cxrv.list.linear
-import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.cxrv.list.*
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
 import com.xiaocydx.sample.*
@@ -22,24 +19,22 @@ class OneToManyFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
-        adapter = listAdapter<OneToManyMessage> {
-            register(OneToManyTextDelegate().apply {
-                typeLinker { it.type == "text" }
-                doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
-            })
-
-            register(OneToManyImageDelegate().apply {
-                typeLinker { it.type == "image" }
-                doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
-            })
-        }.initMessages()
+        val textDelegate = OneToManyTextDelegate()
+        val imageDelegate = OneToManyImageDelegate()
+        textDelegate.doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
+        imageDelegate.doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
 
         linear().fixedSize()
+        adapter(listAdapter<OneToManyMessage> {
+            register(textDelegate) { it.type == "text" }
+            register(imageDelegate) { it.type == "image" }
+            listAdapter.initOneToManyMessages()
+        })
         overScrollNever()
         withLayoutParams(matchParent, matchParent)
     }
 
-    private fun ListAdapter<OneToManyMessage, *>.initMessages(): RecyclerView.Adapter<*> {
+    private fun ListAdapter<OneToManyMessage, *>.initOneToManyMessages() = apply {
         val username = "用户A"
         val avatar = R.mipmap.ic_launcher_round
         val messages = (1..10).map {
@@ -52,7 +47,6 @@ class OneToManyFragment : Fragment() {
             }
         }
         submitList(messages)
-        return this
     }
 
     private fun loremText(): String {

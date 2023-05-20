@@ -20,10 +20,10 @@ import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
 import com.xiaocydx.sample.databinding.ItemTextTypeBinding
 import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.extension.TextItem
-import com.xiaocydx.sample.extension.getTextType1Delegate
-import com.xiaocydx.sample.extension.getTextType2Delegate
-import com.xiaocydx.sample.extension.initMultiTypeTextItems
+import com.xiaocydx.sample.extensions.TextItem
+import com.xiaocydx.sample.extensions.getTextType1Delegate
+import com.xiaocydx.sample.extensions.getTextType2Delegate
+import com.xiaocydx.sample.extensions.initMultiTypeTextItems
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
 import com.xiaocydx.sample.withLayoutParams
@@ -38,20 +38,20 @@ class ItemTouchActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(RecyclerView(this).apply {
-            adapter = listAdapter<TextItem> {
-                register(getTextType1Delegate())
-                register(getTextType2Delegate())
-            }.apply {
-                initItemTouch()
-                initMultiTypeTextItems()
-            }.withHeaderFooter()
+        setContentView(contentView())
+    }
 
-            linear()
-            fixedSize()
-            overScrollNever()
-            withLayoutParams(matchParent, matchParent)
-        })
+    private fun contentView() = RecyclerView(this).apply {
+        adapter = listAdapter<TextItem> {
+            register(getTextType1Delegate())
+            register(getTextType2Delegate())
+            listAdapter.initItemTouch()
+            listAdapter.initMultiTypeTextItems()
+        }.withHeaderFooter()
+
+        overScrollNever()
+        linear().fixedSize()
+        withLayoutParams(matchParent, matchParent)
     }
 
     /**

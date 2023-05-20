@@ -134,15 +134,11 @@ abstract class PagingFragment : Fragment() {
     }
 
     private fun clearOddItem() {
-        fooAdapter.submitTransform {
-            filter { it.num % 2 == 0 }
-        }
+        fooAdapter.submitTransform { filter { it.num % 2 == 0 } }
     }
 
     private fun clearEvenItem() {
-        fooAdapter.submitTransform {
-            filter { it.num % 2 != 0 }
-        }
+        fooAdapter.submitTransform { filter { it.num % 2 != 0 } }
     }
 
     private fun clearAllItem() {

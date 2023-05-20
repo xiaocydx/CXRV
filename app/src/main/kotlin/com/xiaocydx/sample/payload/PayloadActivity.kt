@@ -25,23 +25,25 @@ class PayloadActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(RecyclerView(this).apply {
-            linear().fixedSize()
-            divider(height = 0.5f.dp) { color(0xFF7E7AAA.toInt()) }
-            adapter(CountAdapter().apply {
-                submitList((1..3).map { CountItem(id = it.toString()) })
-                doOnItemClick(target = { binding.btnCount1 }) { holder, _ ->
-                    holder.setItem { incrementCount1() }
-                }
-                doOnItemClick(target = { binding.btnCount2 }) { holder, _ ->
-                    holder.setItem { incrementCount2() }
-                }
-                doOnItemClick(target = { binding.btnCount3 }) { holder, _ ->
-                    holder.setItem { incrementCount3() }
-                }
-            })
-            overScrollNever()
-            withLayoutParams(matchParent, matchParent)
+        setContentView(contentView())
+    }
+
+    private fun contentView() = RecyclerView(this).apply {
+        linear().fixedSize()
+        divider(height = 0.5f.dp) { color(0xFF7E7AAA.toInt()) }
+        adapter(CountAdapter().apply {
+            doOnItemClick(target = { binding.btnCount1 }) { holder, _ ->
+                holder.setItem { incrementCount1() }
+            }
+            doOnItemClick(target = { binding.btnCount2 }) { holder, _ ->
+                holder.setItem { incrementCount2() }
+            }
+            doOnItemClick(target = { binding.btnCount3 }) { holder, _ ->
+                holder.setItem { incrementCount3() }
+            }
+            submitList((1..3).map { CountItem(id = it.toString()) })
         })
+        overScrollNever()
+        withLayoutParams(matchParent, matchParent)
     }
 }

@@ -39,12 +39,10 @@ class MultiSelectionActivity : AppCompatActivity() {
 
     private fun contentView() = RecyclerView(this).apply {
         id = viewModel.rvId
-        adapter = MultiSelectionBindingAdapter()
-        // adapter = MultiSelectionAdapter()
         linear().fixedSize()
-        divider(height = 0.5f.dp) {
-            color(0xFF7E7AAA.toInt())
-        }
+        divider(height = 0.5f.dp) { color(0xFF7E7AAA.toInt()) }
+        adapter(MultiSelectionBindingAdapter())
+        // adapter(MultiSelectionAdapter())
         overScrollNever()
         withLayoutParams(matchParent, matchParent)
     }

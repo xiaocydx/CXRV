@@ -5,7 +5,7 @@ import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
 import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.list.getItem
-import com.xiaocydx.sample.extension.TextItem
+import com.xiaocydx.sample.extensions.TextItem
 
 /**
  * 通过[RecyclerView]设置匹配`bindingAdapter`的点击和长按`action`

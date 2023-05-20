@@ -9,7 +9,7 @@ import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 import com.xiaocydx.sample.databinding.ItemTextTypeBinding
-import com.xiaocydx.sample.extension.TextItem
+import com.xiaocydx.sample.extensions.TextItem
 
 /**
  * 通过[ViewTypeDelegate]设置点击和长按`action`

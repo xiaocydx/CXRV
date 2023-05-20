@@ -12,28 +12,28 @@ import com.xiaocydx.sample.R
  * @author xcc
  * @date 2022/2/17
  */
-class OneToOneImageDelegate : ViewTypeDelegate<OneToOneMessage.Image, OneToOneImageDelegate.ViewHolder>() {
+class OneToOneImageDelegate : ViewTypeDelegate<OneToOneMessage.Image, OneToOneImageHolder>() {
 
     override fun areItemsTheSame(oldItem: OneToOneMessage.Image, newItem: OneToOneMessage.Image): Boolean {
         return oldItem.id == newItem.id
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
-        return ViewHolder(parent.inflate(R.layout.item_message_image))
+    override fun onCreateViewHolder(parent: ViewGroup): OneToOneImageHolder {
+        return OneToOneImageHolder(parent.inflate(R.layout.item_message_image))
     }
 
     override fun onBindViewHolder(
-        holder: ViewHolder,
+        holder: OneToOneImageHolder,
         item: OneToOneMessage.Image
     ) = with(holder) {
         ivAvatar.setImageResource(item.avatar)
         tvUsername.text = item.username
         ivContent.setImageResource(item.image)
     }
+}
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val ivAvatar: ImageView = itemView.findViewById(R.id.ivAvatar)
-        val tvUsername: TextView = itemView.findViewById(R.id.tvUsername)
-        val ivContent: ImageView = itemView.findViewById(R.id.ivContent)
-    }
+class OneToOneImageHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    val ivAvatar: ImageView = itemView.findViewById(R.id.ivAvatar)
+    val tvUsername: TextView = itemView.findViewById(R.id.tvUsername)
+    val ivContent: ImageView = itemView.findViewById(R.id.ivContent)
 }

@@ -27,9 +27,9 @@ class ItemClickActivity : AppCompatActivity() {
     }
 
     private fun ActivityItemClickBinding.initView() = apply {
-        val list = ItemClickScenesList()
-        var disposable = list.first().apply(rvClick)
         rvClick.linear()
+        val scenesList = ItemClickScenesList()
+        var disposable = scenesList.first().apply(rvClick)
         rvScenes
             .linear(HORIZONTAL)
             .divider(10.dp, 10.dp) {
@@ -39,7 +39,7 @@ class ItemClickActivity : AppCompatActivity() {
                 uniqueId = ItemClickScenes::text,
                 inflate = ItemButtonBinding::inflate
             ) {
-                submitList(list)
+                submitList(scenesList)
                 doOnItemClick { _, item ->
                     disposable.dispose()
                     disposable = item.apply(rvClick)
