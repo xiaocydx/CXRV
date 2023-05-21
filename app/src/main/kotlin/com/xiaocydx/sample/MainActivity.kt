@@ -20,6 +20,7 @@ import com.xiaocydx.sample.nested.NestedListActivity
 import com.xiaocydx.sample.paging.PagingActivity
 import com.xiaocydx.sample.paging.article.ArticleListActivity
 import com.xiaocydx.sample.payload.PayloadActivity
+import com.xiaocydx.sample.transition.FragmentTransitionActivity
 import com.xiaocydx.sample.viewpager2.ViewPager2Activity
 import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity
 
@@ -62,7 +63,8 @@ class MainActivity : AppCompatActivity() {
             StartItem<PagingActivity>("分页加载示例（本地测试）"),
             StartItem<ArticleListActivity>("分页加载示例（网络请求）"),
             StartItem<ViewPager2Activity>("ViewPager2共享池示例"),
-            StartItem<LoopPagerActivity>("ViewPager2循环页面示例")
+            StartItem<LoopPagerActivity>("ViewPager2循环页面示例"),
+            StartItem<FragmentTransitionActivity>("Fragment过渡动画卡顿优化示例"),
         ))
     }
 

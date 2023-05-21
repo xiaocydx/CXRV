@@ -56,5 +56,8 @@
         <activity
             android:name=".viewpager2.loop.LoopPagerActivity"
             android:exported="false" />
+        <activity
+            android:name=".transition.FragmentTransitionActivity"
+            android:exported="false" />
     </application>
 </manifest>
