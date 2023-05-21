@@ -23,10 +23,12 @@ package androidx.recyclerview.widget
 import android.util.SparseArray
 import androidx.core.view.OneShotPreDrawListener
 import androidx.recyclerview.widget.RecyclerView.*
-import androidx.recyclerview.widget.UpdateReason.ADAPTER_NOTIFY
+import androidx.recyclerview.widget.UpdateScenes.AdapterNotify
 import androidx.viewpager2.widget.ViewPager2
+import androidx.viewpager2.widget.scrollToPositionDirect
 import androidx.viewpager2.widget.setCurrentItemDirect
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent
+import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTRA_PAGE_LIMIT
 
 /**
  * [ViewPager2]循环页面的锚点信息更新器
@@ -49,10 +51,10 @@ internal interface LoopAnchorUpdater {
      * 实现类会优化更新锚点信息的过程，避免移除`itemView`，绑定新的[ViewHolder]，
      * 优化效果可以理解为将`B*、C*、A`的`itemView`，挪到`B、C，A*`的位置进行展示，
      *
-     * @param reason  更新锚点信息的原因
-     * @param content 若[reason]为[ADAPTER_NOTIFY]，则根据`content.previous`计算新锚点。
+     * @param scenes  更新锚点信息的场景，不同的场景根据具体需求重写相关函数。
+     * @param content 若[scenes]为[AdapterNotify]，则根据`content.previous`计算新锚点。
      */
-    fun updateAnchorInfo(reason: UpdateReason, content: LoopPagerContent)
+    fun updateAnchorInfo(scenes: UpdateScenes, content: LoopPagerContent)
 
     /**
      * 移除[updateAnchorInfo]添加的待处理操作
@@ -61,28 +63,62 @@ internal interface LoopAnchorUpdater {
 }
 
 /**
- * [LoopAnchorUpdater.updateAnchorInfo]更新锚点信息的原因
+ * [LoopAnchorUpdater.updateAnchorInfo]更新锚点信息的场景
  */
-internal enum class UpdateReason {
+internal sealed class UpdateScenes {
     /**
      * 开始手势拖动
      */
-    DRAGGING,
+    object Dragging : UpdateScenes()
 
     /**
      * `scrollToPosition()`
      */
-    SCROLL,
+    object Scroll : UpdateScenes()
 
     /**
      * `smoothScrollToPosition()`
      */
-    SMOOTH_SCROLL,
+    object SmoothScroll : UpdateScenes()
 
     /**
      * [LoopPagerAdapter]的局部更新通知，根据`content.previous`计算新锚点
      */
-    ADAPTER_NOTIFY
+    object AdapterNotify : UpdateScenes() {
+        override fun getAnchorContent(content: LoopPagerContent) = content.previous
+    }
+
+    /**
+     * 修复多指交替滚动未更新锚点信息的问题，不设置`viewPager2.currentItem`
+     */
+    class ScrolledFix(private val currentPosition: Int) : UpdateScenes() {
+        override fun getCurrentPosition(content: LoopPagerContent) = currentPosition
+
+        override fun setAnchorPosition(anchorPosition: Int, content: LoopPagerContent) {
+            content.viewPager2.scrollToPositionDirect(anchorPosition)
+        }
+    }
+
+    /**
+     * 获取计算新锚点的[LoopPagerContent]
+     */
+    open fun getAnchorContent(content: LoopPagerContent) = content
+
+    /**
+     * 获取计算新锚点的`currentPosition`
+     *
+     * @param content [getAnchorContent]的返回结果
+     */
+    open fun getCurrentPosition(content: LoopPagerContent) = content.viewPager2.currentItem
+
+    /**
+     * 设置新锚点[anchorPosition]
+     *
+     * @param content [getAnchorContent]的返回结果
+     */
+    open fun setAnchorPosition(anchorPosition: Int, content: LoopPagerContent) {
+        content.viewPager2.setCurrentItemDirect(anchorPosition)
+    }
 }
 
 /**
@@ -102,7 +138,7 @@ internal class LoopAnchorUpdaterImpl(
 ) : LoopAnchorUpdater {
     private var preDrawListener: OneShotPreDrawListener? = null
 
-    override fun updateAnchorInfo(reason: UpdateReason, content: LoopPagerContent) {
+    override fun updateAnchorInfo(scenes: UpdateScenes, content: LoopPagerContent) {
         if (!content.previous.supportLoop() && content.supportLoop()) {
             // 不支持循环到支持循环的转换过程不需要更新锚点信息
             removeUpdateAnchorInfoPending()
@@ -111,11 +147,11 @@ internal class LoopAnchorUpdaterImpl(
 
         // 在下一次布局完成之前，不需要再更新锚点信息
         if (hasUpdateAnchorInfoPending()) return
-        val finalContent = if (reason === ADAPTER_NOTIFY) content.previous else content
-        val anchorPosition = getNewAnchorPositionForContent(finalContent)
+        val anchorContent = scenes.getAnchorContent(content)
+        val anchorPosition = getNewAnchorPosition(scenes, anchorContent)
         if (anchorPosition == NO_POSITION) return
-        updateAnchorInfoInNextLayout(anchorPosition, finalContent)
-        addUpdateAnchorInfoPending(finalContent)
+        updateAnchorInfoInNextLayout(anchorPosition, scenes, anchorContent)
+        addUpdateAnchorInfoPending(anchorContent)
     }
 
     private fun hasUpdateAnchorInfoPending() = preDrawListener != null
@@ -132,17 +168,17 @@ internal class LoopAnchorUpdaterImpl(
     }
 
     /**
-     * 若`viewPager.currentItem`是附加页面，则返回对应原始页面的`layoutPosition`
+     * 若`currentPosition`是附加页面，则返回对应原始页面的`layoutPosition`
      */
-    private fun getNewAnchorPositionForContent(content: LoopPagerContent): Int {
+    private fun getNewAnchorPosition(scenes: UpdateScenes, content: LoopPagerContent): Int {
         if (!content.supportLoop()) return NO_POSITION
         val headerFirst = content.firstExtraLayoutPosition(isHeader = true)
         val headerLast = content.lastExtraLayoutPosition(isHeader = true)
         val footerFirst = content.firstExtraLayoutPosition(isHeader = false)
         val footerLast = content.lastExtraLayoutPosition(isHeader = false)
-        return when (val currentItem = content.viewPager2.currentItem) {
-            in headerFirst..headerLast -> currentItem + content.itemCount
-            in footerFirst..footerLast -> currentItem - content.itemCount
+        return when (val currentPosition = scenes.getCurrentPosition(content)) {
+            in headerFirst..headerLast -> currentPosition + content.itemCount
+            in footerFirst..footerLast -> currentPosition - content.itemCount
             else -> NO_POSITION
         }
     }
@@ -151,17 +187,17 @@ internal class LoopAnchorUpdaterImpl(
      * [RecyclerView]的布局流程会调用[Recycler.tryGetViewHolderForPositionByDeadline]填充`itemView`，
      * 该函数确保修改当前`targetScrap`的`layoutPosition`后，下一次布局基于新锚点填充当前`targetScrap`。
      */
-    private fun updateAnchorInfoInNextLayout(anchorPosition: Int, content: LoopPagerContent) {
+    private fun updateAnchorInfoInNextLayout(anchorPosition: Int, scenes: UpdateScenes, content: LoopPagerContent) {
         val recyclerView = content.viewPager2.recyclerView
         val cachedViews = recyclerView.mRecycler?.mCachedViews ?: return
 
         // 查找当前targetScrap，并基于新锚点设置layoutPosition
-        val current = content.viewPager2.currentItem
-        val offset = anchorPosition - current
-        addTargetScrapForLayoutPosition(current, offset, content)
-        if (content.extraPageLimit == LoopPagerContent.PADDING_EXTRA_PAGE_LIMIT) {
-            addTargetScrapForLayoutPosition(current - 1, offset, content)
-            addTargetScrapForLayoutPosition(current + 1, offset, content)
+        val currentPosition = scenes.getCurrentPosition(content)
+        val offset = anchorPosition - currentPosition
+        addTargetScrapForLayoutPosition(currentPosition, offset, content)
+        if (content.extraPageLimit == PADDING_EXTRA_PAGE_LIMIT) {
+            addTargetScrapForLayoutPosition(currentPosition - 1, offset, content)
+            addTargetScrapForLayoutPosition(currentPosition + 1, offset, content)
         }
 
         // 对有冲突的离屏页面设置targetScrap的oldPosition，避免下一次布局基于新锚点填充离屏页面
@@ -184,7 +220,7 @@ internal class LoopAnchorUpdaterImpl(
 
         // 下一次布局LinearLayoutManager会自行计算出当前targetScrap的锚点信息，
         // RecyclerView.dispatchLayoutStep3()回收上述已处理但未填充的离屏页面。
-        content.viewPager2.setCurrentItemDirect(anchorPosition)
+        scenes.setAnchorPosition(anchorPosition, content)
         if (targetScrapStore.size > 0) targetScrapStore.clear()
     }
 

@@ -118,7 +118,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 1) { contentCallback.onViewAttachedToWindow(previous) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previous) }
 
-        scroller.updateAnchorInfo(UpdateReason.DRAGGING, content)
+        scroller.updateAnchorInfo(UpdateScenes.Dragging, content)
 
         // currentItem = 1 -> currentItem = 4，移除itemView，绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -147,7 +147,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 1) { contentCallback.onViewAttachedToWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
 
-        scroller.updateAnchorInfo(UpdateReason.DRAGGING, content)
+        scroller.updateAnchorInfo(UpdateScenes.Dragging, content)
 
         // currentItem = 1 -> currentItem = 4，不移除itemView，不绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -185,7 +185,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousA) }
 
-        scroller.updateAnchorInfo(UpdateReason.DRAGGING, content)
+        scroller.updateAnchorInfo(UpdateScenes.Dragging, content)
 
         // currentItem = 1 -> currentItem = 4，移除itemView，绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -237,7 +237,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousA) }
 
-        scroller.updateAnchorInfo(UpdateReason.DRAGGING, content)
+        scroller.updateAnchorInfo(UpdateScenes.Dragging, content)
 
         // currentItem = 1 -> currentItem = 4，不移除itemView，不绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -290,10 +290,10 @@ internal class LoopPagerScrollerTest {
         private val optimization = LoopAnchorUpdaterImpl(TestTargetScrapStore())
         var isOptimizationEnabled = true
 
-        override fun updateAnchorInfo(reason: UpdateReason, content: LoopPagerContent) {
-            if (reason === UpdateReason.SCROLL) return
+        override fun updateAnchorInfo(scenes: UpdateScenes, content: LoopPagerContent) {
+            if (scenes === UpdateScenes.Scroll) return
             if (isOptimizationEnabled) {
-                optimization.updateAnchorInfo(reason, content)
+                optimization.updateAnchorInfo(scenes, content)
             } else {
                 val anchorPosition = getNewAnchorPositionForContent(content)
                 if (anchorPosition == NO_POSITION) return

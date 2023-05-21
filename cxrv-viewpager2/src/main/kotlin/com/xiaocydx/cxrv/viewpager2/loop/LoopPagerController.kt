@@ -111,7 +111,7 @@ class LoopPagerController(
             viewPager2, adapter,
             extraPageLimit, supportLoopCount
         )
-        scroller?.removeCallback()
+        scroller?.removeCallbacks()
         scroller = LoopPagerScroller(content!!)
         viewPager2.adapter = LoopPagerAdapter(content!!, scroller!!)
         initAnchorIfNecessary()

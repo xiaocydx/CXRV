@@ -19,6 +19,7 @@
 
 package androidx.viewpager2.widget
 
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 
@@ -36,8 +37,14 @@ import androidx.recyclerview.widget.RecyclerView.*
  */
 internal fun ViewPager2.setCurrentItemDirect(item: Int) {
     mCurrentItem = item
-    // ViewPager2的LayoutManager是LinearLayoutManager，调用scrollToPosition()是为了确保下一帧布局流程，
-    // onLayoutChildren()通过updateAnchorFromPendingData()更新锚点，而不是updateAnchorFromChildren()，
-    // 在快速滚动的过程中，updateAnchorFromChildren()不能达到预期的效果。
-    mRecyclerView.layoutManager?.scrollToPosition(item)
+    scrollToPositionDirect(item)
+}
+
+/**
+ * [ViewPager2]的LayoutManager是[LinearLayoutManager]，调用`scrollToPosition()`是为了确保下一帧布局流程，
+ * `onLayoutChildren()`通过`updateAnchorFromPendingData()`更新锚点，而不是`updateAnchorFromChildren()`，
+ * 在快速滚动的过程中，`updateAnchorFromChildren()`不能达到预期的效果。
+ */
+internal fun ViewPager2.scrollToPositionDirect(position: Int) {
+    mRecyclerView.layoutManager?.scrollToPosition(position)
 }
