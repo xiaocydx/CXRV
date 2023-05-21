@@ -115,7 +115,7 @@ internal class LoopAnchorUpdaterImpl(
         val finalContent = if (reason === ADAPTER_NOTIFY) content.previous else content
         val anchorPosition = getNewAnchorPositionForContent(finalContent)
         if (anchorPosition == NO_POSITION) return
-        updateAnchorInfoInNextLayout(anchorPosition, reason, finalContent)
+        updateAnchorInfoInNextLayout(anchorPosition, finalContent)
         addUpdateAnchorInfoPending(finalContent)
     }
 
@@ -152,14 +152,13 @@ internal class LoopAnchorUpdaterImpl(
      * [RecyclerView]的布局流程会调用[Recycler.tryGetViewHolderForPositionByDeadline]填充`itemView`，
      * 该函数确保修改当前`targetScrap`的`layoutPosition`后，下一次布局基于新锚点填充当前`targetScrap`。
      */
-    private fun updateAnchorInfoInNextLayout(anchorPosition: Int, reason: UpdateReason, content: LoopPagerContent) {
+    private fun updateAnchorInfoInNextLayout(anchorPosition: Int, content: LoopPagerContent) {
         val recyclerView = content.viewPager2.recyclerView
         val cachedViews = recyclerView.mRecycler?.mCachedViews ?: return
 
         // 查找当前targetScrap，并基于新锚点设置layoutPosition
         val current = content.viewPager2.currentItem
         val offset = anchorPosition - current
-        content.viewPager2.setCurrentItemDirect(anchorPosition)
         addTargetScrapForLayoutPosition(current, offset, content)
         if (content.extraPageLimit == LoopPagerContent.PADDING_EXTRA_PAGE_LIMIT) {
             addTargetScrapForLayoutPosition(current - 1, offset, content)
@@ -186,9 +185,7 @@ internal class LoopAnchorUpdaterImpl(
 
         // 下一次布局LinearLayoutManager会自行计算出当前targetScrap的锚点信息，
         // RecyclerView.dispatchLayoutStep3()回收上述已处理但未填充的离屏页面。
-        // RecyclerView.mObserver决定下一帧在Animation还是Traversal进行布局，
-        // 此时不能调用requestLayout()，这会对下一帧Animation的判断造成影响。
-        if (reason !== ADAPTER_NOTIFY) recyclerView.requestLayout()
+        content.viewPager2.setCurrentItemDirect(anchorPosition)
         if (targetScrapStore.size > 0) targetScrapStore.clear()
     }
 

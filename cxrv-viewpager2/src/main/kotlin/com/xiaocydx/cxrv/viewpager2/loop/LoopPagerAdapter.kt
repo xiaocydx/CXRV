@@ -210,7 +210,7 @@ internal class LoopPagerAdapter(
         override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
             // 更新footer，跟itemRangeChanged()计算交集的过程一致，
             // 更新header，需要偏移positionStart，再计算交集，例如：
-            // extraPageLimit = 2, {B* ，C* ，A ，B ，C ，A* ，B*}
+            // {B* ，C* ，A ，B ，C ，A* ，B*}, extraPageLimit = 2
             // bindingAdapterPositionRange = [0, 2]
             // headerBindingAdapterPositionRange = [1, 2]
             // 1. positionStart <= 1，无需更新header。
@@ -226,9 +226,9 @@ internal class LoopPagerAdapter(
             val bindingFirst = content.previous.firstExtraBindingAdapterPosition(isHeader)
             val bindingLast = content.previous.lastExtraBindingAdapterPosition(isHeader)
             when {
-                // 更新header，未移除最后一个，跟itemRangeChanged()计算交集的过程一致
+                // 更新header，未移除最后一个，跟onItemRangeChanged()计算交集的过程一致
                 isHeader && positionStart < bindingLast -> updateRangeExtraPage(positionStart, itemCount)
-                // 更新footer，未移除第一个，跟itemRangeChanged()计算交集的过程一致
+                // 更新footer，未移除第一个，跟onItemRangeChanged()计算交集的过程一致
                 !isHeader && positionStart > bindingFirst -> updateRangeExtraPage(positionStart, itemCount)
                 else -> updateAllExtraPage()
             }
@@ -257,11 +257,11 @@ internal class LoopPagerAdapter(
 
             val positionEnd = positionStart + itemCount - 1
             if (positionStart > bindingLast || positionEnd < bindingFirst) {
-                // first..last跟positionStart..positionEnd之间没有交集
+                // [bindingFirst, bindingLast]跟[positionStart, positionEnd]没有交集
                 return
             }
 
-            // 配置属性确保first..last小于等于positionStart..positionEnd
+            // 配置属性确保[bindingFirst, bindingLast]小于等于[positionStart, positionEnd]
             val previousFirst = bindingFirst
             bindingFirst = bindingFirst.coerceAtLeast(positionStart)
             bindingLast = bindingLast.coerceAtMost(positionEnd)
