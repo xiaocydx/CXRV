@@ -21,9 +21,9 @@
 package androidx.recyclerview.widget
 
 import android.util.SparseArray
-import androidx.annotation.VisibleForTesting
 import androidx.core.view.OneShotPreDrawListener
 import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.UpdateReason.ADAPTER_NOTIFY
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.setCurrentItemDirect
 import com.xiaocydx.cxrv.internal.doOnPreDraw
@@ -50,16 +50,40 @@ internal interface LoopAnchorUpdater {
      * 实现类会优化更新锚点信息的过程，避免移除`itemView`，绑定新的[ViewHolder]，
      * 优化效果可以理解为将`B*、C*、A`的`itemView`，挪到`B、C，A*`的位置进行展示，
      *
-     * @param fromNotify 是否调用自[AdapterDataObserver]的分发过程
-     * @param content    若[fromNotify]为`true`，则根据`content.previous`计算新锚点，
-     * 使用`content.previous`而不是`content`的原因可以看[LoopPagerAdapter]的注释描述。
+     * @param reason  更新锚点信息的原因
+     * @param content 若[reason]为[ADAPTER_NOTIFY]，则根据`content.previous`计算新锚点。
      */
-    fun updateAnchorInfo(fromNotify: Boolean, content: LoopPagerContent)
+    fun updateAnchorInfo(reason: UpdateReason, content: LoopPagerContent)
 
     /**
      * 移除[updateAnchorInfo]添加的待处理操作
      */
     fun removeUpdateAnchorInfoPending()
+}
+
+/**
+ * [LoopAnchorUpdater.updateAnchorInfo]更新锚点信息的原因
+ */
+internal enum class UpdateReason {
+    /**
+     * 开始手势拖动
+     */
+    DRAGGING,
+
+    /**
+     * `scrollToPosition()`
+     */
+    SCROLL,
+
+    /**
+     * `smoothScrollToPosition()`
+     */
+    SMOOTH_SCROLL,
+
+    /**
+     * [LoopPagerAdapter]的局部更新通知，根据`content.previous`计算新锚点
+     */
+    ADAPTER_NOTIFY
 }
 
 /**
@@ -74,37 +98,28 @@ internal interface LoopAnchorUpdater {
  * ### 优化方案
  * [updateAnchorInfoInNextLayout]查找目标`itemView`，处理跟离屏页面和离屏缓存的冲突。
  */
-internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
-    private val targetScrapStore = targetScrapStoreProvider()
+internal class LoopAnchorUpdaterImpl(
+    private val targetScrapStore: TargetScrapStore = DefaultTargetScrapStore()
+) : LoopAnchorUpdater {
     private var preDrawListener: OneShotPreDrawListener? = null
 
-    override fun updateAnchorInfo(fromNotify: Boolean, content: LoopPagerContent) {
-        val anchorPosition: Int
-        if (content.supportLoop() != content.previous.supportLoop()) {
-            // 支持循环和不支持循环的相互转换过程
+    override fun updateAnchorInfo(reason: UpdateReason, content: LoopPagerContent) {
+        if (!content.previous.supportLoop() && content.supportLoop()) {
+            // 不支持循环到支持循环的转换过程不需要更新锚点信息
             removeUpdateAnchorInfoPending()
-            anchorPosition = content.toLayoutPosition(content.viewPager2.currentItem)
-            updateAnchorInfoByScrollToPosition(anchorPosition, content)
-            addUpdateAnchorInfoPending(content)
             return
         }
 
-        // 在下一次布局完成之前，不需要再通过优化方案更新锚点信息
+        // 在下一次布局完成之前，不需要再更新锚点信息
         if (hasUpdateAnchorInfoPending()) return
-        val anchorContent = if (!fromNotify) content else content.previous
-        anchorPosition = getNewAnchorPositionForContent(anchorContent)
-        when {
-            anchorPosition == NO_POSITION -> return
-            // OPTIMIZATION_ENABLED = false用于单元测试，对比优化前和优化后的效果
-            !OPTIMIZATION_ENABLED -> updateAnchorInfoByScrollToPosition(anchorPosition, anchorContent)
-            else -> updateAnchorInfoInNextLayout(anchorPosition, fromNotify, anchorContent)
-        }
-        addUpdateAnchorInfoPending(content)
+        val finalContent = if (reason === ADAPTER_NOTIFY) content.previous else content
+        val anchorPosition = getNewAnchorPositionForContent(finalContent)
+        if (anchorPosition == NO_POSITION) return
+        updateAnchorInfoInNextLayout(anchorPosition, reason, finalContent)
+        addUpdateAnchorInfoPending(finalContent)
     }
 
-    private fun hasUpdateAnchorInfoPending(): Boolean {
-        return preDrawListener != null
-    }
+    private fun hasUpdateAnchorInfoPending() = preDrawListener != null
 
     private fun addUpdateAnchorInfoPending(content: LoopPagerContent) {
         // 当通知局部更新时，若RecyclerView.hasFixedSize()为true，并且下一帧条件满足，
@@ -134,22 +149,10 @@ internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
     }
 
     /**
-     * 当[RecyclerView.onInterceptTouchEvent]将滚动状态设为[SCROLL_STATE_DRAGGING]时，
-     * 会对[OnScrollListener]分发新的滚动状态，若此时调用[ViewPager2.setCurrentItem]，
-     * 则会调用至[RecyclerView.stopScroll]，将滚动状态设为[SCROLL_STATE_IDLE]，
-     * 导致[RecyclerView.onInterceptTouchEvent]返回`false`，在实际场景中，
-     * 手势滚动可能会因为这次触摸事件拦截失败，而出现交互不流畅的问题。
-     */
-    private fun updateAnchorInfoByScrollToPosition(anchorPosition: Int, content: LoopPagerContent) {
-        content.viewPager2.setCurrentItemDirect(anchorPosition)
-        content.viewPager2.recyclerView.layoutManager?.scrollToPosition(anchorPosition)
-    }
-
-    /**
      * [RecyclerView]的布局流程会调用[Recycler.tryGetViewHolderForPositionByDeadline]填充`itemView`，
      * 该函数确保修改当前`targetScrap`的`layoutPosition`后，下一次布局基于新锚点填充当前`targetScrap`。
      */
-    private fun updateAnchorInfoInNextLayout(anchorPosition: Int, fromNotify: Boolean, content: LoopPagerContent) {
+    private fun updateAnchorInfoInNextLayout(anchorPosition: Int, reason: UpdateReason, content: LoopPagerContent) {
         val recyclerView = content.viewPager2.recyclerView
         val cachedViews = recyclerView.mRecycler?.mCachedViews ?: return
 
@@ -183,7 +186,9 @@ internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
 
         // 下一次布局LinearLayoutManager会自行计算出当前targetScrap的锚点信息，
         // RecyclerView.dispatchLayoutStep3()回收上述已处理但未填充的离屏页面。
-        if (!fromNotify) recyclerView.requestLayout()
+        // RecyclerView.mObserver决定下一帧在Animation还是Traversal进行布局，
+        // 此时不能调用requestLayout()，这会对下一帧Animation的判断造成影响。
+        if (reason !== ADAPTER_NOTIFY) recyclerView.requestLayout()
         if (targetScrapStore.size > 0) targetScrapStore.clear()
     }
 
@@ -193,14 +198,6 @@ internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
         val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
         holder.offsetPosition(offset, false)
         targetScrapStore[bindingAdapterPosition] = holder
-    }
-
-    companion object {
-        @set:VisibleForTesting
-        internal var OPTIMIZATION_ENABLED = true
-
-        @set:VisibleForTesting
-        internal var targetScrapStoreProvider: () -> TargetScrapStore = { DefaultTargetScrapStore() }
     }
 }
 

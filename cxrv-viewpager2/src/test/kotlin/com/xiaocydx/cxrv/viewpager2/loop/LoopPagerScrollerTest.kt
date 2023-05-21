@@ -19,6 +19,7 @@ package com.xiaocydx.cxrv.viewpager2.loop
 import android.os.Build
 import androidx.lifecycle.Lifecycle.State.CREATED
 import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario.launch
 import com.google.common.truth.Truth.assertThat
@@ -45,7 +46,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 internal class LoopPagerScrollerTest {
     private lateinit var content: LoopPagerContent
-    private lateinit var loopPagerScroller: LoopPagerScroller
+    private lateinit var updater: TestLoopAnchorUpdater
+    private lateinit var scroller: LoopPagerScroller
     private val contentCallback: AdapterCallback = spyk()
 
     /**
@@ -78,8 +80,9 @@ internal class LoopPagerScrollerTest {
                     extraPageLimit = PADDING_EXTRA_PAGE_LIMIT,
                     supportLoopCount = DEFAULT_SUPPORT_LOOP_COUNT
                 )
-                loopPagerScroller = LoopPagerScroller(content)
-                it.viewPager2.adapter = LoopPagerAdapter(content, loopPagerScroller)
+                updater = TestLoopAnchorUpdater()
+                scroller = LoopPagerScroller(content, updater)
+                it.viewPager2.adapter = LoopPagerAdapter(content, scroller)
             }
     }
 
@@ -93,7 +96,7 @@ internal class LoopPagerScrollerTest {
     @Test
     fun scrollToPosition() {
         assertThat(content.viewPager2.currentItem).isEqualTo(0)
-        loopPagerScroller.scrollToPosition(2)
+        scroller.scrollToPosition(2)
         assertThat(content.viewPager2.currentItem).isEqualTo(2)
     }
 
@@ -108,14 +111,14 @@ internal class LoopPagerScrollerTest {
     @Test
     fun defaultUpdateAnchorWithoutOptimization() = withoutOptimization {
         verify(exactly = 0) { contentCallback.onBindViewHolder(any(), 2, any()) }
-        loopPagerScroller.scrollToPosition(1)
+        scroller.scrollToPosition(1)
 
         val previous = content.findViewHolderForLayoutPosition(1)
         verify(exactly = 1) { contentCallback.onBindViewHolder(previous, 2, any()) }
         verify(exactly = 1) { contentCallback.onViewAttachedToWindow(previous) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previous) }
 
-        loopPagerScroller.updateAnchorInfo(fromNotify = false, content)
+        scroller.updateAnchorInfo(UpdateReason.DRAGGING, content)
 
         // currentItem = 1 -> currentItem = 4，移除itemView，绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -137,14 +140,14 @@ internal class LoopPagerScrollerTest {
     @Test
     fun defaultUpdateAnchorWithOptimization() {
         verify(exactly = 0) { contentCallback.onBindViewHolder(any(), 2, any()) }
-        loopPagerScroller.scrollToPosition(1)
+        scroller.scrollToPosition(1)
 
         val previousC = content.findViewHolderForLayoutPosition(1)
         verify(exactly = 1) { contentCallback.onBindViewHolder(previousC, 2, any()) }
         verify(exactly = 1) { contentCallback.onViewAttachedToWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
 
-        loopPagerScroller.updateAnchorInfo(fromNotify = false, content)
+        scroller.updateAnchorInfo(UpdateReason.DRAGGING, content)
 
         // currentItem = 1 -> currentItem = 4，不移除itemView，不绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -166,7 +169,7 @@ internal class LoopPagerScrollerTest {
     @Test
     fun paddingUpdateAnchorWithoutOptimization() = withoutOptimization {
         content.setupPadding()
-        loopPagerScroller.scrollToPosition(1)
+        scroller.scrollToPosition(1)
 
         val previousB = content.findViewHolderForLayoutPosition(0)
         val previousC = content.findViewHolderForLayoutPosition(1)
@@ -182,7 +185,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousA) }
 
-        loopPagerScroller.updateAnchorInfo(fromNotify = false, content)
+        scroller.updateAnchorInfo(UpdateReason.DRAGGING, content)
 
         // currentItem = 1 -> currentItem = 4，移除itemView，绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -218,7 +221,7 @@ internal class LoopPagerScrollerTest {
     @Test
     fun paddingUpdateAnchorWithOptimization() {
         content.setupPadding()
-        loopPagerScroller.scrollToPosition(1)
+        scroller.scrollToPosition(1)
 
         val previousB = content.findViewHolderForLayoutPosition(0)
         val previousC = content.findViewHolderForLayoutPosition(1)
@@ -234,7 +237,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousA) }
 
-        loopPagerScroller.updateAnchorInfo(fromNotify = false, content)
+        scroller.updateAnchorInfo(UpdateReason.DRAGGING, content)
 
         // currentItem = 1 -> currentItem = 4，不移除itemView，不绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -260,10 +263,10 @@ internal class LoopPagerScrollerTest {
     }
 
     private inline fun withoutOptimization(block: () -> Unit) {
-        val previous = LoopAnchorUpdaterImpl.OPTIMIZATION_ENABLED
-        LoopAnchorUpdaterImpl.OPTIMIZATION_ENABLED = false
+        val previous = updater.isOptimizationEnabled
+        updater.isOptimizationEnabled = false
         block()
-        LoopAnchorUpdaterImpl.OPTIMIZATION_ENABLED = previous
+        updater.isOptimizationEnabled = previous
     }
 
     private val LoopPagerContent.recyclerView: RecyclerView
@@ -281,6 +284,39 @@ internal class LoopPagerScrollerTest {
 
     private fun LoopPagerContent.findViewHolderForLayoutPosition(layoutPosition: Int): ViewHolder {
         return requireNotNull(recyclerView.findViewHolderForLayoutPosition(layoutPosition))
+    }
+
+    private class TestLoopAnchorUpdater : LoopAnchorUpdater {
+        private val optimization = LoopAnchorUpdaterImpl(TestTargetScrapStore())
+        var isOptimizationEnabled = true
+
+        override fun updateAnchorInfo(reason: UpdateReason, content: LoopPagerContent) {
+            if (reason === UpdateReason.SCROLL) return
+            if (isOptimizationEnabled) {
+                optimization.updateAnchorInfo(reason, content)
+            } else {
+                val anchorPosition = getNewAnchorPositionForContent(content)
+                if (anchorPosition == NO_POSITION) return
+                content.viewPager2.setCurrentItem(anchorPosition, false)
+            }
+        }
+
+        override fun removeUpdateAnchorInfoPending() {
+            optimization.removeUpdateAnchorInfoPending()
+        }
+
+        private fun getNewAnchorPositionForContent(content: LoopPagerContent): Int {
+            if (!content.supportLoop()) return NO_POSITION
+            val headerFirst = content.firstExtraLayoutPosition(isHeader = true)
+            val headerLast = content.lastExtraLayoutPosition(isHeader = true)
+            val footerFirst = content.firstExtraLayoutPosition(isHeader = false)
+            val footerLast = content.lastExtraLayoutPosition(isHeader = false)
+            return when (val currentItem = content.viewPager2.currentItem) {
+                in headerFirst..headerLast -> currentItem + content.itemCount
+                in footerFirst..footerLast -> currentItem - content.itemCount
+                else -> NO_POSITION
+            }
+        }
     }
 
     private class TestTargetScrapStore : TargetScrapStore {
@@ -303,11 +339,5 @@ internal class LoopPagerScrollerTest {
         }
 
         override fun clear() = mutableMap.clear()
-    }
-
-    private companion object {
-        init {
-            LoopAnchorUpdaterImpl.targetScrapStoreProvider = { TestTargetScrapStore() }
-        }
     }
 }

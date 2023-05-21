@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LoopAnchorUpdater
 import androidx.recyclerview.widget.LoopAnchorUpdaterImpl
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_DRAGGING
+import androidx.recyclerview.widget.UpdateReason.*
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 
@@ -30,8 +31,9 @@ import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
  * @date 2023/5/11
  */
 internal class LoopPagerScroller(
-    private val content: LoopPagerContent
-) : OnPageChangeCallback(), LoopAnchorUpdater by LoopAnchorUpdaterImpl() {
+    private val content: LoopPagerContent,
+    updater: LoopAnchorUpdater = LoopAnchorUpdaterImpl()
+) : OnPageChangeCallback(), LoopAnchorUpdater by updater {
     private var runnable: SmoothScrollRunnable? = null
     private val viewPager2: ViewPager2
         get() = content.viewPager2
@@ -53,7 +55,7 @@ internal class LoopPagerScroller(
 
     override fun onPageScrollStateChanged(state: Int) {
         if (state == SCROLL_STATE_DRAGGING) {
-            updateAnchorInfo(fromNotify = false, content)
+            updateAnchorInfo(DRAGGING, content)
         }
     }
 
@@ -63,6 +65,7 @@ internal class LoopPagerScroller(
     fun scrollToPosition(layoutPosition: Int) {
         if (layoutPosition == NO_POSITION || viewPager2.currentItem == layoutPosition) return
         removeRunnable()
+        updateAnchorInfo(SCROLL, content)
         viewPager2.setCurrentItem(layoutPosition, false)
     }
 
@@ -83,7 +86,7 @@ internal class LoopPagerScroller(
             // 往开始方向查找
             LookupDirection.START -> when {
                 current == headerLayoutLast -> {
-                    updateAnchorInfo(fromNotify = false, content)
+                    updateAnchorInfo(SMOOTH_SCROLL, content)
                     smoothScrollToPositionAfterRemoveSyncBarrier(layoutPosition)
                 }
                 layoutPosition in headerLayoutLast until current -> {
@@ -102,7 +105,7 @@ internal class LoopPagerScroller(
             // 往结束方向查找
             LookupDirection.END -> when {
                 current == footerLayoutFirst -> {
-                    updateAnchorInfo(fromNotify = false, content)
+                    updateAnchorInfo(SMOOTH_SCROLL, content)
                     smoothScrollToPositionAfterRemoveSyncBarrier(layoutPosition)
                 }
                 layoutPosition in (current + 1) until footerLayoutFirst -> {

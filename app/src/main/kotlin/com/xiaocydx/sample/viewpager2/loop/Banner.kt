@@ -17,7 +17,7 @@ import kotlin.coroutines.resume
  * 以下是轮播开始的必要条件：
  * 1. `Adapter.itemCount`支持循环。
  * 2. [Lifecycle.State]至少为[state]。
- * 3. 上一次平滑滚动结束，或未通过触摸开始滚动。
+ * 3. 未通过触摸开始滚动，上一次平滑滚动结束。
  */
 fun LoopPagerController.launchBanner(
     adapter: Adapter<*>,
@@ -74,9 +74,9 @@ private suspend fun LoopPagerController.awaitSupportLoop(adapter: Adapter<*>) {
 /**
  * 等待`scrollState`为[SCROLL_STATE_IDLE]
  *
- * 当`intervalMs`轮播间隔时间达到时，该函数处理两种情况：
- * 1. 若上一次平滑滚动还未结束，则等待其结束，才开始这一次平滑滚动。
- * 2. 若已通过触摸开始滚动，则等待手指抬起，才开始这一次平滑滚动。
+ * 该函数处理两种情况：
+ * 1. 若已通过触摸开始滚动，则等待手指抬起，才开始这一次平滑滚动。
+ * 2. 若上一次平滑滚动还未结束，则等待其结束，才开始这一次平滑滚动。
  */
 private suspend fun LoopPagerController.awaitScrollIdle() {
     if (scrollState == SCROLL_STATE_IDLE) return
@@ -97,7 +97,7 @@ private suspend fun LoopPagerController.awaitScrollIdle() {
             unregisterOnPageChangeCallback(callback!!)
         }
     }
-    // 分发过程不支持remove，因此用yieId()跟分发过程错开
+    // 分发过程不支持remove，因此用yield()跟分发过程错开
     yield()
     unregisterOnPageChangeCallback(callback!!)
 }

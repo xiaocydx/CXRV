@@ -27,6 +27,7 @@ import com.xiaocydx.cxrv.payload.Payload
 import com.xiaocydx.cxrv.payload.value
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent
 import java.lang.Integer.min
+import androidx.recyclerview.widget.UpdateReason.ADAPTER_NOTIFY
 import kotlin.math.max
 
 /**
@@ -189,7 +190,7 @@ internal class LoopPagerAdapter(
          * 若`viewPager.currentItem`是附加页面，则更新可能导致当前可见内容发生变化，
          * 这不符合预期，需要更新锚点信息，可以理解为将当前内容，挪到新锚点进行展示。
          */
-        private fun updateAnchorInfo() = updater.updateAnchorInfo(fromNotify = true, content)
+        private fun updateAnchorInfo() = updater.updateAnchorInfo(ADAPTER_NOTIFY, content)
     }
 
     private inner class ContentExtraPage(private val isHeader: Boolean) : AdapterDataObserver() {
