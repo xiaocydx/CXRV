@@ -21,13 +21,12 @@ package androidx.recyclerview.widget
 
 import android.annotation.SuppressLint
 import android.view.ViewGroup
+import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.UpdateReason.ADAPTER_NOTIFY
 import androidx.viewpager2.widget.ViewPager2
-import com.xiaocydx.cxrv.payload.Payload
-import com.xiaocydx.cxrv.payload.value
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent
 import java.lang.Integer.min
-import androidx.recyclerview.widget.UpdateReason.ADAPTER_NOTIFY
 import kotlin.math.max
 
 /**
@@ -76,14 +75,12 @@ internal class LoopPagerAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        onBindViewHolder(holder, position, emptyList())
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>) {
         // 将holder.mBindingAdapter修改为contentAdapter，
         // 确保不影响使用bindingAdapter和bindingAdapterPosition实现的功能。
         holder.mBindingAdapter = contentAdapter
-        contentAdapter.onBindViewHolder(holder, content.toBindingAdapterPosition(position), payloads)
+        val bindingAdapterPosition = content.toBindingAdapterPosition(position)
+        val unmodifiedPayloads = holder.distinctUnmodifiedPayloads()
+        contentAdapter.onBindViewHolder(holder, bindingAdapterPosition, unmodifiedPayloads)
     }
 
     override fun findRelativeAdapterPositionIn(adapter: Adapter<*>, holder: ViewHolder, position: Int): Int {
@@ -246,7 +243,7 @@ internal class LoopPagerAdapter(
             updateExtraPage(layoutFirst, updateCount = itemCount)
         }
 
-        private fun updateRangeExtraPage(positionStart: Int, itemCount: Int, payload: Any? = PAYLOAD) {
+        private fun updateRangeExtraPage(positionStart: Int, itemCount: Int, payload: Any? = Payload) {
             if (content.supportLoop() != content.previous.supportLoop()) {
                 return updateAllExtraPage()
             }
@@ -274,7 +271,7 @@ internal class LoopPagerAdapter(
             updateExtraPage(layoutFirst, updateCount, payload)
         }
 
-        private fun updateExtraPage(layoutFirst: Int, updateCount: Int, payload: Any? = PAYLOAD) {
+        private fun updateExtraPage(layoutFirst: Int, updateCount: Int, payload: Any? = Payload) {
             var first = layoutFirst
             var count = updateCount
             val previousCount = itemCount
@@ -302,11 +299,25 @@ internal class LoopPagerAdapter(
         }
     }
 
-    private companion object {
+    internal companion object Payload {
         /**
-         * 同步更新可能会添加多个[PAYLOAD]，若调用者使用[Payload]构建对象，
-         * 则提取[Payload]的过程可以合并多个[PAYLOAD]，仅执行一次全量更新。
+         * 同步更新可能会添加多个[Payload]，该函数对[Payload]进行去重
          */
-        val PAYLOAD = Payload { add(Payload.value(31)) }
+        private fun ViewHolder.distinctUnmodifiedPayloads(): List<Any> {
+            val payloads = mPayloads
+            if (payloads.isNullOrEmpty()) return unmodifiedPayloads
+            distinctPayloads(mPayloads)
+            return unmodifiedPayloads
+        }
+
+        @VisibleForTesting
+        fun distinctPayloads(payloads: MutableList<Any>) {
+            var existed = false
+            for (index in payloads.indices.reversed()) {
+                val isTarget = payloads[index] === Payload
+                if (existed && isTarget) payloads.removeAt(index)
+                if (!existed && isTarget) existed = true
+            }
+        }
     }
 }

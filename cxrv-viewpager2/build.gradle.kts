@@ -56,7 +56,6 @@ android {
 }
 
 dependencies {
-    compileOnly(project(":cxrv"))
     compileOnly("androidx.recyclerview:recyclerview:1.2.0")
     compileOnly("androidx.viewpager2:viewpager2:1.0.0")
     testImplementation("androidx.appcompat:appcompat:1.2.0")

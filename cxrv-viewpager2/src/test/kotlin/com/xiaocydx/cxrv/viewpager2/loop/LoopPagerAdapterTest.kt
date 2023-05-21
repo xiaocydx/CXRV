@@ -104,6 +104,15 @@ internal class LoopPagerAdapterTest {
     }
 
     @Test
+    fun distinctPayloads() {
+        val payload = LoopPagerAdapter.Payload
+        val payloads = mutableListOf("A", payload, "B", payload, "C", payload)
+        val distinct = payloads.reversed().distinct().reversed()
+        LoopPagerAdapter.distinctPayloads(payloads)
+        assertThat(payloads).isEqualTo(distinct)
+    }
+
+    @Test
     fun forwardNotifyDataSetChanged() {
         contentAdapter.notifyDataSetChanged()
         verify(exactly = 1) { loopPagerObserver.onChanged() }

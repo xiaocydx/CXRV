@@ -19,7 +19,6 @@ package com.xiaocydx.cxrv.viewpager2.fragment
 import androidx.collection.LongSparseArray
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.xiaocydx.cxrv.internal.ExperimentalFeature
 
 /**
  * ```
@@ -44,7 +43,6 @@ private val mSavedStatesField = runCatching {
  * 对频繁移除item并且是常驻应用首页的[ViewPager2]页面来说，可能会堆积无效Fragment状态，
  * 需要考虑在合适的时机调用该函数，通过反射清除`mSavedStates`保存的无效Fragment状态。
  */
-@ExperimentalFeature
 fun FragmentStateAdapter.gcSavedStates() {
     val mSavedStates = mSavedStatesField?.get(this) as? LongSparseArray<*> ?: return
     for (itemId in mSavedStates.keys()) {
