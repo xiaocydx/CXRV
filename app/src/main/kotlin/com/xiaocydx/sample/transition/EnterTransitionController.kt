@@ -14,6 +14,8 @@ import android.transition.Transition as AndroidTransition
 import androidx.transition.Transition as AndroidXTransition
 
 /**
+ * `Fragment.enterTransition`的控制器
+ *
  * @author xcc
  * @date 2023/2/4
  */
@@ -28,6 +30,11 @@ class EnterTransitionController(
     private var androidTransitionListener: AndroidTransitionListener? = null
     private var androidXTransitionListener: AndroidXTransitionListener? = null
 
+    /**
+     * 推迟`Fragment.enterTransition`
+     *
+     * @param timeoutMillis 推迟的超时时长
+     */
     fun postponeEnterTransition(timeoutMillis: Long) = runOnMainThread {
         if (timeoutMillis <= 0 || isPostponed) return@runOnMainThread
         isPostponed = true
@@ -36,6 +43,9 @@ class EnterTransitionController(
         addEnterTransitionListener()
     }
 
+    /**
+     * 开始`Fragment.enterTransition`或者等待结束
+     */
     suspend fun startPostponeEnterTransitionOrAwait() = withMainDispatcher {
         if (!isPostponed) return@withMainDispatcher
         if (!isStarted) {

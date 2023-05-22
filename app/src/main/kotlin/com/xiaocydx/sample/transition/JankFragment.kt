@@ -10,14 +10,14 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
 /**
+ * 模拟加载列表数据的场景，复现Fragment过渡动画卡顿问题
+ *
  * @author xcc
  * @date 2023/5/21
  */
-class TimeoutSlideFragment : SlideFragment() {
+class JankFragment : SlideFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val controller = EnterTransitionController(this)
-        controller.postponeEnterTransition(CONTENT_DURATION - 50L)
         viewModel.state
             .flowWithLifecycle(viewLifecycle)
             .distinctUntilChanged()
@@ -27,7 +27,6 @@ class TimeoutSlideFragment : SlideFragment() {
                         loadingAdapter.showLoading()
                     }
                     SlideState.CONTENT -> {
-                        controller.startPostponeEnterTransitionOrAwait()
                         loadingAdapter.hideLoading()
                         contentAdapter.insertItems()
                     }
