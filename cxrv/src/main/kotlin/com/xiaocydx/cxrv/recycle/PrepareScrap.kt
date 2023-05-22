@@ -97,7 +97,7 @@ suspend fun RecyclerView.prepareScrap(
             PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
                 // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
                 prepareAdapter.awaitDeadlineNs()
-                prepareJob?.cancel()
+                prepareJob?.cancelAndJoin()
                 trace(TRACE_DEADLINE_TAG) { deadline = true }
             }
         }
@@ -122,7 +122,7 @@ suspend fun RecyclerView.prepareScrap(
             if (deadline) break
             trace(TRACE_PUT_SCRAP_TAG) { result.putScrapToRecycledViewPool(scrap) }
         }
-        deadlineJob?.cancel()
+        deadlineJob?.cancelAndJoin()
     }
     return result
 }
