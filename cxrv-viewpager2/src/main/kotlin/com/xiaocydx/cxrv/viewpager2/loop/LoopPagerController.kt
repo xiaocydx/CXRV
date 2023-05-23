@@ -19,8 +19,7 @@ package com.xiaocydx.cxrv.viewpager2.loop
 import androidx.annotation.Px
 import androidx.recyclerview.widget.LoopPagerAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter
-import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.pendingSavedState
 import androidx.recyclerview.widget.recyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
@@ -177,12 +176,17 @@ class LoopPagerController(
      * @param position  取值范围是`[0, adapter.itemCount)`，即`holder.bindingAdapterPosition`。
      * @param direction [position]相应`item`的查找方向，以[ViewPager2]水平布局方向为例，
      * [LookupDirection.END]往右查找[position]相应的`item`，并往右平滑滚动至[position]。
+     * @param provider  [SmoothScroller]的提供者，可用于修改平滑滚动的时长和插值器。
      */
-    fun smoothScrollToPosition(position: Int, direction: LookupDirection = LookupDirection.END) {
+    fun smoothScrollToPosition(
+        position: Int,
+        direction: LookupDirection = LookupDirection.END,
+        provider: SmoothScrollerProvider? = null
+    ) {
         val content = content ?: return
-        val wait = waitNotEmptyIfNecessary { smoothScrollToPosition(position, direction) }
+        val wait = waitNotEmptyIfNecessary { smoothScrollToPosition(position, direction, provider) }
         if (wait || position == content.toBindingAdapterPosition(viewPager2.currentItem)) return
-        scroller?.smoothScrollToPosition(content.toLayoutPosition(position), direction)
+        scroller?.smoothScrollToPosition(content.toLayoutPosition(position), direction, provider)
     }
 
     /**

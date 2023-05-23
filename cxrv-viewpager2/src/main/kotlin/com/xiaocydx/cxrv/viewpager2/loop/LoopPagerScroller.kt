@@ -18,9 +18,10 @@ package com.xiaocydx.cxrv.viewpager2.loop
 
 import androidx.recyclerview.widget.LoopAnchorUpdater
 import androidx.recyclerview.widget.LoopAnchorUpdaterImpl
-import androidx.recyclerview.widget.RecyclerView.NO_POSITION
-import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_DRAGGING
+import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.UpdateScenes.*
+import androidx.recyclerview.widget.recyclerView
+import androidx.recyclerview.widget.smoothScroller
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.DEFAULT_EXTRA_PAGE_LIMIT
@@ -36,8 +37,9 @@ internal class LoopPagerScroller(
     private val content: LoopPagerContent,
     updater: LoopAnchorUpdater = LoopAnchorUpdaterImpl()
 ) : LoopAnchorUpdater by updater {
-    private var runnable: SmoothScrollRunnable? = null
     private val callback = PageChangeCallbackImpl()
+    private var smoothRunnable: Runnable? = null
+    private var replaceRunnable: Runnable? = null
     private val viewPager2: ViewPager2
         get() = content.viewPager2
 
@@ -52,8 +54,10 @@ internal class LoopPagerScroller(
     }
 
     private fun removeRunnable() {
-        runnable?.let(viewPager2::removeCallbacks)
-        runnable = null
+        smoothRunnable?.let(viewPager2::removeCallbacks)
+        replaceRunnable?.let(viewPager2::removeCallbacks)
+        smoothRunnable = null
+        replaceRunnable = null
     }
 
     /**
@@ -71,8 +75,13 @@ internal class LoopPagerScroller(
      *
      * @param direction [layoutPosition]相应`item`的查找方向，以[ViewPager2]水平布局方向为例，
      * [LookupDirection.END]往右查找[layoutPosition]相应的`item`，并往右平滑滚动至[layoutPosition]。
+     * @param provider  [SmoothScroller]的提供者，可用于修改平滑滚动的时长和插值器。
      */
-    fun smoothScrollToPosition(layoutPosition: Int, direction: LookupDirection = LookupDirection.END) {
+    fun smoothScrollToPosition(
+        layoutPosition: Int,
+        direction: LookupDirection = LookupDirection.END,
+        provider: SmoothScrollerProvider? = null
+    ) {
         if (layoutPosition == NO_POSITION || viewPager2.currentItem == layoutPosition) return
         removeRunnable()
         val current = viewPager2.currentItem
@@ -119,17 +128,35 @@ internal class LoopPagerScroller(
                 }
             }
         }
+        provider?.let { replaceSmoothScroller(provider = it) }
     }
 
     private fun smoothScrollToPositionAfterRemoveSyncBarrier(layoutPosition: Int) {
-        viewPager2.post(SmoothScrollRunnable(layoutPosition).also { runnable = it })
+        smoothRunnable = Runnable {
+            smoothRunnable = null
+            viewPager2.currentItem = layoutPosition
+        }
+        viewPager2.post(smoothRunnable)
     }
 
-    private inner class SmoothScrollRunnable(private val layoutPosition: Int) : Runnable {
-        override fun run() {
-            viewPager2.currentItem = layoutPosition
-            runnable = null
+    private fun replaceSmoothScroller(canPostpone: Boolean = true, provider: SmoothScrollerProvider) {
+        val smoothScroller = viewPager2.recyclerView.layoutManager?.smoothScroller
+        if (smoothScroller == null) {
+            if (canPostpone) {
+                replaceRunnable = Runnable {
+                    replaceRunnable = null
+                    replaceSmoothScroller(canPostpone = false, provider)
+                }
+                // -> scrollToPosition()
+                // -> post smoothScrollToPosition()
+                // -> post replaceSmoothScroller()
+                viewPager2.post(replaceRunnable)
+            }
+            return
         }
+        val newSmoothScroller = provider.create(viewPager2.context)
+        newSmoothScroller.targetPosition = smoothScroller.targetPosition
+        viewPager2.recyclerView.layoutManager?.startSmoothScroll(newSmoothScroller)
     }
 
     private inner class PageChangeCallbackImpl : OnPageChangeCallback() {

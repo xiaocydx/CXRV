@@ -108,7 +108,7 @@ class LoopPagerActivity : AppCompatActivity() {
                     showToast("平滑滚动至bindingAdapterPosition = $position")
                 }
                 LoopPagerAction.LAUNCH_BANNER -> {
-                    bannerJob = controller.launchBanner(adapter, lifecycle)
+                    bannerJob = controller.launchBanner(adapter, lifecycle, durationMs = 500)
                     showToast("启动Banner轮播交互")
                 }
                 LoopPagerAction.CANCEL_BANNER -> {

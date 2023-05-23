@@ -20,6 +20,8 @@
 package androidx.recyclerview.widget
 
 import android.os.Parcelable
+import androidx.recyclerview.widget.RecyclerView.LayoutManager
+import androidx.recyclerview.widget.RecyclerView.SmoothScroller
 import androidx.viewpager2.widget.ViewPager2
 
 internal val ViewPager2.recyclerView: RecyclerView
@@ -27,3 +29,6 @@ internal val ViewPager2.recyclerView: RecyclerView
 
 internal val RecyclerView.pendingSavedState: Parcelable?
     get() = mPendingSavedState
+
+internal val LayoutManager.smoothScroller: SmoothScroller?
+    get() = mSmoothScroller
