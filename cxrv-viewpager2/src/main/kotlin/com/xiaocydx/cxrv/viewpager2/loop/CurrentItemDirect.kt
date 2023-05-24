@@ -22,6 +22,7 @@ package androidx.viewpager2.widget
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
+import androidx.viewpager2.widget.ViewPager2.PageAwareAccessibilityProvider
 
 /**
  * ### 优化初衷
@@ -47,4 +48,22 @@ internal fun ViewPager2.setCurrentItemDirect(item: Int) {
  */
 internal fun ViewPager2.scrollToPositionDirect(position: Int) {
     mRecyclerView.layoutManager?.scrollToPosition(position)
+}
+
+/**
+ * [ViewPager2.setCurrentItem]平滑滚动的准备工作，确保先分发新的滚动状态
+ *
+ * @param item 传入的实参已通过边界检查，因此不需要限制大小
+ */
+internal fun ViewPager2.prepareSmoothScrollToPosition(item: Int): Int {
+    check(!isFakeDragging) { "Cannot change current item when ViewPager2 is fake dragging" }
+    var previousItem = mCurrentItem
+    mCurrentItem = item
+    @Suppress("INACCESSIBLE_TYPE")
+    mAccessibilityProvider?.let { it as? PageAwareAccessibilityProvider }?.onSetNewCurrentItem()
+    if (!mScrollEventAdapter.isIdle) {
+        previousItem = mScrollEventAdapter.relativeScrollPosition.toInt()
+    }
+    mScrollEventAdapter.notifyProgrammaticScroll(item, true)
+    return previousItem
 }
