@@ -32,22 +32,24 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(RecyclerView(this).apply {
-            linear()
-            fixedSize()
-            adapter(bindingAdapter(
-                uniqueId = StartItem::text,
-                inflate = ItemStartBinding::inflate
-            ) {
-                submitStartList()
-                doOnItemClick(
-                    target = { binding.btnStart }
-                ) { _, item -> item.start(context) }
-                onBindView { btnStart.text = it.text }
-            })
-            overScrollNever()
-            withLayoutParams(matchParent, matchParent)
+        setContentView(contentView())
+    }
+
+    private fun contentView() = RecyclerView(this).apply {
+        linear()
+        fixedSize()
+        adapter(bindingAdapter(
+            uniqueId = StartItem::text,
+            inflate = ItemStartBinding::inflate
+        ) {
+            submitStartList()
+            doOnItemClick(
+                target = { binding.btnStart }
+            ) { _, item -> item.start(context) }
+            onBindView { btnStart.text = it.text }
         })
+        overScrollNever()
+        withLayoutParams(matchParent, matchParent)
     }
 
     private fun ListAdapter<StartItem, *>.submitStartList() {

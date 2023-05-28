@@ -5,4 +5,5 @@
     <item name="tag_span_params" type="id" />
     <item name="tag_item_click_dispatcher" type="id" />
     <item name="tag_item_touch_dispatcher" type="id" />
+    <item name="tag_view_touch_temp_info" type="id" />
 </resources>

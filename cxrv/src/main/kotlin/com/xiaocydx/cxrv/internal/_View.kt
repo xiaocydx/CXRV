@@ -16,10 +16,12 @@
 
 package com.xiaocydx.cxrv.internal
 
+import android.graphics.Matrix
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.OneShotPreDrawListener
 import androidx.core.view.ViewCompat
+import com.xiaocydx.cxrv.R
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -43,15 +45,47 @@ internal inline var View.isGone: Boolean
 
 internal fun View.isTouched(rawX: Float, rawY: Float): Boolean {
     if (!isVisible) return false
-    val location = IntArray(2)
-    this.getLocationOnScreen(location)
-    val left = location[0]
-    val top = location[1]
-    val right = left + this.width
-    val bottom = top + this.height
-    val isContainX = rawX in left.toFloat()..right.toFloat()
-    val isContainY = rawY in top.toFloat()..bottom.toFloat()
-    return isContainX && isContainY
+    val location = tempInfo.location
+    getLocationOnScreen(location)
+    val point = tempInfo.point
+    point[0] = rawX - location[0]
+    point[1] = rawY - location[1]
+    if (!matrix.isIdentity) {
+        tempInfo.inverseMatrix.mapPoints(point)
+    }
+    return point[0] >= 0 && point[0] < right - left
+            && point[1] >= 0 && point[1] < bottom - top
+}
+
+private val View.tempInfo: TempInfo
+    get() {
+        var tempInfo = getTag(R.id.tag_view_touch_temp_info) as? TempInfo
+        if (tempInfo == null) {
+            tempInfo = TempInfo(this)
+            setTag(R.id.tag_view_touch_temp_info, tempInfo)
+        }
+        return tempInfo
+    }
+
+private class TempInfo(private val view: View) {
+    private var _point: FloatArray? = null
+    private var _location: IntArray? = null
+    private var _inverseMatrix: Matrix? = null
+
+    val point: FloatArray
+        get() = _point ?: FloatArray(2).also { _point = it }
+
+    val location: IntArray
+        get() = _location ?: IntArray(2).also { _location = it }
+
+    val inverseMatrix: Matrix
+        get() {
+            if (_inverseMatrix == null) {
+                _inverseMatrix = Matrix()
+            }
+            view.matrix.invert(_inverseMatrix)
+            return _inverseMatrix!!
+        }
 }
 
 internal suspend fun View.awaitPreDraw() {
