@@ -16,14 +16,12 @@
 
 package com.xiaocydx.cxrv.itemclick
 
-import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.OnLongClickListener
 import androidx.annotation.CheckResult
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
-import com.xiaocydx.cxrv.internal.isTouched
 import com.xiaocydx.cxrv.list.Disposable
 
 /**
@@ -89,9 +87,7 @@ inline fun <AdapterT : Adapter<out VH>, VH : ViewHolder> RecyclerView.doOnItemCl
     crossinline action: AdapterT.(holder: VH, position: Int) -> Unit
 ): Disposable = itemClickDispatcher.addItemClick(
     intervalMs = intervalMs,
-    targetView = { itemView, event ->
-        itemView.holder(adapter)?.let { it.optimizeTarget(it.target(), event) }
-    },
+    targetView = { itemView, _ -> itemView.holder(adapter)?.target() },
     clickHandler = { itemView ->
         itemView.holder(adapter)?.let { adapter.action(it, it.bindingAdapterPosition) }
     }
@@ -113,9 +109,7 @@ inline fun <AdapterT : Adapter<out VH>, VH : ViewHolder> RecyclerView.doOnLongIt
     crossinline target: VH.() -> View? = { itemView },
     crossinline action: AdapterT.(holder: VH, position: Int) -> Boolean
 ): Disposable = itemClickDispatcher.addLongItemClick(
-    targetView = { itemView, event ->
-        itemView.holder(adapter)?.let { it.optimizeTarget(it.target(), event) }
-    },
+    targetView = { itemView, _ -> itemView.holder(adapter)?.target() },
     longClickHandler = { itemView ->
         itemView.holder(adapter)?.let { adapter.action(it, it.bindingAdapterPosition) } ?: false
     }
@@ -137,12 +131,4 @@ internal fun <VH : ViewHolder> View.holder(adapter: Adapter<VH>): VH? {
     val parent = parent as? RecyclerView ?: return null
     val holder = parent.getChildViewHolder(this) ?: return null
     return if (holder.bindingAdapter === adapter) holder as VH else null
-}
-
-@CheckResult
-@PublishedApi
-internal fun ViewHolder.optimizeTarget(targetView: View?, event: MotionEvent): View? = when {
-    targetView === itemView -> targetView
-    targetView?.isTouched(event.rawX, event.rawY) == true -> targetView
-    else -> null
 }
