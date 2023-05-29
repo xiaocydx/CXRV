@@ -19,8 +19,7 @@ package com.xiaocydx.cxrv.itemselect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.getTag
 import androidx.lifecycle.setTagIfAbsent
-import androidx.recyclerview.widget.RecyclerView.Adapter
-import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
+import androidx.recyclerview.widget.RecyclerView.*
 
 /**
  * 列表单项选择功能的实现类，负责维护状态和更新列表
@@ -63,9 +62,7 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
 
     override fun select(item: ITEM, position: Int): Boolean {
         val itemKey = item.key ?: return false
-        if (selectedKey == itemKey) {
-            return false
-        }
+        if (selectedKey == itemKey) return false
         clearSelected()
         selectedKey = itemKey
         onSelect?.invoke(item)
@@ -75,9 +72,7 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
 
     override fun unselect(item: ITEM, position: Int): Boolean {
         val itemKey = item.key ?: return false
-        if (selectedKey != itemKey) {
-            return false
-        }
+        if (selectedKey != itemKey) return false
         selectedKey = null
         onUnselect?.invoke(item)
         notifySelectChanged(position)
@@ -93,7 +88,7 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
         val itemKey = selectedKey ?: return false
         selectedKey = null
         val position = findPositionByKey(itemKey)
-        if (position != -1) {
+        if (position != NO_POSITION) {
             onUnselect?.invoke(adapter.itemAccess(position))
             notifySelectChanged(position)
         }
@@ -158,9 +153,7 @@ class SingleSelection<ITEM : Any, K : Any> internal constructor(
 
         private fun clearInvalidSelected() {
             val itemKey = selectedKey ?: return
-            if (findItemByKey(itemKey) == null) {
-                selectedKey = null
-            }
+            if (findItemByKey(itemKey) == null) selectedKey = null
         }
     }
 

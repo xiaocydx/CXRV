@@ -17,8 +17,7 @@
 package com.xiaocydx.cxrv.itemselect
 
 import androidx.lifecycle.ViewModel
-import androidx.recyclerview.widget.RecyclerView.Adapter
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.payloads
 import com.xiaocydx.cxrv.itemselect.Selection.Companion.Payload
 
@@ -114,16 +113,12 @@ sealed class Selection<ITEM : Any, K : Any>(
     }
 
     protected fun notifySelectChanged(position: Int) {
-        if (!checkPosition(position)) {
-            return
-        }
+        if (!checkPosition(position)) return
         adapter.notifyItemChanged(position, Payload)
     }
 
     protected fun notifySelectRangeChanged(startPosition: Int, endPosition: Int) {
-        if (!checkPosition(startPosition) || !checkPosition(endPosition)) {
-            return
-        }
+        if (!checkPosition(startPosition) || !checkPosition(endPosition)) return
         val itemCount = endPosition - startPosition + 1
         adapter.notifyItemRangeChanged(startPosition, itemCount, Payload)
     }
@@ -131,9 +126,7 @@ sealed class Selection<ITEM : Any, K : Any>(
     internal fun findItemByKey(itemKey: K): ITEM? {
         for (position in 0 until adapter.itemCount) {
             val item = adapter.itemAccess(position)
-            if (itemKey(item) == itemKey) {
-                return item
-            }
+            if (itemKey(item) == itemKey) return item
         }
         return null
     }
@@ -141,11 +134,9 @@ sealed class Selection<ITEM : Any, K : Any>(
     internal fun findPositionByKey(itemKey: K): Int {
         for (position in 0 until adapter.itemCount) {
             val item = adapter.itemAccess(position)
-            if (itemKey(item) == itemKey) {
-                return position
-            }
+            if (itemKey(item) == itemKey) return position
         }
-        return -1
+        return NO_POSITION
     }
 
     companion object {

@@ -21,8 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.getTag
 import androidx.lifecycle.setTagIfAbsent
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter
-import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
+import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.cacheViews
 import kotlin.math.max
 import kotlin.math.min
@@ -137,11 +136,9 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
      */
     fun selectAll(parent: RecyclerView): Boolean {
         require(maxSelectSize == Int.MAX_VALUE) {
-            "已设置maxSelectSize，不能调用selectAll()。"
+            "已设置maxSelectSize，不能调用selectAll()"
         }
-        if (isSelectedAll) {
-            return false
-        }
+        if (isSelectedAll) return false
         // 在修改selectedKeys之前，找到更新范围
         val positions = parent.findChangePositions(isSelect = true)
         for (position in 0 until adapter.itemCount) {
@@ -150,9 +147,7 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
             selectedKeys.add(itemKey)
         }
         updateSelectedAllState()
-        positions?.also {
-            notifySelectRangeChanged(it.first(), it.last())
-        }
+        positions?.apply { notifySelectRangeChanged(first(), last()) }
         return true
     }
 
@@ -162,16 +157,12 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
      * @return `true`表示清除成功，`false`表示未选择过
      */
     fun clearSelected(parent: RecyclerView): Boolean {
-        if (selectedKeys.isEmpty()) {
-            return false
-        }
+        if (selectedKeys.isEmpty()) return false
         // 在修改selectedKeys之前，找到更新范围
         val positions = parent.findChangePositions(isSelect = false)
         selectedKeys.clear()
         updateSelectedAllState()
-        positions?.also {
-            notifySelectRangeChanged(it.first(), it.last())
-        }
+        positions?.apply { notifySelectRangeChanged(first(), last()) }
         return true
     }
 
@@ -250,24 +241,20 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
      * 尝试缩小更新范围，减少不必要的更新
      */
     private fun RecyclerView.findChangePositions(isSelect: Boolean): IntArray? {
-        var startPosition = -1
-        var endPosition = -1
+        val lm = layoutManager ?: return null
+        var startPosition = NO_POSITION
+        var endPosition = NO_POSITION
         val adapter = this@MultiSelection.adapter
 
         // 确定子View更新范围
-        for (index in 0 until childCount) {
-            val child = getChildAt(index)
-            val holder = getChildViewHolder(child)
-            if (holder.bindingAdapter != adapter) {
-                continue
-            }
+        for (index in 0 until lm.childCount) {
+            val holder = lm.getChildAt(index)?.let(::getChildViewHolder)
+            if (holder?.bindingAdapter !== adapter) continue
             val position = holder.bindingAdapterPosition
             val itemKey = adapter.itemAccess(position).key ?: continue
             val isContains = selectedKeys.contains(itemKey)
             if ((isSelect && !isContains) || (!isSelect && isContains)) {
-                if (startPosition == -1) {
-                    startPosition = position
-                }
+                if (startPosition == NO_POSITION) startPosition = position
                 endPosition = position
             }
         }
@@ -276,9 +263,7 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
         val cacheViews = cacheViews
         for (index in cacheViews.indices) {
             val holder = cacheViews[index]
-            if (holder.bindingAdapter != adapter) {
-                continue
-            }
+            if (holder.bindingAdapter !== adapter) continue
             val position = cacheViews[index].bindingAdapterPosition
             val itemKey = adapter.itemAccess(position).key ?: continue
             val isContains = selectedKeys.contains(itemKey)
@@ -317,9 +302,7 @@ class MultiSelection<ITEM : Any, K : Any> internal constructor(
         private fun clearInvalidSelected() {
             for (index in (selectedSize - 1) downTo 0) {
                 val itemKey = selectedKeys.valueAt(index) ?: continue
-                if (findItemByKey(itemKey) == null) {
-                    selectedKeys.removeAt(index)
-                }
+                if (findItemByKey(itemKey) == null) selectedKeys.removeAt(index)
             }
         }
     }
