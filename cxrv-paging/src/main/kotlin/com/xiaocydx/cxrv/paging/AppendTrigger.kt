@@ -26,6 +26,8 @@ import com.xiaocydx.cxrv.internal.PreDrawListener
 import com.xiaocydx.cxrv.internal.hasDisplayItem
 import com.xiaocydx.cxrv.internal.log
 import com.xiaocydx.cxrv.list.*
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * [PagingSource]的末尾加载触发器
@@ -127,7 +129,7 @@ internal class AppendTrigger(
      * 若指定的item可视，则触发末尾加载
      *
      * 该函数的计算逻辑基于`layoutPosition`而不是`bindingAdapterPosition`，因此会存在一定偏差，
-     * 例如最后一个item可能是loadFooter或者[adapter]的最后一个item，不过对于替补方案而言已经足够。
+     * 例如最后一个item可能是loadFooter或者[adapter]的最后一个item，不过对替补方案而言已经足够。
      */
     private fun appendIfTargetItemVisible(from: String) {
         // 当append.isFailure = true时，由AppendRetryListener处理
@@ -139,27 +141,27 @@ internal class AppendTrigger(
         }
 
         val rv = rv
-        val lm = rv?.layoutManager
-        val childCount = rv?.childCount ?: 0
-        if (rv == null || lm == null || childCount == 0) return
-
+        val lm = rv?.layoutManager ?: return
         // 不能用layoutManager.findXXXVisibleItemPosition()这类查找函数，
         // 具体原因可看LayoutManager.enableBoundCheckCompat()的注释说明。
-        val endPosition = lm.itemCount - 1
-        val startPosition = (endPosition - prefetchItemCount).coerceAtLeast(0)
-        var minPosition = rv.getChildLayoutPosition(rv.getChildAt(0))
-        var maxPosition = rv.getChildLayoutPosition(rv.getChildAt(childCount - 1))
-        if (minPosition > maxPosition) {
-            minPosition = maxPosition.also { maxPosition = minPosition }
+        var minPosition = 0
+        var maxPosition = NO_POSITION
+        for (index in 0 until lm.childCount) {
+            // rv.childCount包含正在运行remove动画的子View，不需要这些子View参与判断
+            val holder = lm.getChildAt(index)?.let(rv::getChildViewHolder) ?: continue
+            minPosition = min(holder.layoutPosition, minPosition)
+            maxPosition = max(holder.layoutPosition, maxPosition)
         }
 
+        val endPosition = lm.itemCount - 1
+        val startPosition = (endPosition - prefetchItemCount).coerceAtLeast(0)
         val layoutPosition = when {
             startPosition in minPosition..maxPosition -> startPosition
             endPosition in minPosition..maxPosition -> endPosition
             startPosition < minPosition && endPosition > maxPosition -> Int.MIN_VALUE
-            else -> -1
+            else -> NO_POSITION
         }
-        if (layoutPosition != -1) {
+        if (layoutPosition != NO_POSITION) {
             if (layoutPosition == Int.MIN_VALUE) {
                 log { "$from trigger append" }
             } else {
