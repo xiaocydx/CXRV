@@ -1,16 +1,15 @@
 package com.xiaocydx.sample.transition
 
+import android.os.Build
+import android.os.Bundle
+import android.os.Looper
+import android.os.MessageQueue
 import androidx.annotation.MainThread
 import androidx.fragment.app.Fragment
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainCoroutineDispatcher
+import androidx.savedstate.SavedStateRegistry
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.resume
-import android.transition.Transition as AndroidTransition
 import androidx.transition.Transition as AndroidXTransition
 
 /**
@@ -19,107 +18,124 @@ import androidx.transition.Transition as AndroidXTransition
  * @author xcc
  * @date 2023/2/4
  */
-class EnterTransitionController(
-    private val fragment: Fragment,
-    private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
-) {
+class EnterTransitionController(private val fragment: Fragment) {
     private var isStarted = false
     private var isPostponed = false
-    private var enterTransition: Any? = null
-    private var continuation: Continuation<Unit>? = null
-    private var androidTransitionListener: AndroidTransitionListener? = null
-    private var androidXTransitionListener: AndroidXTransitionListener? = null
+    private var enterTransition: AndroidXTransition? = null
 
     /**
      * 推迟`Fragment.enterTransition`
      *
      * @param timeoutMillis 推迟的超时时长
      */
-    fun postponeEnterTransition(timeoutMillis: Long) = runOnMainThread {
-        if (timeoutMillis <= 0 || isPostponed) return@runOnMainThread
+    @MainThread
+    fun postponeEnterTransition(timeoutMillis: Long) {
+        assertMainThread()
+        if (timeoutMillis <= 0 || isStarted || isPostponed) return
         isPostponed = true
+        // TODO: Android 8.0以下存在同步屏障未移除的情况
         fragment.postponeEnterTransition(timeoutMillis, TimeUnit.MILLISECONDS)
-        enterTransition = fragment.enterTransition
-        addEnterTransitionListener()
+        enterTransition = requireNotNull(fragment.enterTransition as AndroidXTransition)
+        enterTransition!!.addListener(AndroidXTransitionOnStart())
+        fragment.setSavedStateProvider()
     }
 
     /**
      * 开始`Fragment.enterTransition`或者等待结束
      */
-    suspend fun startPostponeEnterTransitionOrAwait() = withMainDispatcher {
-        if (!isPostponed) return@withMainDispatcher
+    @MainThread
+    suspend fun startPostponeEnterTransitionOrAwait() {
+        assertMainThread()
+        val transition = enterTransition
+        if (transition == null || !isPostponed) return
+        awaitMainThreadIdle(transition)
         if (!isStarted) {
-            removeEnterTransitionListener()
             fragment.startPostponedEnterTransition()
-            return@withMainDispatcher
-        }
-        suspendCancellableCoroutine { cont -> continuation = cont }
-    }
-
-    @MainThread
-    private fun onEnterTransitionStart() {
-        isStarted = true
-    }
-
-    @MainThread
-    private fun addEnterTransitionListener() {
-        when (val transition = enterTransition) {
-            is AndroidTransition -> {
-                androidTransitionListener = AndroidTransitionListener()
-                transition.addListener(androidTransitionListener)
-            }
-            is AndroidXTransition -> {
-                androidXTransitionListener = AndroidXTransitionListener()
-                transition.addListener(androidXTransitionListener!!)
-            }
-        }
-    }
-
-    @MainThread
-    private fun removeEnterTransitionListener() {
-        when (val transition = enterTransition) {
-            is AndroidTransition -> androidTransitionListener?.let(transition::removeListener)
-            is AndroidXTransition -> androidXTransitionListener?.let(transition::removeListener)
-        }
-        isStarted = false
-        enterTransition = null
-        androidTransitionListener = null
-        androidXTransitionListener = null
-        continuation?.resume(Unit)
-        continuation = null
-    }
-
-    private inline fun runOnMainThread(crossinline block: () -> Unit) {
-        val dispatcher = mainDispatcher.immediate
-        if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
-            dispatcher.dispatch(EmptyCoroutineContext) { block() }
         } else {
-            block()
+            transition.awaitEnd()
         }
     }
 
-    private suspend inline fun withMainDispatcher(crossinline block: suspend () -> Unit) {
-        val dispatcher = mainDispatcher.immediate
-        if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
-            withContext(dispatcher) { block() }
-        } else {
-            block()
+    private fun assertMainThread() {
+        assert(Thread.currentThread() === Looper.getMainLooper().thread)
+    }
+
+    /**
+     * 主动开始[transition]之前，先等待主线程空闲，尽可能让动画运行期间不被堆积的消息影响，
+     * 若[transition]的超时时间到达，还未等到主线程空闲，则结束挂起，等待[transition]结束。
+     */
+    private suspend fun awaitMainThreadIdle(transition: AndroidXTransition) {
+        // fragment重建流程不需要等待主线程空闲
+        if (fragment.consumeRestoredState()) return
+        val queue = Looper.myQueue()
+        if (isStarted || Build.VERSION.SDK_INT >= 23 && queue.isIdle) return
+        suspendCancellableCoroutine { cont ->
+            var idleHandler: MessageQueue.IdleHandler? = null
+            val listener = object : AndroidXTransitionListener() {
+                override fun onTransitionStart(transition: AndroidXTransition) {
+                    transition.removeListener(this)
+                    idleHandler?.let(queue::removeIdleHandler) ?: return
+                    cont.resume(Unit)
+                }
+            }
+            transition.addListener(listener)
+
+            idleHandler = MessageQueue.IdleHandler {
+                transition.removeListener(listener)
+                cont.resume(Unit)
+                false
+            }
+            queue.addIdleHandler(idleHandler)
+
+            cont.invokeOnCancellation {
+                assertMainThread()
+                transition.removeListener(listener)
+                queue.removeIdleHandler(idleHandler)
+            }
         }
     }
 
-    private inner class AndroidTransitionListener : AndroidTransition.TransitionListener {
-        override fun onTransitionPause(transition: AndroidTransition) = Unit
-        override fun onTransitionResume(transition: AndroidTransition) = Unit
-        override fun onTransitionStart(transition: AndroidTransition) = onEnterTransitionStart()
-        override fun onTransitionCancel(transition: AndroidTransition) = removeEnterTransitionListener()
-        override fun onTransitionEnd(transition: AndroidTransition) = removeEnterTransitionListener()
+    private suspend fun AndroidXTransition.awaitEnd() = suspendCancellableCoroutine { cont ->
+        val listener = object : AndroidXTransitionListener() {
+            override fun onTransitionEnd(transition: AndroidXTransition) {
+                removeListener(this)
+                cont.resume(Unit)
+            }
+        }
+        addListener(listener)
+        cont.invokeOnCancellation {
+            assertMainThread()
+            removeListener(listener)
+        }
     }
 
-    private inner class AndroidXTransitionListener : AndroidXTransition.TransitionListener {
+    private inner class AndroidXTransitionOnStart : AndroidXTransitionListener() {
+        override fun onTransitionStart(transition: AndroidXTransition) {
+            transition.removeListener(this)
+            isStarted = true
+        }
+    }
+
+    private abstract class AndroidXTransitionListener : AndroidXTransition.TransitionListener {
         override fun onTransitionPause(transition: AndroidXTransition) = Unit
         override fun onTransitionResume(transition: AndroidXTransition) = Unit
-        override fun onTransitionStart(transition: AndroidXTransition) = onEnterTransitionStart()
-        override fun onTransitionCancel(transition: AndroidXTransition) = removeEnterTransitionListener()
-        override fun onTransitionEnd(transition: AndroidXTransition) = removeEnterTransitionListener()
+        override fun onTransitionStart(transition: AndroidXTransition) = Unit
+        override fun onTransitionCancel(transition: AndroidXTransition) = Unit
+        override fun onTransitionEnd(transition: AndroidXTransition) = Unit
+    }
+
+    private companion object : SavedStateRegistry.SavedStateProvider {
+        private const val KEY = "com.xiaocydx.sample.transition.EnterTransitionController"
+
+        override fun saveState() = Bundle(1)
+
+        fun Fragment.consumeRestoredState(): Boolean {
+            return savedStateRegistry.consumeRestoredStateForKey(KEY) != null
+        }
+
+        fun Fragment.setSavedStateProvider() {
+            savedStateRegistry.unregisterSavedStateProvider(KEY)
+            savedStateRegistry.registerSavedStateProvider(KEY, this@Companion)
+        }
     }
 }

@@ -21,9 +21,9 @@ import com.xiaocydx.sample.dp
 
 /**
  * 对页面导航场景而言，Fragment过渡动画卡顿的主要原因是动画运行期间，
- * 有一帧`doFrame`消息耗时较长，导致动画进度跨度较大，看起来就是卡顿，
+ * 消息耗时较长（例如doFrame）或者消息堆积较多，导致动画进度跨度较大，
  * 动画运行期间，加载列表数据完成，申请下一帧[RecyclerView]重新布局，
- * 这是导致`doFrame`消息耗时较长的常见场景。
+ * 这是`doFrame`消息耗时较长的常见场景。
  *
  * 1. [JankFragment]模拟加载列表数据的场景，复现Fragment过渡动画卡顿问题。
  *
