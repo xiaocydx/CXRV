@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 
 /**
  * 尝试在加载列表数据期间，通过[prepareScrap]预创建[ViewHolder]以解决卡顿问题，但结果是失败的，
- * 原因是预创建[ViewHolder]虽然能解决创建View的耗时问题，但解决不了[RecyclerView]布局本身的耗时，
+ * 原因是预创建[ViewHolder]，虽然能解决创建View的耗时，但解决不了[RecyclerView]布局本身的耗时，
  * 当在一帧内填充大量的View时，`onBindViewHolder()`、`measureChild()`、`layoutChild()`等等函数，
  * 其执行时长按View的填充个数累积起来，就是耗时较长的`doFrame`消息，导致Fragment过渡动画卡顿。
  *

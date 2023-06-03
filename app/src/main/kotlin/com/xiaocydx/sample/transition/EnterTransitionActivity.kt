@@ -22,7 +22,7 @@ import com.xiaocydx.sample.dp
 /**
  * 对页面导航场景而言，Fragment过渡动画卡顿的主要原因是动画运行期间，
  * 消息耗时较长（例如doFrame）或者消息堆积较多，导致动画进度跨度较大，
- * 动画运行期间，加载列表数据完成，申请下一帧[RecyclerView]重新布局，
+ * 动画运行期间，列表数据加载完成，[RecyclerView]申请下一帧重新布局，
  * 这是`doFrame`消息耗时较长的常见场景。
  *
  * 1. [JankFragment]模拟加载列表数据的场景，复现Fragment过渡动画卡顿问题。
@@ -32,13 +32,12 @@ import com.xiaocydx.sample.dp
  * 当在一帧内填充大量的View时，`onBindViewHolder()`、`measureChild()`、`layoutChild()`等等函数，
  * 其执行时长按View的填充个数累积起来，就是耗时较长的`doFrame`消息，导致Fragment过渡动画卡顿。
  *
- * 3. [TimeoutFragment]推迟Fragment过渡动画，推迟的超时时间达到，列表数据未加载完成，
- * 开始Fragment过渡动画，动画运行期间，列表数据加载完成，等待动画结束再申请重新布局，
- * 等于是在动画结束后处理耗时较长的`doFrame`消息。
+ * 3. [WaitEndFragment]推迟Fragment过渡动画，推迟时间达到，开始Fragment过渡动画，
+ * 动画运行期间，列表数据加载完成，等待动画结束再申请重新布局，避免造成动画卡顿。
  *
- * 4. [NotTimeoutFragment]推迟Fragment过渡动画，推迟的超时时间未到达，列表数据加载完成，
- * 申请重新布局，并开始Fragment过渡动画，此时的交互体验接近Activity的窗口动画，即看到Fragment页面时，
- * 就有列表内容，而不是先显示Loading，再看到列表内容，等于是在动画开始前处理耗时较长的`doFrame`消息。
+ * 4. [NotWaitEndFragment]推迟Fragment过渡动画，推迟时间未到达，列表数据加载完成，申请重新布局，
+ * 并开始Fragment过渡动画，此时的交互体验接近Activity的窗口动画，即看到Fragment页面就有列表内容，
+ * 而不是先显示Loading，再看到列表内容。
  *
  * @author xcc
  * @date 2023/5/21
@@ -68,8 +67,8 @@ class EnterTransitionActivity : AppCompatActivity() {
             when (item) {
                 TransitionAction.JANK -> addFragment(JankFragment())
                 TransitionAction.PREPARE -> addFragment(PrepareFragment())
-                TransitionAction.TIMEOUT -> addFragment(TimeoutFragment())
-                TransitionAction.NOT_TIMEOUT -> addFragment(NotTimeoutFragment())
+                TransitionAction.WAIT_END -> addFragment(WaitEndFragment())
+                TransitionAction.NOT_WAIT_END -> addFragment(NotWaitEndFragment())
             }
         }
         submitList(TransitionAction.values().toList())
@@ -86,7 +85,7 @@ class EnterTransitionActivity : AppCompatActivity() {
     private enum class TransitionAction(val text: String) {
         JANK("Jank"),
         PREPARE("Prepare"),
-        TIMEOUT("Timeout"),
-        NOT_TIMEOUT(" NotTimeout")
+        WAIT_END("WaitEnd"),
+        NOT_WAIT_END(" NotWaitEnd")
     }
 }

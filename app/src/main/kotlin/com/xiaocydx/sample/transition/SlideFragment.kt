@@ -43,10 +43,7 @@ abstract class SlideFragment : Fragment() {
 
     final override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enterTransition = Slide().apply {
-            slideEdge = Gravity.END
-            duration = TRANSITION_DURATION
-        }
+        enterTransition = Slide(Gravity.END).apply { duration = TRANSITION_DURATION }
     }
 
     final override fun onCreateView(
