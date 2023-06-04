@@ -58,9 +58,11 @@ class EnterTransitionController(private val fragment: Fragment) {
         if (timeMillis <= 0 || isPostponed) return
         isPostponed = true
 
-        // fragment的重建流程不需要处理过渡动画
         fragment.registerPostponeSavedStateProvider()
-        if (fragment.consumeRestoredStateForPostpone()) return
+        if (fragment.consumeRestoredStateForPostpone()) {
+            // fragment的重建流程不需要处理过渡动画
+            return
+        }
 
         // 该函数的调用时机不确定，在viewLifecycle创建之前，或者创建之后，
         // 并且当前处理的是fragment过渡动画，跟fragment的整体生命周期有关，
@@ -202,7 +204,7 @@ private fun assertMainThread() {
     }
 }
 
-private inline fun <T> CancellableContinuation<T>.invokeOnCancellationSafely(
+private inline fun CancellableContinuation<*>.invokeOnCancellationSafely(
     crossinline handler: CompletionHandler
 ) = invokeOnCancellation {
     assertMainThread()
