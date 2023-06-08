@@ -9,11 +9,20 @@ import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearSmoothScroller
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
+import androidx.recyclerview.widget.RecyclerView.SmoothScroller
+import androidx.recyclerview.widget.RecyclerView.State
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.cxrv.viewpager2.loop.SmoothScrollerProvider
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.yield
 import kotlin.coroutines.resume
 import kotlin.math.sqrt
 
@@ -83,18 +92,14 @@ private suspend fun LoopPagerController.awaitSupportLoop(adapter: Adapter<*>) {
     if (adapter.itemCount >= supportLoopCount) return
     suspendCancellableCoroutine { cont ->
         val observer = object : AdapterDataObserver() {
-            private var isResumed = false
-
             override fun onChanged() {
-                if (isResumed || adapter.itemCount < supportLoopCount) return
-                isResumed = true
+                if (!cont.isActive || adapter.itemCount < supportLoopCount) return
                 adapter.unregisterAdapterDataObserver(this)
                 cont.resume(Unit)
             }
 
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = onChanged()
         }
-
         adapter.registerAdapterDataObserver(observer)
         cont.invokeOnCancellation {
             assertMainThread()
@@ -115,11 +120,8 @@ private suspend fun LoopPagerController.awaitScrollIdle() {
     var callback: OnPageChangeCallback? = null
     suspendCancellableCoroutine { cont ->
         callback = object : OnPageChangeCallback() {
-            private var isResumed = false
-
             override fun onPageScrollStateChanged(state: Int) {
-                if (isResumed || state != SCROLL_STATE_IDLE) return
-                isResumed = true
+                if (!cont.isActive || state != SCROLL_STATE_IDLE) return
                 cont.resume(Unit)
             }
         }
