@@ -170,8 +170,9 @@ class EnterTransitionController(private val fragment: Fragment) {
             }
         }
 
-        // 这是跟调用Lock.lock()和Lock.unlock()类似的防御性写法，
-        // 假设view.isVisible = false可能抛异常，不写进try {...}。
+        // 这是跟调用Lock.lock()和Lock.unlock()类似的写法，
+        // view.isVisible = false写进try {...}，若抛出异常，
+        // 则finally {...}会再抛出异常，导致首次异常信息丢失。
         view.isVisible = false
         try {
             block()
