@@ -128,7 +128,7 @@ class LoopPagerController(
         val wait = waitNotEmptyIfNecessary(::initAnchorIfNecessary)
         if (wait || viewPager2.recyclerView.pendingSavedState != null) return
         // 初始化阶段adapter.itemCount > 0，会直接设置初始锚点信息，不过这没有影响，
-        // LinearLayoutManager.updateAnchorInfoForLayout()仍会处理pendingSavedState。
+        // ViewPager2.restorePendingState()根据mPendingCurrentItem恢复currentItem。
         scroller.scrollToPosition(content.toLayoutPosition(0))
     }
 
