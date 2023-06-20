@@ -18,8 +18,13 @@ package com.xiaocydx.cxrv.viewpager2.loop
 
 import androidx.recyclerview.widget.LoopAnchorUpdater
 import androidx.recyclerview.widget.LoopAnchorUpdaterImpl
-import androidx.recyclerview.widget.RecyclerView.*
-import androidx.recyclerview.widget.UpdateScenes.*
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_DRAGGING
+import androidx.recyclerview.widget.RecyclerView.SmoothScroller
+import androidx.recyclerview.widget.UpdateScenes.Dragging
+import androidx.recyclerview.widget.UpdateScenes.Scroll
+import androidx.recyclerview.widget.UpdateScenes.ScrolledFix
+import androidx.recyclerview.widget.UpdateScenes.SmoothScroll
 import androidx.recyclerview.widget.recyclerView
 import androidx.recyclerview.widget.smoothScroller
 import androidx.viewpager2.widget.ViewPager2
@@ -83,7 +88,7 @@ internal class LoopPagerScroller(
             LookupDirection.START -> when {
                 current == headerLast -> {
                     updateAnchorInfo(SmoothScroll, content)
-                    val pending = viewPager2.currentItem
+                    val pending = (layoutPosition + NEARBY_COUNT).coerceAtMost(viewPager2.currentItem)
                     smoothScrollToPositionInternal(layoutPosition, provider, pending)
                 }
                 layoutPosition in headerLast until current -> {
@@ -103,7 +108,7 @@ internal class LoopPagerScroller(
             LookupDirection.END -> when {
                 current == footerFirst -> {
                     updateAnchorInfo(SmoothScroll, content)
-                    val pending = viewPager2.currentItem
+                    val pending = (layoutPosition - NEARBY_COUNT).coerceAtLeast(viewPager2.currentItem)
                     smoothScrollToPositionInternal(layoutPosition, provider, pending)
                 }
                 layoutPosition in (current + 1) until footerFirst -> {
@@ -174,7 +179,7 @@ internal class LoopPagerScroller(
             val footerFirst = content.firstExtraLayoutPosition(isHeader = false)
             val currentPosition = when (content.extraPageLimit) {
                 DEFAULT_EXTRA_PAGE_LIMIT -> when {
-                    // 完全偏移附加页面headerFirst，根据headerFirst更新锚点信息
+                    // 完全偏移附加页面headerLast，根据headerLast更新锚点信息
                     position == headerLast && positionOffset == 0f -> headerLast
                     // 完全偏移附加页面footerFirst，根据footerFirst更新锚点信息
                     position == footerFirst && positionOffset == 0f -> footerFirst
