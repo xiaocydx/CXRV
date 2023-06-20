@@ -66,6 +66,16 @@ internal class InlineListTest {
     }
 
     @Test
+    fun contains() {
+        var list = InlineList<Int>()
+        assertThat(list.contains(1)).isFalse()
+        list += 1
+        assertThat(list.contains(1)).isTrue()
+        list += 2
+        assertThat(list.contains(2)).isTrue()
+    }
+
+    @Test
     fun throwIndexOutOfBoundsException() {
         var list = InlineList<Int>()
         var result = runCatching { list[0] }

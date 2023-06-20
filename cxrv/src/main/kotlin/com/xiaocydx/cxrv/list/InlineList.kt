@@ -77,6 +77,12 @@ internal value class InlineList<E : Any> private constructor(private val holder:
         else -> InlineList(null)
     }
 
+    fun contains(element: E): Boolean = when (holder) {
+        null -> false
+        is ArrayList<*> -> (holder as ArrayList<E>).contains(element)
+        else -> holder == element
+    }
+
     private fun throwIndexOutOfBoundsException(index: Int): Nothing {
         throw IndexOutOfBoundsException("Index: $index, Size: $size")
     }

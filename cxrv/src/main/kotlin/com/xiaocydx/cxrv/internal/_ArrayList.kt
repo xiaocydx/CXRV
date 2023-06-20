@@ -22,41 +22,41 @@ import java.util.*
  * clone当前ArrayList再遍历
  */
 @Suppress("UNCHECKED_CAST")
-internal inline fun <T> ArrayList<T>.cloneAccessEach(action: (T) -> Unit) {
-    (clone() as ArrayList<T>).accessEach(action)
+internal inline fun <E> ArrayList<E>.cloneAccessEach(action: (E) -> Unit) {
+    (clone() as ArrayList<E>).accessEach(action)
 }
 
 /**
  * clone当前ArrayList再遍历
  */
 @Suppress("UNCHECKED_CAST")
-internal inline fun <T> ArrayList<T>.cloneAccessEachIndexed(action: (index: Int, T) -> Unit) {
-    (clone() as ArrayList<T>).accessEachIndexed(action)
+internal inline fun <E> ArrayList<E>.cloneAccessEachIndexed(action: (index: Int, E) -> Unit) {
+    (clone() as ArrayList<E>).accessEachIndexed(action)
 }
 
 /**
  * 用于频繁遍历访问元素的场景，减少迭代器对象的创建
  */
-internal inline fun <T> ArrayList<T>.accessEach(action: (T) -> Unit) {
+internal inline fun <E> ArrayList<E>.accessEach(action: (E) -> Unit) {
     for (index in this.indices) action(get(index))
 }
 
 /**
  * 用于频繁遍历访问元素的场景，减少迭代器对象的创建
  */
-internal inline fun <T> ArrayList<T>.accessEachIndexed(action: (index: Int, T) -> Unit) {
+internal inline fun <E> ArrayList<E>.accessEachIndexed(action: (index: Int, E) -> Unit) {
     for (index in this.indices) action(index, get(index))
 }
 
 /**
  * 用于频繁遍历访问元素的场景，减少迭代器对象的创建
  */
-internal inline fun <T> ArrayList<T>.reverseAccessEach(action: (T) -> Unit) {
+internal inline fun <E> ArrayList<E>.reverseAccessEach(action: (E) -> Unit) {
     for (index in this.indices.reversed()) action(get(index))
 }
 
-internal fun <T> ArrayList<T>.toUnmodifiableList(): List<T> = Collections.unmodifiableList(this)
+internal fun <E> ArrayList<E>.toUnmodifiableList(): List<E> = Collections.unmodifiableList(this)
 
-internal fun <T> ArrayList<T>.swap(from: Int, to: Int) = Collections.swap(this, from, to)
+internal fun <E> ArrayList<E>.swap(from: Int, to: Int) = Collections.swap(this, from, to)
 
-internal fun <T> Sequence<T>.toArrayList() = ArrayList<T>().also(::toCollection)
+internal fun <E> Sequence<E>.toArrayList() = ArrayList<E>().also(::toCollection)
