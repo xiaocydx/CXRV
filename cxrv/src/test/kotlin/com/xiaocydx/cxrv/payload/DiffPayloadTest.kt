@@ -16,7 +16,7 @@
 
 package com.xiaocydx.cxrv.payload
 
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 /**
@@ -45,9 +45,9 @@ internal class DiffPayloadTest {
 
         val outcome = arrayListOf<Int>()
         Payload.takeOrEmpty(listOf(payload), outcome::add)
-        Truth.assertThat(outcome).hasSize(2)
-        Truth.assertThat(outcome).contains(COUNT1)
-        Truth.assertThat(outcome).contains(COUNT2)
+        assertThat(outcome).hasSize(2)
+        assertThat(outcome).contains(COUNT1)
+        assertThat(outcome).contains(COUNT2)
     }
 
     private data class CountItem(val count1: Int, val count2: Int)
