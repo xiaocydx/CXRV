@@ -21,8 +21,9 @@ package com.xiaocydx.cxrv.animatable
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.internal.PreDrawListener
-import com.xiaocydx.cxrv.internal.accessEach
 import com.xiaocydx.cxrv.list.Disposable
+import com.xiaocydx.cxrv.list.InlineList
+import com.xiaocydx.cxrv.list.accessEach
 
 /**
  * [AnimatableMediator]的实现类
@@ -34,13 +35,13 @@ import com.xiaocydx.cxrv.list.Disposable
 internal class AnimatableMediatorImpl(
     override val recyclerView: RecyclerView
 ) : AnimatableMediator, () -> Unit {
-    private var providers: ArrayList<AnimatableProvider>? = null
-    private var controllers: ArrayList<AnimatableController>? = null
+    private var providers = InlineList<AnimatableProvider>()
+    private var controllers = InlineList<AnimatableController>()
     private var preDrawListener: PreDrawListener? = null
     override var isDisposed: Boolean = false
     override val canStartAnimatable: Boolean
         get() {
-            controllers?.accessEach { if (!it.canStartAnimatable) return false }
+            controllers.accessEach { if (!it.canStartAnimatable) return false }
             return true
         }
 
@@ -78,40 +79,30 @@ internal class AnimatableMediatorImpl(
     }
 
     override fun addAnimatableProvider(provider: AnimatableProvider) {
-        if (providers == null) {
-            providers = ArrayList(2)
-        }
-        if (!providers!!.contains(provider)) {
-            providers!!.add(provider)
-        }
+        providers += provider
     }
 
     override fun removeAnimatableProvider(provider: AnimatableProvider) {
-        providers?.remove(provider)
+        providers -= provider
     }
 
     override fun addAnimatableController(controller: AnimatableController) {
-        if (controllers == null) {
-            controllers = ArrayList(2)
-        }
-        if (!controllers!!.contains(controller)) {
-            controllers!!.add(controller)
-        }
+        controllers += controller
     }
 
     override fun removeAnimatableController(controller: AnimatableController) {
-        controllers?.remove(controller)
+        controllers -= controller
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : AnimatableController> findAnimatableController(clazz: Class<T>): T? {
-        controllers?.accessEach { if (clazz.isAssignableFrom(it.javaClass)) return it as T }
+        controllers.accessEach { if (clazz.isAssignableFrom(it.javaClass)) return it as T }
         return null
     }
 
     private fun startAnimatable(child: View) {
         val holder = recyclerView.getChildViewHolder(child) ?: return
-        providers?.accessEach action@{
+        providers.accessEach action@{
             val animatable = it.getAnimatableOrNull(holder) ?: return@action
             if (animatable.isRunning || !it.canStartAnimatable(holder, animatable)) return@action
             animatable.start()
@@ -120,7 +111,7 @@ internal class AnimatableMediatorImpl(
 
     private fun stopAnimatable(child: View) {
         val holder = recyclerView.getChildViewHolder(child) ?: return
-        providers?.accessEach action@{
+        providers.accessEach action@{
             val animatable = it.getAnimatableOrNull(holder) ?: return@action
             if (animatable.isRunning) animatable.stop()
         }
@@ -128,7 +119,7 @@ internal class AnimatableMediatorImpl(
 
     private fun stopAnimatableOnPreDraw(child: View) {
         val holder = recyclerView.getChildViewHolder(child) ?: return
-        providers?.accessEach action@{
+        providers.accessEach action@{
             val animatable = it.getAnimatableOrNull(holder) ?: return@action
             if (!animatable.isRunning || it.canStartAnimatable(holder, animatable)) return@action
             animatable.stop()
@@ -136,11 +127,11 @@ internal class AnimatableMediatorImpl(
     }
 
     override fun dispose() {
-        providers?.accessEach { it.dispose() }
-        controllers?.accessEach { it.dispose() }
+        providers.accessEach { it.dispose() }
+        controllers.accessEach { it.dispose() }
         preDrawListener?.removeListener()
-        providers = null
-        controllers = null
+        providers = InlineList()
+        controllers = InlineList()
         preDrawListener = null
         isDisposed = true
     }

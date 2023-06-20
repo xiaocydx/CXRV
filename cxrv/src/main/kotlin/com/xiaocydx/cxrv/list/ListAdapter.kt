@@ -27,9 +27,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.concat.SpanSizeProvider
 import com.xiaocydx.cxrv.concat.onAttachedToRecyclerView
 import com.xiaocydx.cxrv.concat.spanSizeProvider
-import com.xiaocydx.cxrv.internal.accessEach
 import com.xiaocydx.cxrv.internal.assertMainThread
-import com.xiaocydx.cxrv.internal.reverseAccessEach
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -42,8 +40,8 @@ import kotlinx.coroutines.Dispatchers
 abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
         Adapter<VH>(), ListOwner<ITEM>, SpanSizeProvider {
     private var tags: HashMap<String, Any?>? = null
-    private var callbacks: ArrayList<AdapterAttachCallback>? = null
-    private var listeners: ArrayList<ViewHolderListener<in VH>>? = null
+    private var callbacks = InlineList<AdapterAttachCallback>()
+    private var listeners = InlineList<ViewHolderListener<in VH>>()
     private val differ: CoroutineListDiffer<ITEM> = CoroutineListDiffer(
         diffCallback = InternalDiffItemCallback(),
         adapter = @Suppress("LeakingThis") this
@@ -126,12 +124,12 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
     protected open fun getChangePayload(oldItem: ITEM, newItem: ITEM): Any? = null
 
     final override fun onBindViewHolder(holder: VH, position: Int, payloads: List<Any>) {
-        listeners?.accessEach { it.onBindViewHolder(holder, position, payloads) }
+        listeners.accessEach { it.onBindViewHolder(holder, position, payloads) }
         onBindViewHolder(holder, getItem(position), payloads)
     }
 
     final override fun onBindViewHolder(holder: VH, position: Int) {
-        listeners?.accessEach { it.onBindViewHolder(holder, position, emptyList()) }
+        listeners.accessEach { it.onBindViewHolder(holder, position, emptyList()) }
         onBindViewHolder(holder, getItem(position))
     }
 
@@ -191,11 +189,8 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
     @MainThread
     fun addAdapterAttachCallback(callback: AdapterAttachCallback) {
         assertMainThread()
-        if (callbacks == null) {
-            callbacks = arrayListOf()
-        }
-        if (!callbacks!!.contains(callback)) {
-            callbacks!!.add(callback)
+        if (!callbacks.contains(callback)) {
+            callbacks += callback
             recyclerView?.let(callback::onAttachedToRecyclerView)
         }
     }
@@ -203,7 +198,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
     @MainThread
     fun removeAdapterAttachCallback(callback: AdapterAttachCallback) {
         assertMainThread()
-        callbacks?.remove(callback)
+        callbacks -= callback
     }
 
     @MainThread
@@ -225,32 +220,27 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
     @CallSuper
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         this.recyclerView = recyclerView
-        callbacks?.reverseAccessEach { it.onAttachedToRecyclerView(recyclerView) }
+        callbacks.reverseAccessEach { it.onAttachedToRecyclerView(recyclerView) }
         spanSizeProvider.onAttachedToRecyclerView(recyclerView)
     }
 
     @CallSuper
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         this.recyclerView = null
-        callbacks?.reverseAccessEach { it.onDetachedFromRecyclerView(recyclerView) }
+        callbacks.reverseAccessEach { it.onDetachedFromRecyclerView(recyclerView) }
         differ.cancel()
     }
 
     @MainThread
     internal fun addViewHolderListener(listener: ViewHolderListener<in VH>) {
         assertMainThread()
-        if (listeners == null) {
-            listeners = arrayListOf()
-        }
-        if (!listeners!!.contains(listener)) {
-            listeners!!.add(listener)
-        }
+        listeners += listener
     }
 
     @MainThread
     internal fun removeViewHolderListener(listener: ViewHolderListener<in VH>) {
         assertMainThread()
-        listeners?.remove(listener)
+        listeners -= listener
     }
 
     @MainThread

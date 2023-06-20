@@ -21,7 +21,6 @@ import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.cxrv.internal.reverseAccessEach
 import com.xiaocydx.cxrv.internal.swap
 import com.xiaocydx.cxrv.internal.toUnmodifiableList
 import kotlinx.coroutines.*
@@ -59,8 +58,8 @@ class CoroutineListDiffer<T : Any>(
     private val runner = SingleRunner()
     private val scope = CoroutineScope(SupervisorJob() + mainDispatcher.immediate)
     private var sourceList: ArrayList<T> = arrayListOf()
-    private var executeListeners: ArrayList<ListExecuteListener<T>>? = null
-    private var changedListeners: ArrayList<ListChangedListener<T>>? = null
+    private var executeListeners = InlineList<ListExecuteListener<T>>()
+    private var changedListeners = InlineList<ListChangedListener<T>>()
     @Volatile var currentList: List<T> = sourceList.toUnmodifiableList(); private set
 
     constructor(
@@ -177,12 +176,7 @@ class CoroutineListDiffer<T : Any>(
      */
     fun addListChangedListener(listener: ListChangedListener<T>) {
         assertMainThread()
-        if (changedListeners == null) {
-            changedListeners = arrayListOf()
-        }
-        if (!changedListeners!!.contains(listener)) {
-            changedListeners!!.add(listener)
-        }
+        changedListeners += listener
     }
 
     /**
@@ -190,7 +184,7 @@ class CoroutineListDiffer<T : Any>(
      */
     fun removeListChangedListener(listener: ListChangedListener<T>) {
         assertMainThread()
-        changedListeners?.remove(listener)
+        changedListeners -= listener
     }
 
     /**
@@ -200,12 +194,7 @@ class CoroutineListDiffer<T : Any>(
      */
     fun addListExecuteListener(listener: ListExecuteListener<T>) {
         assertMainThread()
-        if (executeListeners == null) {
-            executeListeners = arrayListOf()
-        }
-        if (!executeListeners!!.contains(listener)) {
-            executeListeners!!.add(listener)
-        }
+        executeListeners += listener
     }
 
     /**
@@ -213,7 +202,7 @@ class CoroutineListDiffer<T : Any>(
      */
     fun removeListExecuteListener(listener: ListExecuteListener<T>) {
         assertMainThread()
-        executeListeners?.remove(listener)
+        executeListeners -= listener
     }
 
     fun cancel() {
@@ -225,7 +214,7 @@ class CoroutineListDiffer<T : Any>(
     @MainThread
     private suspend fun execute(op: UpdateOp<T>, dispatch: Boolean) {
         if (dispatch) {
-            executeListeners?.reverseAccessEach { it.onExecute(op) }
+            executeListeners.reverseAccessEach { it.onExecute(op) }
         }
         when (op) {
             is UpdateOp.SubmitList -> submitList(op.newList)
@@ -236,7 +225,7 @@ class CoroutineListDiffer<T : Any>(
             is UpdateOp.RemoveItems -> removeItems(op.position, op.itemCount)
             is UpdateOp.MoveItem -> moveItem(op.fromPosition, op.toPosition)
         }
-        changedListeners?.reverseAccessEach { it.onListChanged(currentList) }
+        changedListeners.reverseAccessEach { it.onListChanged(currentList) }
     }
 
     @MainThread

@@ -22,8 +22,9 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.R
-import com.xiaocydx.cxrv.internal.accessEach
-import com.xiaocydx.cxrv.internal.toUnmodifiableList
+import com.xiaocydx.cxrv.list.InlineList
+import com.xiaocydx.cxrv.list.accessEach
+import com.xiaocydx.cxrv.list.toList
 
 /**
  * [ItemTouchCallback]的分发器
@@ -45,13 +46,13 @@ internal val RecyclerView.itemTouchDispatcher: ItemTouchDispatcher
 internal class ItemTouchDispatcher(
     private val recyclerView: RecyclerView
 ) : ItemTouchHelper.Callback() {
-    private var callbacks: ArrayList<ItemTouchCallback>? = null
+    private var callbacks = InlineList<ItemTouchCallback>()
     private var intercepting: ItemTouchCallback? = null
     private val touchHelper = ItemTouchHelper(this)
         .apply { attachToRecyclerView(recyclerView) }
 
     override fun getMovementFlags(rv: RecyclerView, holder: ViewHolder): Int {
-        intercepting = callbacks?.findIntercepting(holder)
+        intercepting = callbacks.findIntercepting(holder)
         return intercepting?.getMovementFlags(holder) ?: return 0
     }
 
@@ -94,28 +95,23 @@ internal class ItemTouchDispatcher(
         intercepting?.clearView(holder)
     }
 
-    private fun ArrayList<ItemTouchCallback>.findIntercepting(holder: ViewHolder): ItemTouchCallback? {
+    private fun InlineList<ItemTouchCallback>.findIntercepting(holder: ViewHolder): ItemTouchCallback? {
         accessEach { if (it.onIntercept(holder)) return it }
         return null
     }
 
     @VisibleForTesting
-    fun getItemTouchCallbacks(): List<ItemTouchCallback> {
-        return callbacks?.toUnmodifiableList() ?: emptyList()
-    }
+    fun getItemTouchCallbacks() = callbacks.toList()
 
     fun addItemTouchCallback(callback: ItemTouchCallback) {
-        if (callbacks == null) {
-            callbacks = ArrayList(2)
-        }
-        if (!callbacks!!.contains(callback)) {
-            callbacks!!.add(callback)
+        if (!callbacks.contains(callback)) {
+            callbacks += callback
             callback.attach(touchHelper, recyclerView)
         }
     }
 
     fun removeItemTouchCallback(callback: ItemTouchCallback) {
-        callbacks?.remove(callback)
+        callbacks -= callback
         if (this.intercepting === callback) {
             this.intercepting = null
         }

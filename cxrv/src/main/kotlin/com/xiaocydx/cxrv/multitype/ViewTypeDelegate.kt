@@ -25,7 +25,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.concat.SpanSizeProvider
-import com.xiaocydx.cxrv.internal.accessEach
 import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.list.*
 
@@ -39,7 +38,7 @@ import com.xiaocydx.cxrv.list.*
  */
 abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider {
     private var maxScrap: Int = 0
-    private var callbacks: ArrayList<AdapterAttachCallback>? = null
+    private var callbacks = InlineList<AdapterAttachCallback>()
 
     @PublishedApi
     @Suppress("PropertyName")
@@ -142,8 +141,8 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
     @Suppress("UNCHECKED_CAST")
     open fun attachAdapter(adapter: ListAdapter<*, *>) {
         _adapter = adapter as ListAdapter<Any, *>
-        callbacks?.accessEach { adapter.addAdapterAttachCallback(it) }
-        callbacks = null
+        callbacks.accessEach { adapter.addAdapterAttachCallback(it) }
+        callbacks = InlineList()
     }
 
     @MainThread
@@ -153,19 +152,14 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
             _adapter!!.addAdapterAttachCallback(callback)
             return
         }
-        if (callbacks == null) {
-            callbacks = ArrayList(2)
-        }
-        if (!callbacks!!.contains(callback)) {
-            callbacks!!.add(callback)
-        }
+        callbacks += callback
     }
 
     @MainThread
     fun removeAdapterAttachCallback(callback: AdapterAttachCallback) {
         assertMainThread()
         _adapter?.removeAdapterAttachCallback(callback)
-        callbacks?.remove(callback)
+        callbacks -= callback
     }
 
     /**

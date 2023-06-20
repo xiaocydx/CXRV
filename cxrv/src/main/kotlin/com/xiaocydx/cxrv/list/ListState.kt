@@ -58,7 +58,7 @@ import kotlinx.coroutines.flow.callbackFlow
  * ```
  */
 class ListState<T : Any> : ListOwner<T> {
-    private var listeners: ArrayList<(UpdateOp<T>) -> Unit>? = null
+    private var listeners = InlineList<(UpdateOp<T>) -> Unit>()
     private val sourceList: ArrayList<T> = arrayListOf()
     override val currentList: List<T> = sourceList.toUnmodifiableList()
     internal var version: Int = 0
@@ -96,18 +96,13 @@ class ListState<T : Any> : ListOwner<T> {
     @MainThread
     internal fun addUpdatedListener(listener: (UpdateOp<T>) -> Unit) {
         assertMainThread()
-        if (listeners == null) {
-            listeners = arrayListOf()
-        }
-        if (!listeners!!.contains(listener)) {
-            listeners!!.add(listener)
-        }
+        listeners += listener
     }
 
     @MainThread
     internal fun removeUpdatedListener(listener: (UpdateOp<T>) -> Unit) {
         assertMainThread()
-        listeners?.remove(listener)
+        listeners -= listener
     }
 
     @MainThread

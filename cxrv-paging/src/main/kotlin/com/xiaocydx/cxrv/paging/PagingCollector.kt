@@ -24,11 +24,12 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
 import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.awaitNextLayout
-import com.xiaocydx.cxrv.internal.reverseAccessEach
 import com.xiaocydx.cxrv.internal.trace
 import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
+import com.xiaocydx.cxrv.list.InlineList
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.UpdateOp
+import com.xiaocydx.cxrv.list.reverseAccessEach
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -143,8 +144,8 @@ class PagingCollector<T : Any> internal constructor(
     private var version = 0
     private var mediator: PagingMediator? = null
     private var appendTrigger: AppendTrigger? = null
-    private var loadStatesListeners: ArrayList<LoadStatesListener>? = null
-    private var handleEventListeners: ArrayList<HandleEventListener<in T>>? = null
+    private var loadStatesListeners = InlineList<LoadStatesListener>()
+    private var handleEventListeners = InlineList<HandleEventListener<in T>>()
     var loadStates: LoadStates = LoadStates.Incomplete
         private set
 
@@ -194,12 +195,7 @@ class PagingCollector<T : Any> internal constructor(
     @MainThread
     fun addHandleEventListener(listener: HandleEventListener<in T>) {
         assertMainThread()
-        if (handleEventListeners == null) {
-            handleEventListeners = arrayListOf()
-        }
-        if (!handleEventListeners!!.contains(listener)) {
-            handleEventListeners!!.add(listener)
-        }
+        handleEventListeners += listener
     }
 
     /**
@@ -208,7 +204,7 @@ class PagingCollector<T : Any> internal constructor(
     @MainThread
     fun removeHandleEventListener(listener: HandleEventListener<in T>) {
         assertMainThread()
-        handleEventListeners?.remove(listener)
+        handleEventListeners -= listener
     }
 
     /**
@@ -220,12 +216,7 @@ class PagingCollector<T : Any> internal constructor(
     @MainThread
     fun addLoadStatesListener(listener: LoadStatesListener) {
         assertMainThread()
-        if (loadStatesListeners == null) {
-            loadStatesListeners = arrayListOf()
-        }
-        if (!loadStatesListeners!!.contains(listener)) {
-            loadStatesListeners!!.add(listener)
-        }
+        loadStatesListeners += listener
     }
 
     /**
@@ -234,7 +225,7 @@ class PagingCollector<T : Any> internal constructor(
     @MainThread
     fun removeLoadStatesListener(listener: LoadStatesListener) {
         assertMainThread()
-        loadStatesListeners?.remove(listener)
+        loadStatesListeners -= listener
     }
 
     /**
@@ -273,7 +264,7 @@ class PagingCollector<T : Any> internal constructor(
     @MainThread
     private suspend fun handleEvent(event: PagingEvent<T>) {
         val rv = requireNotNull(adapter.recyclerView) { "ListAdapter已从RecyclerView上分离" }
-        handleEventListeners?.reverseAccessEach { it.handleEvent(rv, event) }
+        handleEventListeners.reverseAccessEach { it.handleEvent(rv, event) }
 
         val op: UpdateOp<T>? = when (event) {
             is PagingEvent.ListStateUpdate -> event.op
@@ -318,7 +309,7 @@ class PagingCollector<T : Any> internal constructor(
         if (loadStates == newStates) return
         val previous = loadStates
         loadStates = newStates
-        loadStatesListeners?.reverseAccessEach {
+        loadStatesListeners.reverseAccessEach {
             it.onLoadStatesChanged(previous, loadStates)
         }
     }
@@ -329,7 +320,7 @@ class PagingCollector<T : Any> internal constructor(
         if (loadStates.getState(loadType) == newState) return
         val previous = loadStates
         loadStates = loadStates.modifyState(loadType, newState)
-        loadStatesListeners?.reverseAccessEach {
+        loadStatesListeners.reverseAccessEach {
             it.onLoadStatesChanged(previous, loadStates)
         }
     }

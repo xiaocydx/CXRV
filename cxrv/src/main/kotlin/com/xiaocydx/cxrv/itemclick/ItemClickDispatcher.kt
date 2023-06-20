@@ -25,9 +25,10 @@ import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.SimpleOnItemTouchListener
 import com.xiaocydx.cxrv.R
-import com.xiaocydx.cxrv.internal.accessEach
-import com.xiaocydx.cxrv.internal.toUnmodifiableList
 import com.xiaocydx.cxrv.list.Disposable
+import com.xiaocydx.cxrv.list.InlineList
+import com.xiaocydx.cxrv.list.accessEach
+import com.xiaocydx.cxrv.list.toList
 
 /**
  * Item点击分发器，支持`itemView`及其子view的点击、长按
@@ -56,9 +57,9 @@ internal val RecyclerView.itemClickDispatcher: ItemClickDispatcher
 internal class ItemClickDispatcher(
     private val rv: RecyclerView
 ) : SimpleOnItemTouchListener(), OnClickListener, OnLongClickListener {
-    private var dispatchTargets: ArrayList<DispatchTarget>? = null
-    private var pendingClickTargets: ArrayList<ClickDispatchTarget>? = null
-    private var pendingLongClickTargets: ArrayList<LongClickDispatchTarget>? = null
+    private var dispatchTargets = InlineList<DispatchTarget>()
+    private var pendingClickTargets = InlineList<ClickDispatchTarget>()
+    private var pendingLongClickTargets = InlineList<LongClickDispatchTarget>()
 
     init {
         rv.addOnItemTouchListener(this)
@@ -105,7 +106,7 @@ internal class ItemClickDispatcher(
         clearPendingLongClickTargets()
 
         val itemView = rv.findChildViewUnder(event.x, event.y) ?: return false
-        dispatchTargets?.accessEach action@{
+        dispatchTargets.accessEach action@{
             if (!it.setCurrentTargetView(itemView, event)) return@action
             when {
                 it is ClickDispatchTarget && it.setOnClickListener(this) -> {
@@ -124,7 +125,7 @@ internal class ItemClickDispatcher(
      */
     override fun onClick(view: View) {
         val itemView = rv.findContainingItemView(view) ?: return
-        pendingClickTargets?.accessEach { it.tryPerformClickHandler(view, itemView) }
+        pendingClickTargets.accessEach { it.tryPerformClickHandler(view, itemView) }
         clearPendingClickTargets()
     }
 
@@ -134,7 +135,7 @@ internal class ItemClickDispatcher(
     override fun onLongClick(view: View): Boolean {
         val itemView = rv.findContainingItemView(view) ?: return false
         var consumed = false
-        pendingLongClickTargets?.accessEach {
+        pendingLongClickTargets.accessEach {
             if (it.tryPerformLongClickHandler(view, itemView)) {
                 consumed = true
             }
@@ -144,43 +145,30 @@ internal class ItemClickDispatcher(
     }
 
     @VisibleForTesting
-    fun getDispatchTargets(): List<DispatchTarget> {
-        return dispatchTargets?.toUnmodifiableList() ?: emptyList()
-    }
+    fun getDispatchTargets() = dispatchTargets.toList()
 
     private fun addDispatchTarget(target: DispatchTarget) {
-        if (dispatchTargets == null) {
-            dispatchTargets = ArrayList(2)
-        }
-        if (!dispatchTargets!!.contains(target)) {
-            dispatchTargets!!.add(target)
-        }
+        dispatchTargets += target
     }
 
     private fun removeDispatchTarget(target: DispatchTarget) {
-        dispatchTargets?.remove(target)
+        dispatchTargets -= target
     }
 
     private fun addPendingClickTarget(target: ClickDispatchTarget) {
-        if (pendingClickTargets == null) {
-            pendingClickTargets = ArrayList(2)
-        }
-        pendingClickTargets!!.add(target)
+        pendingClickTargets += target
     }
 
     private fun addPendingLongClickTarget(target: LongClickDispatchTarget) {
-        if (pendingLongClickTargets == null) {
-            pendingLongClickTargets = ArrayList(2)
-        }
-        pendingLongClickTargets!!.add(target)
+        pendingLongClickTargets += target
     }
 
     private fun clearPendingClickTargets() {
-        pendingClickTargets.takeIf { !it.isNullOrEmpty() }?.clear()
+        pendingClickTargets = pendingClickTargets.clear()
     }
 
     private fun clearPendingLongClickTargets() {
-        pendingLongClickTargets.takeIf { !it.isNullOrEmpty() }?.clear()
+        pendingClickTargets = pendingClickTargets.clear()
     }
 
     private class DispatchTargetDisposable : Disposable {
