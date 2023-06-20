@@ -17,6 +17,7 @@
 package com.xiaocydx.cxrv.viewpager2.loop
 
 import android.os.Build
+import android.os.Looper.getMainLooper
 import androidx.lifecycle.Lifecycle.State.CREATED
 import androidx.recyclerview.widget.*
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
@@ -34,6 +35,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
@@ -112,6 +114,7 @@ internal class LoopPagerScrollerTest {
     fun defaultUpdateAnchorWithoutOptimization() = withoutOptimization {
         verify(exactly = 0) { contentCallback.onBindViewHolder(any(), 2, any()) }
         scroller.scrollToPosition(1)
+        shadowOf(getMainLooper()).idle()
 
         val previous = content.findViewHolderForLayoutPosition(1)
         verify(exactly = 1) { contentCallback.onBindViewHolder(previous, 2, any()) }
@@ -119,6 +122,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previous) }
 
         scroller.updateAnchorInfo(UpdateScenes.Dragging, content)
+        shadowOf(getMainLooper()).idle()
 
         // currentItem = 1 -> currentItem = 4，移除itemView，绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -141,6 +145,7 @@ internal class LoopPagerScrollerTest {
     fun defaultUpdateAnchorWithOptimization() {
         verify(exactly = 0) { contentCallback.onBindViewHolder(any(), 2, any()) }
         scroller.scrollToPosition(1)
+        shadowOf(getMainLooper()).idle()
 
         val previousC = content.findViewHolderForLayoutPosition(1)
         verify(exactly = 1) { contentCallback.onBindViewHolder(previousC, 2, any()) }
@@ -148,6 +153,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousC) }
 
         scroller.updateAnchorInfo(UpdateScenes.Dragging, content)
+        shadowOf(getMainLooper()).idle()
 
         // currentItem = 1 -> currentItem = 4，不移除itemView，不绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -170,6 +176,7 @@ internal class LoopPagerScrollerTest {
     fun paddingUpdateAnchorWithoutOptimization() = withoutOptimization {
         content.setupPadding()
         scroller.scrollToPosition(1)
+        shadowOf(getMainLooper()).idle()
 
         val previousB = content.findViewHolderForLayoutPosition(0)
         val previousC = content.findViewHolderForLayoutPosition(1)
@@ -186,6 +193,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousA) }
 
         scroller.updateAnchorInfo(UpdateScenes.Dragging, content)
+        shadowOf(getMainLooper()).idle()
 
         // currentItem = 1 -> currentItem = 4，移除itemView，绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)
@@ -222,6 +230,7 @@ internal class LoopPagerScrollerTest {
     fun paddingUpdateAnchorWithOptimization() {
         content.setupPadding()
         scroller.scrollToPosition(1)
+        shadowOf(getMainLooper()).idle()
 
         val previousB = content.findViewHolderForLayoutPosition(0)
         val previousC = content.findViewHolderForLayoutPosition(1)
@@ -238,6 +247,7 @@ internal class LoopPagerScrollerTest {
         verify(exactly = 0) { contentCallback.onViewDetachedFromWindow(previousA) }
 
         scroller.updateAnchorInfo(UpdateScenes.Dragging, content)
+        shadowOf(getMainLooper()).idle()
 
         // currentItem = 1 -> currentItem = 4，不移除itemView，不绑定新的holder
         assertThat(content.viewPager2.currentItem).isEqualTo(4)

@@ -37,7 +37,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import org.robolectric.annotation.LooperMode
 
 /**
  * [LoadFooterAdapter]的单元测试
@@ -45,7 +44,6 @@ import org.robolectric.annotation.LooperMode
  * @author xcc
  * @date 2021/12/11
  */
-@LooperMode(LooperMode.Mode.PAUSED)
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
 internal class LoadFooterAdapterTest {
@@ -79,7 +77,6 @@ internal class LoadFooterAdapterTest {
             activity.recyclerView.adapter = concatAdapter
             listAdapter.insertItem("A")
             collector.setLoadState(LoadType.APPEND, LoadState.Loading)
-
             shadowOf(getMainLooper()).idle()
             verify(exactly = 1) { onCreateView(ofType(), ofType()) }
             verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
@@ -101,7 +98,6 @@ internal class LoadFooterAdapterTest {
             activity.recyclerView.adapter = concatAdapter
             listAdapter.insertItem("A")
             collector.setLoadState(LoadType.APPEND, LoadState.Success(isFully = true))
-
             shadowOf(getMainLooper()).idle()
             verify(exactly = 1) { onCreateView(ofType(), ofType()) }
             verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
@@ -124,7 +120,6 @@ internal class LoadFooterAdapterTest {
             listAdapter.insertItem("A")
             val exception = IllegalArgumentException()
             collector.setLoadState(LoadType.APPEND, LoadState.Failure(exception))
-
             shadowOf(getMainLooper()).idle()
             verify(exactly = 1) { onCreateView(ofType(), ofType()) }
             verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
@@ -145,13 +140,11 @@ internal class LoadFooterAdapterTest {
         scenario.onActivity { activity ->
             activity.recyclerView.adapter = concatAdapter
             collector.setLoadState(LoadType.APPEND, LoadState.Success(isFully = true))
-
             shadowOf(getMainLooper()).idle()
             verify(exactly = 0) { onCreateView(ofType(), ofType()) }
             verify(exactly = 0) { onVisibleChanged(ofType(), ofType(), ofType()) }
 
             listAdapter.insertItem("A")
-
             shadowOf(getMainLooper()).idle()
             verify(exactly = 1) { onCreateView(ofType(), ofType()) }
             verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }

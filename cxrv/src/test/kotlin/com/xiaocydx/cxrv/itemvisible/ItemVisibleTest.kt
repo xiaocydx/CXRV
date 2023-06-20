@@ -17,6 +17,7 @@
 package com.xiaocydx.cxrv.itemvisible
 
 import android.os.Build
+import android.os.Looper.getMainLooper
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -34,6 +35,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
@@ -111,12 +113,14 @@ internal class ItemVisibleTest {
     private fun RecyclerView.testItemVisibleProperty() {
         adapter = testAdapter
         testAdapter.items = testItems
+        shadowOf(getMainLooper()).idle()
         assertThat(isFirstItemVisible).isTrue()
         assertThat(isFirstItemCompletelyVisible).isTrue()
         assertThat(isLastItemVisible).isFalse()
         assertThat(isLastItemCompletelyVisible).isFalse()
 
         scrollToPosition(testAdapter.items.lastIndex)
+        shadowOf(getMainLooper()).idle()
         assertThat(isFirstItemVisible).isFalse()
         assertThat(isFirstItemCompletelyVisible).isFalse()
         assertThat(isLastItemVisible).isTrue()
@@ -127,12 +131,14 @@ internal class ItemVisibleTest {
         val helper = ItemVisibleHelper(this)
         adapter = testAdapter
         testAdapter.items = testItems
+        shadowOf(getMainLooper()).idle()
         assertThat(helper.isFirstItemVisible).isTrue()
         assertThat(helper.isFirstItemCompletelyVisible).isTrue()
         assertThat(helper.isLastItemVisible).isFalse()
         assertThat(helper.isLastItemCompletelyVisible).isFalse()
 
         scrollToPosition(testAdapter.items.lastIndex)
+        shadowOf(getMainLooper()).idle()
         assertThat(helper.isFirstItemVisible).isFalse()
         assertThat(helper.isFirstItemCompletelyVisible).isFalse()
         assertThat(helper.isLastItemVisible).isTrue()
@@ -149,6 +155,7 @@ internal class ItemVisibleTest {
 
         adapter = testAdapter
         testAdapter.items = testItems
+        shadowOf(getMainLooper()).idle()
         verify(exactly = 1) { firstItemHandler.invoke() }
         verify(exactly = 1) { firstItemCompletelyHandler.invoke() }
         assertThat(firstItemDisposable.isDisposed).isTrue()
@@ -166,6 +173,7 @@ internal class ItemVisibleTest {
         adapter = testAdapter
         testAdapter.items = testItems
         scrollToPosition(testAdapter.items.lastIndex)
+        shadowOf(getMainLooper()).idle()
         verify(exactly = 1) { lastItemHandler.invoke() }
         verify(exactly = 1) { lastItemCompletelyHandler.invoke() }
         assertThat(lastItemDisposable.isDisposed).isTrue()

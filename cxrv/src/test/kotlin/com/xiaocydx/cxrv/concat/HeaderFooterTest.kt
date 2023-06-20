@@ -17,6 +17,7 @@
 package com.xiaocydx.cxrv.concat
 
 import android.os.Build
+import android.os.Looper.getMainLooper
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Lifecycle.State
@@ -35,6 +36,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
@@ -161,7 +163,10 @@ internal class HeaderFooterTest {
             val recyclerView = activity.recyclerView
             recyclerView.adapter = testAdapter
             recyclerView.addHeader(headerView)
+            shadowOf(getMainLooper()).idle()
+
             testAdapter.items = testItems
+            shadowOf(getMainLooper()).idle()
 
             (recyclerView.adapter as ConcatAdapter).adapters[0].let { adapter ->
                 adapter as SimpleViewAdapter
@@ -181,7 +186,10 @@ internal class HeaderFooterTest {
             val recyclerView = activity.recyclerView
             recyclerView.adapter = testAdapter
             recyclerView.addHeader(headerView)
+            shadowOf(getMainLooper()).idle()
+
             testAdapter.items = testItems
+            shadowOf(getMainLooper()).idle()
 
             (recyclerView.adapter as ConcatAdapter).adapters[0].let { adapter ->
                 adapter as SimpleViewAdapter
@@ -201,12 +209,14 @@ internal class HeaderFooterTest {
             val recyclerView = activity.recyclerView
             recyclerView.adapter = testAdapter
             recyclerView.addFooter(footerView)
+            shadowOf(getMainLooper()).idle()
 
             (recyclerView.adapter as ConcatAdapter).adapters[1].let { adapter ->
                 adapter as SimpleViewAdapter
                 assertThat(adapter.view).isEqualTo(footerView)
                 // 添加items占满屏幕，触发footerView的ViewHolder回收
                 testAdapter.items = testItems
+                shadowOf(getMainLooper()).idle()
                 assertThat(adapter.getRecycledViewHolder()).isNotNull()
                 recyclerView.removeFooter(footerView)
                 assertThat(adapter.getRecycledViewHolder()).isNull()
@@ -220,12 +230,14 @@ internal class HeaderFooterTest {
             val recyclerView = activity.recyclerView
             recyclerView.adapter = testAdapter
             recyclerView.addFooter(footerView)
+            shadowOf(getMainLooper()).idle()
 
             (recyclerView.adapter as ConcatAdapter).adapters[1].let { adapter ->
                 adapter as SimpleViewAdapter
                 assertThat(adapter.view).isEqualTo(footerView)
                 // 添加items占满屏幕，触发footerView的ViewHolder回收
                 testAdapter.items = testItems
+                shadowOf(getMainLooper()).idle()
                 assertThat(adapter.getRecycledViewHolder()).isNotNull()
                 recyclerView.removeFromParent()
                 assertThat(adapter.getRecycledViewHolder()).isNull()
@@ -236,12 +248,14 @@ internal class HeaderFooterTest {
     private fun RecyclerView.removeFromParent() {
         assertThat(parent).isNotNull()
         (parent as ViewGroup).removeView(this)
+        shadowOf(getMainLooper()).idle()
     }
 
     private fun RecyclerView.scrollToLastItem() {
         assertThat(layoutManager).isNotNull()
         val lastItemPosition = layoutManager!!.itemCount - 1
         scrollToPosition(lastItemPosition)
+        shadowOf(getMainLooper()).idle()
         assertThat(findLastCompletelyVisibleItemPosition()).isEqualTo(lastItemPosition)
     }
 }

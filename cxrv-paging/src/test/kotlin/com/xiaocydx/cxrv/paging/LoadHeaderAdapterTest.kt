@@ -17,6 +17,7 @@
 package com.xiaocydx.cxrv.paging
 
 import android.os.Build
+import android.os.Looper.getMainLooper
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Lifecycle
@@ -35,6 +36,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
@@ -75,6 +77,7 @@ internal class LoadHeaderAdapterTest {
         scenario.onActivity { activity ->
             activity.recyclerView.adapter = concatAdapter
             collector.setLoadState(LoadType.REFRESH, LoadState.Loading)
+            shadowOf(getMainLooper()).idle()
             verify(exactly = 1) { onCreateView(ofType(), ofType()) }
             verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
         }
@@ -97,6 +100,7 @@ internal class LoadHeaderAdapterTest {
                 LoadType.REFRESH,
                 LoadState.Success(isFully = true)
             )
+            shadowOf(getMainLooper()).idle()
             verify(exactly = 1) { onCreateView(ofType(), ofType()) }
             verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
         }
@@ -117,6 +121,7 @@ internal class LoadHeaderAdapterTest {
             activity.recyclerView.adapter = concatAdapter
             val exception = IllegalArgumentException()
             collector.setLoadState(LoadType.REFRESH, LoadState.Failure(exception))
+            shadowOf(getMainLooper()).idle()
             verify(exactly = 1) { onCreateView(ofType(), ofType()) }
             verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
         }
@@ -140,10 +145,12 @@ internal class LoadHeaderAdapterTest {
                 LoadType.REFRESH,
                 LoadState.Success(isFully = true)
             )
+            shadowOf(getMainLooper()).idle()
             verify(exactly = 0) { onCreateView(ofType(), ofType()) }
             verify(exactly = 0) { onVisibleChanged(ofType(), ofType(), ofType()) }
 
             listAdapter.clear()
+            shadowOf(getMainLooper()).idle()
             verify(exactly = 1) { onCreateView(ofType(), ofType()) }
             verify(exactly = 1) { onVisibleChanged(ofType(), ofType(), true) }
         }
