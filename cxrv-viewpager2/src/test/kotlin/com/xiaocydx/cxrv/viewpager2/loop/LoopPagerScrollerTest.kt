@@ -297,7 +297,7 @@ internal class LoopPagerScrollerTest {
     }
 
     private class TestLoopAnchorUpdater : LoopAnchorUpdater {
-        private val optimization = LoopAnchorUpdaterImpl(TestTargetScrapStore())
+        private val optimization = LoopAnchorUpdaterImpl()
         var isOptimizationEnabled = true
 
         override fun updateAnchorInfo(scenes: UpdateScenes, content: LoopPagerContent) {
@@ -327,27 +327,5 @@ internal class LoopPagerScrollerTest {
                 else -> NO_POSITION
             }
         }
-    }
-
-    private class TestTargetScrapStore : TargetScrapStore {
-        private val mutableMap = mutableMapOf<Int, ViewHolder>()
-
-        override val size: Int
-            get() = mutableMap.size
-
-        override fun get(bindingAdapterPosition: Int): ViewHolder? {
-            return mutableMap[bindingAdapterPosition]
-        }
-
-        override fun set(bindingAdapterPosition: Int, holder: ViewHolder) {
-            mutableMap[bindingAdapterPosition] = holder
-        }
-
-        override fun valueAt(index: Int): ViewHolder {
-            mutableMap.onEachIndexed { i, entry -> if (i == index) return entry.value }
-            throw ArrayIndexOutOfBoundsException(index)
-        }
-
-        override fun clear() = mutableMap.clear()
     }
 }

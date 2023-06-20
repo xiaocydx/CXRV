@@ -133,9 +133,8 @@ internal sealed class UpdateScenes {
  * ### 优化方案
  * [updateAnchorInfoInNextLayout]查找目标`itemView`，处理跟离屏页面和离屏缓存的冲突。
  */
-internal class LoopAnchorUpdaterImpl(
-    private val targetScrapStore: TargetScrapStore = DefaultTargetScrapStore()
-) : LoopAnchorUpdater {
+internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
+    private val targetScrapStore = SparseArray<ViewHolder>()
     private var preDrawListener: OneShotPreDrawListener? = null
 
     override fun updateAnchorInfo(scenes: UpdateScenes, content: LoopPagerContent) {
@@ -206,7 +205,7 @@ internal class LoopAnchorUpdaterImpl(
             val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
             val scrap = targetScrapStore[bindingAdapterPosition]
             if (scrap == null || scrap === holder) continue
-            holder.offsetPosition(scrap.oldPosition - holder.layoutPosition, false)
+            holder.offsetPosition(scrap, "OffscreenPage", content)
         }
 
         // 对有冲突的离屏缓存设置targetScrap的oldPosition，避免下一次布局基于新锚点填充离屏缓存
@@ -215,52 +214,37 @@ internal class LoopAnchorUpdaterImpl(
             val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
             val scrap = targetScrapStore[bindingAdapterPosition]
             if (scrap == null || scrap === holder) continue
-            holder.offsetPosition(scrap.oldPosition - holder.layoutPosition, false)
+            holder.offsetPosition(scrap, "CachedViews", content)
         }
 
         // 下一次布局LinearLayoutManager会自行计算出当前targetScrap的锚点信息，
         // RecyclerView.dispatchLayoutStep3()回收上述已处理但未填充的离屏页面。
         scenes.setAnchorPosition(anchorPosition, content)
-        if (targetScrapStore.size > 0) targetScrapStore.clear()
+        if (targetScrapStore.size() > 0) targetScrapStore.clear()
     }
 
     private fun addTargetScrapForLayoutPosition(layoutPosition: Int, offset: Int, content: LoopPagerContent) {
         val recyclerView = content.viewPager2.recyclerView
         val holder = recyclerView.findViewHolderForLayoutPosition(layoutPosition) ?: return
         val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
-        holder.offsetPosition(offset, false)
+        holder.offsetPosition(offset, "TargetScrap", content)
         targetScrapStore[bindingAdapterPosition] = holder
     }
-}
 
-/**
- * 使用[SparseArray]会让单元测试报错（未找到原因），因此用接口进行兼容
- */
-internal interface TargetScrapStore {
-    val size: Int
-    operator fun get(bindingAdapterPosition: Int): ViewHolder?
-    operator fun set(bindingAdapterPosition: Int, holder: ViewHolder)
-    fun valueAt(index: Int): ViewHolder
-    fun clear()
-}
-
-private class DefaultTargetScrapStore : TargetScrapStore {
-    private val sparseArray = SparseArray<ViewHolder>()
-
-    override val size: Int
-        get() = sparseArray.size()
-
-    override fun get(bindingAdapterPosition: Int): ViewHolder? {
-        return sparseArray[bindingAdapterPosition]
+    private fun ViewHolder.offsetPosition(scrap: ViewHolder, tag: String, content: LoopPagerContent) {
+        offsetPosition(scrap.oldPosition - layoutPosition, tag, content)
     }
 
-    override fun set(bindingAdapterPosition: Int, holder: ViewHolder) {
-        sparseArray[bindingAdapterPosition] = holder
+    private fun ViewHolder.offsetPosition(offset: Int, tag: String, content: LoopPagerContent) {
+        val firstLayoutPosition = content.firstLayoutPosition()
+        val lastLayoutPosition = content.lastLayoutPosition()
+        if (layoutPosition + offset !in firstLayoutPosition..lastLayoutPosition) {
+            throw IndexOutOfBoundsException("$tag offsetPosition()," +
+                    "layoutPosition = $layoutPosition," +
+                    "offset = $offset," +
+                    "firstLayoutPosition = $firstLayoutPosition," +
+                    "lastLayoutPosition = $lastLayoutPosition")
+        }
+        offsetPosition(offset, false)
     }
-
-    override fun valueAt(index: Int): ViewHolder {
-        return sparseArray.valueAt(index)
-    }
-
-    override fun clear() = sparseArray.clear()
 }
