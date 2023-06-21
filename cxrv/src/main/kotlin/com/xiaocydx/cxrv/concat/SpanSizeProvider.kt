@@ -72,8 +72,8 @@ val SpanSizeProvider.spanSizeProvider: SpanSizeProvider
 /**
  * 在[Adapter.onAttachedToRecyclerView]下调用
  */
-@Suppress("unused")
-fun SpanSizeProvider.onAttachedToRecyclerView(rv: RecyclerView): Unit = with(rv) {
+@Suppress("UnusedReceiverParameter")
+fun SpanSizeProvider.onAttachedToRecyclerView(rv: RecyclerView) = with(rv) {
     if (getTag(R.id.tag_span_size_lookup) == true) {
         // 避免重复执行rv.trySetSpanSizeLookup()，重复执行的原因可能是：
         // 1.对rv多次设置实现了SpanSizeProvider的adapter。
@@ -94,8 +94,7 @@ private fun RecyclerView.initSpanSizeLookup() {
         is StaggeredGridLayoutManager -> {
             addOnChildAttachStateChangeListener(object : OnChildAttachStateChangeListener {
                 override fun onChildViewAttachedToWindow(view: View) {
-                    val lp =
-                            view.layoutParams as? StaggeredGridLayoutParams ?: return
+                    val lp = view.layoutParams as? StaggeredGridLayoutParams ?: return
                     val holder = getChildViewHolder(view) ?: return
                     val adapter = holder.bindingAdapter as? SpanSizeProvider ?: return
                     lp.isFullSpan = adapter.fullSpan(holder.bindingAdapterPosition, holder)

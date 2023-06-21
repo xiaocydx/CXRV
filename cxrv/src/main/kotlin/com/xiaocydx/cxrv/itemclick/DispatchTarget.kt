@@ -19,7 +19,9 @@ package com.xiaocydx.cxrv.itemclick
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
-import android.view.View.*
+import android.view.View.OnAttachStateChangeListener
+import android.view.View.OnClickListener
+import android.view.View.OnLongClickListener
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 
 /**

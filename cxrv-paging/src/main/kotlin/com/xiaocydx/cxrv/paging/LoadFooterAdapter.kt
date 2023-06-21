@@ -29,7 +29,10 @@ import com.xiaocydx.cxrv.internal.PreDrawListener
 import com.xiaocydx.cxrv.internal.hasDisplayItem
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.ListChangedListener
-import com.xiaocydx.cxrv.paging.LoadFooterAdapter.Visible.*
+import com.xiaocydx.cxrv.paging.LoadFooterAdapter.Visible.FAILURE
+import com.xiaocydx.cxrv.paging.LoadFooterAdapter.Visible.FULLY
+import com.xiaocydx.cxrv.paging.LoadFooterAdapter.Visible.LOADING
+import com.xiaocydx.cxrv.paging.LoadFooterAdapter.Visible.NONE
 
 /**
  * 加载尾部适配器

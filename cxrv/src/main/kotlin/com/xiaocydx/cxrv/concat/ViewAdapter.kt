@@ -20,7 +20,9 @@ import android.view.View
 import androidx.annotation.CallSuper
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.ViewController
 import com.xiaocydx.cxrv.internal.doOnPreDraw
 

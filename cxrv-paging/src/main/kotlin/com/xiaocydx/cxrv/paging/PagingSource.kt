@@ -22,22 +22,19 @@ package com.xiaocydx.cxrv.paging
  * @author xcc
  * @date 2021/9/13
  */
-fun interface PagingSource<K: Any, T : Any> {
+fun interface PagingSource<K : Any, T : Any> {
 
     /**
      * 加载页面结果
      *
-     * **注意**：内部逻辑调用[PagingSource.load]时，也会进行异常捕获。
+     * **注意**：当内部逻辑调用[PagingSource.load]时，会对函数做异常捕获，
+     * 异常作为[LoadResult.Failure]，也可以主动返回[LoadResult.Failure]。
      * ```
      * class FooPagingSource : PagingSource<Int, Foo>() {
      *
      *      suspend fun load(params: LoadParams<Int, Foo>): LoadResult<Int, Foo> {
-     *          return try {
-     *              ...
-     *              LoadResult.Success(data, nextKey)
-     *          } catch (exception: Throwable) {
-     *              LoadResult.Failure(exception)
-     *          }
+     *          val (data, nextKey) = loadResult(params.key, params.pageSize)
+     *          return LoadResult.Success(data, nextKey)
      *      }
      * }
      * ```
@@ -48,7 +45,7 @@ fun interface PagingSource<K: Any, T : Any> {
 /**
  * [PagingSource.load]的加载参数
  */
-sealed class LoadParams<K: Any>(
+sealed class LoadParams<K : Any>(
     /**
      * 页面对应的key
      */
@@ -67,7 +64,7 @@ sealed class LoadParams<K: Any>(
      *
      * [pageSize]此时的值是[PagingConfig.initPageSize]。
      */
-    data class Refresh<K: Any>(
+    data class Refresh<K : Any>(
         override val key: K,
         override val pageSize: Int
     ) : LoadParams<K>(key, pageSize)
@@ -77,13 +74,13 @@ sealed class LoadParams<K: Any>(
      *
      * [pageSize]此时的值是[PagingConfig.pageSize]。
      */
-    data class Append<K: Any>(
+    data class Append<K : Any>(
         override val key: K,
         override val pageSize: Int
     ) : LoadParams<K>(key, pageSize)
 
     companion object {
-        fun <K: Any> create(
+        fun <K : Any> create(
             loadType: LoadType,
             key: K,
             pageSize: Int

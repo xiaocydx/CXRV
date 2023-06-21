@@ -20,12 +20,20 @@ package com.xiaocydx.cxrv.paging
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import androidx.recyclerview.widget.RecyclerView.OnChildAttachStateChangeListener
+import androidx.recyclerview.widget.RecyclerView.OnScrollListener
+import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.isPreLayout
 import com.xiaocydx.cxrv.internal.PreDrawListener
 import com.xiaocydx.cxrv.internal.hasDisplayItem
 import com.xiaocydx.cxrv.internal.log
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.list.AdapterAttachCallback
+import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.ListChangedListener
+import com.xiaocydx.cxrv.list.ViewHolderListener
+import com.xiaocydx.cxrv.list.adapter
 import kotlin.math.max
 import kotlin.math.min
 

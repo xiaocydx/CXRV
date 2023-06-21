@@ -42,9 +42,7 @@ import kotlinx.coroutines.flow.onStart
  *
  * 2.对ViewModel注入Repository
  * ```
- * class FooViewModel(
- *     private val repository: FooRepository
- * ) : ViewModel() {
+ * class FooViewModel(private val repository: FooRepository) : ViewModel() {
  *     // 可以对分页事件流做数据变换
  *     val flow = repository.flow
  * }

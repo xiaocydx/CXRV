@@ -16,7 +16,9 @@
 
 package com.xiaocydx.cxrv.viewpager2.loop
 
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.viewpager2.widget.ViewPager2
 
 /**

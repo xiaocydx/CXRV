@@ -126,24 +126,16 @@ private class ReflectConcatAdapterHolder(
         /**
          * [ConcatAdapter.mController]
          */
-        val mControllerField: Field? = try {
-            ConcatAdapter::class.java
-                .getDeclaredField("mController")
-                .apply { isAccessible = true }
-        } catch (e: NoSuchFieldException) {
-            null
-        }
+        val mControllerField: Field? = runCatching {
+            ConcatAdapter::class.java.getDeclaredField("mController")
+        }.getOrNull()?.apply { isAccessible = true }
 
         /**
          * [ConcatAdapterController.mWrappers]
          */
-        val mWrappersField: Field? = try {
-            ConcatAdapterController::class.java
-                .getDeclaredField("mWrappers")
-                .apply { isAccessible = true }
-        } catch (e: NoSuchFieldException) {
-            null
-        }
+        val mWrappersField: Field? = runCatching {
+            ConcatAdapterController::class.java.getDeclaredField("mWrappers")
+        }.getOrNull()?.apply { isAccessible = true }
 
         /**
          * [ConcatAdapter.mController.mWrappers]

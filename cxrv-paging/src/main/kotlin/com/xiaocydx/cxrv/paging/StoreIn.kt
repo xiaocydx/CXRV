@@ -22,13 +22,21 @@ import androidx.annotation.MainThread
 import com.xiaocydx.cxrv.list.ListOwner
 import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.UpdateOp
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainCoroutineDispatcher
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -41,8 +49,8 @@ import kotlin.coroutines.EmptyCoroutineContext
  * 热流被首次收集时，才会开始收集它的上游，直到[scope]被取消。
  *
  * ### 调用顺序
- * 不能在调用[storeIn]之后，再调用[flowMap]转换[PagingData.flow]，
- * 因为[state]和视图控制器会建立双向通信，所以需要确保[state]和视图控制器中的数据一致。
+ * 不允许在调用[storeIn]之后，还调用[flowMap]转换[PagingData.flow]，
+ * [state]和视图控制器会建立双向通信，需要确保[state]跟视图控制器的数据一致。
  *
  * 在ViewModel中使用[storeIn]：
  * ```
@@ -50,9 +58,7 @@ import kotlin.coroutines.EmptyCoroutineContext
  *     private val listState = ListState<Foo>()
  *     val flow = repository.flow
  *         .flowMap { eventFlow ->
- *             eventFlow.itemMap { loadType, item ->
- *                 ...
- *             }
+ *             eventFlow.itemMap { loadType, item -> ... }
  *         }
  *         .storeIn(listState, viewModelScope)
  * }

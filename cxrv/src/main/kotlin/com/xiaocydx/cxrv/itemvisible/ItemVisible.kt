@@ -21,7 +21,10 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.xiaocydx.cxrv.itemvisible.VisibleTarget.*
+import com.xiaocydx.cxrv.itemvisible.VisibleTarget.FIRST_ITEM
+import com.xiaocydx.cxrv.itemvisible.VisibleTarget.FIRST_ITEM_COMPLETELY
+import com.xiaocydx.cxrv.itemvisible.VisibleTarget.LAST_ITEM
+import com.xiaocydx.cxrv.itemvisible.VisibleTarget.LAST_ITEM_COMPLETELY
 import com.xiaocydx.cxrv.layout.runExtensionsPrimitive
 import com.xiaocydx.cxrv.list.Disposable
 

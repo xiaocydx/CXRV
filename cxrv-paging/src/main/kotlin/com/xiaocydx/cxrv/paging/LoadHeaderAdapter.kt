@@ -26,7 +26,10 @@ import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.cxrv.internal.hasDisplayItem
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.ListChangedListener
-import com.xiaocydx.cxrv.paging.LoadHeaderAdapter.Visible.*
+import com.xiaocydx.cxrv.paging.LoadHeaderAdapter.Visible.EMPTY
+import com.xiaocydx.cxrv.paging.LoadHeaderAdapter.Visible.FAILURE
+import com.xiaocydx.cxrv.paging.LoadHeaderAdapter.Visible.LOADING
+import com.xiaocydx.cxrv.paging.LoadHeaderAdapter.Visible.NONE
 
 /**
  * 加载头部适配器

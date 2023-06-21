@@ -36,6 +36,7 @@ import com.xiaocydx.cxrv.list.isHeaderOrFooter
  * @author xcc
  * @date 2021/9/29
  */
+@Suppress("KotlinConstantConditions")
 internal object SpanDividerStrategy : DividerStrategy {
 
     override fun getItemOffsets(

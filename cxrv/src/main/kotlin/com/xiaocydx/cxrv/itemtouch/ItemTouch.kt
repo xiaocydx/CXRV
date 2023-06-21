@@ -20,7 +20,11 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.list.Disposable
+import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.moveItem
+import com.xiaocydx.cxrv.list.removeItemAt
+import com.xiaocydx.cxrv.list.repeatOnAttach
 
 /**
  * 设置item触摸回调

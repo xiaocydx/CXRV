@@ -76,7 +76,7 @@ inline fun <T : Any, R : Any> Flow<PagingEvent<T>>.dataMap(
             PagingEvent.LoadDataSuccess(transform(loadType, data), loadType, loadStates)
         }
         is PagingEvent.ListStateUpdate -> {
-            throw UnsupportedOperationException("不支持对PagingEvent.ListStateUpdate的转换")
+            throw UnsupportedOperationException("不支持转换PagingEvent.ListStateUpdate")
         }
     }
 }
@@ -86,7 +86,5 @@ inline fun <T : Any, R : Any> Flow<PagingEvent<T>>.dataMap(
  */
 @PublishedApi
 internal fun PagingData<*>.ensureAllowTransform() {
-    require(mediator.asListMediator<Any>() == null) {
-        "flowMap()必须在storeIn()之前调用"
-    }
+    require(mediator.asListMediator<Any>() == null) { "flowMap()必须在storeIn()之前调用" }
 }

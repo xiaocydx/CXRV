@@ -19,7 +19,9 @@ package com.xiaocydx.cxrv.itemselect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.getTag
 import androidx.lifecycle.setTagIfAbsent
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 
 /**
  * 列表单项选择功能的实现类，负责维护状态和更新列表

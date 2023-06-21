@@ -89,7 +89,7 @@ class ListState<T : Any> : ListOwner<T> {
         if (!succeed) return
         version++
         if (dispatch) {
-            listeners?.reverseAccessEach { it(op) }
+            listeners.reverseAccessEach { it(op) }
         }
     }
 

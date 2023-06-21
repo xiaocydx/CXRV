@@ -25,7 +25,7 @@ import com.xiaocydx.cxrv.internal.doOnPreDraw
 
 /**
  * 调用[RecyclerView.scrollToPosition]之后，调用该函数，
- * 减少下一帧[RecyclerView]布局的耗时，适用于联动性交互场景。
+ * 减少下一帧[RecyclerView]布局的耗时，适用于连续绘制场景。
  */
 fun RecyclerView.optimizeNextFrameScroll() {
     val original = getViewCacheExtensionOrNull()
