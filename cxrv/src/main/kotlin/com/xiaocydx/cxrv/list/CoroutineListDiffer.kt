@@ -451,7 +451,7 @@ class CoroutineListDiffer<T : Any>(
         val isRunning: Boolean
             get() = current != null
 
-        suspend fun <T> afterPrevious(block: suspend () -> T): T {
+        suspend inline fun <T> afterPrevious(block: () -> T): T {
             if (current != null) {
                 suspendCancellableCoroutine(::addToLast)
             }
@@ -459,7 +459,6 @@ class CoroutineListDiffer<T : Any>(
             return try {
                 block()
             } finally {
-                // 协程被取消，block抛出CancellationException
                 current = null
                 removeFirst()?.resume(Unit)
             }
