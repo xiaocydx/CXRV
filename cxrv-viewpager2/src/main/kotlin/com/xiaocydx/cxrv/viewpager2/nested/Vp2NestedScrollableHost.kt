@@ -26,7 +26,7 @@ import androidx.viewpager2.widget.ViewPager2
 /**
  * 将此类作为[RecyclerView]等滚动控件的容器，可处理[ViewPager2]嵌套滚动控件的滚动冲突。
  *
- * **注意**：此类不支持处理多指的滚动冲突，实际场景通常不需要处理多指的滚动冲突。
+ * [Vp2NestedScrollableHandler]的注释解释了如何处理滚动冲突。
  *
  * @author xcc
  * @date 2022/7/8

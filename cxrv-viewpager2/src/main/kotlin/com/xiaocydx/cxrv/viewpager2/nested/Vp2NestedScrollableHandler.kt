@@ -20,7 +20,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
-import android.view.ViewParent
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.ORIENTATION_HORIZONTAL
@@ -30,8 +29,12 @@ import kotlin.math.sign
 /**
  * 处理[ViewPager2]嵌套[RecyclerView]等滚动控件的滚动冲突
  *
+ * *注意**：
  * 1. 若此类用于容器方案，则需要传入[host]，例如[Vp2NestedScrollableHost]。
  * 2. 此类不支持处理多指的滚动冲突，实际场景通常不需要处理多指的滚动冲突。
+ *
+ * * 处理相同方向的滚动冲突，当Child无法滚动时，才允许Parent拦截触摸事件。
+ * * 处理不同方向的滚动冲突，Parent拦截触摸事件的条件更严格，不会那么“灵敏”。
  *
  * @author xcc
  * @date 2022/7/8
@@ -39,18 +42,10 @@ import kotlin.math.sign
 class Vp2NestedScrollableHandler constructor() {
     @ViewPager2.Orientation
     private var vp2Orientation = ORIENTATION_HORIZONTAL
-    private var vp2TouchSlop = 0
+    private var childTouchSlop = 0
     private var initialTouchX = 0
     private var initialTouchY = 0
     private var host: ViewGroup? = null
-
-    /**
-     * 是否已处理滚动冲突
-     *
-     * 若[handleInterceptTouchEvent]在[RecyclerView.OnItemTouchListener.onInterceptTouchEvent]下调用，
-     * 则[handleInterceptTouchEvent]在[RecyclerView]开始滚动之后仍然会被调用，
-     * 因此添加[isNestedScrollableHandled]，用于避免冗余的滚动冲突处理。
-     */
     private var isNestedScrollableHandled = false
 
     constructor(host: ViewGroup) : this() {
@@ -68,7 +63,7 @@ class Vp2NestedScrollableHandler constructor() {
         when (e.action) {
             MotionEvent.ACTION_DOWN -> {
                 isNestedScrollableHandled = false
-                if (!ensureVp2Orientation(child) || !ensureVp2TouchSlop(child)) {
+                if (!ensureVp2Orientation(child) || !ensureChildTouchSlop(child)) {
                     isNestedScrollableHandled = true
                     return
                 }
@@ -83,7 +78,7 @@ class Vp2NestedScrollableHandler constructor() {
                 val isVp2Horizontal = vp2Orientation == ORIENTATION_HORIZONTAL
                 val xDiff = if (isVp2Horizontal) dx.absoluteValue else 0
                 val yDiff = if (isVp2Horizontal) 0 else dy.absoluteValue
-                if (xDiff > vp2TouchSlop || yDiff > vp2TouchSlop) {
+                if (xDiff > childTouchSlop || yDiff > childTouchSlop) {
                     val disallowIntercept = if (isVp2Horizontal) {
                         if (child.canScrollHorizontally(dx.toDirection())) {
                             // child能和ViewPager2平行滚动，不允许ViewPager2拦截触摸事件
@@ -107,20 +102,16 @@ class Vp2NestedScrollableHandler constructor() {
     }
 
     private fun ensureVp2Orientation(child: View): Boolean {
-        var parent: View? = child.parent as? View
-        while (parent != null && parent !is ViewPager2) {
-            parent = parent.parent as? View
-        }
-        val viewPager2 = parent as? ViewPager2 ?: return false
+        val viewPager2 = child.findParentViewPager2() ?: return false
         vp2Orientation = viewPager2.orientation
         return true
     }
 
-    private fun ensureVp2TouchSlop(child: View): Boolean {
-        if (vp2TouchSlop <= 0) {
-            vp2TouchSlop = ViewConfiguration.get(child.context).scaledPagingTouchSlop
+    private fun ensureChildTouchSlop(child: View): Boolean {
+        if (childTouchSlop <= 0) {
+            childTouchSlop = ViewConfiguration.get(child.context).scaledTouchSlop
         }
-        return vp2TouchSlop > 0
+        return childTouchSlop > 0
     }
 
     private fun Int.toDirection() = -this.sign
@@ -128,8 +119,16 @@ class Vp2NestedScrollableHandler constructor() {
     private fun Float.toRoundPx() = (this + 0.5f).toInt()
 
     private fun View.requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-        var parent: ViewParent? = parent
-        if (parent === host) parent = host?.parent
-        parent?.requestDisallowInterceptTouchEvent(disallowIntercept)
+        val vp2Rv = findParentViewPager2()?.getChildAt(0) as? RecyclerView
+        vp2Rv?.requestDisallowInterceptTouchEvent(disallowIntercept)
+    }
+
+    private fun View.findParentViewPager2(): ViewPager2? {
+        var parent: View? = parent as? View
+        if (parent is ViewPager2) parent = parent.parent as? View
+        while (parent != null && parent !is ViewPager2) {
+            parent = parent.parent as? View
+        }
+        return parent as? ViewPager2
     }
 }

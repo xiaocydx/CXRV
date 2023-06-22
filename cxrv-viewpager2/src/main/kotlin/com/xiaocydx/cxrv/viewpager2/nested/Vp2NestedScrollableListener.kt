@@ -23,6 +23,8 @@ import com.xiaocydx.cxrv.viewpager2.R
 
 /**
  * 是否处理[ViewPager2]嵌套[RecyclerView]的滚动冲突
+ *
+ * [Vp2NestedScrollableHandler]的注释解释了如何处理滚动冲突。
  */
 var RecyclerView.isVp2NestedScrollable: Boolean
     get() = getTag(R.id.tag_vp2_nested_scrollable) != null
@@ -38,6 +40,20 @@ var RecyclerView.isVp2NestedScrollable: Boolean
             removeOnItemTouchListener(listener)
         }
     }
+
+/**
+ * 是否处理[ViewPager2]嵌套[ViewPager2]的滚动冲突
+ *
+ * [Vp2NestedScrollableHandler]的注释解释了如何处理滚动冲突。
+ */
+var ViewPager2.isVp2NestedScrollable: Boolean
+    get() = recyclerView.isVp2NestedScrollable
+    set(value) {
+        recyclerView.isVp2NestedScrollable = value
+    }
+
+private val ViewPager2.recyclerView: RecyclerView
+    get() = getChildAt(0) as RecyclerView
 
 private class Vp2NestedScrollableListener : RecyclerView.OnItemTouchListener {
     private val handler = Vp2NestedScrollableHandler()
