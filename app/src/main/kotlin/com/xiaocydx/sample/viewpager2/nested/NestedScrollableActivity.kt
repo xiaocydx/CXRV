@@ -14,9 +14,9 @@ import com.xiaocydx.sample.databinding.ActivityNestedScrollableBinding
  * [Vp2NestedScrollableHandler]处理[ViewPager2]嵌套[RecyclerView]等滚动控件的滚动冲突，
  * `RecyclerView.isVp2NestedScrollable = true`能便捷的使用[Vp2NestedScrollableHandler]，
  * 示例代码通过设置`RecyclerView.isVp2NestedScrollable = true`，处理以下场景的滚动冲突：
- * 1. [OuterHeader]，水平方向ViewPager（Parent）和水平方向ViewPager（Child）。
- * 2. [OuterHolder]，水平方向ViewPager（Parent）和水平方向RecyclerView（Child）。
- * 3. [NestedPageAdapter]，水平方向ViewPager（Parent）和垂直方向RecyclerView（Child）。
+ * 1. [OuterHeader]，水平方向ViewPager2（Parent）和水平方向ViewPager2（Child）。
+ * 2. [OuterHolder]，水平方向ViewPager2（Parent）和水平方向RecyclerView（Child）。
+ * 3. [NestedPageAdapter]，水平方向ViewPager2（Parent）和垂直方向RecyclerView（Child）。
  *
  * * 处理相同方向的滚动冲突，当Child无法滚动时，才允许Parent拦截触摸事件。
  * * 处理不同方向的滚动冲突，Parent拦截触摸事件的条件更严格，不会那么“灵敏”。

@@ -19,7 +19,7 @@ class NestedPageAdapter : RecyclerView.Adapter<ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = RecyclerView(parent.context).apply {
-            // 水平方向ViewPager（Parent）和垂直方向RecyclerView（Child）
+            // 水平方向ViewPager2（Parent）和垂直方向RecyclerView（Child）
             isVp2NestedScrollable = true
             adapter = OuterListAdapter(15)
                 .withHeader(OuterHeader(parent.context))

@@ -16,7 +16,7 @@ import com.xiaocydx.sample.withLayoutParams
 
 @Suppress("FunctionName")
 fun OuterHeader(context: Context) = ViewPager2(context).apply {
-    // 水平方向ViewPager（Parent）和水平方向ViewPager（Child）
+    // 水平方向ViewPager2（Parent）和水平方向ViewPager2（Child）
     isVp2NestedScrollable = true
     adapter = HeaderListAdapter()
     withLayoutParams(matchParent, 200.dp)

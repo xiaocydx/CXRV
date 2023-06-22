@@ -68,7 +68,7 @@ class OuterHolder(
     private val adapter = InnerListAdapter()
 
     init {
-        // 水平方向ViewPager（Parent）和水平方向RecyclerView（Child）
+        // 水平方向ViewPager2（Parent）和水平方向RecyclerView（Child）
         binding.rvInner
             .fixedSize()
             .adapter(adapter)
