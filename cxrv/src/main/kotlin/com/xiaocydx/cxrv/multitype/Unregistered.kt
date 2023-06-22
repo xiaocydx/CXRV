@@ -28,13 +28,13 @@ private object Unregistered : MutableMultiType<Any>() {
     override val size: Int
         get() = error()
 
-    override fun keyAt(viewType: Int): Type<out Any> = error()
+    override fun keyAt(viewType: Int) = error()
 
-    override fun valueAt(index: Int): Type<out Any> = error()
+    override fun valueAt(index: Int) = error()
 
-    override fun itemAt(item: Any): Type<out Any> = error()
+    override fun itemAt(item: Any) = error()
 
-    override fun register(type: Type<out Any>): Nothing = error()
+    override fun register(type: Type<out Any>) = error()
 
     private fun error(): Nothing {
         throw IllegalStateException("未完成多类型注册")

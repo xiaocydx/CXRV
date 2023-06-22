@@ -26,38 +26,25 @@ import com.xiaocydx.cxrv.list.ListAdapter
  */
 @PublishedApi
 internal class MultiTypeScopeImpl<T : Any> : MultiTypeScope<T>() {
-    private var _multiType: MutableMultiType<T>? = MutableMultiTypeImpl()
-    private var _listAdapter: ListAdapter<T, *>? = MultiTypeAdapter()
-    private val multiType: MutableMultiType<T>
-        get() = checkNotNull(_multiType) { "已完成多类型注册" }
+    private val multiType = MutableMultiTypeImpl<T>()
+    private val multiTypeAdapter = MultiTypeAdapter<T>()
     override val listAdapter: ListAdapter<T, *>
-        get() = checkNotNull(_listAdapter) { "已完成多类型注册" }
+        get() = multiTypeAdapter
 
     override val size: Int
         get() = multiType.size
 
-    override fun keyAt(viewType: Int): Type<out T>? {
-        return multiType.keyAt(viewType)
-    }
+    override fun keyAt(viewType: Int) = multiType.keyAt(viewType)
 
-    override fun valueAt(index: Int): Type<out T> {
-        return multiType.valueAt(index)
-    }
+    override fun valueAt(index: Int) = multiType.valueAt(index)
 
-    override fun itemAt(item: T): Type<out T>? {
-        return multiType.itemAt(item)
-    }
+    override fun itemAt(item: T) = multiType.itemAt(item)
 
-    override fun register(type: Type<out T>) {
-        multiType.register(type)
-    }
+    override fun register(type: Type<out T>) = multiType.register(type)
 
     fun complete(): ListAdapter<T, *> {
-        (multiType as? MutableMultiTypeImpl)?.complete()
-        (listAdapter as? MultiTypeAdapter)?.setMultiType(multiType)
-        val adapter = listAdapter
-        _listAdapter = null
-        _multiType = null
-        return adapter
+        multiType.complete()
+        multiTypeAdapter.setMultiType(multiType)
+        return multiTypeAdapter
     }
 }
