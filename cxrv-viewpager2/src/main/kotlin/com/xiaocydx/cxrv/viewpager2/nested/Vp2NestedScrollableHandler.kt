@@ -118,6 +118,10 @@ class Vp2NestedScrollableHandler constructor() {
 
     private fun Float.toRoundPx() = (this + 0.5f).toInt()
 
+    /**
+     * 从[ViewPager2]开始，向上递归不允许拦截，不处理当前View到[ViewPager2]之间的滚动冲突，
+     * 这能确保内部滚动正常，例如[ViewPager2]嵌套[RecyclerView]再嵌套[RecyclerView]的场景。
+     */
     private fun View.requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
         val vp2Rv = findParentViewPager2()?.getChildAt(0) as? RecyclerView
         vp2Rv?.requestDisallowInterceptTouchEvent(disallowIntercept)
@@ -125,6 +129,7 @@ class Vp2NestedScrollableHandler constructor() {
 
     private fun View.findParentViewPager2(): ViewPager2? {
         var parent: View? = parent as? View
+        // parent是ViewPager2，表示当前View是ViewPager2.mRecyclerView
         if (parent is ViewPager2) parent = parent.parent as? View
         while (parent != null && parent !is ViewPager2) {
             parent = parent.parent as? View
