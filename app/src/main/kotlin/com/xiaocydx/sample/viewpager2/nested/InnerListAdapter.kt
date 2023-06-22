@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.nested
+package com.xiaocydx.sample.viewpager2.nested
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -9,14 +9,14 @@ import com.xiaocydx.sample.databinding.ItemNestedInnerBinding
  * @author xcc
  * @date 2022/4/6
  */
-class InnerAdapter : RecyclerView.Adapter<InnerHolder>() {
-    private var data = emptyList<InnerItem>()
+class InnerListAdapter : RecyclerView.Adapter<InnerHolder>() {
+    private var list = emptyList<InnerItem>()
 
-    fun updateData(data: List<InnerItem>) {
+    fun submitList(newList: List<InnerItem>) {
         val itemCount = itemCount
-        this.data = data
+        list = newList
         notifyItemRangeRemoved(0, itemCount)
-        notifyItemRangeInserted(0, data.size)
+        notifyItemRangeInserted(0, newList.size)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): InnerHolder {
@@ -26,10 +26,10 @@ class InnerAdapter : RecyclerView.Adapter<InnerHolder>() {
     }
 
     override fun onBindViewHolder(holder: InnerHolder, position: Int) {
-        holder.binding.root.text = data[position].title
+        holder.binding.root.text = list[position].title
     }
 
-    override fun getItemCount(): Int = data.size
+    override fun getItemCount(): Int = list.size
 }
 
 class InnerHolder(val binding: ItemNestedInnerBinding) : RecyclerView.ViewHolder(binding.root)

@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.nested
+package com.xiaocydx.sample.viewpager2.nested
 
 /**
  * @author xcc

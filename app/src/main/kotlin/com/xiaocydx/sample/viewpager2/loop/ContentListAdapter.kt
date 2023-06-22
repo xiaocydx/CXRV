@@ -25,7 +25,7 @@ class ContentListAdapter : ListAdapter<ContentItem, ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val textView = AppCompatTextView(parent.context).apply {
             gravity = Gravity.CENTER
-            setBackgroundColor(0xFFBFD5CC.toInt())
+            setBackgroundColor(0xFFBFD3FF.toInt())
             setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15f)
             withLayoutParams(matchParent, matchParent)
         }

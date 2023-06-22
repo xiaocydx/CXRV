@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.nested
+package com.xiaocydx.sample.viewpager2.nested
 
 import android.os.Parcelable
 import android.view.ViewGroup
@@ -10,6 +10,8 @@ import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
+import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
 import com.xiaocydx.sample.databinding.ItemNestedOuterBinding
 import com.xiaocydx.sample.dp
 
@@ -17,9 +19,23 @@ import com.xiaocydx.sample.dp
  * @author xcc
  * @date 2022/4/6
  */
-class OuterAdapter : ListAdapter<OuterItem, OuterHolder>() {
+class OuterListAdapter(size: Int) : ListAdapter<OuterItem, OuterHolder>() {
     private val sharedPool = RecyclerView.RecycledViewPool()
     private val savedStates = mutableMapOf<String, Parcelable>()
+
+    init {
+        val items = (1..size).map {
+            val finalSize = if (it % 2 == 0) size / 2 else size
+            OuterItem(
+                id = "Outer-$it",
+                title = "List-$it",
+                data = (1..finalSize).map { value ->
+                    InnerItem(id = "Inner-$value", title = "$it-${value}")
+                }
+            )
+        }
+        submitList(items)
+    }
 
     override fun areItemsTheSame(oldItem: OuterItem, newItem: OuterItem): Boolean {
         return oldItem.id == newItem.id
@@ -49,9 +65,10 @@ class OuterHolder(
     sharedPool: RecyclerView.RecycledViewPool,
     private val binding: ItemNestedOuterBinding
 ) : RecyclerView.ViewHolder(binding.root) {
-    private val adapter = InnerAdapter()
+    private val adapter = InnerListAdapter()
 
     init {
+        // 水平方向ViewPager（Parent）和水平方向RecyclerView（Child）
         binding.rvInner
             .fixedSize()
             .adapter(adapter)
@@ -61,12 +78,13 @@ class OuterHolder(
             }
             .divider(width = 8.dp) { edge(Edge.horizontal()) }
             .apply { itemAnimator = null }
+            .apply { isVp2NestedScrollable = true }
             .setRecycledViewPool(sharedPool)
     }
 
     fun onBindView(item: OuterItem) {
         binding.tvTitle.text = item.title
-        adapter.updateData(item.data)
+        adapter.submitList(item.data)
     }
 
     fun onSaveState(): Parcelable? {
