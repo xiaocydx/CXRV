@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.viewpager2
+package com.xiaocydx.sample.viewpager2.shared
 
 import android.util.Log
 import android.view.ViewGroup

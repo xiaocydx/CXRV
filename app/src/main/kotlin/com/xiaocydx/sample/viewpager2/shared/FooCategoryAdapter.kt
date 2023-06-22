@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.viewpager2
+package com.xiaocydx.sample.viewpager2.shared
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity

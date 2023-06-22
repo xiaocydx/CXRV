@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.viewpager2.animatable
+package com.xiaocydx.sample.viewpager2.shared
 
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable

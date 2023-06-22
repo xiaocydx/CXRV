@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.viewpager2
+package com.xiaocydx.sample.viewpager2.shared
 
 import android.content.Context
 import android.graphics.Outline

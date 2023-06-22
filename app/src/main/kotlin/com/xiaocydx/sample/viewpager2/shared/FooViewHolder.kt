@@ -1,6 +1,7 @@
-package com.xiaocydx.sample.viewpager2
+package com.xiaocydx.sample.viewpager2.shared
 
 import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.sample.viewpager2.shared.FooItemView
 
 /**
  * @author xcc

@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.viewpager2
+package com.xiaocydx.sample.viewpager2.shared
 
 import android.util.Log
 import android.view.ViewGroup
@@ -11,7 +11,7 @@ import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.sample.*
 import com.xiaocydx.sample.foo.Foo
-import com.xiaocydx.sample.viewpager2.animatable.intoIsolate
+import com.xiaocydx.sample.viewpager2.shared.intoIsolate
 
 /**
  * 修复[FooListAdapterError]列举的问题

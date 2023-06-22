@@ -51,7 +51,7 @@
             android:name=".viewpager2.nested.NestedScrollableActivity"
             android:exported="false" />
         <activity
-            android:name=".viewpager2.ViewPager2Activity"
+            android:name=".viewpager2.shared.SharedPoolActivity"
             android:exported="false" />
         <activity
             android:name=".viewpager2.loop.LoopPagerActivity"
