@@ -59,6 +59,7 @@ class LoopPagerController(
     private var content: LoopPagerContent? = null
     private var scroller: LoopPagerScroller? = null
     private var observer: NotEmptyDataObserver? = null
+    private var listener: LoopPagerScrollableListener? = null
     private var callbacks: MutableMap<OnPageChangeCallback, CallbackWrapper>? = null
 
     /**
@@ -81,6 +82,24 @@ class LoopPagerController(
      * 支持循环的`adapter.itemCount`至少数量，该属性不会小于[DEFAULT_SUPPORT_LOOP_COUNT]
      */
     val supportLoopCount = supportLoopCount.coerceAtLeast(DEFAULT_SUPPORT_LOOP_COUNT)
+
+    /**
+     * 是否处理[ViewPager2]嵌套[ViewPager2]（LoopPager）的滚动冲突
+     *
+     * 1. 处理相同方向的滚动冲突，Child需要循环滚动，不允许Parent拦截触摸事件。
+     * 2. 处理不同方向的滚动冲突，Parent拦截触摸事件的条件更严格，不会那么“灵敏”。
+     */
+    var isVp2NestedScrollable: Boolean
+        get() = listener != null
+        set(value) {
+            if (value && listener == null) {
+                listener = LoopPagerScrollableListener()
+                viewPager2.recyclerView.addOnItemTouchListener(listener!!)
+            } else if (!value && listener != null) {
+                viewPager2.recyclerView.removeOnItemTouchListener(listener!!)
+                listener = null
+            }
+        }
 
     /**
      * 对[ViewPager2]设置[adapter]的循环页面适配器

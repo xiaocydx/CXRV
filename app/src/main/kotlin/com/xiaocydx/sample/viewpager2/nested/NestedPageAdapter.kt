@@ -21,8 +21,8 @@ class NestedPageAdapter : RecyclerView.Adapter<ViewHolder>() {
         val view = RecyclerView(parent.context).apply {
             // 水平方向ViewPager2（Parent）和垂直方向RecyclerView（Child）
             isVp2NestedScrollable = true
-            adapter = OuterListAdapter(15)
-                .withHeader(OuterHeader(parent.context))
+            val header = createOuterHeader(parent, viewType)
+            adapter = OuterListAdapter(15).withHeader(header)
             overScrollNever()
             linear().fixedSize()
             withLayoutParams(matchParent, matchParent)
@@ -30,7 +30,22 @@ class NestedPageAdapter : RecyclerView.Adapter<ViewHolder>() {
         return object : ViewHolder(view) {}
     }
 
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) = Unit
+
     override fun getItemCount(): Int = 3
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) = Unit
+    override fun getItemViewType(position: Int): Int {
+        return if (position % 2 == 0) NORMAL_HEADER else LOOP_HEADER
+    }
+
+    private fun createOuterHeader(parent: ViewGroup, viewType: Int) = when (viewType) {
+        NORMAL_HEADER -> OuterHeader(parent.context)
+        LOOP_HEADER -> LoopOuterHeader(parent.context)
+        else -> throw IllegalArgumentException()
+    }
+
+    private companion object {
+        const val NORMAL_HEADER = 0
+        const val LOOP_HEADER = 1
+    }
 }
