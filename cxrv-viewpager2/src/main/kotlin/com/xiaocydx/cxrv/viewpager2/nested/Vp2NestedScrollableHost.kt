@@ -34,7 +34,7 @@ import androidx.viewpager2.widget.ViewPager2
 class Vp2NestedScrollableHost @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs) {
-    private val handler = Vp2NestedScrollableHandler(host = this)
+    private val handler = Vp2NestedScrollableHandler()
 
     override fun onInterceptTouchEvent(e: MotionEvent): Boolean {
         require(childCount <= 1) { "Vp2NestedScrollableHost只能有一个子View" }

@@ -19,7 +19,6 @@ package com.xiaocydx.cxrv.viewpager2.nested
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.ORIENTATION_HORIZONTAL
@@ -30,7 +29,7 @@ import kotlin.math.sign
  * 处理[ViewPager2]嵌套[RecyclerView]等滚动控件的滚动冲突
  *
  * *注意**：
- * 1. 若此类用于容器方案，则需要传入[host]，例如[Vp2NestedScrollableHost]。
+ * 1. 此类可用于实现容器方案，例如[Vp2NestedScrollableHost]。
  * 2. 此类不支持处理多指的滚动冲突，实际场景通常不需要处理多指的滚动冲突。
  *
  * * 处理相同方向的滚动冲突，当Child无法滚动时，才允许Parent拦截触摸事件。
@@ -39,18 +38,13 @@ import kotlin.math.sign
  * @author xcc
  * @date 2022/7/8
  */
-class Vp2NestedScrollableHandler constructor() {
+class Vp2NestedScrollableHandler {
     @ViewPager2.Orientation
     private var vp2Orientation = ORIENTATION_HORIZONTAL
     private var childTouchSlop = 0
     private var initialTouchX = 0
     private var initialTouchY = 0
-    private var host: ViewGroup? = null
     private var isNestedScrollableHandled = false
-
-    constructor(host: ViewGroup) : this() {
-        this.host = host
-    }
 
     /**
      * [ViewPager2]的`touchSlop`是[ViewConfiguration.getScaledPagingTouchSlop]，
