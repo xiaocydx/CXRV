@@ -50,7 +50,7 @@ class Vp2NestedScrollableHandler {
      * [ViewPager2]的`touchSlop`是[ViewConfiguration.getScaledPagingTouchSlop]，
      * 该函数的实现逻辑是假设[ViewPager2]的`touchSlop`大于等于[child]的`touchSlop`，
      * 例如[RecyclerView]的默认`touchSlop`是[ViewConfiguration.getScaledTouchSlop]，
-     * `pagingTouchSlop = 2 * scaledTouchSlop`。
+     * `scaledPagingTouchSlop = 2 * scaledTouchSlop`。
      */
     fun handleInterceptTouchEvent(child: View, e: MotionEvent) {
         if (isNestedScrollableHandled && e.action != MotionEvent.ACTION_DOWN) return
