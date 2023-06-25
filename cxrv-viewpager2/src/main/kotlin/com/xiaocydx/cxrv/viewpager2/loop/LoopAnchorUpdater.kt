@@ -243,7 +243,8 @@ internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
                     "layoutPosition = $layoutPosition," +
                     "offset = $offset," +
                     "firstLayoutPosition = $firstLayoutPosition," +
-                    "lastLayoutPosition = $lastLayoutPosition")
+                    "lastLayoutPosition = $lastLayoutPosition," +
+                    "holder = $this")
         }
         offsetPosition(offset, false)
     }
