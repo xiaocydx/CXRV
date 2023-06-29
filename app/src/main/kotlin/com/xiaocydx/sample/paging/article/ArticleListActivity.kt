@@ -55,13 +55,12 @@ class ArticleListActivity : AppCompatActivity() {
             }
         }
 
-        rvArticle = RecyclerView(this).apply {
-            id = viewModel.rvId
-            overScrollNever()
-            withLayoutParams(matchParent, matchParent)
-            divider(10.dp, 10.dp) { edge(Edge.all()) }
-            linear().fixedSize().adapter(listAdapter.withPaging())
-        }
+        rvArticle = RecyclerView(this)
+            .apply { id = viewModel.rvId }
+            .layoutParams(matchParent, matchParent)
+            .overScrollNever().linear().fixedSize()
+            .divider(10.dp, 10.dp) { edge(Edge.all()) }
+            .adapter(listAdapter.withPaging())
 
         setContentView(rvArticle.withSwipeRefresh(listAdapter))
     }

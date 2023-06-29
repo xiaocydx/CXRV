@@ -10,7 +10,13 @@ import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
+import com.xiaocydx.cxrv.list.adapter
+import com.xiaocydx.cxrv.list.doOnListChanged
+import com.xiaocydx.cxrv.list.linear
+import com.xiaocydx.cxrv.list.listCollector
+import com.xiaocydx.cxrv.list.onEach
+import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.sample.databinding.ActivityLoopPagerBinding
@@ -70,7 +76,8 @@ class LoopPagerActivity : AppCompatActivity() {
                 uniqueId = LoopPagerAction::ordinal,
                 inflate = ItemButtonBinding::inflate
             ) {
-                initLoopPagerAction()
+                submitList(LoopPagerAction.values().toList())
+                doOnSimpleItemClick(::performLoopPagerAction)
                 onBindView { root.text = it.text }
             })
     }
@@ -86,40 +93,37 @@ class LoopPagerActivity : AppCompatActivity() {
             .launchInLifecycleScope()
     }
 
-    private fun ListAdapter<LoopPagerAction, *>.initLoopPagerAction() {
+    private fun performLoopPagerAction(action: LoopPagerAction) {
         val position = 0
         val timeMillis = 1000L
-        doOnItemClick { _, item ->
-            when (item) {
-                LoopPagerAction.REFRESH -> {
-                    viewModel.refresh(timeMillis)
-                    showToast("${timeMillis / 1000}s后刷新")
-                }
-                LoopPagerAction.APPEND -> {
-                    viewModel.append(timeMillis)
-                    showToast("${timeMillis / 1000}s后添加")
-                }
-                LoopPagerAction.SCROLL -> {
-                    controller.scrollToPosition(position)
-                    showToast("非平滑滚动至bindingAdapterPosition = $position")
-                }
-                LoopPagerAction.SMOOTH_SCROLL -> {
-                    controller.smoothScrollToPosition(position, LookupDirection.START)
-                    showToast("平滑滚动至bindingAdapterPosition = $position")
-                }
-                LoopPagerAction.LAUNCH_BANNER -> {
-                    bannerJob?.cancel()
-                    bannerJob = controller.launchBanner(adapter, lifecycle, durationMs = 500)
-                    showToast("启动Banner轮播交互")
-                }
-                LoopPagerAction.CANCEL_BANNER -> {
-                    bannerJob?.cancel()
-                    bannerJob = null
-                    showToast("取消Banner轮播交互")
-                }
+        when (action) {
+            LoopPagerAction.REFRESH -> {
+                viewModel.refresh(timeMillis)
+                showToast("${timeMillis / 1000}s后刷新")
+            }
+            LoopPagerAction.APPEND -> {
+                viewModel.append(timeMillis)
+                showToast("${timeMillis / 1000}s后添加")
+            }
+            LoopPagerAction.SCROLL -> {
+                controller.scrollToPosition(position)
+                showToast("非平滑滚动至bindingAdapterPosition = $position")
+            }
+            LoopPagerAction.SMOOTH_SCROLL -> {
+                controller.smoothScrollToPosition(position, LookupDirection.START)
+                showToast("平滑滚动至bindingAdapterPosition = $position")
+            }
+            LoopPagerAction.LAUNCH_BANNER -> {
+                bannerJob?.cancel()
+                bannerJob = controller.launchBanner(adapter, lifecycle, durationMs = 500)
+                showToast("启动Banner轮播交互")
+            }
+            LoopPagerAction.CANCEL_BANNER -> {
+                bannerJob?.cancel()
+                bannerJob = null
+                showToast("取消Banner轮播交互")
             }
         }
-        submitList(LoopPagerAction.values().toList())
     }
 
     private enum class LoopPagerAction(val text: String) {

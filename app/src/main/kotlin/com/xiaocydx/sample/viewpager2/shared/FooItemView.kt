@@ -16,8 +16,7 @@ import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.view.marginLeft
 import androidx.core.view.marginTop
 import com.xiaocydx.sample.CustomLayout
-import com.xiaocydx.sample.withLayoutParams
-import com.xiaocydx.sample.wrapContent
+import com.xiaocydx.sample.layoutParams
 
 /**
  * @author xcc
@@ -49,7 +48,7 @@ class FooItemView(
     }
 
     init {
-        withLayoutParams(matchParent, wrapContent)
+        layoutParams(matchParent, wrapContent)
     }
 
     override fun onMeasureChildren(widthMeasureSpec: Int, heightMeasureSpec: Int) {

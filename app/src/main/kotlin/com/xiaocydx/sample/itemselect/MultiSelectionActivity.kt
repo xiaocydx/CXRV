@@ -6,19 +6,22 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.BindingAdapter
-import com.xiaocydx.cxrv.binding.Inflate
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.itemselect.hasPayload
 import com.xiaocydx.cxrv.itemselect.multiSelection
 import com.xiaocydx.cxrv.itemselect.toggleSelect
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.list.adapter
+import com.xiaocydx.cxrv.list.fixedSize
+import com.xiaocydx.cxrv.list.getItem
+import com.xiaocydx.cxrv.list.linear
+import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.databinding.ItemSelectionBinding
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
-import com.xiaocydx.sample.withLayoutParams
 
 /**
  * [multiSelection]示例代码
@@ -37,70 +40,32 @@ class MultiSelectionActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
-    private fun contentView() = RecyclerView(this).apply {
-        id = viewModel.rvId
-        linear().fixedSize()
-        divider(height = 0.5f.dp) { color(0xFF7E7AAA.toInt()) }
-        adapter(MultiSelectionBindingAdapter())
-        // adapter(MultiSelectionAdapter())
-        overScrollNever()
-        withLayoutParams(matchParent, matchParent)
-    }
-
     /**
      * [BindingAdapter]的构建函数，适用于简单列表场景
      */
-    @Suppress("FunctionName")
-    private fun MultiSelectionBindingAdapter(): ListAdapter<*, *> {
-        return bindingAdapter(
-            uniqueId = { item: String -> item },
+    private fun contentView() = RecyclerView(this)
+        .apply { id = viewModel.rvId }
+        .layoutParams(matchParent, matchParent)
+        .overScrollNever().linear().fixedSize()
+        .divider(height = 0.5f.dp) { color(0xFF7E7AAA.toInt()) }
+        .adapter(bindingAdapter(
+            uniqueId = SelectionItem::num,
             inflate = ItemSelectionBinding::inflate
         ) {
             val selection = multiSelection(
-                itemKey = { item: String -> item },
+                itemKey = SelectionItem::num,
                 itemAccess = { getItem(it) }
             ).initSelected(viewModel)
 
+            submitList((1..20).map(::SelectionItem))
             doOnItemClick { holder, item ->
                 // selection.select(holder)
                 selection.toggleSelect(holder)
             }
-            submitList((1..20).map { "Selection-$it" })
-
             onBindView { item ->
                 viewSelect.isVisible = selection.isSelected(holder)
                 if (selection.hasPayload(holder)) return@onBindView
-                tvSelection.text = item
+                tvSelection.text = item.text
             }
-        }
-    }
-
-    private inner class MultiSelectionAdapter : BindingAdapter<String, ItemSelectionBinding>() {
-        private val selection = multiSelection(
-            itemKey = { item: String -> item },
-            itemAccess = { getItem(it) }
-        ).initSelected(viewModel)
-
-        init {
-            doOnItemClick { holder, item ->
-                // selection.select(holder)
-                selection.toggleSelect(holder)
-            }
-            submitList((1..20).map { "Selection-$it" })
-        }
-
-        override fun inflate(): Inflate<ItemSelectionBinding> {
-            return ItemSelectionBinding::inflate
-        }
-
-        override fun areItemsTheSame(oldItem: String, newItem: String): Boolean {
-            return oldItem == newItem
-        }
-
-        override fun ItemSelectionBinding.onBindView(item: String) {
-            viewSelect.isVisible = selection.isSelected(holder)
-            if (selection.hasPayload(holder)) return
-            tvSelection.text = item
-        }
-    }
+        })
 }

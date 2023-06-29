@@ -18,10 +18,24 @@ import com.xiaocydx.cxrv.list.clear
 import com.xiaocydx.cxrv.list.removeItemAt
 import com.xiaocydx.cxrv.list.submitTransform
 import com.xiaocydx.cxrv.paging.pagingCollector
-import com.xiaocydx.sample.*
+import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.sample.foo.FooListAdapter
 import com.xiaocydx.sample.foo.FooListViewModel
-import com.xiaocydx.sample.paging.MenuAction.*
+import com.xiaocydx.sample.layoutParams
+import com.xiaocydx.sample.matchParent
+import com.xiaocydx.sample.overScrollNever
+import com.xiaocydx.sample.paging.MenuAction.ADAPTER_DELETE_ITEM
+import com.xiaocydx.sample.paging.MenuAction.ADAPTER_INSERT_ITEM
+import com.xiaocydx.sample.paging.MenuAction.CLEAR_ALL_ITEM
+import com.xiaocydx.sample.paging.MenuAction.CLEAR_EVEN_ITEM
+import com.xiaocydx.sample.paging.MenuAction.CLEAR_ODD_ITEM
+import com.xiaocydx.sample.paging.MenuAction.DECREASE_SPAN_COUNT
+import com.xiaocydx.sample.paging.MenuAction.INCREASE_SPAN_COUNT
+import com.xiaocydx.sample.paging.MenuAction.LIST_STATE_DELETE_ITEM
+import com.xiaocydx.sample.paging.MenuAction.LIST_STATE_INSERT_ITEM
+import com.xiaocydx.sample.paging.MenuAction.REFRESH
+import com.xiaocydx.sample.paging.MenuAction.REVERSE_LAYOUT
+import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -44,12 +58,11 @@ abstract class PagingFragment : Fragment() {
     ): View = FrameLayout(requireContext()).also {
         fooViewModel = sharedViewModel
             .getListViewModel(key = this.javaClass.simpleName)
-        rvPaging = RecyclerView(requireContext()).apply {
-            id = fooViewModel.rvId
-            overScrollNever()
-            withLayoutParams(matchParent, matchParent)
-            enableGestureNavBarEdgeToEdge()
-        }
+        rvPaging = RecyclerView(requireContext())
+            .apply { id = fooViewModel.rvId }
+            .layoutParams(matchParent, matchParent)
+            .overScrollNever()
+        rvPaging.enableGestureNavBarEdgeToEdge()
         it.addView(rvPaging)
     }
 

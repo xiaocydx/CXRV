@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.commit
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
@@ -16,7 +17,9 @@ import com.xiaocydx.sample.databinding.ActivityPagingBinding
 import com.xiaocydx.sample.databinding.ItemMenuBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
-import com.xiaocydx.sample.paging.MenuAction.*
+import com.xiaocydx.sample.paging.MenuAction.GIRD_LAYOUT
+import com.xiaocydx.sample.paging.MenuAction.LINEAR_LAYOUT
+import com.xiaocydx.sample.paging.MenuAction.STAGGERED_GRID_LAYOUT
 import com.xiaocydx.sample.showToast
 
 /**
@@ -91,10 +94,9 @@ class PagingActivity : AppCompatActivity() {
     }
 
     private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager
-            .beginTransaction()
-            .replace(R.id.flContainer, fragment, fragmentTag)
-            .commit()
+        supportFragmentManager.commit {
+            replace(R.id.flContainer, fragment, fragmentTag)
+        }
         setActionBarTitle(fragment)
     }
 

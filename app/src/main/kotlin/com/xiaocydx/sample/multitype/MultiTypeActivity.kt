@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.commit
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.multitype.onetomany.OneToManyFragment
 import com.xiaocydx.sample.multitype.onetoone.OneToOneFragment
@@ -31,10 +32,9 @@ class MultiTypeActivity : AppCompatActivity() {
     }
 
     private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager
-            .beginTransaction()
-            .replace(R.id.flContainer, fragment)
-            .commit()
+        supportFragmentManager.commit {
+            replace(R.id.flContainer, fragment)
+        }
         supportActionBar?.title = fragment.javaClass.simpleName
     }
 }

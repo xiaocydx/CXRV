@@ -14,6 +14,7 @@ import com.xiaocydx.cxrv.itemtouch.itemTouch
 import com.xiaocydx.cxrv.itemtouch.onDragMoveItem
 import com.xiaocydx.cxrv.itemtouch.onSwipeRemoveItem
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.multitype.listAdapter
@@ -24,9 +25,9 @@ import com.xiaocydx.sample.extensions.TextItem
 import com.xiaocydx.sample.extensions.getTextType1Delegate
 import com.xiaocydx.sample.extensions.getTextType2Delegate
 import com.xiaocydx.sample.extensions.initMultiTypeTextItems
+import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
-import com.xiaocydx.sample.withLayoutParams
 
 /**
  * ItemTouch示例代码
@@ -41,18 +42,15 @@ class ItemTouchActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
-    private fun contentView() = RecyclerView(this).apply {
-        adapter = listAdapter<TextItem> {
+    private fun contentView() = RecyclerView(this)
+        .layoutParams(matchParent, matchParent)
+        .overScrollNever().linear().fixedSize()
+        .adapter(listAdapter<TextItem> {
             register(getTextType1Delegate())
             register(getTextType2Delegate())
             listAdapter.initItemTouch()
             listAdapter.initMultiTypeTextItems()
-        }.withHeaderFooter()
-
-        overScrollNever()
-        linear().fixedSize()
-        withLayoutParams(matchParent, matchParent)
-    }
+        }.withHeaderFooter())
 
     /**
      * ItemTouch的配置方式有三种：
@@ -99,7 +97,7 @@ class ItemTouchActivity : AppCompatActivity() {
     }
 
     private fun createView(isHeader: Boolean) = View(this).apply {
-        withLayoutParams(matchParent, 100.dp)
+        layoutParams(matchParent, 100.dp)
         setBackgroundColor(if (isHeader) 0xFF92C3FF.toInt() else 0xFF958CFF.toInt())
     }
 }

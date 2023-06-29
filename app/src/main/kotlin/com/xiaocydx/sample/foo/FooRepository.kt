@@ -1,6 +1,11 @@
 package com.xiaocydx.sample.foo
 
-import com.xiaocydx.cxrv.paging.*
+import com.xiaocydx.cxrv.paging.LoadParams
+import com.xiaocydx.cxrv.paging.LoadResult
+import com.xiaocydx.cxrv.paging.Pager
+import com.xiaocydx.cxrv.paging.PagingConfig
+import com.xiaocydx.cxrv.paging.PagingData
+import com.xiaocydx.cxrv.paging.PagingSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration

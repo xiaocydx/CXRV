@@ -25,7 +25,13 @@ import android.view.View.MeasureSpec.UNSPECIFIED
 import android.view.ViewGroup
 import androidx.annotation.CheckResult
 import androidx.annotation.Px
-import androidx.core.view.*
+import androidx.core.view.isGone
+import androidx.core.view.marginBottom
+import androidx.core.view.marginLeft
+import androidx.core.view.marginRight
+import androidx.core.view.marginTop
+import androidx.core.view.updateMargins
+import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager

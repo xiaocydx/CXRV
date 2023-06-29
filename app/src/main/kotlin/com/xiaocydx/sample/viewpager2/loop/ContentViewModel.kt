@@ -2,7 +2,11 @@ package com.xiaocydx.sample.viewpager2.loop
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.list.ListState
+import com.xiaocydx.cxrv.list.addItems
+import com.xiaocydx.cxrv.list.asFlow
+import com.xiaocydx.cxrv.list.size
+import com.xiaocydx.cxrv.list.submitList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

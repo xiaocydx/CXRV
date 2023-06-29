@@ -23,8 +23,8 @@ import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.sample.databinding.ItemSlideContentBinding
 import com.xiaocydx.sample.databinding.ItemSlideLoadingBinding
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.withLayoutParams
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted.Companion.Lazily
 import kotlinx.coroutines.flow.flow
@@ -56,7 +56,7 @@ abstract class SlideFragment : Fragment() {
         grid(spanCount = 4).fixedSize()
         divider(5.dp, 5.dp) { edge(Edge.all()) }
         adapter(contentAdapter.withHeader(loadingAdapter))
-        withLayoutParams(matchParent, matchParent)
+        layoutParams(matchParent, matchParent)
         recyclerView = this
     }
 }

@@ -7,7 +7,16 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.paging.*
+import com.xiaocydx.cxrv.paging.HandleEventListener
+import com.xiaocydx.cxrv.paging.LoadStates
+import com.xiaocydx.cxrv.paging.LoadStatesListener
+import com.xiaocydx.cxrv.paging.LoadType
+import com.xiaocydx.cxrv.paging.PagingCollector
+import com.xiaocydx.cxrv.paging.PagingEvent
+import com.xiaocydx.cxrv.paging.isComplete
+import com.xiaocydx.cxrv.paging.loadType
+import com.xiaocydx.cxrv.paging.pagingCollector
+import com.xiaocydx.cxrv.paging.refreshToComplete
 import kotlinx.coroutines.delay
 
 /**

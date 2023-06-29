@@ -7,10 +7,17 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.list.adapter
+import com.xiaocydx.cxrv.list.fixedSize
+import com.xiaocydx.cxrv.list.linear
+import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
-import com.xiaocydx.sample.*
+import com.xiaocydx.sample.R
+import com.xiaocydx.sample.layoutParams
+import com.xiaocydx.sample.matchParent
+import com.xiaocydx.sample.overScrollNever
+import com.xiaocydx.sample.showToast
 
 class OneToManyFragment : Fragment() {
 
@@ -18,26 +25,25 @@ class OneToManyFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View = RecyclerView(requireContext()).apply {
-        val textDelegate = OneToManyTextDelegate()
-        val imageDelegate = OneToManyImageDelegate()
-        textDelegate.doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
-        imageDelegate.doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
-
-        linear().fixedSize()
-        adapter(listAdapter<OneToManyMessage> {
-            register(textDelegate) { it.type == "text" }
-            register(imageDelegate) { it.type == "image" }
-            listAdapter.initOneToManyMessages()
+    ): View = RecyclerView(requireContext())
+        .layoutParams(matchParent, matchParent)
+        .overScrollNever().linear().fixedSize()
+        .adapter(listAdapter<OneToManyMessage> {
+            listAdapter.submitList(messageList())
+            register(OneToManyTextDelegate().apply {
+                typeLinker { it.type == "text" }
+                doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
+            })
+            register(OneToManyImageDelegate().apply {
+                typeLinker { it.type == "image" }
+                doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
+            })
         })
-        overScrollNever()
-        withLayoutParams(matchParent, matchParent)
-    }
 
-    private fun ListAdapter<OneToManyMessage, *>.initOneToManyMessages() = apply {
+    private fun messageList(): List<OneToManyMessage> {
         val username = "用户A"
         val avatar = R.mipmap.ic_launcher_round
-        val messages = (1..10).map {
+        return (1..10).map {
             if (it % 2 != 0) {
                 OneToManyMessage(id = it, avatar = avatar,
                     username = username, type = "text", content = "文本消息$it - ${loremText()}")
@@ -46,7 +52,6 @@ class OneToManyFragment : Fragment() {
                     username = username, type = "image", image = R.mipmap.ic_launcher)
             }
         }
-        submitList(messages)
     }
 
     private fun loremText(): String {

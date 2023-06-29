@@ -10,7 +10,6 @@ import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
-import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
@@ -57,21 +56,19 @@ class EnterTransitionActivity : AppCompatActivity() {
                 uniqueId = TransitionAction::ordinal,
                 inflate = ItemButtonBinding::inflate
             ) {
-                initTransitionAction()
+                submitList(TransitionAction.values().toList())
+                doOnSimpleItemClick(::performTransitionAction)
                 onBindView { root.text = it.text }
             })
     }
 
-    private fun ListAdapter<TransitionAction, *>.initTransitionAction() {
-        doOnSimpleItemClick { item ->
-            when (item) {
-                TransitionAction.JANK -> addFragment(JankFragment())
-                TransitionAction.PREPARE -> addFragment(PrepareFragment())
-                TransitionAction.WAIT_END -> addFragment(WaitEndFragment())
-                TransitionAction.NOT_WAIT_END -> addFragment(NotWaitEndFragment())
-            }
+    private fun performTransitionAction(action: TransitionAction) {
+        when (action) {
+            TransitionAction.JANK -> addFragment(JankFragment())
+            TransitionAction.PREPARE -> addFragment(PrepareFragment())
+            TransitionAction.WAIT_END -> addFragment(WaitEndFragment())
+            TransitionAction.NOT_WAIT_END -> addFragment(NotWaitEndFragment())
         }
-        submitList(TransitionAction.values().toList())
     }
 
     private fun addFragment(fragment: SlideFragment) {

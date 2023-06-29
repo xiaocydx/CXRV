@@ -8,8 +8,8 @@ import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.withLayoutParams
 
 /**
  * @author xcc
@@ -27,7 +27,7 @@ class ContentListAdapter : ListAdapter<ContentItem, ViewHolder>() {
             gravity = Gravity.CENTER
             setBackgroundColor(0xFFBFD3FF.toInt())
             setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15f)
-            withLayoutParams(matchParent, matchParent)
+            layoutParams(matchParent, matchParent)
         }
         return object : ViewHolder(textView) {}
     }

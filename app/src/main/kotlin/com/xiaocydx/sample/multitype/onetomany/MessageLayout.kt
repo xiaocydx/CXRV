@@ -12,7 +12,7 @@ import androidx.core.view.marginStart
 import androidx.core.view.marginTop
 import androidx.core.view.setMargins
 import com.xiaocydx.sample.CustomLayout
-import com.xiaocydx.sample.withLayoutParams
+import com.xiaocydx.sample.layoutParams
 import kotlin.math.max
 
 /**
@@ -38,7 +38,7 @@ abstract class MessageLayout @JvmOverloads constructor(
     }
 
     init {
-        withLayoutParams(matchParent, wrapContent) { setMargins(16.dp) }
+        layoutParams(matchParent, wrapContent) { setMargins(16.dp) }
     }
 
     fun setContentView(view: View) {

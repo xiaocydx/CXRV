@@ -7,10 +7,17 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.list.adapter
+import com.xiaocydx.cxrv.list.fixedSize
+import com.xiaocydx.cxrv.list.linear
+import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
-import com.xiaocydx.sample.*
+import com.xiaocydx.sample.R
+import com.xiaocydx.sample.layoutParams
+import com.xiaocydx.sample.matchParent
+import com.xiaocydx.sample.overScrollNever
+import com.xiaocydx.sample.showToast
 
 /**
  * @author xcc
@@ -22,26 +29,23 @@ class OneToOneFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View = RecyclerView(requireContext()).apply {
-        val textDelegate = OneToOneTextDelegate()
-        val imageDelegate = OneToOneImageDelegate()
-        textDelegate.doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
-        imageDelegate.doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
-
-        linear().fixedSize()
-        adapter(listAdapter<OneToOneMessage> {
-            register(textDelegate)
-            register(imageDelegate)
-            listAdapter.initOneToOneMessages()
+    ): View = RecyclerView(requireContext())
+        .layoutParams(matchParent, matchParent)
+        .overScrollNever().linear().fixedSize()
+        .adapter(listAdapter<OneToOneMessage> {
+            listAdapter.submitList(messageList())
+            register(OneToOneTextDelegate().apply {
+                doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
+            })
+            register(OneToOneImageDelegate().apply {
+                doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
+            })
         })
-        overScrollNever()
-        withLayoutParams(matchParent, matchParent)
-    }
 
-    private fun ListAdapter<OneToOneMessage, *>.initOneToOneMessages() = apply {
+    private fun messageList(): List<OneToOneMessage> {
         val username = "用户A"
         val avatar = R.mipmap.ic_launcher_round
-        val messages = (1..10).map {
+        return (1..10).map {
             if (it % 2 != 0) {
                 OneToOneMessage.Text(id = it, avatar = avatar,
                     username = username, content = "文本消息$it - ${loremText()}")
@@ -50,7 +54,6 @@ class OneToOneFragment : Fragment() {
                     username = username, image = R.mipmap.ic_launcher)
             }
         }
-        submitList(messages)
     }
 
     private fun loremText(): String {

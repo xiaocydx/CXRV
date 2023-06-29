@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import com.xiaocydx.sample.foo.FooListViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.*
 
 /**
  * @author xcc
@@ -42,7 +41,7 @@ class FooCategoryViewModel : ViewModel() {
         val newItem = 0
         if (currentItem == newItem) return
         val list = list.toMutableList()
-        Collections.swap(list, newItem, currentItem)
+        list.add(newItem, list.removeAt(currentItem))
         copy(list = list, currentItem = newItem, pendingItem = newItem)
     }
 

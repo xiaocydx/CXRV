@@ -11,9 +11,9 @@ import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.payload.Payload
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
-import com.xiaocydx.sample.withLayoutParams
 
 /**
  * [Payload]更新示例代码
@@ -28,10 +28,11 @@ class PayloadActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
-    private fun contentView() = RecyclerView(this).apply {
-        linear().fixedSize()
-        divider(height = 0.5f.dp) { color(0xFF7E7AAA.toInt()) }
-        adapter(CountAdapter().apply {
+    private fun contentView() = RecyclerView(this)
+        .layoutParams(matchParent, matchParent)
+        .overScrollNever().linear().fixedSize()
+        .divider(height = 0.5f.dp) { color(0xFF7E7AAA.toInt()) }
+        .adapter(CountAdapter().apply {
             doOnItemClick(target = { binding.btnCount1 }) { holder, _ ->
                 holder.setItem { incrementCount1() }
             }
@@ -43,7 +44,4 @@ class PayloadActivity : AppCompatActivity() {
             }
             submitList((1..3).map { CountItem(id = it.toString()) })
         })
-        overScrollNever()
-        withLayoutParams(matchParent, matchParent)
-    }
 }

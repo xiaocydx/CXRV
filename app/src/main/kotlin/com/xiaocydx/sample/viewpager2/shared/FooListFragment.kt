@@ -34,13 +34,13 @@ import com.xiaocydx.sample.doOnTargetState
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.foo.Foo
 import com.xiaocydx.sample.foo.FooListViewModel
+import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.viewLifecycle
-import com.xiaocydx.sample.withLayoutParams
 
 /**
  * @author xcc
@@ -72,13 +72,10 @@ class FooListFragment : Fragment() {
     ): View = RecyclerView(requireContext()).apply {
         fooViewModel = sharedViewModel.getFooViewModel(categoryId)
         id = fooViewModel.rvId
-        linear().fixedSize()
-        divider(10.dp, 10.dp) {
-            edge(Edge.top().horizontal())
-        }
+        layoutParams(matchParent, matchParent)
+        overScrollNever().linear().fixedSize()
+        divider(10.dp, 10.dp) { edge(Edge.top().horizontal()) }
         initFooAdapter()
-        overScrollNever()
-        withLayoutParams(matchParent, matchParent)
         doOnAttachToViewPager2()
     }.withSwipeRefresh(fooAdapter)
 

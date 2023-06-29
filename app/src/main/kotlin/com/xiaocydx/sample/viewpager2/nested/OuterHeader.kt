@@ -12,15 +12,15 @@ import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
 import com.xiaocydx.sample.databinding.ItemNestedInnerBinding
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.withLayoutParams
 
 @Suppress("FunctionName")
 fun OuterHeader(context: Context) = ViewPager2(context).apply {
     // 水平方向ViewPager2（Parent）和水平方向ViewPager2（Child）
     isVp2NestedScrollable = true
     adapter = HeaderListAdapter(false)
-    withLayoutParams(matchParent, 200.dp)
+    layoutParams(matchParent, 200.dp)
     setPageTransformer(MarginPageTransformer(8.dp))
 }.toAdapter()
 
@@ -34,7 +34,7 @@ fun LoopOuterHeader(context: Context) = ViewPager2(context).apply {
     val controller = LoopPagerController(this)
     controller.isVp2NestedScrollable = true
     controller.setAdapter(HeaderListAdapter(true))
-    withLayoutParams(matchParent, 200.dp)
+    layoutParams(matchParent, 200.dp)
     setPageTransformer(MarginPageTransformer(8.dp))
 }.toAdapter()
 
@@ -44,7 +44,7 @@ private class HeaderListAdapter(private val supportLoop: Boolean) : RecyclerView
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HeaderHolder {
         val binding = ItemNestedInnerBinding.inflate(
             LayoutInflater.from(parent.context), parent, false)
-        binding.root.apply { withLayoutParams(matchParent, matchParent) }
+        binding.root.layoutParams(matchParent, matchParent)
         if (supportLoop) binding.root.setBackgroundColor(0xFFFFB4D5.toInt())
         return HeaderHolder(binding)
     }

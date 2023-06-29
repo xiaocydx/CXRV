@@ -1,14 +1,13 @@
 package com.xiaocydx.sample
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
-import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
@@ -27,6 +26,7 @@ import com.xiaocydx.sample.transition.EnterTransitionActivity
 import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity
 import com.xiaocydx.sample.viewpager2.nested.NestedScrollableActivity
 import com.xiaocydx.sample.viewpager2.shared.SharedPoolActivity
+import kotlin.reflect.KClass
 
 /**
  * @author xcc
@@ -39,46 +39,43 @@ class MainActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
-    private fun contentView() = RecyclerView(this).apply {
-        linear()
-        fixedSize()
-        adapter(bindingAdapter(
-            uniqueId = StartItem::text,
+    private fun contentView() = RecyclerView(this)
+        .layoutParams(matchParent, matchParent)
+        .overScrollNever().linear().fixedSize()
+        .adapter(bindingAdapter(
+            uniqueId = StartAction::text,
             inflate = ItemStartBinding::inflate
         ) {
-            submitStartList()
+            submitList(startActionList())
             doOnItemClick(
-                target = { binding.btnStart }
-            ) { _, item -> item.start(context) }
+                target = { binding.btnStart },
+                action = ::performStartAction
+            )
             onBindView { btnStart.text = it.text }
         })
-        overScrollNever()
-        withLayoutParams(matchParent, matchParent)
+
+    private fun startActionList() = listOf(
+        "item点击、长按示例" to ItemClickActivity::class,
+        "item拖动、侧滑示例" to ItemTouchActivity::class,
+        "item单项选择示例" to SingleSelectionActivity::class,
+        "item多项选择示例" to MultiSelectionActivity::class,
+        "item多类型示例" to MultiTypeActivity::class,
+        "Payload更新示例" to PayloadActivity::class,
+        "HeaderFooter示例" to HeaderFooterActivity::class,
+        "分页加载示例（本地测试）" to PagingActivity::class,
+        "分页加载示例（网络请求）" to ArticleListActivity::class,
+        "ViewPager2共享池示例" to SharedPoolActivity::class,
+        "ViewPager2循环页面示例" to LoopPagerActivity::class,
+        "ViewPager2滚动冲突处理示例" to NestedScrollableActivity::class,
+        "Fragment过渡动画卡顿优化示例" to EnterTransitionActivity::class
+    )
+
+    private fun performStartAction(holder: ViewHolder, action: StartAction) {
+        val context = holder.itemView.context
+        context.startActivity(Intent(context, action.clazz.java))
     }
 
-    private fun ListAdapter<StartItem, *>.submitStartList() {
-        submitList(listOf(
-            StartItem<ItemClickActivity>("item点击、长按示例"),
-            StartItem<ItemTouchActivity>("item拖动、侧滑示例"),
-            StartItem<SingleSelectionActivity>("item单项选择示例"),
-            StartItem<MultiSelectionActivity>("item多项选择示例"),
-            StartItem<MultiTypeActivity>("item多类型示例"),
-            StartItem<PayloadActivity>("Payload更新示例"),
-            StartItem<HeaderFooterActivity>("HeaderFooter示例"),
-            StartItem<PagingActivity>("分页加载示例（本地测试）"),
-            StartItem<ArticleListActivity>("分页加载示例（网络请求）"),
-            StartItem<SharedPoolActivity>("ViewPager2共享池示例"),
-            StartItem<LoopPagerActivity>("ViewPager2循环页面示例"),
-            StartItem<NestedScrollableActivity>("ViewPager2滚动冲突处理示例"),
-            StartItem<EnterTransitionActivity>("Fragment过渡动画卡顿优化示例"),
-        ))
-    }
+    private infix fun String.to(clazz: KClass<out Activity>) = StartAction(this, clazz)
 
-    private inline fun <reified T : Activity> StartItem(text: String): StartItem {
-        return StartItem(text, T::class.java)
-    }
-
-    private data class StartItem(val text: String, val clazz: Class<out Activity>) {
-        fun start(context: Context) = context.startActivity(Intent(context, clazz))
-    }
+    private data class StartAction(val text: String, val clazz: KClass<out Activity>)
 }

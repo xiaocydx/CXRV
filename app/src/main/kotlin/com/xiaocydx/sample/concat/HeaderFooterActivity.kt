@@ -4,7 +4,11 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.HeaderFooterRemovedChecker
-import com.xiaocydx.cxrv.concat.*
+import com.xiaocydx.cxrv.concat.ViewAdapter
+import com.xiaocydx.cxrv.concat.addFooter
+import com.xiaocydx.cxrv.concat.addHeader
+import com.xiaocydx.cxrv.concat.removeFooter
+import com.xiaocydx.cxrv.concat.removeHeader
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.linear
@@ -13,9 +17,9 @@ import com.xiaocydx.sample.databinding.ActivityHeaderFooterBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.foo.Foo
 import com.xiaocydx.sample.foo.FooListAdapter
+import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.onClick
-import com.xiaocydx.sample.withLayoutParams
 
 /**
  * HeaderFooter示例代码
@@ -75,7 +79,7 @@ class HeaderFooterActivity : AppCompatActivity() {
     }
 
     private fun createView(isHeader: Boolean) = View(this).apply {
-        withLayoutParams(matchParent, 100.dp)
+        layoutParams(matchParent, 100.dp)
         setBackgroundColor(if (isHeader) 0xFF92C3FF.toInt() else 0xFF958CFF.toInt())
     }
 
