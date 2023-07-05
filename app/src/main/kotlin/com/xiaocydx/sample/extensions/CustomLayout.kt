@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample
+package com.xiaocydx.sample.extensions
 
 import android.content.Context
 import android.util.AttributeSet

@@ -15,7 +15,7 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.view.marginLeft
 import androidx.core.view.marginTop
-import com.xiaocydx.sample.CustomLayout
+import com.xiaocydx.sample.extensions.CustomLayout
 import com.xiaocydx.sample.layoutParams
 
 /**

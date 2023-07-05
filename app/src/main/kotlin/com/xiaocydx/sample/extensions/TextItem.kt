@@ -1,6 +1,5 @@
 package com.xiaocydx.sample.extensions
 
-import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.submitList
@@ -10,24 +9,20 @@ import kotlin.math.max
 
 data class TextItem(val text: String, val type: String)
 
-fun getTextType1Delegate(): BindingDelegate<TextItem, ItemTextType1Binding> {
-    return bindingDelegate(
-        uniqueId = TextItem::text,
-        inflate = ItemTextType1Binding::inflate
-    ) {
-        typeLinker { it.type == "type1" }
-        onBindView { textView.text = it.text }
-    }
+fun getTextType1Delegate() = bindingDelegate(
+    uniqueId = TextItem::text,
+    inflate = ItemTextType1Binding::inflate
+) {
+    typeLinker { it.type == "type1" }
+    onBindView { textView.text = it.text }
 }
 
-fun getTextType2Delegate(): BindingDelegate<TextItem, ItemTextType2Binding> {
-    return bindingDelegate(
-        uniqueId = TextItem::text,
-        inflate = ItemTextType2Binding::inflate
-    ) {
-        typeLinker { it.type == "type2" }
-        onBindView { textView.text = it.text }
-    }
+fun getTextType2Delegate() = bindingDelegate(
+    uniqueId = TextItem::text,
+    inflate = ItemTextType2Binding::inflate
+) {
+    typeLinker { it.type == "type2" }
+    onBindView { textView.text = it.text }
 }
 
 fun ListAdapter<TextItem, *>.initTextItems(
