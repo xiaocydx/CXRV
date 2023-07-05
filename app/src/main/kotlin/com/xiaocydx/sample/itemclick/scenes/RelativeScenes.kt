@@ -36,10 +36,10 @@ class RelativeScenes : ItemClickScenes() {
             true
         }.autoDispose()
 
-        rv.doOnItemClick(listAdapter, target = { binding.targetView }) { holder, position ->
+        rv.doOnItemClick(listAdapter, target = { targetView }) { holder, position ->
             toast("点击", "targetView", position, getItem(position))
         }.autoDispose()
-        rv.doOnLongItemClick(listAdapter, target = { binding.targetView }) { holder, position ->
+        rv.doOnLongItemClick(listAdapter, target = { targetView }) { holder, position ->
             toast("长按", "targetView", position, getItem(position))
             true
         }.autoDispose()

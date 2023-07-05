@@ -41,10 +41,10 @@ class ListAdapterScenes : ItemClickScenes() {
             true
         }
 
-        listAdapter.doOnItemClick(target = { binding.targetView }) { holder, item ->
+        listAdapter.doOnItemClick(target = { targetView }) { holder, item ->
             toast("点击", "targetView", holder, item)
         }
-        listAdapter.doOnLongItemClick(target = { binding.targetView }) { holder, item ->
+        listAdapter.doOnLongItemClick(target = { targetView }) { holder, item ->
             toast("长按", "targetView", holder, item)
             true
         }

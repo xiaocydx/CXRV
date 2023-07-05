@@ -8,7 +8,6 @@ import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
 import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
-import com.xiaocydx.sample.databinding.ItemTextTypeBinding
 import com.xiaocydx.sample.extensions.TextItem
 
 /**
@@ -40,10 +39,7 @@ class ViewTypeDelegateScenes : ItemClickScenes() {
         setup(dNum = 2, delegate2)
     }
 
-    private fun Sub.setup(
-        dNum: Int,
-        delegate: BindingDelegate<TextItem, ItemTextTypeBinding>
-    ) {
+    private fun Sub.setup(dNum: Int, delegate: BindingDelegate<TextItem, *>) {
         delegate.doOnItemClick { holder, item ->
             toast(dNum, "点击", "itemView", holder, item)
         }
@@ -52,10 +48,10 @@ class ViewTypeDelegateScenes : ItemClickScenes() {
             true
         }
 
-        delegate.doOnItemClick(target = { binding.targetView }) { holder, item ->
+        delegate.doOnItemClick(target = { targetView }) { holder, item ->
             toast(dNum, "点击", "targetView", holder, item)
         }
-        delegate.doOnLongItemClick(target = { binding.targetView }) { holder, item ->
+        delegate.doOnLongItemClick(target = { targetView }) { holder, item ->
             toast(dNum, "长按", "targetView", holder, item)
             true
         }

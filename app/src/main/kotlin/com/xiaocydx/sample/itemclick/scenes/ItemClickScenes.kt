@@ -1,15 +1,17 @@
 package com.xiaocydx.sample.itemclick.scenes
 
+import android.view.View
 import android.widget.Toast
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.binding.BindingHolder
 import com.xiaocydx.cxrv.list.Disposable
-import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.emptyDisposable
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
-import com.xiaocydx.sample.databinding.ItemTextTypeBinding
+import com.xiaocydx.sample.databinding.ItemTextType1Binding
+import com.xiaocydx.sample.databinding.ItemTextType2Binding
 import com.xiaocydx.sample.extensions.TextItem
 import com.xiaocydx.sample.extensions.getTextType1Delegate
 import com.xiaocydx.sample.extensions.getTextType2Delegate
@@ -48,6 +50,16 @@ sealed class ItemClickScenes {
         context.showToast(content, Toast.LENGTH_LONG)
     }
 
+    protected val ViewHolder.targetView: View?
+        get() {
+            if (this !is BindingHolder<*>) return null
+            return when (val binding = binding) {
+                is ItemTextType1Binding -> binding.targetView
+                is ItemTextType2Binding -> binding.targetView
+                else -> null
+            }
+        }
+
     protected inner class Sub(val num: Int) {
         val delegate1 = getTextType1Delegate()
         val delegate2 = getTextType2Delegate()
@@ -55,18 +67,10 @@ sealed class ItemClickScenes {
         val listAdapter = listAdapter<TextItem> {
             register(delegate1)
             register(delegate2)
-        }.initMultiTypeTextItems().ensureVH()
+        }.initMultiTypeTextItems()
 
         fun toast(content: String) {
             listAdapter.recyclerView?.toast(content)
-        }
-
-        /**
-         * 示例代码的`VH`类型唯一，因此进行类型转换，让[ItemClickScenes]子类的逻辑清晰一些
-         */
-        @Suppress("UNCHECKED_CAST")
-        private fun ListAdapter<TextItem, *>.ensureVH() = let {
-            it as ListAdapter<TextItem, BindingHolder<ItemTextTypeBinding>>
         }
     }
 }
