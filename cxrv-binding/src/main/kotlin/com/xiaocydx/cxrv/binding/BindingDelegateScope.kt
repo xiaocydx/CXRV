@@ -47,6 +47,10 @@ import com.xiaocydx.cxrv.list.setItems
  *     }
  * }
  * ```
+ *
+ * **注意**：函数引用`VB::inflate`无法作为多个[bindingDelegate]的实参，
+ * 因为`inflate.hashCode()`会作为当前[BindingDelegate]的ViewType值。
+ *
  * @param inflate         函数引用`VB::inflate`
  * @param areItemsTheSame 对应[DiffUtil.ItemCallback.areItemsTheSame]
  */
@@ -54,11 +58,7 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingDelegate(
     noinline inflate: Inflate<VB>,
     noinline areItemsTheSame: (oldItem: ITEM, newItem: ITEM) -> Boolean,
     block: BindingDelegateScope<ITEM, VB>.() -> Unit
-): BindingDelegate<ITEM, VB> {
-    // viewType的值是类的JavaClass的hashCode，
-    // 因此需要内联到调用处，在调用处生成匿名内部类。
-    return object : BindingDelegateScope<ITEM, VB>(inflate, areItemsTheSame) {}.apply(block)
-}
+): BindingDelegate<ITEM, VB> = BindingDelegateScope(inflate, areItemsTheSame).apply(block)
 
 /**
  * [BindingDelegate]的构建函数，适用于简单列表场景
@@ -76,6 +76,10 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingDelegate(
  *     }
  * }
  * ```
+ *
+ * **注意**：函数引用`VB::inflate`无法作为多个[bindingDelegate]的实参，
+ * 因为`inflate.hashCode()`会作为当前[BindingDelegate]的ViewType值。
+ *
  * @param inflate  函数引用`VB::inflate`
  * @param uniqueId item唯一id，是[DiffUtil.ItemCallback.areItemsTheSame]的简化函数
  */
@@ -95,7 +99,7 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingDelegate(
  * [BindingDelegate]的构建作用域
  */
 @RvDslMarker
-abstract class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
+class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
 @PublishedApi internal constructor(
     private val inflate: Inflate<VB>,
     private val areItemsTheSame: (oldItem: ITEM, newItem: ITEM) -> Boolean
@@ -211,6 +215,8 @@ abstract class BindingDelegateScope<ITEM : Any, VB : ViewBinding>
     fun getSpanSize(block: (position: Int, spanCount: Int) -> Int) {
         getSpanSize = block
     }
+
+    override val viewType: Int = inflate.hashCode()
 
     override fun inflate(): Inflate<VB> = inflate
 

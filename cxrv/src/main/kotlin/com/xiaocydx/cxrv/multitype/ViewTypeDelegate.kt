@@ -46,7 +46,11 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
         private set
     internal var typeLinker: ((item: ITEM) -> Boolean)? = null
         private set
-    val viewType = this::class.java.hashCode()
+
+    /**
+     * 唯一的ViewType值
+     */
+    open val viewType = javaClass.hashCode()
 
     /**
      * 通过[adapter]修改item时，例如[ListAdapter.setItem]，会对item做校验，
