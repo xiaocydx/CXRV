@@ -98,10 +98,10 @@ abstract class ViewAdapter<VH : ViewHolder>(
     /**
      * 更新item的显示情况
      *
-     * @param show 是否显示item，true-添加或更新item，false-移除item
+     * @param show 是否显示item，`true`-添加或更新item，`false`-移除item
      * @param anim 支持的动画，详细描述[NeedAnim]
      */
-    protected fun updateItem(show: Boolean, anim: NeedAnim = NeedAnim.ALL) {
+    fun updateItem(show: Boolean, anim: NeedAnim = NeedAnim.ALL) {
         val previousAsItem = currentAsItem
         currentAsItem = show
         when {
@@ -118,7 +118,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
             previousAsItem && currentAsItem -> when (anim) {
                 NeedAnim.ALL -> notifyItemChanged(0)
                 NeedAnim.NOT_CHANGE,
-                NeedAnim.NOT_ALL -> notifyItemChanged(0, this)
+                NeedAnim.NOT_ALL -> notifyItemChanged(0, anim)
             }
         }
     }
@@ -134,7 +134,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
     /**
      * 需要Item动画
      */
-    protected enum class NeedAnim {
+    enum class NeedAnim {
         /**
          * 需要全部类型的item动画
          */
