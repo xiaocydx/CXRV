@@ -24,15 +24,15 @@ import com.xiaocydx.sample.foo.FooListViewModel
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
-import com.xiaocydx.sample.paging.MenuAction.ADAPTER_DELETE_ITEM
 import com.xiaocydx.sample.paging.MenuAction.ADAPTER_INSERT_ITEM
+import com.xiaocydx.sample.paging.MenuAction.ADAPTER_REMOVE_ITEM
 import com.xiaocydx.sample.paging.MenuAction.CLEAR_ALL_ITEM
 import com.xiaocydx.sample.paging.MenuAction.CLEAR_EVEN_ITEM
 import com.xiaocydx.sample.paging.MenuAction.CLEAR_ODD_ITEM
 import com.xiaocydx.sample.paging.MenuAction.DECREASE_SPAN_COUNT
 import com.xiaocydx.sample.paging.MenuAction.INCREASE_SPAN_COUNT
-import com.xiaocydx.sample.paging.MenuAction.LIST_STATE_DELETE_ITEM
 import com.xiaocydx.sample.paging.MenuAction.LIST_STATE_INSERT_ITEM
+import com.xiaocydx.sample.paging.MenuAction.LIST_STATE_REMOVE_ITEM
 import com.xiaocydx.sample.paging.MenuAction.REFRESH
 import com.xiaocydx.sample.paging.MenuAction.REVERSE_LAYOUT
 import com.xiaocydx.sample.viewLifecycleScope
@@ -46,10 +46,8 @@ import kotlinx.coroutines.flow.onEach
 abstract class PagingFragment : Fragment() {
     private val sharedViewModel: PagingSharedViewModel by activityViewModels()
     protected val fooAdapter = FooListAdapter()
-    protected lateinit var fooViewModel: FooListViewModel
-        private set
-    protected lateinit var rvPaging: RecyclerView
-        private set
+    protected lateinit var fooViewModel: FooListViewModel; private set
+    protected lateinit var rvPaging: RecyclerView; private set
 
     final override fun onCreateView(
         inflater: LayoutInflater,
@@ -83,9 +81,9 @@ abstract class PagingFragment : Fragment() {
                 REVERSE_LAYOUT -> reverseLayout()
                 REFRESH -> refresh()
                 ADAPTER_INSERT_ITEM -> adapterInsertItem()
-                ADAPTER_DELETE_ITEM -> adapterDeleteItem()
+                ADAPTER_REMOVE_ITEM -> adapterRemoveItem()
                 LIST_STATE_INSERT_ITEM -> listStateInsertItem()
-                LIST_STATE_DELETE_ITEM -> listStateDeleteItem()
+                LIST_STATE_REMOVE_ITEM -> listStateRemoveItem()
                 CLEAR_ODD_ITEM -> clearOddItem()
                 CLEAR_EVEN_ITEM -> clearEvenItem()
                 CLEAR_ALL_ITEM -> clearAllItem()
@@ -122,7 +120,7 @@ abstract class PagingFragment : Fragment() {
     }
 
     private fun refresh() {
-        // viewModel.refresh()
+        // fooViewModel.refresh()
         fooAdapter.pagingCollector.refresh()
     }
 
@@ -134,7 +132,7 @@ abstract class PagingFragment : Fragment() {
         fooAdapter.addItem(0, item)
     }
 
-    private fun adapterDeleteItem() {
+    private fun adapterRemoveItem() {
         fooAdapter.removeItemAt(0)
     }
 
@@ -142,7 +140,7 @@ abstract class PagingFragment : Fragment() {
         fooViewModel.insertItem()
     }
 
-    private fun listStateDeleteItem() {
+    private fun listStateRemoveItem() {
         fooViewModel.deleteItem()
     }
 

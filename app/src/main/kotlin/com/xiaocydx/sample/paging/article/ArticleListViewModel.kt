@@ -4,7 +4,7 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.removeItemAt
+import com.xiaocydx.cxrv.list.removeItem
 import com.xiaocydx.cxrv.paging.PagingConfig
 import com.xiaocydx.cxrv.paging.PagingPrefetch
 import com.xiaocydx.cxrv.paging.storeIn
@@ -30,10 +30,7 @@ class ArticleListViewModel(repository: ArticleListRepository = ArticleListReposi
         pager.refresh()
     }
 
-    fun deleteArticle(articleId: Int) {
-        state.currentList
-            .indexOfFirst { it.id == articleId }
-            .takeIf { it != -1 }
-            ?.let(state::removeItemAt)
+    fun deleteArticle(article: ArticleInfo) {
+        state.removeItem(article)
     }
 }

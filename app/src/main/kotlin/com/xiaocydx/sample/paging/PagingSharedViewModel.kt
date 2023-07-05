@@ -5,7 +5,6 @@ import com.xiaocydx.sample.foo.FooListViewModel
 import com.xiaocydx.sample.viewpager2.shared.RetainedViewModels
 import com.xiaocydx.sample.viewpager2.shared.getOrPut
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
@@ -20,7 +19,7 @@ class PagingSharedViewModel : ViewModel() {
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
 
-    val menuAction: Flow<MenuAction> = _menuAction.asSharedFlow()
+    val menuAction = _menuAction.asSharedFlow()
 
     fun submitMenuAction(action: MenuAction) {
         _menuAction.tryEmit(action)

@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
+import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
@@ -53,6 +54,7 @@ class ArticleListActivity : AppCompatActivity() {
                 tvTitle.text = it.title ?: ""
                 tvAuthor.text = "作者：${it.author ?: ""}"
             }
+            doOnSimpleItemClick(viewModel::deleteArticle)
         }
 
         rvArticle = RecyclerView(this)

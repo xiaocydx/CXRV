@@ -56,12 +56,12 @@ class PagingActivity : AppCompatActivity() {
                 inflate = ItemMenuBinding::inflate
             ) {
                 submitList(MenuAction.values().toList())
-                doOnSimpleItemClick(::executeMenuAction)
+                doOnSimpleItemClick(::performMenuAction)
                 onBindView { root.text = it.text }
             })
     }
 
-    private fun executeMenuAction(action: MenuAction) {
+    private fun performMenuAction(action: MenuAction) {
         when (action) {
             LINEAR_LAYOUT -> initLinearLayout()
             GIRD_LAYOUT -> initGridLayout()
