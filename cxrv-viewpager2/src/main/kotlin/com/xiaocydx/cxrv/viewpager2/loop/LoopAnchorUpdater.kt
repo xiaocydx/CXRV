@@ -65,7 +65,7 @@ internal interface LoopAnchorUpdater {
 /**
  * [LoopAnchorUpdater.updateAnchorInfo]更新锚点信息的场景
  */
-internal sealed class UpdateScenes {
+internal sealed class UpdateScenes(val canSetCurrentItem: Boolean = true) {
     /**
      * 开始手势拖动
      */
@@ -91,12 +91,8 @@ internal sealed class UpdateScenes {
     /**
      * 修复多指交替滚动未更新锚点信息的问题，不设置`viewPager2.currentItem`
      */
-    class ScrolledFix(private val currentPosition: Int) : UpdateScenes() {
+    class ScrolledFix(private val currentPosition: Int) : UpdateScenes(canSetCurrentItem = false) {
         override fun getCurrentPosition(content: LoopPagerContent) = currentPosition
-
-        override fun setAnchorPosition(anchorPosition: Int, content: LoopPagerContent) {
-            content.viewPager2.scrollToPositionDirect(anchorPosition)
-        }
     }
 
     /**
@@ -110,15 +106,6 @@ internal sealed class UpdateScenes {
      * @param content [getAnchorContent]的返回结果
      */
     open fun getCurrentPosition(content: LoopPagerContent) = content.viewPager2.currentItem
-
-    /**
-     * 设置新锚点[anchorPosition]
-     *
-     * @param content [getAnchorContent]的返回结果
-     */
-    open fun setAnchorPosition(anchorPosition: Int, content: LoopPagerContent) {
-        content.viewPager2.setCurrentItemDirect(anchorPosition)
-    }
 }
 
 /**
@@ -187,65 +174,94 @@ internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
      * 该函数确保修改当前`targetScrap`的`layoutPosition`后，下一次布局基于新锚点填充当前`targetScrap`。
      */
     private fun updateAnchorInfoInNextLayout(anchorPosition: Int, scenes: UpdateScenes, content: LoopPagerContent) {
-        val recyclerView = content.viewPager2.recyclerView
-        val cachedViews = recyclerView.mRecycler?.mCachedViews ?: return
-
-        // 查找当前targetScrap，并基于新锚点设置layoutPosition
         val currentPosition = scenes.getCurrentPosition(content)
-        val offset = anchorPosition - currentPosition
-        addTargetScrapForLayoutPosition(currentPosition, offset, content)
+        addTargetScrapForLayoutPosition(currentPosition, content)
         if (content.extraPageLimit == PADDING_EXTRA_PAGE_LIMIT) {
-            addTargetScrapForLayoutPosition(currentPosition - 1, offset, content)
-            addTargetScrapForLayoutPosition(currentPosition + 1, offset, content)
+            addTargetScrapForLayoutPosition(currentPosition - 1, content)
+            addTargetScrapForLayoutPosition(currentPosition + 1, content)
         }
 
-        // 对有冲突的离屏页面设置targetScrap的oldPosition，避免下一次布局基于新锚点填充离屏页面
-        for (index in 0 until recyclerView.childCount) {
-            val holder = recyclerView.getChildAt(index).let(recyclerView::getChildViewHolder)
-            val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
-            val scrap = targetScrapStore[bindingAdapterPosition]
-            if (scrap == null || scrap === holder) continue
-            holder.offsetPosition(scrap, "OffscreenPage", content)
-        }
-
-        // 对有冲突的离屏缓存设置targetScrap的oldPosition，避免下一次布局基于新锚点填充离屏缓存
-        for (index in cachedViews.indices) {
-            val holder = cachedViews[index]
-            val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
-            val scrap = targetScrapStore[bindingAdapterPosition]
-            if (scrap == null || scrap === holder) continue
-            holder.offsetPosition(scrap, "CachedViews", content)
+        if (targetScrapStore.size() != 0) {
+            swapLayoutPositionForOffscreenPage(content)
+            swapLayoutPositionForCachedViews(content)
+            swapLayoutPositionForTargetScrap(anchorPosition, currentPosition, content)
+            targetScrapStore.clear()
         }
 
         // 下一次布局LinearLayoutManager会自行计算出当前targetScrap的锚点信息，
         // RecyclerView.dispatchLayoutStep3()回收上述已处理但未填充的离屏页面。
-        scenes.setAnchorPosition(anchorPosition, content)
-        if (targetScrapStore.size() > 0) targetScrapStore.clear()
+        if (scenes.canSetCurrentItem) {
+            content.viewPager2.setCurrentItemDirect(anchorPosition)
+        } else {
+            content.viewPager2.scrollToPositionDirect(anchorPosition)
+        }
     }
 
-    private fun addTargetScrapForLayoutPosition(layoutPosition: Int, offset: Int, content: LoopPagerContent) {
+    private var ViewHolder.realLayoutPosition: Int
+        get() = mPosition
+        set(value) {
+            mPosition = value
+        }
+
+    private fun addTargetScrapForLayoutPosition(layoutPosition: Int, content: LoopPagerContent) {
         val recyclerView = content.viewPager2.recyclerView
         val holder = recyclerView.findViewHolderForLayoutPosition(layoutPosition) ?: return
-        val bindingAdapterPosition = content.toBindingAdapterPosition(holder.layoutPosition)
-        holder.offsetPosition(offset, "TargetScrap", content)
+        val bindingAdapterPosition = content.toBindingAdapterPosition(holder.realLayoutPosition)
         targetScrapStore[bindingAdapterPosition] = holder
     }
 
-    private fun ViewHolder.offsetPosition(scrap: ViewHolder, tag: String, content: LoopPagerContent) {
-        offsetPosition(scrap.oldPosition - layoutPosition, tag, content)
+    /**
+     * 对有冲突的离屏页面设置`targetScrap`的`layoutPosition`，避免下一次布局基于新锚点填充离屏页面
+     */
+    private fun swapLayoutPositionForOffscreenPage(content: LoopPagerContent) {
+        val recyclerView = content.viewPager2.recyclerView
+        for (index in 0 until recyclerView.childCount) {
+            val holder = recyclerView.getChildAt(index).let(recyclerView::getChildViewHolder)
+            val bindingAdapterPosition = content.toBindingAdapterPosition(holder.realLayoutPosition)
+            val scrap = targetScrapStore[bindingAdapterPosition]
+            if (scrap == null || scrap === holder) continue
+            holder.setLayoutPosition(scrap.realLayoutPosition, "OffscreenPage", content)
+        }
     }
 
-    private fun ViewHolder.offsetPosition(offset: Int, tag: String, content: LoopPagerContent) {
+    /**
+     * 对有冲突的离屏缓存设置`targetScrap`的`layoutPosition`，避免下一次布局基于新锚点填充离屏缓存
+     */
+    private fun swapLayoutPositionForCachedViews(content: LoopPagerContent) {
+        val recyclerView = content.viewPager2.recyclerView
+        val cachedViews = recyclerView.mRecycler?.mCachedViews ?: return
+        for (index in cachedViews.indices) {
+            val holder = cachedViews[index]
+            val bindingAdapterPosition = content.toBindingAdapterPosition(holder.realLayoutPosition)
+            val scrap = targetScrapStore[bindingAdapterPosition]
+            if (scrap == null || scrap === holder) continue
+            holder.setLayoutPosition(scrap.realLayoutPosition, "CachedViews", content)
+        }
+    }
+
+    /**
+     * 对`targetScrap`设置基于[anchorPosition]的`layoutPosition`，完成`layoutPosition`的交换
+     */
+    private fun swapLayoutPositionForTargetScrap(anchorPosition: Int, currentPosition: Int, content: LoopPagerContent) {
+        val size = targetScrapStore.size()
+        val offset = anchorPosition - currentPosition
+        for (index in 0 until size) {
+            val scrap = targetScrapStore.valueAt(index)
+            val layoutPosition = scrap.realLayoutPosition + offset
+            scrap.setLayoutPosition(layoutPosition, "TargetScrap", content)
+        }
+    }
+
+    private fun ViewHolder.setLayoutPosition(layoutPosition: Int, tag: String, content: LoopPagerContent) {
         val firstLayoutPosition = content.firstLayoutPosition()
         val lastLayoutPosition = content.lastLayoutPosition()
-        if (layoutPosition + offset !in firstLayoutPosition..lastLayoutPosition) {
-            throw IndexOutOfBoundsException("$tag offsetPosition()," +
-                    "layoutPosition = $layoutPosition," +
-                    "offset = $offset," +
-                    "firstLayoutPosition = $firstLayoutPosition," +
-                    "lastLayoutPosition = $lastLayoutPosition," +
+        if (layoutPosition !in firstLayoutPosition..lastLayoutPosition) {
+            throw IndexOutOfBoundsException("$tag setLayoutPosition()\n" +
+                    "realLayoutPosition = $realLayoutPosition\n" +
+                    "targetLayoutPosition = $layoutPosition\n" +
+                    "layoutPositionRange = [$firstLayoutPosition, $lastLayoutPosition]\n" +
                     "holder = $this")
         }
-        offsetPosition(offset, false)
+        realLayoutPosition = layoutPosition
     }
 }
