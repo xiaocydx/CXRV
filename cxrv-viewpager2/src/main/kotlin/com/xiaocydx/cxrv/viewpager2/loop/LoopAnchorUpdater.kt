@@ -17,7 +17,6 @@
 @file:JvmName("LoopAnchorUpdaterInternalKt")
 @file:Suppress("PackageDirectoryMismatch")
 
-
 package androidx.recyclerview.widget
 
 import android.util.SparseArray

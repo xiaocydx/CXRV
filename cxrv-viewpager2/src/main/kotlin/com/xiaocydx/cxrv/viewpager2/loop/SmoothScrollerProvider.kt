@@ -20,7 +20,7 @@ import android.content.Context
 import androidx.recyclerview.widget.RecyclerView.SmoothScroller
 
 /**
- * [SmoothScroller]的提供者
+ * [SmoothScroller]的提供者，可用于修改平滑滚动的时长和插值器
  *
  * @author xcc
  * @date 2023/5/23

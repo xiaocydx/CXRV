@@ -36,16 +36,16 @@ import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTR
 /**
  * [ViewPager2]循环页面的控制器
  *
- * **注意**：[LoopPagerController]不支持反转布局，不处理平滑滚动时长。
- *
  * ```
  * val controller = LoopPagerController(viewPager2)
  * controller.setAdapter(adapter) // 必须调用
  * controller.setPadding(left, top, right, bottom) // 可选调用
  * controller.registerOnPageChangeCallback(callback) // 可选调用
  *
- * // 调用者可通过以下函数，自行实现轮播交互
- * controller.smoothScrollToPosition(position)
+ * // 调用者可通过以下属性和函数，自行实现轮播交互
+ * controller.scrollState
+ * controller.currentPosition
+ * controller.smoothScrollToPosition(position, direction, provider)
  * ```
  *
  * @author xcc
