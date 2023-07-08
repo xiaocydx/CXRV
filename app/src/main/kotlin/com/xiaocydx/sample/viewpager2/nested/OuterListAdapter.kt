@@ -4,6 +4,7 @@ import android.os.Parcelable
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
+import androidx.recyclerview.widget.setRecycleAllViewsOnDetach
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -70,16 +71,12 @@ class OuterHolder(
     init {
         // 水平方向ViewPager2（Parent）和水平方向RecyclerView（Child）
         binding.rvInner
-            .fixedSize()
-            .adapter(adapter)
-            .linear(orientation = HORIZONTAL) {
-                // recycle to sharedPool
-                recycleChildrenOnDetach = true
-            }
-            .divider(width = 8.dp) { edge(Edge.horizontal()) }
             .apply { itemAnimator = null }
             .apply { isVp2NestedScrollable = true }
-            .setRecycledViewPool(sharedPool)
+            .apply { setRecycledViewPool(sharedPool) }
+            .linear(HORIZONTAL).fixedSize().adapter(adapter)
+            .divider(width = 8.dp) { edge(Edge.horizontal()) }
+            .setRecycleAllViewsOnDetach(maxScrap = 20, saveState = false)
     }
 
     fun onBindView(item: OuterItem) {
