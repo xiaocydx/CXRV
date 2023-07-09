@@ -135,9 +135,12 @@ private class RecycleAllViewsRunner(
         val scrapData = scrap[viewType] ?: return
 
         // 若可以继续回收，则不需要增加回收上限
-        val currentMaxScrap = scrapData.mMaxScrap
-        if (scrapData.mScrapHeap.size < currentMaxScrap) return
+        var currentMaxScrap = scrapData.mMaxScrap
+        val scrapSize = scrapData.mScrapHeap.size
+        if (scrapSize < currentMaxScrap) return
 
+        // 预创建ViewHolder的场景可能会出现scrapSize > currentMaxScrap
+        currentMaxScrap = currentMaxScrap.coerceAtLeast(scrapSize)
         val expectMaxScrap = increaseMaxScrap(viewType, currentMaxScrap, this)
         if (currentMaxScrap < expectMaxScrap) scrapData.mMaxScrap = currentMaxScrap + 1
     }
