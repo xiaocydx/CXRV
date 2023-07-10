@@ -12,7 +12,6 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.setRecycleAllViewsOnDetach
 import androidx.viewpager2.widget.ViewPager2
@@ -76,12 +75,10 @@ class FooListFragment : Fragment() {
         overScrollNever().linear().fixedSize()
         divider(10.dp, 10.dp) { edge(Edge.top().horizontal()) }
         initFooAdapter()
-        doOnAttachToViewPager2()
+        initParentViewPager2()
     }.withSwipeRefresh(fooAdapter)
 
     /**
-     * 初始化适配器
-     *
      * [FooListAdapterFixed]中讲述了`sharedRecycledViewPool`场景的一些注意事项：
      * 1. 除了有视图设置逻辑，还要有视图重置逻辑，逻辑对称才能避免内存泄漏问题。
      * 2. 若使用[Glide]对[ImageView]加载图片，则需要和父级关联或者做另外处理。
@@ -98,32 +95,25 @@ class FooListFragment : Fragment() {
         adapter = fooAdapter.withPaging()
     }
 
-    /**
-     * 在[RecyclerView.isAttachedToWindow] = `true`之后，向上查找[ViewPager2]父级：
-     * 1. 处理[ViewPager2]嵌套[RecyclerView]的滚动冲突。
-     * 2. 对[RecyclerView]设置[ViewPager2.sharedRecycledViewPool]。
-     * 3. 当[RecyclerView]从Window上分离时，保存[LayoutManager]的状态，
-     * 将子View和离屏缓存回收进[ViewPager2.sharedRecycledViewPool]。
-     * 4. 设置动图受[RecyclerView]滚动、父级[ViewPager2]控制。
-     */
-    private fun RecyclerView.doOnAttachToViewPager2() = doOnAttach {
-        val vp2 = findParentViewPager2() ?: return@doOnAttach
+    private fun RecyclerView.initParentViewPager2()  = doOnAttach{
+        // 1. 处理ViewPager2嵌套RecyclerView的滚动冲突
         isVp2NestedScrollable = true
-        setRecycledViewPool(vp2.sharedRecycledViewPool)
 
-        // Activity直接退出的流程，即ActivityThread.handleDestroyActivity()，
-        // 是先更改Lifecycle的状态，再执行视图树的dispatchDetachedFromWindow()。
-        // autoDispose(viewLifecycle)在DESTROYED状态时自动废弃，
-        // 避免Activity直接退出时，执行冗余的视图回收处理。
+        // 2. 对RecyclerView设置ViewPager2.sharedRecycledViewPool
+        setVp2SharedRecycledViewPoolOnAttach()
+
+        // 3. 当RecyclerView从Window分离时，保存LayoutManager的状态，
+        // 将子View和离屏缓存回收进ViewPager2.sharedRecycledViewPool。
         setRecycleAllViewsOnDetach { _, _, initialState ->
             // 回收进sharedRecycledViewPool的上限，是当前子View数量的3倍，
             // 这是一种简易策略，意图是最多回收3页满数量的View，供重建复用。
             3 * initialState.childCount
         }.autoDispose(viewLifecycle)
 
+        // 4. 设置动图受RecyclerView滚动、父级ViewPager2控制
         setAnimatableMediator {
             controlledByScroll()
-            controlledByParentViewPager2(vp2)
+            controlledByParentViewPager2()
             // 若跳转至透明主题的Activity，则可以启用该函数，动图受RESUMED状态控制
             // controlledByLifecycle(viewLifecycle, RESUMED)
             registerImageView(fooAdapter, visiableRatio = 0.5f) { view.imageView }

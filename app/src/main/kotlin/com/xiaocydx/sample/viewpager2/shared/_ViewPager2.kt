@@ -3,6 +3,7 @@
 package com.xiaocydx.sample.viewpager2.shared
 
 import android.view.View
+import androidx.core.view.doOnAttach
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.viewpager2.widget.ViewPager2
@@ -23,12 +24,21 @@ val ViewPager2.sharedRecycledViewPool: RecycledViewPool
     }
 
 /**
- * 向上查找[ViewPager2]父级
+ * 查找最接近的父级[ViewPager2]
  */
 fun RecyclerView.findParentViewPager2(): ViewPager2? {
     var parent: View? = parent as? View
+    // parent是ViewPager2，表示当前View是ViewPager2.mRecyclerView
+    if (parent is ViewPager2) parent = parent.parent as? View
     while (parent != null && parent !is ViewPager2) {
         parent = parent.parent as? View
     }
     return parent as? ViewPager2
+}
+
+/**
+ * 当RecyclerView添加到Window时，设置[ViewPager2.sharedRecycledViewPool]
+ */
+fun RecyclerView.setVp2SharedRecycledViewPoolOnAttach() {
+    doOnAttach { findParentViewPager2()?.sharedRecycledViewPool?.let(::setRecycledViewPool) }
 }
