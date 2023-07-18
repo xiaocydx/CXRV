@@ -29,9 +29,9 @@ import com.xiaocydx.cxrv.internal.doOnPreDraw
 /**
  * View适配器，用于构建HeaderFooter
  *
- * 当移除HeaderFooter或者RecyclerView从Window上分离时，
+ * 当移除HeaderFooter或者RecyclerView从Window分离时，
  * [ViewController]会清除已分离的ViewHolder，拦截要被回收的ViewHolder，
- * 子类不用关注移除HeaderFooter和共享[RecycledViewPool]的场景下，可能引起内存泄漏的问题。
+ * 子类不用关注移除HeaderFooter和共享[RecycledViewPool]的场景，可能引起内存泄漏的问题。
  *
  * @author xcc
  * @date 2021/10/15
@@ -126,9 +126,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
     private inline fun withoutAnim(block: () -> Unit) {
         block()
         val itemAnimator = recyclerView?.itemAnimator ?: return
-        recyclerView?.doOnPreDraw {
-            controller.viewHolder?.let(itemAnimator::endAnimation)
-        }
+        recyclerView?.doOnPreDraw { controller.viewHolder?.let(itemAnimator::endAnimation) }
     }
 
     /**

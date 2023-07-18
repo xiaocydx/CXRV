@@ -30,12 +30,12 @@ import java.lang.ref.WeakReference
  * 从[Recycler]中清除ViewHolder的控制器
  *
  * ### [Adapter.onDetachedFromRecyclerView]
- * 当Adapter从RecyclerView上分离时，清除已分离的[Tracker.viewHolder]，
+ * 当Adapter从RecyclerView分离时，清除已分离的[Tracker.viewHolder]，
  * 若Adapter是被[ConcatAdapter]移除，则需要拦截要被回收的[Tracker.viewHolder]，
  * 拦截流程为[makeViewHolderRecycleFailed]和[onFailedToRecycleView]。
  *
  * ### [View.OnAttachStateChangeListener.onViewDetachedFromWindow]
- * 当RecyclerView从Window上分离时，清除已分离的[Tracker.viewHolder]，
+ * 当RecyclerView从Window分离时，清除已分离的[Tracker.viewHolder]，
  * 避免共享[RecycledViewPool]的场景回收无用的[Tracker.viewHolder]。
  *
  * @author xcc
@@ -80,7 +80,7 @@ internal class ViewController {
      *
      * **注意**：在[Recycler.addViewHolderToRecycledViewPool]的流程中，
      * 虽然可以通过[RecyclerListener]或者[onViewRecycled]，将回收上限设为0，
-     * 防止[holder]被回收，但这种处理方式仍然会创建[ScrapData]，导致清除的不够彻底。
+     * 防止[holder]被回收，但这种处理方式仍会创建[ScrapData]，清除的不够彻底。
      */
     private fun makeViewHolderRecycleFailed(holder: ViewHolder) {
         if (tracker.isAttached) return

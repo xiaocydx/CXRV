@@ -49,8 +49,8 @@ internal open class ChoreographerContext : CoroutineDispatcher(), DispatchAtFron
     }
 
     /**
-     *  **注意**：负延时不等于[Handler.postAtFrontOfQueue]往队列头部插入消息的作用，
-     *  负延时只能让[dispatch]添加的全部[FrameCallback]比其它[FrameCallback]先执行。
+     * **注意**：负延时不等于[Handler.postAtFrontOfQueue]往队列头部插入消息的作用，
+     * 负延时只能让[dispatch]添加的全部[FrameCallback]比其它[FrameCallback]先执行。
      */
     @CallSuper
     override fun dispatch(context: CoroutineContext, block: Runnable) {

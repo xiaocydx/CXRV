@@ -32,7 +32,7 @@ import androidx.recyclerview.widget.RecyclerView
  * @author xcc
  * @date 2021/9/26
  */
-class ConcatSpanSizeLookup(
+internal class ConcatSpanSizeLookup(
     private val recyclerView: RecyclerView,
     private val layoutManager: GridLayoutManager,
     private val sourceLookup: SpanSizeLookup = layoutManager.sourceSpanSizeLookup
@@ -60,7 +60,7 @@ class ConcatSpanSizeLookup(
     }
 
     private fun checkAndUpdateConcatAdapter(adapter: RecyclerView.Adapter<*>?) {
-        if (concatAdapterHolder != null && concatAdapterHolder!!.concatAdapter != adapter) {
+        if (concatAdapterHolder != null && concatAdapterHolder!!.concatAdapter !== adapter) {
             // RecyclerView被设置了新的adapter，废弃concatAdapterHolder
             concatAdapterHolder!!.dispose()
             concatAdapterHolder = null

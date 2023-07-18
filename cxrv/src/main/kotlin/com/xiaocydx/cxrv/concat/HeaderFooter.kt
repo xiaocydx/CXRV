@@ -102,7 +102,7 @@ fun RecyclerView.removeHeader(header: View): ViewAdapter<*>? {
     val concatAdapter = adapter as? ConcatAdapter ?: return null
     val headerAdapter: Adapter<*>? = concatAdapter.adapters
         .firstOrNull { adapter -> adapter.containView(header) }
-        ?.also { concatAdapter.removeAdapter(it) }
+        ?.also(concatAdapter::removeAdapter)
     return headerAdapter as? ViewAdapter<*>
 }
 
@@ -115,7 +115,7 @@ fun RecyclerView.removeFooter(footer: View): ViewAdapter<*>? {
     val concatAdapter = adapter as? ConcatAdapter ?: return null
     val footerAdapter: Adapter<*>? = concatAdapter.adapters
         .lastOrNull { adapter -> adapter.containView(footer) }
-        ?.also { concatAdapter.removeAdapter(it) }
+        ?.also(concatAdapter::removeAdapter)
     return footerAdapter as? ViewAdapter<*>
 }
 
@@ -168,8 +168,8 @@ fun HeaderFooterConcatAdapter(
     header: ViewAdapter<*>? = null,
     footer: ViewAdapter<*>? = null
 ): ConcatAdapter {
-    val config = ConcatAdapter.Config
-        .Builder().setIsolateViewTypes(false).build()
+    val config = ConcatAdapter.Config.Builder()
+        .setIsolateViewTypes(false).build()
     return when {
         header == null && footer == null -> ConcatAdapter(config, adapter)
         header == null -> ConcatAdapter(config, adapter, footer)
@@ -184,7 +184,7 @@ fun HeaderFooterConcatAdapter(
 fun View.toAdapter(): ViewAdapter<*> = SimpleViewAdapter(this)
 
 private fun Adapter<*>.containView(view: View): Boolean {
-    return this is SimpleViewAdapter && this.view == view
+    return this is SimpleViewAdapter && this.view === view
 }
 
 @VisibleForTesting
