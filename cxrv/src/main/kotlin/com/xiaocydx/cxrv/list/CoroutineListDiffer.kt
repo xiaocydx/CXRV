@@ -26,6 +26,7 @@ import com.xiaocydx.cxrv.internal.toUnmodifiableList
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import java.util.*
+import kotlin.collections.ArrayDeque
 import kotlin.coroutines.*
 
 /**
@@ -447,7 +448,7 @@ class CoroutineListDiffer<T : Any>(
     @MainThread
     private class SingleRunner {
         private var current: Job? = null
-        private var queue: LinkedList<CancellableContinuation<Unit>>? = null
+        private var queue: ArrayDeque<CancellableContinuation<Unit>>? = null
         val isRunning: Boolean
             get() = current != null
 
@@ -474,15 +475,11 @@ class CoroutineListDiffer<T : Any>(
         }
 
         private fun addToLast(cont: CancellableContinuation<Unit>) {
-            val queue = queue ?: LinkedList<CancellableContinuation<Unit>>().also { queue = it }
+            val queue = queue ?: ArrayDeque<CancellableContinuation<Unit>>().also { queue = it }
             queue.add(cont)
         }
 
-        private fun removeFirst(): Continuation<Unit>? {
-            val queue = queue ?: return null
-            // 当queue为空时，调用removeFirst()会抛出NoSuchElementException
-            return if (queue.isNotEmpty()) queue.removeFirst() else null
-        }
+        private fun removeFirst() = queue?.removeFirstOrNull()
     }
 
     private companion object NopSymbol : Continuation<Any?> {
