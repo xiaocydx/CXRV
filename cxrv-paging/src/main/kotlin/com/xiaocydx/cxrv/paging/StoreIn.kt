@@ -128,19 +128,13 @@ private open class CancellableFlow<T>(
     private val upstream: Flow<T>,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) : Flow<T> {
-    private var isCompleted = false
     private var isCollected = false
     @Volatile private var collectJob: Job? = null
     private val channel: Channel<T> = Channel(RENDEZVOUS)
 
     override suspend fun collect(collector: FlowCollector<T>) {
         val active = withMainDispatcher {
-            require(!isCompleted) {
-                "CancellableFlow已完成，不能再被收集"
-            }
-            require(!isCollected) {
-                "CancellableFlow只能被一个收集器收集"
-            }
+            check(!isCollected) { "CancellableFlow只能被一个收集器收集" }
             isCollected = true
             launchCollectJob()
             onActive()
@@ -181,7 +175,6 @@ private open class CancellableFlow<T>(
         }
         collectJob!!.invokeOnCompletion {
             // MainThread
-            isCompleted = true
             collectJob = null
             channel.close()
         }
