@@ -101,6 +101,10 @@ class Pager<K : Any, T : Any>(
         refreshEvent.send(Unit)
     }
 
+    fun append() {
+        fetcher?.append()
+    }
+
     private class PagingMediatorImpl<K : Any, T : Any>(
         private val config: PagingConfig,
         private val fetcher: PagingFetcher<K, T>,
