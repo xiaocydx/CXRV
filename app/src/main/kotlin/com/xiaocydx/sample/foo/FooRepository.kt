@@ -34,7 +34,7 @@ class FooRepository(private val source: FooSource) {
     }
 }
 
-private val urls = arrayOf(
+val urls = arrayOf(
     "https://cdn.pixabay.com/photo/2022/07/01/14/29/wheat-7295718_960_720.jpg",
     "https://cdn.pixabay.com/photo/2022/07/10/18/21/allium-7313550_960_720.jpg",
     "https://cdn.pixabay.com/photo/2022/07/04/23/52/beach-7302072_960_720.jpg",
@@ -46,7 +46,8 @@ private val urls = arrayOf(
     "https://cdn.pixabay.com/photo/2022/07/06/12/11/spaceship-7304985_960_720.jpg",
     "https://cdn.pixabay.com/photo/2022/06/19/07/12/mount-kilimanjaro-7271184_960_720.jpg",
 )
-private val gifUrls = arrayOf(
+
+val gifUrls = arrayOf(
     "https://alifei05.cfp.cn/creative/vcg/800/new/VCG211168385804.gif",
     "https://tenfei03.cfp.cn/creative/vcg/800/new/VCG211280897919.gif",
     "https://alifei03.cfp.cn/creative/vcg/800/new/VCG211280814110.gif",

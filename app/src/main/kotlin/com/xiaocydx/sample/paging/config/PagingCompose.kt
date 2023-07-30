@@ -10,10 +10,18 @@ import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.doOnAttach
 import com.xiaocydx.cxrv.paging.LoadFooterConfig
 import com.xiaocydx.cxrv.paging.LoadHeaderConfig
+import com.xiaocydx.cxrv.paging.LoadStates
+import com.xiaocydx.cxrv.paging.LoadStatesListener
 import com.xiaocydx.cxrv.paging.OnCreateView
+import com.xiaocydx.cxrv.paging.PagingCollector
 import com.xiaocydx.cxrv.paging.PagingConcatScope
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.dp
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
 
 /**
  * 连接加载头部适配器、内容适配器、加载尾部适配器，返回连接后的结果
@@ -32,6 +40,18 @@ import com.xiaocydx.sample.dp
 inline fun ListAdapter<*, *>.withPaging(block: DefaultPagingConcatScope.() -> Unit = {}): Adapter<*> {
     return DefaultPagingConcatScope().apply(block).complete(this)
 }
+
+/**
+ * 分页加载状态集合流
+ *
+ * 流被收集时，会先发射当前的状态集合，后续发射改变后的状态集合。
+ */
+fun <T : Any> PagingCollector<T>.loadStatesFlow(): Flow<LoadStates> = callbackFlow {
+    send(loadStates)
+    val listener = LoadStatesListener { _, current -> trySend(current) }
+    addLoadStatesListener(listener)
+    awaitClose { removeLoadStatesListener(listener) }
+}.buffer(UNLIMITED)
 
 /**
  * 连接加载头部适配器、内容适配器、加载尾部适配器的分页初始化作用域，

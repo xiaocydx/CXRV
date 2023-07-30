@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.paging.HandleEventListener
 import com.xiaocydx.cxrv.paging.LoadStates
@@ -44,27 +45,38 @@ fun RecyclerView.replaceWithSwipeRefresh(adapter: ListAdapter<*, *>): SwipeRefre
 }
 
 /**
- * 将RecyclerView的添加到[SwipeRefreshLayout]
+ * 将ViewPager2的添加到[SwipeRefreshLayout]
+ *
+ * ```
+ * val adapter: ListAdapter<*, *> = ...
+ * val parent = viewPager2.withSwipeRefresh(adapter)
+ * ```
  */
-private fun RecyclerView.addToSwipeRefreshLayout(): DefaultSwipeRefreshLayout {
-    require(parent == null) {
-        "RecyclerView的父级不为空，无法添加到SwipeRefreshLayout。"
-    }
+fun ViewPager2.withSwipeRefresh(adapter: ListAdapter<*, *>): SwipeRefreshLayout {
+    return addToSwipeRefreshLayout().apply { setAdapter(adapter) }
+}
+
+/**
+ * 将ViewPager2的父级替换为[SwipeRefreshLayout]
+ *
+ * ```
+ * val adapter: ListAdapter<*, *> = ...
+ * val newParent = viewPager2.replaceWithSwipeRefresh(adapter)
+ * ```
+ */
+fun ViewPager2.replaceWithSwipeRefresh(adapter: ListAdapter<*, *>): SwipeRefreshLayout {
+    return replaceParentToSwipeRefreshLayout().apply { setAdapter(adapter) }
+}
+
+private fun ViewGroup.addToSwipeRefreshLayout(): DefaultSwipeRefreshLayout {
+    require(parent == null) { "父级不为空，无法添加到SwipeRefreshLayout" }
     return DefaultSwipeRefreshLayout(context)
         .also { it.addView(this, MATCH_PARENT, MATCH_PARENT) }
 }
 
-/**
- * 将RecyclerView的父级替换为[SwipeRefreshLayout]
- */
-private fun RecyclerView.replaceParentToSwipeRefreshLayout(): DefaultSwipeRefreshLayout {
-    val oldParent = requireNotNull(parent) {
-        "RecyclerView的父级为空，无法进行父级替换，" +
-                "请改为调用`RecyclerView.withSwipeRefresh(ListAdapter<*, *>)`创建刷新容器。"
-    }
-    require(oldParent is ViewGroup) {
-        "RecyclerView的父级需要是ViewGroup。"
-    }
+private fun ViewGroup.replaceParentToSwipeRefreshLayout(): DefaultSwipeRefreshLayout {
+    val oldParent = requireNotNull(parent) { "父级为空，无法进行父级替换" }
+    require(oldParent is ViewGroup) { "父级需要是ViewGroup" }
     findSwipeRefresh()?.let { return it }
 
     val oldIndex = oldParent.indexOfChild(this)
@@ -79,10 +91,7 @@ private fun RecyclerView.replaceParentToSwipeRefreshLayout(): DefaultSwipeRefres
     }
 }
 
-/**
- * 查找RecyclerView的[SwipeRefreshLayout]父级
- */
-private fun RecyclerView.findSwipeRefresh(): DefaultSwipeRefreshLayout? {
+private fun ViewGroup.findSwipeRefresh(): DefaultSwipeRefreshLayout? {
     var parent = this.parent
     while (parent != null) {
         if (parent is DefaultSwipeRefreshLayout) {
