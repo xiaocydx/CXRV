@@ -30,8 +30,7 @@ class ComplexRepository(
                 val id = "${params.key}-$num"
                 val url = urls[num % urls.size]
                 val type = when {
-                    num % 4 == 0 -> ComplexItem.TYPE_IMAGE
-                    num % 7 == 0 -> ComplexItem.TYPE_AD
+                    num % 4 == 0 -> ComplexItem.TYPE_AD
                     else -> ComplexItem.TYPE_VIDEO
                 }
                 ComplexItem(id, url, url, id, type)

@@ -4,11 +4,9 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.DrawableImageViewTarget
 import com.google.android.material.transition.platform.MaterialContainerTransformSharedElementCallback
 import com.xiaocydx.cxrv.binding.BindingAdapter
 import com.xiaocydx.cxrv.binding.BindingHolder
@@ -18,7 +16,7 @@ import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
-import com.xiaocydx.cxrv.list.staggered
+import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.R
@@ -34,7 +32,6 @@ import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.showToast
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import androidx.constraintlayout.widget.ConstraintLayout.LayoutParams as ConstraintLayoutParams
 
 /**
  * TODO: 2023/7/30
@@ -42,6 +39,7 @@ import androidx.constraintlayout.widget.ConstraintLayout.LayoutParams as Constra
  *  2. 重建后退出没有回退动画
  *  3. 出现内存泄漏检查，原因？
  *  4. 限制为竖屏
+ *  5. 进入后退出动画异常
  *
  * @author xcc
  * @date 2023/7/30
@@ -65,12 +63,9 @@ class ComplexListActivity : AppCompatActivity() {
         ) {
             val requestManager = Glide.with(this@ComplexListActivity)
             onBindView {
-                ivCover.updateLayoutParams<ConstraintLayoutParams> {
-                    dimensionRatio = it.dimensionRatio
-                }
                 requestManager.load(it.coverUrl).centerCrop()
                     .placeholder(R.color.placeholder_color)
-                    .into(DrawableImageViewTarget(ivCover).waitForLayout())
+                    .into(ivCover)
                 tvType.text = it.type
                 tvType.setBackgroundColor(it.typeColor)
                 tvTitle.text = it.title
@@ -80,7 +75,7 @@ class ComplexListActivity : AppCompatActivity() {
         rvComplex = RecyclerView(this)
             .apply { id = viewModel.rvId }
             .layoutParams(matchParent, matchParent)
-            .overScrollNever().staggered(spanCount = 2).fixedSize()
+            .overScrollNever().grid(spanCount = 2).fixedSize()
             .divider(width = 5.dp, height = 5.dp) { edge(Edge.all()) }
             .adapter(complexAdapter.withPaging())
 
@@ -95,7 +90,6 @@ class ComplexListActivity : AppCompatActivity() {
 
         complexAdapter.doOnItemClick { holder, item ->
             when (item.type) {
-                ComplexItem.TYPE_IMAGE,
                 ComplexItem.TYPE_AD -> showToast("点击${item.type}${item.title}")
                 ComplexItem.TYPE_VIDEO -> VideoStreamHelper.start(
                     activity = this,
