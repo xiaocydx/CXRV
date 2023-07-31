@@ -21,7 +21,6 @@ import com.xiaocydx.sample.itemtouch.ItemTouchActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
 import com.xiaocydx.sample.paging.PagingActivity
 import com.xiaocydx.sample.paging.article.ArticleListActivity
-import com.xiaocydx.sample.paging.complex.ComplexListActivity
 import com.xiaocydx.sample.payload.PayloadActivity
 import com.xiaocydx.sample.transition.EnterTransitionActivity
 import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity
@@ -65,7 +64,6 @@ class MainActivity : AppCompatActivity() {
         "HeaderFooter示例" to HeaderFooterActivity::class,
         "分页加载示例（本地测试）" to PagingActivity::class,
         "分页加载示例（网络请求）" to ArticleListActivity::class,
-        "分页数据同步示例（视频流）" to ComplexListActivity::class,
         "ViewPager2共享池示例" to SharedPoolActivity::class,
         "ViewPager2循环页面示例" to LoopPagerActivity::class,
         "ViewPager2滚动冲突处理示例" to NestedScrollableActivity::class,

@@ -40,6 +40,10 @@ import kotlinx.coroutines.flow.onEach
  *  3. 出现内存泄漏检查，原因？
  *  4. 限制为竖屏
  *  5. 进入后退出动画异常
+ *  Android 12启动其它Activity，传入options.toBundle()会导致当前Activity退出动画无效，
+ *  并且出现内存泄漏问题，原因？
+ *
+ * 分页数据同步示例（视频流）
  *
  * @author xcc
  * @date 2023/7/30
