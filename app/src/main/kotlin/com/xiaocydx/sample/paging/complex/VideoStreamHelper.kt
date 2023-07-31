@@ -9,6 +9,7 @@ import androidx.annotation.MainThread
 import androidx.core.app.ActivityOptionsCompat.makeSceneTransitionAnimation
 import androidx.lifecycle.Lifecycle.State.DESTROYED
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import com.xiaocydx.sample.doOnTargetState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -62,7 +63,7 @@ object VideoStreamHelper {
         assertMainThread()
         val data = currentList.filter { it.type == ComplexItem.TYPE_VIDEO }
         val position = data.indexOfFirst { it.id == targetItem.id }
-        val params = VideoStreamParams(data, nextKey, position)
+        val params = VideoStreamParams(data, nextKey, position, true)
         this.params[activity.token] = params
         val intent = Intent(activity, VideoStreamActivity::class.java)
         intent.putExtra(KEY_OWNER_ID, activity.token)
@@ -74,7 +75,7 @@ object VideoStreamHelper {
     @CheckResult
     fun consume(token: Int): VideoStreamParams {
         assertMainThread()
-        return requireNotNull(params.remove(token))
+        return params.remove(token) ?: VideoStreamParams()
     }
 
     private fun assertMainThread() {
@@ -83,9 +84,10 @@ object VideoStreamHelper {
 }
 
 data class VideoStreamParams(
-    val data: List<ComplexItem>,
-    val nextKey: Int?,
-    val position: Int,
+    val data: List<ComplexItem> = emptyList(),
+    val nextKey: Int? = null,
+    val position: Int = NO_POSITION,
+    val isValid: Boolean = false,
     val sharedName: String = data.getOrNull(position)?.id ?: ""
 )
 

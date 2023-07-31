@@ -32,6 +32,7 @@ class VideoStreamStateHolder(repository: ComplexRepository = ComplexRepository()
     fun flow(scope: CoroutineScope) = pager.flow.storeIn(state, scope)
 
     fun initState(params: VideoStreamParams) {
+        if (!params.isValid) return
         position = params.position
         helper.refresh(pager, params.data, params.nextKey)
     }

@@ -1,16 +1,15 @@
 package com.xiaocydx.sample.paging.complex
 
-import android.app.SharedElementCallback
-import android.graphics.Matrix
-import android.graphics.RectF
 import android.os.Bundle
-import android.os.Parcelable
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.DrawableImageViewTarget
+import com.google.android.material.transition.platform.MaterialContainerTransformSharedElementCallback
 import com.xiaocydx.cxrv.binding.BindingAdapter
 import com.xiaocydx.cxrv.binding.BindingHolder
 import com.xiaocydx.cxrv.binding.bindingAdapter
@@ -19,7 +18,7 @@ import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
-import com.xiaocydx.cxrv.list.grid
+import com.xiaocydx.cxrv.list.staggered
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.R
@@ -35,12 +34,14 @@ import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.showToast
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import androidx.constraintlayout.widget.ConstraintLayout.LayoutParams as ConstraintLayoutParams
 
 /**
  * TODO: 2023/7/30
  *  1. 修正重建数据异常的问题
- *  2. 补充类型过滤的处理
+ *  2. 重建后退出没有回退动画
  *  3. 出现内存泄漏检查，原因？
+ *  4. 限制为竖屏
  *
  * @author xcc
  * @date 2023/7/30
@@ -64,9 +65,12 @@ class ComplexListActivity : AppCompatActivity() {
         ) {
             val requestManager = Glide.with(this@ComplexListActivity)
             onBindView {
+                ivCover.updateLayoutParams<ConstraintLayoutParams> {
+                    dimensionRatio = it.dimensionRatio
+                }
                 requestManager.load(it.coverUrl).centerCrop()
                     .placeholder(R.color.placeholder_color)
-                    .into(ivCover)
+                    .into(DrawableImageViewTarget(ivCover).waitForLayout())
                 tvType.text = it.type
                 tvType.setBackgroundColor(it.typeColor)
                 tvTitle.text = it.title
@@ -76,7 +80,7 @@ class ComplexListActivity : AppCompatActivity() {
         rvComplex = RecyclerView(this)
             .apply { id = viewModel.rvId }
             .layoutParams(matchParent, matchParent)
-            .overScrollNever().grid(spanCount = 2).fixedSize()
+            .overScrollNever().staggered(spanCount = 2).fixedSize()
             .divider(width = 5.dp, height = 5.dp) { edge(Edge.all()) }
             .adapter(complexAdapter.withPaging())
 
@@ -135,16 +139,7 @@ class ComplexListActivity : AppCompatActivity() {
 
     private class MaterialContainerExitSharedElementCallback(
         private val exitSharedElement: () -> View?
-    ) : SharedElementCallback() {
-        override fun onCaptureSharedElementSnapshot(
-            sharedElement: View?,
-            viewToGlobalMatrix: Matrix?,
-            screenBounds: RectF?
-        ): Parcelable {
-            // TODO: 2023/7/31  重置为1f的时机慢了，原因？
-            // sharedElement?.alpha = 1f
-            return super.onCaptureSharedElementSnapshot(sharedElement, viewToGlobalMatrix, screenBounds)
-        }
+    ) : MaterialContainerTransformSharedElementCallback() {
 
         override fun onMapSharedElements(
             names: MutableList<String>,

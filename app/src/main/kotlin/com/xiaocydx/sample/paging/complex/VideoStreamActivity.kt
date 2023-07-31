@@ -1,5 +1,6 @@
 package com.xiaocydx.sample.paging.complex
 
+import android.app.Activity
 import android.app.Instrumentation
 import android.graphics.Color
 import android.os.Build
@@ -10,7 +11,6 @@ import android.view.Window
 import android.widget.FrameLayout
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.transition.doOnEnd
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
@@ -34,6 +34,7 @@ import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.databinding.ItemVideoStreamBinding
 import com.xiaocydx.sample.doOnStateChanged
+import com.xiaocydx.sample.extensions.doOnEnd
 import com.xiaocydx.sample.launchSafely
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
@@ -43,6 +44,7 @@ import com.xiaocydx.sample.registerOnPageChangeCallback
 import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.wrapContent
 import kotlinx.coroutines.flow.first
+import java.lang.ref.WeakReference
 
 /**
  * @author xcc
@@ -122,16 +124,17 @@ class VideoStreamActivity : AppCompatActivity() {
 
         // 2. 推迟过渡动画，直至图片加载结束
         postponeEnterTransition()
-        requestManager.addDefaultRequestListener(RequestCompleteStartPostponedEnterTransition())
+        requestManager.addDefaultRequestListener(StartPostponedEnterTransitionListener(this))
+        window.sharedElementEnterTransition.doOnEnd(once = true) {
+            // 过渡动画结束时，才将viewPager2.offscreenPageLimit修改为1，
+            // 确保startPostponedEnterTransition()不受两侧加载图片影响。
+            viewPager2.offscreenPageLimit = 1
+        }
 
-        // 3. 过渡动画结束时，才将viewPager2.offscreenPageLimit修改为1，
-        // 确保startPostponedEnterTransition()不受两侧加载图片影响。
-        window.sharedElementEnterTransition.doOnEnd { viewPager2.offscreenPageLimit = 1 }
-
-        // 4. 发送事件同步当前位置的videoId
+        // 3. 发送事件同步当前位置的videoId
         viewPager2.registerOnPageChangeCallback(onSelected = viewModel::selectVideo)
 
-        // 5. 兼容Android 10及以上，执行onStop()后再恢复，退出时无过渡动画的问题
+        // 4. 兼容Android 10及以上，执行onStop()后再恢复，退出时无过渡动画的问题
         lifecycle.doOnStateChanged { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE
                     && !isFinishing && Build.VERSION.SDK_INT >= 29) {
@@ -140,20 +143,22 @@ class VideoStreamActivity : AppCompatActivity() {
         }
     }
 
-    private inner class RequestCompleteStartPostponedEnterTransition : RequestListener<Any> {
+    private class StartPostponedEnterTransitionListener(activity: Activity) : RequestListener<Any> {
+        private var activityRef: WeakReference<Activity>? = WeakReference(activity)
+
         override fun onResourceReady(
             resource: Any?, model: Any?,
             target: Target<Any>?, dataSource: DataSource?, isFirstResource: Boolean
-        ): Boolean {
-            startPostponedEnterTransition()
-            return false
-        }
+        ): Boolean = startPostponedEnterTransition()
 
         override fun onLoadFailed(
             e: GlideException?, model: Any?,
             target: Target<Any>?, isFirstResource: Boolean
-        ): Boolean {
-            startPostponedEnterTransition()
+        ): Boolean = startPostponedEnterTransition()
+
+        private fun startPostponedEnterTransition(): Boolean {
+            activityRef?.get()?.startPostponedEnterTransition()
+            activityRef = null
             return false
         }
     }
