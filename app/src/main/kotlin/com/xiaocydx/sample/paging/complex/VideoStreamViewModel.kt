@@ -8,22 +8,24 @@ import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 
 /**
+ * // TODO: 2023/8/2 简化示例代码
+ *
  * @author xcc
  * @date 2023/7/30
  */
 class VideoStreamViewModel(
-    private val token: Int,
-    params: VideoStreamParams = VideoStreamHelper.consume(token),
+    private val complexViewModel: ComplexListViewModel,
     repository: ComplexRepository = ComplexRepository()
 ) : ViewModel() {
-    private var position = params.position
+    private var position = NO_POSITION
     private val state = VideoStreamStateHolder(repository)
     val vpId = ViewCompat.generateViewId()
     val flow = state.flow(viewModelScope)
-    val sharedName = params.sharedName
 
     init {
-        state.sendEvent { VideoStreamHelper.send(token, it) }
+        val params = complexViewModel.consumeParams()
+        position = params.position
+        state.sendEvent(complexViewModel::sync)
         state.initState(params)
     }
 
@@ -34,14 +36,12 @@ class VideoStreamViewModel(
         state.selectVideo(position)
     }
 
-    class Factory(private val token: Int) : ViewModelProvider.Factory {
-
-        constructor(activity: VideoStreamActivity) : this(VideoStreamHelper.token(activity))
+    class Factory(private val viewModel: ComplexListViewModel) : ViewModelProvider.Factory {
 
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass === VideoStreamViewModel::class.java)
             @Suppress("UNCHECKED_CAST")
-            return VideoStreamViewModel(token) as T
+            return VideoStreamViewModel(viewModel) as T
         }
     }
 }

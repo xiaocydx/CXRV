@@ -51,10 +51,6 @@
             android:name=".paging.complex.ComplexListActivity"
             android:exported="false" />
         <activity
-            android:name=".paging.complex.VideoStreamActivity"
-            android:exported="false"
-            android:theme="@style/VideoStream" />
-        <activity
             android:name=".viewpager2.nested.NestedScrollableActivity"
             android:exported="false" />
         <activity

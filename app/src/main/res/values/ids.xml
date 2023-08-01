@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="tag_vp2_shared_recycled_view_pool" type="id" />
+    <item name="transform_root_view_fragment_container" type="id" />
 </resources>
