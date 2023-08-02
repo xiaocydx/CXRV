@@ -23,6 +23,7 @@ import com.xiaocydx.cxrv.list.ListOwner
 import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.UpdateOp
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -49,18 +50,18 @@ import kotlin.coroutines.EmptyCoroutineContext
  * 热流被首次收集时，才会开始收集它的上游，直到[scope]被取消。
  *
  * ### 调用顺序
- * 不允许在调用[storeIn]之后，还调用[flowMap]转换[PagingData.flow]，
+ * 不允许调用[storeIn]之后，还调用[multiple]或[flowMap]转换[PagingData.flow]，
  * [state]和视图控制器会建立双向通信，需要确保[state]跟视图控制器的数据一致。
  *
  * 在ViewModel中使用[storeIn]：
  * ```
  * class FooViewModel : ViewModel(private val repository: FooRepository) {
- *     private val listState = ListState<Foo>()
+ *     private val state = ListState<Foo>()
  *     val flow = repository.flow
  *         .flowMap { eventFlow ->
  *             eventFlow.itemMap { loadType, item -> ... }
  *         }
- *         .storeIn(listState, viewModelScope)
+ *         .storeIn(state, viewModelScope)
  * }
  * ```
  */
@@ -68,21 +69,19 @@ fun <T : Any> Flow<PagingData<T>>.storeIn(
     state: ListState<T>,
     scope: CoroutineScope
 ): Flow<PagingData<T>> {
-    var previous: PagingEventFlow<T>? = null
+    if (this is PagingDataCancellableFlow) return this
+    var previous: PagingEventCancellableFlow<T>? = null
     val upstream: Flow<PagingData<T>> = map { data ->
         previous?.cancel()
         val mediator = PagingListMediator(data, state)
-        val flow = PagingEventFlow(scope, mediator.flow, mediator)
+        val flow = PagingEventCancellableFlow(scope, mediator.flow, mediator)
         previous = flow
         PagingData(flow, mediator)
     }
-    return PagingDataFlow(scope, upstream)
+    return PagingDataCancellableFlow(scope, upstream)
 }
 
-/**
- * 可取消的`Flow<PagingData<T>>`
- */
-private class PagingDataFlow<T : Any>(
+private class PagingDataCancellableFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingData<T>>
 ) : CancellableFlow<PagingData<T>>(scope, upstream) {
@@ -95,25 +94,20 @@ private class PagingDataFlow<T : Any>(
     }
 }
 
-/**
- * 可取消的`Flow<PagingEvent<T>>`
- */
-private class PagingEventFlow<T : Any>(
+private class PagingEventCancellableFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingEvent<T>>,
     private val mediator: PagingListMediator<T>
 ) : CancellableFlow<PagingEvent<T>>(scope, upstream) {
-    private var isFirstActive = true
 
-    override fun onActive(): PagingEvent<T>? = when {
-        isFirstActive -> {
-            isFirstActive = false
-            null
+    override fun onActive(): PagingEvent<T>? = mediator.run {
+        if (version == 0
+                && loadStates.refresh.isIncomplete
+                && loadStates.append.isIncomplete) {
+            return@run null
         }
-        else -> mediator.run {
-            val op: UpdateOp<T> = UpdateOp.SubmitList(currentList)
-            PagingEvent.ListStateUpdate(op, loadStates).fusion(version)
-        }
+        val op: UpdateOp<T> = UpdateOp.SubmitList(currentList)
+        PagingEvent.ListStateUpdate(op, loadStates).fusion(version)
     }
 }
 
@@ -123,7 +117,7 @@ private class PagingEventFlow<T : Any>(
  * [CancellableFlow]可以被重复收集，但同时只能被一个收集器收集，
  * 在被首次收集时，才会开始收集它的上游，直到主动调用`cancel()`或者`scope`被取消。
  */
-private open class CancellableFlow<T>(
+internal open class CancellableFlow<T>(
     private val scope: CoroutineScope,
     private val upstream: Flow<T>,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
@@ -147,7 +141,7 @@ private open class CancellableFlow<T>(
                 collector.emit(value)
             }
         } finally {
-            // 当前协程可能已经被取消，因此用NonCancellable替换Job
+            // 当前协程可能已被取消，用NonCancellable确保执行
             withMainDispatcher(NonCancellable) {
                 isCollected = false
                 onInactive()
@@ -157,10 +151,9 @@ private open class CancellableFlow<T>(
 
     @MainThread
     private fun launchCollectJob() {
-        if (collectJob != null) {
-            return
-        }
-        collectJob = scope.launch(mainDispatcher.immediate) {
+        if (collectJob != null) return
+        val coroutineName = CoroutineName(javaClass.simpleName)
+        collectJob = scope.launch(coroutineName + mainDispatcher.immediate) {
             upstream.collect {
                 onReceive(it)
                 if (!isCollected) {

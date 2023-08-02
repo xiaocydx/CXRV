@@ -50,7 +50,7 @@ import kotlinx.coroutines.flow.map
 inline fun <T : Any, R : Any> Flow<PagingData<T>>.flowMap(
     crossinline transform: suspend (flow: Flow<PagingEvent<T>>) -> Flow<PagingEvent<R>>
 ): Flow<PagingData<R>> = map { data ->
-    data.ensureAllowTransform()
+    data.ensureTransformBeforeStoreIn()
     PagingData(transform(data.flow), data.mediator)
 }
 
@@ -81,10 +81,9 @@ inline fun <T : Any, R : Any> Flow<PagingEvent<T>>.dataMap(
     }
 }
 
-/**
- * 确保允许转换`PagingData<T>`，若不允许，则抛出[IllegalArgumentException]异常
- */
 @PublishedApi
-internal fun PagingData<*>.ensureAllowTransform() {
-    require(mediator.asListMediator<Any>() == null) { "flowMap()必须在storeIn()之前调用" }
+internal fun PagingData<*>.ensureTransformBeforeStoreIn() {
+    check(mediator.asListMediator<Any>() == null) {
+        "Flow<PagingData<T>>.flowMap()必须在Flow<PagingData<T>>.storeIn()之前调用"
+    }
 }
