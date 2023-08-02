@@ -19,12 +19,11 @@ class ComplexRepository(
 
     fun getComplexPager(
         initKey: Int,
-        config: PagingConfig,
-        interceptor: PagingInterceptor<Int, ComplexItem>
+        config: PagingConfig
     ): Pager<Int, ComplexItem> = Pager(
         initKey = initKey,
         config = config,
-        source = interceptor.intercept { params ->
+        source = { params ->
             delay(duration)
             val data = (1..params.pageSize).map { num ->
                 val id = "${params.key}-$num"

@@ -18,6 +18,7 @@ import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.R
+import com.xiaocydx.sample.awaitPreDraw
 import com.xiaocydx.sample.databinding.ItemComplexBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
@@ -37,12 +38,11 @@ import kotlinx.coroutines.flow.onEach
 
 /**
  * TODO: 2023/7/30
- *   1. 修整数据同步逻辑
- *   2. 添加TransformLifecycle
- *   3. 实现退出动画完成才清除图片
- *   4. 处理点击穿透
- *   5. 重建流程位置不正确
- *   6. 过渡卡顿
+ *   1. 添加TransformLifecycle
+ *   2. 实现退出动画完成才清除图片
+ *   3. 处理动画过程的点击穿透
+ *   4. 过渡卡顿
+ *   5. 重建后没有退出动画
  *
  * 分页数据同步示例（视频流）
  *
@@ -78,11 +78,11 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
 
             doOnItemClick { holder, item ->
                 when (item.type) {
-                    ComplexItem.TYPE_AD -> showToast("点击${item.type}${item.title}")
                     ComplexItem.TYPE_VIDEO -> {
-                        viewModel.setPendingId(item.id)
+                        if (!viewModel.setPendingParams(item.id)) return@doOnItemClick
                         showTransformFragment(holder.binding.ivCover, VideoStreamFragment::class)
                     }
+                    ComplexItem.TYPE_AD -> showToast("点击${item.type}${item.title}")
                 }
             }
         }
@@ -98,13 +98,14 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
     }
 
     private fun initCollect() {
-        viewModel.flow
+        viewModel.complexFlow
             .onEach(complexAdapter.pagingCollector)
             .repeatOnLifecycle(lifecycle)
             .launchInLifecycleScope()
 
         viewModel.scrollEvent
             .onEach(rvComplex::scrollToPosition)
+            .onEach { rvComplex.awaitPreDraw() }
             .map(rvComplex::findViewHolderForAdapterPosition)
             .filterIsInstance<BindingHolder<ItemComplexBinding>>()
             .onEach { setTransformTargetView(it.binding.ivCover) }

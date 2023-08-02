@@ -7,7 +7,10 @@ import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.Px
+import androidx.core.view.doOnPreDraw
 import androidx.viewpager2.widget.ViewPager2
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 /**
  * [TypedValue.complexToDimensionPixelSize]的舍入逻辑，
@@ -60,3 +63,10 @@ inline fun ViewPager2.registerOnPageChangeCallback(
 
     override fun onPageScrollStateChanged(state: Int) = onScrollStateChanged(state)
 }.also(::registerOnPageChangeCallback)
+
+internal suspend fun View.awaitPreDraw() {
+    suspendCancellableCoroutine { cont ->
+        val listener = doOnPreDraw { cont.resume(Unit) }
+        cont.invokeOnCancellation { listener.removeListener() }
+    }
+}
