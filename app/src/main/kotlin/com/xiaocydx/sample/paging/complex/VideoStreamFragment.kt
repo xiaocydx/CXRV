@@ -41,12 +41,12 @@ import java.lang.ref.WeakReference
  */
 class VideoStreamFragment : Fragment(), TransformReceiver {
     private lateinit var binding: FragmetVideoStreamBinding
-    private lateinit var videoAdapter: ListAdapter<ComplexItem, *>
+    private lateinit var videoAdapter: ListAdapter<VideoStreamItem, *>
     private val complexViewModel: ComplexListViewModel by viewModels(
         ownerProducer = { parentFragment ?: requireActivity() }
     )
     private val videoViewModel: VideoStreamViewModel by viewModels(
-        factoryProducer = { VideoStreamViewModel.Factory(complexViewModel.pagingFlow) }
+        factoryProducer = { VideoStreamViewModel.Factory(complexViewModel.videoStreamFlow()) }
     )
 
     override fun onCreateView(
@@ -58,7 +58,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             inflater, container, false
         )
         videoAdapter = bindingAdapter(
-            uniqueId = ComplexItem::id,
+            uniqueId = VideoStreamItem::id,
             inflate = ItemVideoStreamBinding::inflate
         ) {
             // FIXME: 修复fragment退出过程自动清除图片的问题
@@ -81,15 +81,15 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         viewLifecycleScope.launchSafely {
-            val params = complexViewModel.consumePendingParams()
-            if (params != null) {
-                videoViewModel.syncState(params)
+            val initialState = complexViewModel.consumePendingInitialState()
+            if (initialState != null) {
+                videoViewModel.syncInitialState(initialState)
                 videoAdapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
-                binding.viewPager2.setCurrentItem(params.position, false)
+                binding.viewPager2.setCurrentItem(initialState.position, false)
                 binding.viewPager2.registerOnPageChangeCallback(onSelected = videoViewModel::selectVideo)
-                videoViewModel.selectId.drop(count = 1).collect(complexViewModel::syncSelect)
+                videoViewModel.selectId.drop(count = 1).collect(complexViewModel::syncSelectVideo)
             } else {
-                videoViewModel.selectId.collect(complexViewModel::syncSelect)
+                videoViewModel.selectId.collect(complexViewModel::syncSelectVideo)
             }
         }
 

@@ -79,7 +79,7 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
             doOnItemClick { holder, item ->
                 when (item.type) {
                     ComplexItem.TYPE_VIDEO -> {
-                        if (!viewModel.setPendingParams(item.id)) return@doOnItemClick
+                        if (!viewModel.setPendingInitialState(item.id)) return@doOnItemClick
                         showTransformFragment(holder.binding.ivCover, VideoStreamFragment::class)
                     }
                     ComplexItem.TYPE_AD -> showToast("点击${item.type}${item.title}")

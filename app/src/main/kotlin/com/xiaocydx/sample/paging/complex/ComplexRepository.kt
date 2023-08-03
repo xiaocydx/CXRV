@@ -18,8 +18,8 @@ class ComplexRepository(
 ) {
 
     fun getComplexPager(
-        initKey: Int,
-        config: PagingConfig
+        config: PagingConfig,
+        initKey: Int = 1
     ): Pager<Int, ComplexItem> = Pager(
         initKey = initKey,
         config = config,
