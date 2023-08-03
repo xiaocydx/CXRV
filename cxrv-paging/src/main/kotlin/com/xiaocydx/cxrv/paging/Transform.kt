@@ -16,6 +16,7 @@
 
 package com.xiaocydx.cxrv.paging
 
+import com.xiaocydx.cxrv.paging.LoadType.APPEND
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -35,7 +36,7 @@ import kotlinx.coroutines.flow.map
  *
  * 由于`Flow<PagingData<T>>`是嵌套流结构，
  * 因此基础库中不会将[flowMap]和[itemMap]组合起来，
- * 声明`Flow<PagingData<T>>.itemMap`扩展函数简化代码，
+ * 声明`Flow<PagingData<T>>.itemMap()`扩展简化代码，
  * 因为这类扩展函数会对调用者产生误导，例如下面的代码：
  * ```
  * val flow: Flow<PagingData<T>> = ...
@@ -50,7 +51,7 @@ import kotlinx.coroutines.flow.map
 inline fun <T : Any, R : Any> Flow<PagingData<T>>.flowMap(
     crossinline transform: suspend (flow: Flow<PagingEvent<T>>) -> Flow<PagingEvent<R>>
 ): Flow<PagingData<R>> = map { data ->
-    data.ensureTransformBeforeStoreIn()
+    data.ensureBeforeStoreInOperator { "Flow<PagingData<T>>.flowMap()" }
     PagingData(transform(data.flow), data.mediator)
 }
 
@@ -81,9 +82,25 @@ inline fun <T : Any, R : Any> Flow<PagingEvent<T>>.dataMap(
     }
 }
 
-@PublishedApi
-internal fun PagingData<*>.ensureTransformBeforeStoreIn() {
-    check(mediator.asListMediator<Any>() == null) {
-        "Flow<PagingData<T>>.flowMap()必须在Flow<PagingData<T>>.storeIn()之前调用"
+/**
+ * 将上游[APPEND]加载的预取策略转换为[prefetch]，最初的预取策略来自[PagingConfig.appendPrefetch]，
+ * 该函数在搭配[broadcastIn]共享分页数据流和加载状态时才有意义，详细描述可以看[broadcastIn]的注释。
+ */
+fun <T : Any> Flow<PagingData<T>>.appendPrefetch(
+    prefetch: PagingPrefetch
+): Flow<PagingData<T>> = map { data ->
+    var mediator = data.mediator
+    mediator = if (mediator is AppendPrefetchMediator) {
+        mediator.copy(prefetch = prefetch)
+    } else {
+        AppendPrefetchMediator(prefetch, mediator)
     }
+    PagingData(data.flow, mediator)
+}
+
+private data class AppendPrefetchMediator(
+    private val prefetch: PagingPrefetch,
+    private val mediator: PagingMediator
+) : PagingMediator by mediator {
+    override val appendPrefetch: PagingPrefetch = prefetch
 }
