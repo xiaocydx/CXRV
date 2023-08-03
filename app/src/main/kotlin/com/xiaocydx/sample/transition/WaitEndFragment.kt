@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.onEach
  * @author xcc
  * @date 2023/5/21
  */
-class WaitEndFragment : SlideFragment() {
+class WaitEndFragment : TransitionFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val controller = EnterTransitionController(this)

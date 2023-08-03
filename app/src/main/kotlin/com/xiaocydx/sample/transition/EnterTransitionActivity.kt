@@ -71,7 +71,7 @@ class EnterTransitionActivity : AppCompatActivity() {
         }
     }
 
-    private fun addFragment(fragment: SlideFragment) {
+    private fun addFragment(fragment: TransitionFragment) {
         supportFragmentManager.commit {
             setReorderingAllowed(true)
             addToBackStack(null)

@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
  * @author xcc
  * @date 2023/5/21
  */
-class PrepareFragment : SlideFragment() {
+class PrepareFragment : TransitionFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         viewLifecycleScope.launch {

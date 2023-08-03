@@ -30,7 +30,6 @@ import com.xiaocydx.sample.paging.complex.transform.TransformSender
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.repeatOnLifecycle
-import com.xiaocydx.sample.showToast
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -57,7 +56,6 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
         super.onCreate(savedInstanceState)
         initView()
         initCollect()
-        initEdgeToEdge()
     }
 
     private fun initView() {
@@ -81,7 +79,10 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
                         if (!viewModel.setPendingInitialState(item.id)) return@doOnItemClick
                         showTransformFragment(holder.binding.ivCover, VideoStreamFragment::class)
                     }
-                    ComplexItem.TYPE_AD -> showToast("点击${item.type}${item.title}")
+                    ComplexItem.TYPE_AD -> {
+                        // 沿用EnterTransitionController的过渡动画卡顿优化方案
+                        showTransformFragment(holder.binding.ivCover, AdFragment::class)
+                    }
                 }
             }
         }
@@ -93,7 +94,10 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
             .divider(width = 5.dp, height = 5.dp) { edge(Edge.all()) }
             .adapter(complexAdapter.withPaging())
 
-        setTransformContentView(rvComplex.withSwipeRefresh(complexAdapter))
+        val container = SystemBarsContainer(this)
+        container.init(window, rvComplex.withSwipeRefresh(complexAdapter))
+        rvComplex.enableGestureNavBarEdgeToEdge()
+        setTransformContentView(container)
     }
 
     private fun initCollect() {
@@ -110,10 +114,5 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
             .filterIsInstance<BindingHolder<ItemComplexBinding>>()
             .onEach { setTransformTargetView(it.binding.ivCover) }
             .launchIn(lifecycleScope)
-    }
-
-    private fun initEdgeToEdge() {
-        window.enableGestureNavBarEdgeToEdge()
-        rvComplex.enableGestureNavBarEdgeToEdge()
     }
 }

@@ -97,7 +97,7 @@ fun WindowInsetsCompat.consume(@InsetsType typeMask: Int): WindowInsetsCompat {
     return builder.setInsets(typeMask, Insets.NONE).build()
 }
 
-private fun WindowInsetsCompat.isGestureNavigationBar(resources: Resources): Boolean {
+fun WindowInsetsCompat.isGestureNavigationBar(resources: Resources): Boolean {
     val threshold = (24 * resources.displayMetrics.density).toInt()
     return getInsets(navigationBars()).bottom <= threshold.coerceAtLeast(66)
 }

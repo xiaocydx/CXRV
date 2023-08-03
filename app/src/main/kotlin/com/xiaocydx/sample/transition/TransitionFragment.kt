@@ -34,10 +34,10 @@ import kotlinx.coroutines.flow.stateIn
  * @author xcc
  * @date 2023/5/21
  */
-abstract class SlideFragment : Fragment() {
-    protected val viewModel: SlideViewModel by viewModels()
-    protected val loadingAdapter = SlideLoadingAdapter()
-    protected val contentAdapter = SlideContentAdapter()
+abstract class TransitionFragment : Fragment() {
+    protected val viewModel: TransitionViewModel by viewModels()
+    protected val loadingAdapter = LoadingAdapter()
+    protected val contentAdapter = ContentAdapter()
     protected lateinit var recyclerView: RecyclerView
         private set
 
@@ -46,7 +46,7 @@ abstract class SlideFragment : Fragment() {
         enterTransition = Slide(Gravity.END).apply { duration = TRANSITION_DURATION }
     }
 
-    final override fun onCreateView(
+    override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -61,7 +61,7 @@ abstract class SlideFragment : Fragment() {
     }
 }
 
-class SlideViewModel : ViewModel() {
+class TransitionViewModel : ViewModel() {
     val rvId = ViewCompat.generateViewId()
     val state = flow {
         delay(LOADING_DURATION)
@@ -83,7 +83,7 @@ enum class SlideState {
     LOADING, CONTENT
 }
 
-class SlideContentAdapter : RecyclerView.Adapter<SlideContentAdapter.Holder>() {
+class ContentAdapter : RecyclerView.Adapter<ContentAdapter.Holder>() {
     private var count = 0
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
@@ -106,7 +106,7 @@ class SlideContentAdapter : RecyclerView.Adapter<SlideContentAdapter.Holder>() {
     class Holder(val binding: ItemSlideContentBinding) : ViewHolder(binding.root)
 }
 
-class SlideLoadingAdapter : ViewAdapter<ViewHolder>() {
+class LoadingAdapter : ViewAdapter<ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = ItemSlideLoadingBinding.inflate(

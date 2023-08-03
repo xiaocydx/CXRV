@@ -1,8 +1,16 @@
-package com.xiaocydx.sample.transition
+package com.xiaocydx.sample.paging.complex
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.lifecycle.flowWithLifecycle
+import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
+import com.xiaocydx.sample.paging.complex.transform.TransformReceiver
+import com.xiaocydx.sample.transition.EnterTransitionController
+import com.xiaocydx.sample.transition.LOADING_DURATION
+import com.xiaocydx.sample.transition.SlideState
+import com.xiaocydx.sample.transition.TransitionFragment
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -17,13 +25,24 @@ import kotlinx.coroutines.flow.onEach
  * 对于列表数据加载比较快的情况，这种处理方式虽然没直接解决重新布局的耗时问题，但是能提升交互体验。
  *
  * @author xcc
- * @date 2023/5/21
+ * @date 2023/8/4
  */
-class NotWaitEndFragment : TransitionFragment() {
+class AdFragment : TransitionFragment(), TransformReceiver {
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        val view = super.onCreateView(inflater, container, savedInstanceState)
+        return SystemBarsContainer(requireContext()).init(requireActivity().window, view)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        recyclerView.enableGestureNavBarEdgeToEdge()
         val controller = EnterTransitionController(this)
         controller.postponeEnterTransition(timeMillis = LOADING_DURATION + 50L)
+
         viewModel.state
             .flowWithLifecycle(viewLifecycle)
             .distinctUntilChanged()

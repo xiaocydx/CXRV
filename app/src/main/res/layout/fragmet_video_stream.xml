@@ -9,9 +9,11 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <View
-        android:id="@+id/headerMask"
+    <TextView
+        android:id="@+id/tvTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#4DFFFFFF" />
+        android:background="#4DFFFFFF"
+        android:gravity="center"
+        android:paddingVertical="12dp"/>
 </FrameLayout>

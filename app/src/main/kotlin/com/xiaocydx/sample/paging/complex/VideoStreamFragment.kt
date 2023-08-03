@@ -4,9 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.updateLayoutParams
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.flowWithLifecycle
 import androidx.transition.Transition
 import androidx.transition.TransitionListenerAdapter
 import androidx.viewpager2.widget.ViewPager2.ORIENTATION_VERTICAL
@@ -23,6 +25,7 @@ import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.databinding.FragmetVideoStreamBinding
 import com.xiaocydx.sample.databinding.ItemVideoStreamBinding
+import com.xiaocydx.sample.doOnApplyWindowInsets
 import com.xiaocydx.sample.launchSafely
 import com.xiaocydx.sample.paging.complex.transform.TransformReceiver
 import com.xiaocydx.sample.paging.config.loadStatesFlow
@@ -31,8 +34,11 @@ import com.xiaocydx.sample.registerOnPageChangeCallback
 import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 /**
  * @author xcc
@@ -67,7 +73,6 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             onBindView {
                 requestManager.load(it.coverUrl)
                     .centerCrop().into(ivCover)
-                tvTitle.text = it.title
             }
         }
         binding.viewPager2.apply {
@@ -96,19 +101,21 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             selectVideoId.collect(complexViewModel::syncSelectVideo)
         }
 
+        binding.tvTitle.doOnApplyWindowInsets { v, insets, initialState ->
+            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            v.updatePadding(top = initialState.paddings.top + statusBars.top)
+        }
+
+        videoViewModel.selectVideoTitle
+            .flowWithLifecycle(viewLifecycle)
+            .distinctUntilChanged()
+            .onEach { binding.tvTitle.text = it }
+            .launchIn(viewLifecycleScope)
+
         videoViewModel.videoFlow
             .onEach(videoAdapter.pagingCollector)
             .repeatOnLifecycle(viewLifecycle)
             .launchInLifecycleScope()
-
-        // TODO: 自行处理WindowInsets
-        binding.headerMask.updateLayoutParams { height = 0 }
-        // ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { v, inset ->
-        //     val systemBars = inset.getInsets(WindowInsetsCompat.Type.systemBars())
-        //     root.updatePadding(bottom = systemBars.bottom)
-        //     headerMask.updateLayoutParams { height = systemBars.top }
-        //     WindowInsetsCompat.CONSUMED
-        // }
     }
 
     private fun setupEnterTransition(requestManager: RequestManager) {

@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.onEach
  * @author xcc
  * @date 2023/5/21
  */
-class JankFragment : SlideFragment() {
+class JankFragment : TransitionFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         viewModel.state

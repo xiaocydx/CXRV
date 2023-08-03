@@ -31,6 +31,7 @@ class VideoStreamViewModel(videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewM
         .storeIn(state, viewModelScope)
     val selectPosition = _selectPosition.asStateFlow()
     val selectVideoId = selectPosition.map { state.getItemOrNull(it)?.id ?: "" }
+    val selectVideoTitle = selectPosition.map { state.getItemOrNull(it)?.title ?: "" }
 
     /**
      * 先同步初始状态，后收集[videoFlow]，收集时发射的分页事件会完成状态的同步
