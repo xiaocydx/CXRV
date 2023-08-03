@@ -19,16 +19,14 @@ package com.xiaocydx.cxrv.paging
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.junit.Test
@@ -72,9 +70,9 @@ internal class StoreInTest {
         assertThat(children).hasSize(0)
 
         // storeIn转换后的事件流融合了列表状态的事件，因此分页事件发射完毕也不会结束
-        launch(start = CoroutineStart.UNDISPATCHED) {
-            upstream.storeIn(scope).onEach { it.flow.collect() }.collect()
-        }
+        upstream.storeIn(scope)
+            .onEach { it.flow.collect() }
+            .launchIn(UNDISPATCHED, this)
 
         // 跟启动调度错开，等待所有children启动
         yield()
@@ -92,10 +90,10 @@ internal class StoreInTest {
         val scope = CoroutineScope(Job())
         val storeIn = upstream.storeIn(scope)
 
-        val job = launch(start = CoroutineStart.UNDISPATCHED) {
+        val job = storeIn.onEach {
             // delay(1000)用于模拟在背压情况下也能正常结束收集
-            storeIn.onEach { it.flow.collect { delay(1000) } }.collect()
-        }
+            it.flow.collect { delay(1000) }
+        }.launchIn(UNDISPATCHED, this)
         assertThat(job.isActive).isTrue()
         assertThat(job.isCancelled).isFalse()
         assertThat(job.isCompleted).isFalse()
@@ -114,8 +112,8 @@ internal class StoreInTest {
             coroutineScope {
                 val scope = CoroutineScope(Job())
                 val storeIn = upstream.storeIn(scope)
-                storeIn.onEach { it.flow.collect() }.launchIn(this)
-                storeIn.onEach { it.flow.collect() }.launchIn(this)
+                storeIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
+                storeIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
                 delay(10)
                 coroutineContext.job.cancel()
             }
@@ -131,7 +129,7 @@ internal class StoreInTest {
         val job = upstream.onEach {
             upstreamPagingDataList.add(it)
             it.flow.collect(upstreamPagingEventList::add)
-        }.launchIn(this)
+        }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
         delay(10)
         job.cancelAndJoin()
@@ -143,7 +141,7 @@ internal class StoreInTest {
         storeIn.onEach {
             storeInPagingDataList.add(it)
             it.flow.collect(storeInPagingEventList::add)
-        }.launchIn(this)
+        }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
         delay(10)
         scope.coroutineContext.job.cancelAndJoin()
@@ -161,7 +159,7 @@ internal class StoreInTest {
         var job = storeIn.onEach { data ->
             prevPagingData = data
             data.flow.collect()
-        }.launchIn(this)
+        }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
         delay(10)
         job.cancelAndJoin()
@@ -172,7 +170,7 @@ internal class StoreInTest {
         job = storeIn.onEach { data ->
             lastPagingData = data
             data.flow.collect { lastPagingEvent = it }
-        }.launchIn(this)
+        }.launchIn(UNDISPATCHED, this)
         delay(10)
         job.cancelAndJoin()
 

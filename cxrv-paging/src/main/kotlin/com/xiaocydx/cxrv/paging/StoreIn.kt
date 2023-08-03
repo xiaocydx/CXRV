@@ -29,9 +29,8 @@ import kotlinx.coroutines.flow.map
  * ### 函数作用
  * 1. 将`Flow<PagingData<T>>`发射的事件的列表数据保存到[state]中。
  * 2. [state]和视图控制器建立基于[ListOwner]的双向通信。
- * 3. 将`Flow<PagingData<T>>`转换为热流，
- * 热流可以被重复收集，但同时只能被一个收集器收集，
- * 热流被首次收集时，才会开始收集它的上游，直到[scope]被取消。
+ * 3. 将`Flow<PagingData<T>>`转换为热流，热流可以被重复收集，
+ * 但同时只能被一个收集器收集，当热流被首次收集时，才开始收集上游，直到[scope]被取消。
  *
  * ### 调用顺序
  * 不允许在[storeIn]之后，调用[broadcastIn]或[flowMap]转换[PagingData.flow]，
@@ -80,12 +79,16 @@ internal inline fun PagingData<*>.ensureBeforeStoreInOperator(lazyFunctionName: 
 private class StoreInPagingDataStateFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingData<T>>
-) : PagingSharedFlow<PagingData<T>>(scope, upstream, limitCollectorCount = 1) {
+) : PagingSharedFlow<PagingData<T>>(
+    scope = scope,
+    upstream = upstream,
+    limitCollectorCount = 1
+) {
     private var state: PagingData<T>? = null
 
     override fun onActive(): PagingData<T>? = state
 
-    override fun onReceive(value: PagingData<T>) {
+    override fun onReceive(value: PagingData<T>?) {
         state = value
     }
 }
@@ -94,7 +97,11 @@ private class StoreInPagingEventSharedFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingEvent<T>>,
     private val mediator: PagingListMediator<T>
-) : PagingSharedFlow<PagingEvent<T>>(scope, upstream, limitCollectorCount = 1) {
+) : PagingSharedFlow<PagingEvent<T>>(
+    scope = scope,
+    upstream = upstream,
+    limitCollectorCount = 1
+) {
     private var isFirstActive = true
 
     override fun onActive(): PagingEvent<T>? = mediator.run {

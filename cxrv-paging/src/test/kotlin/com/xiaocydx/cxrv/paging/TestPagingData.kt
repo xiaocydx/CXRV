@@ -16,9 +16,14 @@
 
 package com.xiaocydx.cxrv.paging
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 
 @Suppress("TestFunctionName")
 internal fun TestPagingLoadingEvent() = PagingEvent.LoadStateUpdate<Int>(
@@ -56,3 +61,8 @@ internal class TestPagingMediator : PagingMediator {
     override fun append() = Unit
     override fun retry() = Unit
 }
+
+internal fun <T> Flow<T>.launchIn(
+    start: CoroutineStart,
+    scope: CoroutineScope
+) = scope.launch(start = start) { collect() }

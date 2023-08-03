@@ -20,16 +20,14 @@ import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.junit.Test
@@ -72,9 +70,9 @@ internal class BroadcastInTest {
         var children = scope.coroutineContext.job.children.toList()
         assertThat(children).hasSize(0)
 
-        launch(start = CoroutineStart.UNDISPATCHED) {
-            upstream.broadcastIn(scope).onEach { it.flow.collect() }.collect()
-        }
+        upstream.broadcastIn(scope)
+            .onEach { it.flow.collect() }
+            .launchIn(UNDISPATCHED, this)
 
         // 跟启动调度错开，等待所有children启动
         yield()
@@ -92,10 +90,9 @@ internal class BroadcastInTest {
         val scope = CoroutineScope(Job())
         val broadcastIn = upstream.broadcastIn(scope)
 
-        val job = launch(start = CoroutineStart.UNDISPATCHED) {
-            // delay(1000)用于模拟在背压情况下也能正常结束收集
-            broadcastIn.onEach { it.flow.collect { delay(1000) } }.collect()
-        }
+        val job = broadcastIn.onEach {
+            it.flow.collect { delay(1000) }
+        }.launchIn(UNDISPATCHED, this)
         assertThat(job.isActive).isTrue()
         assertThat(job.isCancelled).isFalse()
         assertThat(job.isCompleted).isFalse()
@@ -114,8 +111,8 @@ internal class BroadcastInTest {
             coroutineScope {
                 val scope = CoroutineScope(Job())
                 val broadcastIn = upstream.broadcastIn(scope)
-                broadcastIn.onEach { it.flow.collect() }.launchIn(this)
-                broadcastIn.onEach { it.flow.collect() }.launchIn(this)
+                broadcastIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
+                broadcastIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
                 delay(10)
                 coroutineContext.job.cancel()
             }
@@ -131,7 +128,7 @@ internal class BroadcastInTest {
         val job = upstream.onEach {
             upstreamPagingDataList.add(it)
             it.flow.collect(upstreamPagingEventList::add)
-        }.launchIn(this)
+        }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
         delay(10)
         job.cancelAndJoin()
@@ -143,7 +140,7 @@ internal class BroadcastInTest {
         broadcastIn.onEach {
             broadcastInPagingDataList.add(it)
             it.flow.collect(broadcastInPagingEventList::add)
-        }.launchIn(this)
+        }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
         delay(10)
         scope.coroutineContext.job.cancelAndJoin()
@@ -161,7 +158,7 @@ internal class BroadcastInTest {
         var job = broadcastIn.onEach { data ->
             prevPagingData = data
             data.flow.collect()
-        }.launchIn(this)
+        }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
         delay(10)
         job.cancelAndJoin()
@@ -172,11 +169,12 @@ internal class BroadcastInTest {
         job = broadcastIn.onEach { data ->
             lastPagingData = data
             data.flow.collect { lastPagingEvent = it }
-        }.launchIn(this)
+        }.launchIn(UNDISPATCHED, this)
         delay(10)
         job.cancelAndJoin()
 
-        assertThat(lastPagingData).isEqualTo(prevPagingData)
-        assertThat(lastPagingEvent).isNull()
+        assertThat(lastPagingData).isNotNull()
+        assertThat(lastPagingEvent).isNotNull()
+        assertThat(prevPagingData).isNotEqualTo(lastPagingData)
     }
 }
