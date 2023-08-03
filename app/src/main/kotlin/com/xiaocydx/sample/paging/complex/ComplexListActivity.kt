@@ -42,7 +42,6 @@ import kotlinx.coroutines.flow.onEach
  *   2. 实现退出动画完成才清除图片
  *   3. 处理动画过程的点击穿透
  *   4. 过渡卡顿
- *   5. 重建后没有退出动画
  *
  * 分页数据同步示例（视频流）
  *
@@ -103,6 +102,7 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
             .repeatOnLifecycle(lifecycle)
             .launchInLifecycleScope()
 
+        // 下一帧非平滑滚动布局完成后，再查找指定位置的目标view
         viewModel.scrollEvent
             .onEach(rvComplex::scrollToPosition)
             .onEach { rvComplex.awaitPreDraw() }

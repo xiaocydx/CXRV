@@ -25,13 +25,14 @@ import com.google.android.material.transition.MaterialContainerTransform
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
+import java.lang.ref.WeakReference
 
 /**
  * @author xcc
  * @date 2023/8/1
  */
 internal class TransformRootView(context: Context) : FrameLayout(context) {
-    private var senderView: View? = null
+    private var senderViewRef: WeakReference<View>? = null
 
     init {
         layoutParams(matchParent, matchParent)
@@ -39,10 +40,11 @@ internal class TransformRootView(context: Context) : FrameLayout(context) {
     }
 
     fun setSenderView(view: View?) {
-        senderView = view
+        if (senderViewRef?.get() === view) return
+        senderViewRef = WeakReference(view)
     }
 
     fun createTransition(fragment: Fragment, transform: MaterialContainerTransform): Transition {
-        return TransformTransition(fragment, ::senderView, transform)
+        return TransformTransition(fragment, lazyView = { senderViewRef?.get() }, transform)
     }
 }

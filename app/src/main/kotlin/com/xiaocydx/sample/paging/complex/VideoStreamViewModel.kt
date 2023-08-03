@@ -13,6 +13,7 @@ import com.xiaocydx.cxrv.paging.storeIn
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 
 /**
  * @author xcc
@@ -20,7 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class VideoStreamViewModel(videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewModel() {
     private val state = ListState<VideoStreamItem>()
-    private val _selectId = MutableStateFlow("")
+    private val _selectPosition = MutableStateFlow(0)
 
     /**
      * 视频流页面的item铺满全屏，转换末尾加载的预期策略，提前指定item个数预取分页数据
@@ -28,16 +29,19 @@ class VideoStreamViewModel(videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewM
     val videoFlow = videoFlow
         .appendPrefetch(ItemCount(3))
         .storeIn(state, viewModelScope)
-    val selectId = _selectId.asStateFlow()
+    val selectPosition = _selectPosition.asStateFlow()
+    val selectVideoId = selectPosition.map { state.getItemOrNull(it)?.id ?: "" }
 
+    /**
+     * 先同步初始状态，后收集[videoFlow]，收集时发射的分页事件会完成状态的同步
+     */
     fun syncInitialState(initialState: VideoStreamInitialState) {
         state.submitList(initialState.videoList)
         selectVideo(initialState.position)
     }
 
     fun selectVideo(position: Int) {
-        val item = state.getItemOrNull(position) ?: return
-        _selectId.value = item.id
+        _selectPosition.value = position
     }
 
     class Factory(private val videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewModelProvider.Factory {

@@ -36,7 +36,7 @@ class ComplexListViewModel(repository: ComplexRepository = ComplexRepository()) 
     fun setPendingInitialState(currentId: String): Boolean {
         if (pendingInitialState != null) return false
         val videoList = state.currentList.toViewStreamList()
-        val position = videoList.indexOfFirst { it.id === currentId }
+        val position = videoList.indexOfFirst { it.id === currentId }.coerceAtLeast(0)
         pendingInitialState = VideoStreamInitialState(position, videoList)
         return true
     }

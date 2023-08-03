@@ -33,7 +33,6 @@ import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
-import java.lang.ref.WeakReference
 
 /**
  * @author xcc
@@ -64,7 +63,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             // FIXME: 修复fragment退出过程自动清除图片的问题
             // val requestManager = Glide.with(this@VideoStreamFragment)
             val requestManager = Glide.with(requireActivity())
-            initEnterTransition(requestManager)
+            setupEnterTransition(requestManager)
             onBindView {
                 requestManager.load(it.coverUrl)
                     .centerCrop().into(ivCover)
@@ -81,16 +80,20 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         viewLifecycleScope.launchSafely {
+            // Fragment首次创建，同步初始状态，下面的selectPosition是同步后的结果
             val initialState = complexViewModel.consumePendingInitialState()
-            if (initialState != null) {
-                videoViewModel.syncInitialState(initialState)
-                videoAdapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
-                binding.viewPager2.setCurrentItem(initialState.position, false)
-                binding.viewPager2.registerOnPageChangeCallback(onSelected = videoViewModel::selectVideo)
-                videoViewModel.selectId.drop(count = 1).collect(complexViewModel::syncSelectVideo)
-            } else {
-                videoViewModel.selectId.collect(complexViewModel::syncSelectVideo)
-            }
+            initialState?.let(videoViewModel::syncInitialState)
+
+            // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重建流程同样适用
+            videoAdapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
+            binding.viewPager2.setCurrentItem(videoViewModel.selectPosition.value, false)
+            binding.viewPager2.registerOnPageChangeCallback(onSelected = videoViewModel::selectVideo)
+
+            // Fragment首次创建，需要丢弃一次选中值，避免冗余的同步处理，
+            // Fragment重建流程，需要根据最新的选中值，同步选中的位置。
+            var selectVideoId = videoViewModel.selectVideoId
+            if (initialState != null) selectVideoId = selectVideoId.drop(count = 1)
+            selectVideoId.collect(complexViewModel::syncSelectVideo)
         }
 
         videoViewModel.videoFlow
@@ -108,7 +111,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         // }
     }
 
-    private fun initEnterTransition(requestManager: RequestManager) {
+    private fun setupEnterTransition(requestManager: RequestManager) {
         // 1. 初始化enterTransition
         val enterTransition = setTransformEnterTransition()
         enterTransition.duration = 200
@@ -126,8 +129,9 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         })
     }
 
-    private class StartPostponedEnterTransitionListener(fragment: Fragment) : RequestListener<Any> {
-        private var fragmentRef: WeakReference<Fragment>? = WeakReference(fragment)
+    private class StartPostponedEnterTransitionListener(
+        private var fragment: Fragment?
+    ) : RequestListener<Any> {
 
         override fun onResourceReady(
             resource: Any?, model: Any?,
@@ -140,8 +144,9 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         ): Boolean = startPostponedEnterTransition()
 
         private fun startPostponedEnterTransition(): Boolean {
-            fragmentRef?.get()?.startPostponedEnterTransition()
-            fragmentRef = null
+            // RequestManager没提供removeDefaultRequestListener()函数，做置空处理
+            fragment?.startPostponedEnterTransition()
+            fragment = null
             return false
         }
     }

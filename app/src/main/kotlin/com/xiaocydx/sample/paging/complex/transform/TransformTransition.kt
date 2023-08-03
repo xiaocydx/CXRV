@@ -50,11 +50,17 @@ internal class TransformTransition(
         startValues: TransitionValues?,
         endValues: TransitionValues?
     ): Animator? {
-        if (startValues?.view == null) return null
+        val startView = startValues?.view
+        val endView = endValues?.view ?: (if (fragment.isAdded) fragment.view else lazyView())
+        if (startView == null || endView == null
+                || (startView.parent == null && endView.parent == null)) {
+            // startView和endView的parent都为null，无法向上递归查找，会导致创建属性动画抛出异常
+            return null
+        }
+
         var finalEndValues = endValues
-        if (finalEndValues == null) {
-            val view = (if (fragment.isAdded) fragment.view else lazyView()) ?: return null
-            finalEndValues = TransitionValues(view)
+        if (finalEndValues?.view == null) {
+            finalEndValues = TransitionValues(endView)
             transform.captureEndValues(finalEndValues)
         }
         transform.dependsOn(this, sceneRoot)
