@@ -33,12 +33,10 @@ class ComplexListViewModel(repository: ComplexRepository = ComplexRepository()) 
             .takeIf { it != -1 }?.let(_scrollEvent::trySend)
     }
 
-    fun setPendingInitialState(currentId: String): Boolean {
-        if (pendingInitialState != null) return false
+    fun setPendingInitialState(currentId: String) {
         val videoList = state.currentList.toViewStreamList()
         val position = videoList.indexOfFirst { it.id === currentId }.coerceAtLeast(0)
         pendingInitialState = VideoStreamInitialState(position, videoList)
-        return true
     }
 
     fun consumePendingInitialState() = pendingInitialState?.also { pendingInitialState = null }

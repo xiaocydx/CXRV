@@ -16,23 +16,34 @@
 
 package com.xiaocydx.sample.paging.complex.transform
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Bundle
 import android.view.View
 import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks
 import androidx.transition.Transition
 import com.google.android.material.transition.MaterialContainerTransform
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import java.lang.ref.WeakReference
+import kotlin.reflect.KClass
 
 /**
  * @author xcc
  * @date 2023/8/1
  */
-internal class TransformRootView(context: Context) : FrameLayout(context) {
+@SuppressLint("ViewConstructor")
+internal class TransformRootView(
+    context: Context,
+    private val fragmentManager: FragmentManager,
+) : FrameLayout(context) {
+    private var hasPendingTransaction = false
     private var senderViewRef: WeakReference<View>? = null
+    private var callbacks = TransformFragmentLifecycleCallbacks()
 
     init {
         layoutParams(matchParent, matchParent)
@@ -46,5 +57,47 @@ internal class TransformRootView(context: Context) : FrameLayout(context) {
 
     fun createTransition(fragment: Fragment, transform: MaterialContainerTransform): Transition {
         return TransformTransition(fragment, lazyView = { senderViewRef?.get() }, transform)
+    }
+
+    fun showTransformFragment(
+        fragmentClass: KClass<out Fragment>,
+        args: Bundle? = null,
+        allowStateLoss: Boolean = false
+    ): Boolean {
+        if (hasPendingTransaction) return false
+        if (fragmentManager.findFragmentByTag(FRAGMENT_TAG) != null) return false
+        hasPendingTransaction = true
+        val transaction = fragmentManager.beginTransaction()
+            .addToBackStack(null)
+            .add(id, fragmentClass.java, args, FRAGMENT_TAG)
+        if (allowStateLoss) {
+            transaction.commitAllowingStateLoss()
+        } else {
+            transaction.commit()
+        }
+        return false
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        fragmentManager.registerFragmentLifecycleCallbacks(callbacks, false)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        fragmentManager.unregisterFragmentLifecycleCallbacks(callbacks)
+    }
+
+    private inner class TransformFragmentLifecycleCallbacks : FragmentLifecycleCallbacks() {
+
+        override fun onFragmentCreated(fm: FragmentManager, f: Fragment, savedInstanceState: Bundle?) {
+            if (f.tag == FRAGMENT_TAG) hasPendingTransaction = false
+        }
+
+        override fun onFragmentDestroyed(fm: FragmentManager, f: Fragment) = Unit
+    }
+
+    private companion object {
+        const val FRAGMENT_TAG = "com.xiaocydx.sample.paging.complex.transform.FRAGMENT_TAG"
     }
 }

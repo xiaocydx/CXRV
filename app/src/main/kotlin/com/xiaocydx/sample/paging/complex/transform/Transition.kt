@@ -23,7 +23,7 @@ import android.annotation.SuppressLint
 import android.view.ViewGroup
 
 @SuppressLint("RestrictedApi")
-fun Transition.dependsOn(other: Transition, sceneRoot: ViewGroup) {
+internal fun Transition.dependsOn(other: Transition, sceneRoot: ViewGroup) {
     val source = this
     if (source === other) return
     other.addListener(object : Transition.TransitionListener {

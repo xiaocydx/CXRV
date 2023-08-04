@@ -4,13 +4,11 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.removeItem
 import com.xiaocydx.cxrv.list.removeItemAt
 import com.xiaocydx.cxrv.paging.PagingConfig
 import com.xiaocydx.cxrv.paging.PagingPrefetch
 import com.xiaocydx.cxrv.paging.storeIn
 import com.xiaocydx.sample.retrofit.ArticleInfo
-import java.text.FieldPosition
 
 /**
  * @author xcc

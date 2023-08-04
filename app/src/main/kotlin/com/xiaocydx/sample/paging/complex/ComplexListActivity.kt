@@ -6,12 +6,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.xiaocydx.cxrv.binding.BindingAdapter
-import com.xiaocydx.cxrv.binding.BindingHolder
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.grid
@@ -30,17 +29,14 @@ import com.xiaocydx.sample.paging.complex.transform.TransformSender
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.repeatOnLifecycle
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 
 /**
  * TODO: 2023/7/30
  *   1. 添加TransformLifecycle
  *   2. 实现退出动画完成才清除图片
- *   3. 处理动画过程的点击穿透
- *   4. 过渡卡顿
  *
  * 分页数据同步示例（视频流）
  *
@@ -49,7 +45,7 @@ import kotlinx.coroutines.flow.onEach
  */
 class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSender {
     private lateinit var rvComplex: RecyclerView
-    private lateinit var complexAdapter: BindingAdapter<ComplexItem, ItemComplexBinding>
+    private lateinit var complexAdapter: ListAdapter<ComplexItem, *>
     private val viewModel: ComplexListViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,12 +73,12 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
             doOnItemClick { holder, item ->
                 when (item.type) {
                     ComplexItem.TYPE_VIDEO -> {
-                        if (!viewModel.setPendingInitialState(item.id)) return@doOnItemClick
-                        showTransformFragment(holder.binding.ivCover, VideoStreamFragment::class)
+                        viewModel.setPendingInitialState(item.id)
+                        forwardTransform(holder.itemView, VideoStreamFragment::class)
                     }
                     ComplexItem.TYPE_AD -> {
                         // 沿用EnterTransitionController的过渡动画卡顿优化方案
-                        showTransformFragment(holder.binding.ivCover, AdFragment::class)
+                        forwardTransform(holder.itemView, AdFragment::class)
                     }
                 }
             }
@@ -106,9 +102,8 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
         viewModel.scrollEvent
             .onEach(rvComplex::scrollToPosition)
             .onEach { rvComplex.awaitPreDraw() }
-            .map(rvComplex::findViewHolderForAdapterPosition)
-            .filterIsInstance<BindingHolder<ItemComplexBinding>>()
-            .onEach { setTransformTargetView(it.binding.ivCover) }
+            .mapNotNull(rvComplex::findViewHolderForAdapterPosition)
+            .onEach { setTransformView(it.itemView) }
             .launchIn(lifecycleScope)
     }
 
