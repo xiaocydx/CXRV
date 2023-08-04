@@ -33,12 +33,13 @@ class AdFragment : TransitionFragment(), TransformReceiver {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        val view = super.onCreateView(inflater, container, savedInstanceState)
-        return SystemBarsContainer(requireContext()).init(requireActivity().window, view)
-    }
+    ): View = SystemBarsContainer(requireContext())
+        .setGestureNavBarEdgeToEdge(true)
+        .setWindowSystemBarsColor(requireActivity().window)
+        .attach(super.onCreateView(inflater, container, savedInstanceState))
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        setTransformEnterTransition().duration = 200
         recyclerView.enableGestureNavBarEdgeToEdge()
         val controller = EnterTransitionController(this)
         controller.postponeEnterTransition(timeMillis = LOADING_DURATION + 50L)

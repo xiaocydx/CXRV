@@ -56,6 +56,7 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
         super.onCreate(savedInstanceState)
         initView()
         initCollect()
+        initEdgeToEdge()
     }
 
     private fun initView() {
@@ -93,11 +94,6 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
             .overScrollNever().grid(spanCount = 2).fixedSize()
             .divider(width = 5.dp, height = 5.dp) { edge(Edge.all()) }
             .adapter(complexAdapter.withPaging())
-
-        val container = SystemBarsContainer(this)
-        container.init(window, rvComplex.withSwipeRefresh(complexAdapter))
-        rvComplex.enableGestureNavBarEdgeToEdge()
-        setTransformContentView(container)
     }
 
     private fun initCollect() {
@@ -114,5 +110,16 @@ class ComplexListActivity : AppCompatActivity(), TransformContainer, TransformSe
             .filterIsInstance<BindingHolder<ItemComplexBinding>>()
             .onEach { setTransformTargetView(it.binding.ivCover) }
             .launchIn(lifecycleScope)
+    }
+
+    private fun initEdgeToEdge() {
+        setTransformContentView(
+            view = SystemBarsContainer(this)
+                .disableDecorFitsSystemWindows(window)
+                .setGestureNavBarEdgeToEdge(true)
+                .setWindowSystemBarsColor(window)
+                .attach(rvComplex.withSwipeRefresh(complexAdapter))
+        )
+        rvComplex.enableGestureNavBarEdgeToEdge()
     }
 }

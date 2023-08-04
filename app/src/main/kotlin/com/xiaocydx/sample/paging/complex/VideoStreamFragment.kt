@@ -80,7 +80,10 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             orientation = ORIENTATION_VERTICAL
             replaceWithSwipeRefresh(videoAdapter)
         }
-        return binding.root
+        return SystemBarsContainer(requireContext())
+            .setStatusBarEdgeToEdge(true)
+            .setGestureNavBarEdgeToEdge(true)
+            .attach(binding.root)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

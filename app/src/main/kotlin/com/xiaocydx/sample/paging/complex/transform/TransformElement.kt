@@ -34,8 +34,8 @@ import kotlin.reflect.KClass
  */
 interface TransformContainer {
 
-    fun FragmentActivity.setTransformContentView(child: View) {
-        setContentView(child)
+    fun FragmentActivity.setTransformContentView(view: View) {
+        setContentView(view)
         installTransformContainer()
     }
 
