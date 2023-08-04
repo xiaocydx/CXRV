@@ -1,6 +1,7 @@
 package com.xiaocydx.sample.transition
 
 import android.os.Bundle
+import android.transition.Slide
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -12,7 +13,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import androidx.transition.Slide
 import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.cxrv.concat.withHeader
 import com.xiaocydx.cxrv.divider.Edge

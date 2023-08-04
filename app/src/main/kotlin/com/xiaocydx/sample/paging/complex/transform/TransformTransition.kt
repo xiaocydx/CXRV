@@ -20,10 +20,11 @@ import android.animation.Animator
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.transition.Transition
-import androidx.transition.TransitionValues
 import androidx.transition.dependsOn
 import com.google.android.material.transition.MaterialContainerTransform
+import android.transition.Transition as AndroidTransition
+import android.transition.TransitionValues as AndroidTransitionValues
+import androidx.transition.TransitionValues as AndroidXTransitionValues
 
 /**
  * @author xcc
@@ -33,22 +34,28 @@ internal class TransformTransition(
     private val fragment: Fragment,
     private val lazyView: () -> View?,
     private val transform: MaterialContainerTransform
-) : Transition() {
+) : AndroidTransition() {
 
-    override fun captureStartValues(transitionValues: TransitionValues) {
-        transitionValues.view = if (fragment.isAdded) lazyView() else fragment.view
-        transitionValues.takeIf { it.view != null }?.let(transform::captureStartValues)
+    override fun captureStartValues(transitionValues: AndroidTransitionValues) {
+        val view = (if (fragment.isAdded) lazyView() else fragment.view) ?: return
+        val values = AndroidXTransitionValues(view)
+        transform.captureStartValues(values)
+        transitionValues.view = view
+        transitionValues.values.putAll(values.values)
     }
 
-    override fun captureEndValues(transitionValues: TransitionValues) {
-        transitionValues.view = if (fragment.isAdded) fragment.view else lazyView()
-        transitionValues.takeIf { it.view != null }?.let(transform::captureEndValues)
+    override fun captureEndValues(transitionValues: AndroidTransitionValues) {
+        val view = (if (fragment.isAdded) fragment.view else lazyView()) ?: return
+        val values = AndroidXTransitionValues(view)
+        transform.captureEndValues(values)
+        transitionValues.view = view
+        transitionValues.values.putAll(values.values)
     }
 
     override fun createAnimator(
         sceneRoot: ViewGroup,
-        startValues: TransitionValues?,
-        endValues: TransitionValues?
+        startValues: AndroidTransitionValues?,
+        endValues: AndroidTransitionValues?
     ): Animator? {
         val startView = startValues?.view
         val endView = endValues?.view ?: (if (fragment.isAdded) fragment.view else lazyView())
@@ -58,12 +65,20 @@ internal class TransformTransition(
             return null
         }
 
-        var finalEndValues = endValues
-        if (finalEndValues?.view == null) {
-            finalEndValues = TransitionValues(endView)
-            transform.captureEndValues(finalEndValues)
+        val endXValues = if (endValues?.view == null) {
+            AndroidXTransitionValues(endView).also(transform::captureEndValues)
+        } else {
+            endValues.toAndroidX()
         }
         transform.dependsOn(this, sceneRoot)
-        return transform.createAnimator(sceneRoot, startValues, finalEndValues)
+        return transform.createAnimator(sceneRoot, startValues.toAndroidX(), endXValues)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun AndroidTransitionValues.toAndroidX(): AndroidXTransitionValues {
+        val transitionValues = AndroidXTransitionValues()
+        transitionValues.view = view
+        transitionValues.values.putAll(values)
+        return transitionValues
     }
 }

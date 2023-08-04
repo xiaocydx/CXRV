@@ -21,6 +21,7 @@ import com.xiaocydx.sample.itemtouch.ItemTouchActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
 import com.xiaocydx.sample.paging.PagingActivity
 import com.xiaocydx.sample.paging.article.ArticleListActivity
+import com.xiaocydx.sample.paging.complex.ComplexListActivity
 import com.xiaocydx.sample.payload.PayloadActivity
 import com.xiaocydx.sample.transition.EnterTransitionActivity
 import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity
@@ -67,7 +68,8 @@ class MainActivity : AppCompatActivity() {
         "ViewPager2共享池示例" to SharedPoolActivity::class,
         "ViewPager2循环页面示例" to LoopPagerActivity::class,
         "ViewPager2滚动冲突处理示例" to NestedScrollableActivity::class,
-        "Fragment过渡动画卡顿优化示例" to EnterTransitionActivity::class
+        "Fragment过渡动画卡顿优化示例" to EnterTransitionActivity::class,
+        "视频流的过渡动画和分页加载示例" to ComplexListActivity::class,
     )
 
     private fun performStartAction(holder: ViewHolder, action: StartAction) {

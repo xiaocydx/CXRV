@@ -1,6 +1,7 @@
 package com.xiaocydx.sample.paging.complex
 
 import android.os.Bundle
+import android.transition.Transition
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,8 +10,6 @@ import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
-import androidx.transition.Transition
-import androidx.transition.TransitionListenerAdapter
 import androidx.viewpager2.widget.ViewPager2.ORIENTATION_VERTICAL
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
@@ -28,6 +27,7 @@ import com.xiaocydx.sample.databinding.ItemVideoStreamBinding
 import com.xiaocydx.sample.doOnApplyWindowInsets
 import com.xiaocydx.sample.launchSafely
 import com.xiaocydx.sample.paging.complex.transform.TransformReceiver
+import com.xiaocydx.sample.paging.complex.transform.TransitionListenerAdapter
 import com.xiaocydx.sample.paging.config.loadStatesFlow
 import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
 import com.xiaocydx.sample.registerOnPageChangeCallback
@@ -59,6 +59,9 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        val requestManager = Glide.with(this)
+        setupEnterTransition(requestManager)
+
         binding = FragmetVideoStreamBinding.inflate(
             inflater, container, false
         )
@@ -66,14 +69,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             uniqueId = VideoStreamItem::id,
             inflate = ItemVideoStreamBinding::inflate
         ) {
-            // FIXME: 修复fragment退出过程自动清除图片的问题
-            // val requestManager = Glide.with(this@VideoStreamFragment)
-            val requestManager = Glide.with(requireActivity())
-            setupEnterTransition(requestManager)
-            onBindView {
-                requestManager.load(it.coverUrl)
-                    .centerCrop().into(ivCover)
-            }
+            onBindView { requestManager.load(it.coverUrl).centerCrop().into(ivCover) }
         }
         binding.viewPager2.apply {
             adapter = videoAdapter

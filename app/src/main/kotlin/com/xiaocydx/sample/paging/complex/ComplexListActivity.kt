@@ -36,9 +36,8 @@ import kotlinx.coroutines.flow.onEach
 /**
  * TODO: 2023/7/30
  *   1. 添加TransformLifecycle
- *   2. 实现退出动画完成才清除图片
  *
- * 分页数据同步示例（视频流）
+ * 视频流的过渡动画和分页加载示例
  *
  * @author xcc
  * @date 2023/7/30

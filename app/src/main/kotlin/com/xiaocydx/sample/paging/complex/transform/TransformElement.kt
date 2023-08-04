@@ -17,11 +17,11 @@
 package com.xiaocydx.sample.paging.complex.transform
 
 import android.os.Bundle
+import android.transition.Transition
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.transition.Transition
 import com.google.android.material.transition.MaterialContainerTransform
 import com.xiaocydx.sample.matchParent
 import kotlin.reflect.KClass

@@ -21,23 +21,23 @@ package androidx.transition
 
 import android.annotation.SuppressLint
 import android.view.ViewGroup
+import android.transition.Transition as AndroidTransition
+import androidx.transition.Transition as AndroidXTransition
 
 @SuppressLint("RestrictedApi")
-internal fun Transition.dependsOn(other: Transition, sceneRoot: ViewGroup) {
-    val source = this
-    if (source === other) return
-    other.addListener(object : Transition.TransitionListener {
-        override fun onTransitionStart(transition: Transition) = source.start()
-        override fun onTransitionPause(transition: Transition) = source.pause(sceneRoot)
-        override fun onTransitionResume(transition: Transition) = source.resume(sceneRoot)
-        override fun onTransitionCancel(transition: Transition) {
+internal fun AndroidXTransition.dependsOn(other: AndroidTransition, sceneRoot: ViewGroup) {
+    other.addListener(object : AndroidTransition.TransitionListener {
+        override fun onTransitionStart(transition: AndroidTransition) = start()
+        override fun onTransitionPause(transition: AndroidTransition) = pause(sceneRoot)
+        override fun onTransitionResume(transition: AndroidTransition) = resume(sceneRoot)
+        override fun onTransitionCancel(transition: AndroidTransition) {
             other.removeListener(this)
-            source.cancel()
+            cancel()
         }
 
-        override fun onTransitionEnd(transition: Transition) {
+        override fun onTransitionEnd(transition: AndroidTransition) {
             other.removeListener(this)
-            source.end()
+            end()
         }
     })
 }
