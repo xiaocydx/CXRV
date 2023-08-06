@@ -95,7 +95,7 @@ class FooListFragment : Fragment() {
         adapter = fooAdapter.withPaging()
     }
 
-    private fun RecyclerView.initParentViewPager2()  = doOnAttach{
+    private fun RecyclerView.initParentViewPager2() = doOnAttach {
         // 1. 处理ViewPager2嵌套RecyclerView的滚动冲突
         isVp2NestedScrollable = true
 

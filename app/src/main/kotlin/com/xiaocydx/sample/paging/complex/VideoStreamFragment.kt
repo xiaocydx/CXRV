@@ -1,7 +1,7 @@
 package com.xiaocydx.sample.paging.complex
 
 import android.os.Bundle
-import android.transition.Transition
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,6 +18,7 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.xiaocydx.cxrv.binding.bindingAdapter
+import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.paging.isSuccess
 import com.xiaocydx.cxrv.paging.onEach
@@ -25,13 +26,18 @@ import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.databinding.FragmetVideoStreamBinding
 import com.xiaocydx.sample.databinding.ItemVideoStreamBinding
 import com.xiaocydx.sample.doOnApplyWindowInsets
+import com.xiaocydx.sample.doOnStateChanged
 import com.xiaocydx.sample.launchSafely
+import com.xiaocydx.sample.paging.complex.transform.SystemBarsContainer
 import com.xiaocydx.sample.paging.complex.transform.TransformReceiver
-import com.xiaocydx.sample.paging.complex.transform.TransitionListenerAdapter
+import com.xiaocydx.sample.paging.complex.transform.doOnEnd
+import com.xiaocydx.sample.paging.complex.transform.setDarkStatusBarOnResume
+import com.xiaocydx.sample.paging.complex.transform.setWindowNavigationBarColor
 import com.xiaocydx.sample.paging.config.loadStatesFlow
 import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
 import com.xiaocydx.sample.registerOnPageChangeCallback
 import com.xiaocydx.sample.repeatOnLifecycle
+import com.xiaocydx.sample.showToast
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -61,7 +67,6 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
     ): View {
         val requestManager = Glide.with(this)
         setupEnterTransition(requestManager)
-
         binding = FragmetVideoStreamBinding.inflate(
             inflater, container, false
         )
@@ -69,7 +74,15 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             uniqueId = VideoStreamItem::id,
             inflate = ItemVideoStreamBinding::inflate
         ) {
-            onBindView { requestManager.load(it.coverUrl).centerCrop().into(ivCover) }
+            onBindView {
+                requestManager.load(it.coverUrl)
+                    .centerCrop().into(ivCover)
+            }
+            doOnLongItemClick { _, _ ->
+                binding.viewPager2.currentItem = 0
+                showToast("长按平滑滚动至首位")
+                false
+            }
         }
         binding.viewPager2.apply {
             adapter = videoAdapter
@@ -77,12 +90,19 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             replaceWithSwipeRefresh(videoAdapter)
         }
         return SystemBarsContainer(requireContext())
+            .setDarkStatusBarOnResume(this)
             .setStatusBarEdgeToEdge(true)
             .setGestureNavBarEdgeToEdge(true)
+            .setWindowNavigationBarColor(this)
             .attach(binding.root)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewLifecycle.doOnStateChanged { source, event ->
+            val currentState = source.lifecycle.currentState
+            Log.d("VideoStreamFragment", "currentState = ${currentState}, event = $event")
+        }
+
         viewLifecycleScope.launchSafely {
             // Fragment首次创建，同步初始状态，下面的selectPosition是同步后的结果
             val initialState = complexViewModel.consumePendingInitialState()
@@ -93,8 +113,8 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             binding.viewPager2.setCurrentItem(videoViewModel.selectPosition.value, false)
             binding.viewPager2.registerOnPageChangeCallback(onSelected = videoViewModel::selectVideo)
 
-            // Fragment首次创建，需要丢弃一次选中值，避免冗余的同步处理，
-            // Fragment重建流程，需要根据最新的选中值，同步选中的位置。
+            // Fragment首次创建，需要丢弃一次选中值，避免冗余的同步，
+            // Fragment重建流程，需要根据最新选中值，同步选中的位置。
             var selectVideoId = videoViewModel.selectVideoId
             if (initialState != null) selectVideoId = selectVideoId.drop(count = 1)
             selectVideoId.collect(complexViewModel::syncSelectVideo)
@@ -108,7 +128,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         videoViewModel.selectVideoTitle
             .flowWithLifecycle(viewLifecycle)
             .distinctUntilChanged()
-            .onEach { binding.tvTitle.text = it }
+            .onEach(binding.tvTitle::setText)
             .launchIn(viewLifecycleScope)
 
         videoViewModel.videoFlow
@@ -123,21 +143,23 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         enterTransition.duration = 200
 
         // 2. 推迟过渡动画，直至图片加载结束
-        postponeEnterTransition()
-        requestManager.addDefaultRequestListener(StartPostponedEnterTransitionListener(this))
-        enterTransition.addListener(object : TransitionListenerAdapter() {
-            override fun onTransitionEnd(transition: Transition) {
-                // 过渡动画结束时，才将viewPager2.offscreenPageLimit修改为1，
-                // 确保startPostponedEnterTransition()不受两侧加载图片影响。
-                transition.removeListener(this)
-                binding.viewPager2.offscreenPageLimit = 1
-            }
-        })
+        EnterTransitionListener(this, requestManager).postpone()
+        enterTransition.doOnEnd(once = true) {
+            // 过渡动画结束时，才将viewPager2.offscreenPageLimit修改为1，
+            // 确保startPostponedEnterTransition()不受两侧加载图片影响。
+            binding.viewPager2.offscreenPageLimit = 1
+        }
     }
 
-    private class StartPostponedEnterTransitionListener(
-        private var fragment: Fragment?
+    private class EnterTransitionListener(
+        private var fragment: Fragment?,
+        private val requestManager: RequestManager
     ) : RequestListener<Any> {
+
+        fun postpone() {
+            fragment?.postponeEnterTransition()
+            requestManager.addDefaultRequestListener(this)
+        }
 
         override fun onResourceReady(
             resource: Any?, model: Any?,
@@ -150,7 +172,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         ): Boolean = startPostponedEnterTransition()
 
         private fun startPostponedEnterTransition(): Boolean {
-            // RequestManager没提供removeDefaultRequestListener()函数，做置空处理
+            // RequestManager没提供removeDefaultRequestListener()，做置空处理
             fragment?.startPostponedEnterTransition()
             fragment = null
             return false
