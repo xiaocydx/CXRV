@@ -6,7 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.flowWithLifecycle
 import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
+import com.xiaocydx.sample.paging.complex.transform.SystemBarsContainer
 import com.xiaocydx.sample.paging.complex.transform.TransformReceiver
+import com.xiaocydx.sample.paging.complex.transform.setLightStatusBarOnResume
+import com.xiaocydx.sample.paging.complex.transform.setWindowNavigationBarColor
 import com.xiaocydx.sample.transition.EnterTransitionController
 import com.xiaocydx.sample.transition.LOADING_DURATION
 import com.xiaocydx.sample.transition.SlideState
@@ -34,16 +37,18 @@ class AdFragment : TransitionFragment(), TransformReceiver {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = SystemBarsContainer(requireContext())
+        .setLightStatusBarOnResume(this)
+        .setStatusBarColor(0xFF79AA91.toInt())
+        .setWindowNavigationBarColor(this)
         .setGestureNavBarEdgeToEdge(true)
-        .setWindowSystemBarsColor(requireActivity().window)
         .attach(super.onCreateView(inflater, container, savedInstanceState))
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setTransformEnterTransition().duration = 200
         recyclerView.enableGestureNavBarEdgeToEdge()
+
         val controller = EnterTransitionController(this)
         controller.postponeEnterTransition(timeMillis = LOADING_DURATION + 50L)
-
         viewModel.state
             .flowWithLifecycle(viewLifecycle)
             .distinctUntilChanged()
