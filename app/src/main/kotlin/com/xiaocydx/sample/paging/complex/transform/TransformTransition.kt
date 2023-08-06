@@ -16,69 +16,105 @@
 
 package com.xiaocydx.sample.paging.complex.transform
 
-import android.animation.Animator
+import android.transition.Transition
+import android.transition.TransitionSet
+import android.transition.TransitionValues
 import android.view.View
-import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.transition.dependsOn
-import com.google.android.material.transition.MaterialContainerTransform
-import android.transition.Transition as AndroidTransition
-import android.transition.TransitionValues as AndroidTransitionValues
-import androidx.transition.TransitionValues as AndroidXTransitionValues
+import com.google.android.material.transition.platform.MaterialContainerTransform
+import java.lang.ref.WeakReference
 
 /**
+ * [MaterialContainerTransform]不能被继承，利用[TransitionSet]包装一层，
+ * 重写[TransitionSet]相关函数，以实现对捕获时机的监听，当真正开始捕获时，
+ * 才获取`target`进行捕获，[TransitionSet]会触发`childTransition`的回调，
+ * 这也让[MaterialContainerTransform]在动画开始和结束时，能正常完成工作。
+ *
+ * **注意**：Fragment的过渡动画不能使用AndroidX的Transition，因为Fragment进入和退出的事务处理过程，
+ * 会调用`FragmentTransitionImpl.setListenerForTransitionEnd()`，等待过渡动画结束才推进生命周期状态，
+ * `FragmentTransitionCompat21.setListenerForTransitionEnd()`对Android SDK的Transition实现了该逻辑，
+ * 但是`FragmentTransitionSupport`却没有重写该函数，对AndroidX的Transition实现等待逻辑，这也就导致，
+ * 对Fragment使用AndroidX的Transition，其生命周期状态会在过渡动画结束前先被推进，以图片加载框架为例，
+ * 当Fragment退出时，会出现过渡动画还未结束，图片加载框架就先清除了图片的问题。
+ *
+ * 目前最新版本的`androidx.fragment 1.6.1`仍存在上述问题。
+ *
  * @author xcc
- * @date 2023/8/1
+ * @date 2023/8/5
  */
 internal class TransformTransition(
-    private val fragment: Fragment,
-    private val lazyView: () -> View?,
+    private val sceneRootId: Int,
+    private val senderView: () -> View?,
+    private val fragmentRef: WeakReference<Fragment>,
     private val transform: MaterialContainerTransform
-) : AndroidTransition() {
+) : TransitionSet() {
 
-    override fun captureStartValues(transitionValues: AndroidTransitionValues) {
-        val view = (if (fragment.isAdded) lazyView() else fragment.view) ?: return
-        val values = AndroidXTransitionValues(view)
-        transform.captureStartValues(values)
-        transitionValues.view = view
-        transitionValues.values.putAll(values.values)
+    init {
+        addTransition(transform)
     }
 
-    override fun captureEndValues(transitionValues: AndroidTransitionValues) {
-        val view = (if (fragment.isAdded) fragment.view else lazyView()) ?: return
-        val values = AndroidXTransitionValues(view)
-        transform.captureEndValues(values)
-        transitionValues.view = view
-        transitionValues.values.putAll(values.values)
-    }
-
-    override fun createAnimator(
-        sceneRoot: ViewGroup,
-        startValues: AndroidTransitionValues?,
-        endValues: AndroidTransitionValues?
-    ): Animator? {
-        val startView = startValues?.view
-        val endView = endValues?.view ?: (if (fragment.isAdded) fragment.view else lazyView())
-        if (startView == null || endView == null
-                || (startView.parent == null && endView.parent == null)) {
-            // startView和endView的parent都为null，无法向上递归查找，会导致创建属性动画抛出异常
-            return null
+    override fun captureStartValues(transitionValues: TransitionValues) {
+        val fragment = fragmentRef.get()
+        val target = when {
+            fragment == null -> null
+            fragment.isAdded -> senderView()
+            else -> fragment.view
         }
+        captureValues(target, transitionValues, start = true)
+    }
 
-        val endXValues = if (endValues?.view == null) {
-            AndroidXTransitionValues(endView).also(transform::captureEndValues)
+    override fun captureEndValues(transitionValues: TransitionValues) {
+        val fragment = fragmentRef.get()
+        val target = when {
+            fragment == null -> null
+            fragment.isAdded -> fragment.view
+            else -> senderView()
+        }
+        captureValues(target, transitionValues, start = false)
+    }
+
+    @Suppress("SENSELESS_COMPARISON")
+    private fun captureValues(target: View?, transitionValues: TransitionValues, start: Boolean) {
+        // 捕获流程调用自Transition.captureValues()，或者Transition.captureHierarchy()，
+        // 对于这两种情况，将sceneRoot的起始和结束捕获委托给transform，确保能创建属性动画。
+        val view = transitionValues.view
+        if (view == null || view.id != sceneRootId) return
+
+        // 当transform.createAnimator()创建属性动画时，会向上递归查找drawingView，
+        // 若查找不到，则抛出异常，因此在创建属性动画之前，先判断target能否进行查找，
+        // return表示不捕获，startValues或endValues会缺一个，也就不会创建属性动画。
+        if (target == null || !canFindDrawingViewById(target)) return
+
+        // 当前Transition和transform可能被添加了target，先移除再添加，确保元素不重复
+        this.addTargetSafely(target)
+        transform.addTargetSafely(target)
+
+        // 将transitionValues.view替换为target有两个目的：
+        // 1. 确保调用捕获函数能通过当前Transition和transform的Transition.isValidTarget()检查。
+        // 2. 确保transform.captureStartValues()和transform.captureEndValues()能捕获target。
+        transitionValues.view = target
+        if (start) {
+            super.captureStartValues(transitionValues)
         } else {
-            endValues.toAndroidX()
+            super.captureEndValues(transitionValues)
         }
-        transform.dependsOn(this, sceneRoot)
-        return transform.createAnimator(sceneRoot, startValues.toAndroidX(), endXValues)
+        this.removeTarget(target)
+        transform.removeTarget(target)
     }
 
-    @Suppress("DEPRECATION")
-    private fun AndroidTransitionValues.toAndroidX(): AndroidXTransitionValues {
-        val transitionValues = AndroidXTransitionValues()
-        transitionValues.view = view
-        transitionValues.values.putAll(values)
-        return transitionValues
+    private fun Transition.addTargetSafely(target: View) {
+        removeTarget(target)
+        addTarget(target)
+    }
+
+    private fun canFindDrawingViewById(target: View): Boolean {
+        val drawingViewId = transform.drawingViewId
+        var view: View? = target
+        while (view != null) {
+            if (view.id == drawingViewId) return true
+            val parent = view.parent
+            view = if (parent is View) parent else break
+        }
+        return false
     }
 }
