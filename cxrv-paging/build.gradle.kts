@@ -59,6 +59,7 @@ dependencies {
     compileOnly(project(":cxrv"))
     compileOnly("androidx.appcompat:appcompat:1.2.0")
     compileOnly("androidx.recyclerview:recyclerview:1.2.0")
+    compileOnly("androidx.viewpager2:viewpager2:1.0.0")
     compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
     testImplementation("junit:junit:4.+")
