@@ -19,11 +19,14 @@ package com.xiaocydx.cxrv.paging
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import com.xiaocydx.cxrv.paging.PagingEvent.LoadDataSuccess
-import kotlinx.coroutines.coroutineScope
+import com.xiaocydx.cxrv.paging.StoreInTest.Companion.storeInTest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,10 +45,11 @@ internal class TransformTest {
 
     @Test
     fun flowMapAfterShoreIn(): Unit = runBlocking {
-        val flow = TestPagingDataFlow(awaitCancellation = false)
         val result = runCatching {
-            coroutineScope {
-                flow.storeIn(this).flowMap { it }.collect()
+            runBlocking {
+                val flow = TestPagingDataFlow()
+                val scope = CoroutineScope(Job(coroutineContext.job))
+                flow.storeInTest(scope).flowMap { it }.collect()
             }
         }
         assertThat(result.exceptionOrNull()).isNotNull()

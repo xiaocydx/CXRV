@@ -14,21 +14,30 @@
  * limitations under the License.
  */
 
+@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER", "CANNOT_OVERRIDE_INVISIBLE_MEMBER")
+
 package com.xiaocydx.cxrv.paging
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
+import com.xiaocydx.cxrv.list.ListState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.yield
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -55,9 +64,8 @@ internal class StoreInTest {
         }
 
         val scope = CoroutineScope(Job())
-        upstream.storeIn(scope)
-        // 跟启动调度错开，等待所有children启动
-        yield()
+        upstream.storeInTest(scope)
+        delay(100)
         assertThat(collectPagingData).isFalse()
         assertThat(collectPagingEvent).isFalse()
     }
@@ -67,15 +75,13 @@ internal class StoreInTest {
         val upstream = TestPagingDataFlow()
         val scope = CoroutineScope(Job())
         var children = scope.coroutineContext.job.children.toList()
-        assertThat(children).hasSize(0)
+        assertThat(children).isEmpty()
 
-        // storeIn转换后的事件流融合了列表状态的事件，因此分页事件发射完毕也不会结束
-        upstream.storeIn(scope)
+        upstream.storeInTest(scope)
             .onEach { it.flow.collect() }
             .launchIn(UNDISPATCHED, this)
 
-        // 跟启动调度错开，等待所有children启动
-        yield()
+        delay(100)
         children = scope.coroutineContext.job.children.toList()
         assertThat(children).hasSize(2)
 
@@ -88,7 +94,7 @@ internal class StoreInTest {
     fun cancelCollector(): Unit = runBlocking {
         val upstream = TestPagingDataFlow()
         val scope = CoroutineScope(Job())
-        val storeIn = upstream.storeIn(scope)
+        val storeIn = upstream.storeInTest(scope)
 
         val job = storeIn.onEach {
             // delay(1000)用于模拟在背压情况下也能正常结束收集
@@ -111,10 +117,10 @@ internal class StoreInTest {
         val result = runCatching {
             coroutineScope {
                 val scope = CoroutineScope(Job())
-                val storeIn = upstream.storeIn(scope)
+                val storeIn = upstream.storeInTest(scope)
                 storeIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
                 storeIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
-                delay(10)
+                delay(100)
                 coroutineContext.job.cancel()
             }
         }
@@ -131,11 +137,11 @@ internal class StoreInTest {
             it.flow.collect(upstreamPagingEventList::add)
         }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(10)
+        delay(100)
         job.cancelAndJoin()
 
         val scope = CoroutineScope(Job())
-        val storeIn = upstream.storeIn(scope)
+        val storeIn = upstream.storeInTest(scope)
         val storeInPagingDataList = mutableListOf<PagingData<Int>>()
         val storeInPagingEventList = mutableListOf<PagingEvent<Int>>()
         storeIn.onEach {
@@ -143,7 +149,7 @@ internal class StoreInTest {
             it.flow.collect(storeInPagingEventList::add)
         }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(10)
+        delay(100)
         scope.coroutineContext.job.cancelAndJoin()
 
         assertThat(upstreamPagingDataList.size).isEqualTo(storeInPagingDataList.size)
@@ -154,14 +160,14 @@ internal class StoreInTest {
     fun repeatCollectValue(): Unit = runBlocking {
         val upstream = TestPagingDataFlow()
         val scope = CoroutineScope(Job())
-        val storeIn = upstream.storeIn(scope)
+        val storeIn = upstream.storeInTest(scope)
         var prevPagingData: PagingData<Int>? = null
         var job = storeIn.onEach { data ->
             prevPagingData = data
             data.flow.collect()
         }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(10)
+        delay(100)
         job.cancelAndJoin()
         assertThat(prevPagingData).isNotNull()
 
@@ -171,10 +177,32 @@ internal class StoreInTest {
             lastPagingData = data
             data.flow.collect { lastPagingEvent = it }
         }.launchIn(UNDISPATCHED, this)
-        delay(10)
+        delay(100)
         job.cancelAndJoin()
 
         assertThat(lastPagingData).isEqualTo(prevPagingData)
         assertThat(lastPagingEvent).isInstanceOf(PagingEvent.ListStateUpdate::class.java)
+    }
+
+    companion object {
+
+        fun <T : Any> Flow<PagingData<T>>.storeInTest(
+            scope: CoroutineScope,
+            state: ListState<T> = ListState()
+        ): Flow<PagingData<T>> = storeInInternal(state, scope, ::TestPagingListMediator)
+
+        private class TestPagingListMediator<T : Any>(
+            data: PagingData<T>,
+            listState: ListState<T>
+        ) : PagingListMediator<T>(data, listState) {
+
+            /**
+             * [PagingListMediator.flow]的主线程调度无法完成，修改实现以完成测试
+             */
+            override val flow = callbackFlow {
+                data.flow.onCompletion { awaitCancellation() }.collect(::send)
+                awaitClose { }
+            }.buffer(UNLIMITED)
+        }
     }
 }

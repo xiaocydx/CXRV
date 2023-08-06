@@ -18,6 +18,7 @@ package com.xiaocydx.cxrv.paging
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
+import com.xiaocydx.cxrv.paging.StoreInTest.Companion.storeInTest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
@@ -29,7 +30,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.yield
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -46,6 +46,18 @@ import org.robolectric.annotation.Config
 internal class BroadcastInTest {
 
     @Test
+    fun broadcastInAfterShoreIn() {
+        val result = runCatching {
+            runBlocking {
+                val flow = TestPagingDataFlow()
+                val scope = CoroutineScope(Job(coroutineContext.job))
+                flow.storeInTest(scope).broadcastIn(scope).collect()
+            }
+        }
+        assertThat(result.exceptionOrNull()).isNotNull()
+    }
+
+    @Test
     fun lazyCollect(): Unit = runBlocking {
         var collectPagingData = false
         var collectPagingEvent = false
@@ -57,8 +69,7 @@ internal class BroadcastInTest {
 
         val scope = CoroutineScope(Job())
         upstream.broadcastIn(scope)
-        // 跟启动调度错开，等待所有children启动
-        yield()
+        delay(100)
         assertThat(collectPagingData).isFalse()
         assertThat(collectPagingEvent).isFalse()
     }
@@ -74,8 +85,7 @@ internal class BroadcastInTest {
             .onEach { it.flow.collect() }
             .launchIn(UNDISPATCHED, this)
 
-        // 跟启动调度错开，等待所有children启动
-        yield()
+        delay(100)
         children = scope.coroutineContext.job.children.toList()
         assertThat(children).hasSize(2)
 
@@ -113,7 +123,7 @@ internal class BroadcastInTest {
                 val broadcastIn = upstream.broadcastIn(scope)
                 broadcastIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
                 broadcastIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
-                delay(10)
+                delay(100)
                 coroutineContext.job.cancel()
             }
         }
@@ -130,7 +140,7 @@ internal class BroadcastInTest {
             it.flow.collect(upstreamPagingEventList::add)
         }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(10)
+        delay(100)
         job.cancelAndJoin()
 
         val scope = CoroutineScope(Job())
@@ -142,7 +152,7 @@ internal class BroadcastInTest {
             it.flow.collect(broadcastInPagingEventList::add)
         }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(10)
+        delay(100)
         scope.coroutineContext.job.cancelAndJoin()
 
         assertThat(upstreamPagingDataList.size).isEqualTo(broadcastInPagingDataList.size)
@@ -160,7 +170,7 @@ internal class BroadcastInTest {
             data.flow.collect()
         }.launchIn(UNDISPATCHED, this)
         // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(10)
+        delay(100)
         job.cancelAndJoin()
         assertThat(prevPagingData).isNotNull()
 
@@ -170,11 +180,38 @@ internal class BroadcastInTest {
             lastPagingData = data
             data.flow.collect { lastPagingEvent = it }
         }.launchIn(UNDISPATCHED, this)
-        delay(10)
+        delay(100)
         job.cancelAndJoin()
 
         assertThat(lastPagingData).isNotNull()
         assertThat(lastPagingEvent).isNotNull()
         assertThat(prevPagingData).isNotEqualTo(lastPagingData)
+    }
+
+    @Test
+    fun multipleCollectValue(): Unit = runBlocking {
+        val upstream = TestPagingDataFlow()
+        val scope = CoroutineScope(Job())
+        val broadcastIn = upstream.broadcastIn(scope)
+
+        val pagingDataList1 = mutableListOf<PagingData<Int>>()
+        val pagingEventList1 = mutableListOf<PagingEvent<Int>>()
+        val job1 = broadcastIn.onEach { data ->
+            pagingDataList1.add(data)
+            data.flow.collect(pagingEventList1::add)
+        }.launchIn(UNDISPATCHED, this)
+
+        val pagingDataList2 = mutableListOf<PagingData<Int>>()
+        val pagingEventList2 = mutableListOf<PagingEvent<Int>>()
+        val job2 = broadcastIn.onEach { data ->
+            pagingDataList2.add(data)
+            data.flow.collect(pagingEventList2::add)
+        }.launchIn(UNDISPATCHED, this)
+
+        delay(100)
+        job1.cancelAndJoin()
+        job2.cancelAndJoin()
+        assertThat(pagingDataList1.size).isEqualTo(pagingDataList2.size)
+        assertThat(pagingEventList1.size).isEqualTo(pagingEventList2.size)
     }
 }

@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
  * @author xcc
  * @date 2022/3/8
  */
-internal class PagingListMediator<T : Any>(
+internal open class PagingListMediator<T : Any>(
     data: PagingData<T>,
     private val listState: ListState<T>
 ) : ListMediator<T>, PagingMediator by data.mediator {
@@ -46,7 +46,7 @@ internal class PagingListMediator<T : Any>(
     override val currentList: List<T>
         get() = listState.currentList
 
-    val flow: Flow<PagingEvent<T>> = callbackFlow {
+    open val flow: Flow<PagingEvent<T>> = callbackFlow {
         launch {
             data.flow.collect { event ->
                 if (event is PagingEvent.LoadDataSuccess) {

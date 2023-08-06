@@ -18,7 +18,7 @@ package com.xiaocydx.cxrv.paging
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
-import com.xiaocydx.cxrv.paging.PagingSharedFlow.Companion.UNLIMITED
+import com.xiaocydx.cxrv.paging.PagingStateFlow.CancelValue.UNLIMITED
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job
@@ -30,6 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -39,21 +40,21 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * [PagingSharedFlow]的单元测试
+ * [PagingStateFlow]的单元测试
  *
  * @author xcc
- * @date 2023/8/3
+ * @date 2023/8/6
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-internal class PagingSharedFlowTest {
+internal class PagingStateFlowTest {
 
     @Test
     fun lazyCollect(): Unit = runBlocking {
         var collect = false
         val scope = CoroutineScope(Job())
         val upstream = flow<Int> { collect = true }
-        PagingSharedFlow(
+        PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = UNLIMITED,
@@ -68,7 +69,7 @@ internal class PagingSharedFlowTest {
     fun limitCollectorCount(): Unit = runBlocking {
         val scope = CoroutineScope(Job())
         val upstream = flow<Int> { awaitCancellation() }
-        val sharedFlow = PagingSharedFlow(
+        val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = 1,
@@ -77,27 +78,27 @@ internal class PagingSharedFlowTest {
         )
         val result = runCatching {
             coroutineScope {
-                launch(start = UNDISPATCHED) { sharedFlow.collect() }
-                launch(start = UNDISPATCHED) { sharedFlow.collect() }
+                launch(start = UNDISPATCHED) { stateFlow.collect() }
+                launch(start = UNDISPATCHED) { stateFlow.collect() }
             }
         }
         assertThat(result.exceptionOrNull()).isNotNull()
     }
 
     @Test
-    fun cancelSharedFlowBeforeCollect(): Unit = runBlocking {
+    fun cancelStateFlowBeforeCollect(): Unit = runBlocking {
         val scope = CoroutineScope(Job())
         val upstream = flow<Int> { awaitCancellation() }
-        val sharedFlow = PagingSharedFlow(
+        val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
-        sharedFlow.cancel()
+        stateFlow.cancel()
 
-        val job = launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        val job = launch(start = UNDISPATCHED) { stateFlow.collect() }
         assertThat(job.isActive).isFalse()
         assertThat(job.isCancelled).isFalse()
         assertThat(job.isCompleted).isTrue()
@@ -107,7 +108,7 @@ internal class PagingSharedFlowTest {
     fun cancelCoroutineScopeBeforeCollect(): Unit = runBlocking {
         val scope = CoroutineScope(Job())
         val upstream = flow<Int> { awaitCancellation() }
-        val sharedFlow = PagingSharedFlow(
+        val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = UNLIMITED,
@@ -116,29 +117,29 @@ internal class PagingSharedFlowTest {
         )
         scope.cancel()
 
-        val job = launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        val job = launch(start = UNDISPATCHED) { stateFlow.collect() }
         assertThat(job.isActive).isFalse()
         assertThat(job.isCancelled).isFalse()
         assertThat(job.isCompleted).isTrue()
     }
 
     @Test
-    fun cancelSharedFlowAfterCollect(): Unit = runBlocking {
+    fun cancelStateFlowAfterCollect(): Unit = runBlocking {
         val scope = CoroutineScope(Job())
         val upstream = flow<Int> { awaitCancellation() }
-        val sharedFlow = PagingSharedFlow(
+        val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
-        val job = launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        val job = launch(start = UNDISPATCHED) { stateFlow.collect() }
         assertThat(job.isActive).isTrue()
         assertThat(job.isCancelled).isFalse()
         assertThat(job.isCompleted).isFalse()
 
-        sharedFlow.cancel()
+        stateFlow.cancel()
         job.join()
         assertThat(job.isActive).isFalse()
         assertThat(job.isCancelled).isFalse()
@@ -149,14 +150,14 @@ internal class PagingSharedFlowTest {
     fun cancelCoroutineScopeAfterCollect(): Unit = runBlocking {
         val scope = CoroutineScope(Job())
         val upstream = flow<Int> { awaitCancellation() }
-        val sharedFlow = PagingSharedFlow(
+        val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
-        val job = launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        val job = launch(start = UNDISPATCHED) { stateFlow.collect() }
         assertThat(job.isActive).isTrue()
         assertThat(job.isCancelled).isFalse()
         assertThat(job.isCompleted).isFalse()
@@ -175,15 +176,15 @@ internal class PagingSharedFlowTest {
             delay(100)
             emit(1)
         }
-        val sharedFlow = PagingSharedFlow(
+        val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
-        val job1 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
-        val job2 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        val job1 = launch(start = UNDISPATCHED) { stateFlow.collect() }
+        val job2 = launch(start = UNDISPATCHED) { stateFlow.collect() }
         job1.join()
         job2.join()
         assertThat(job1.isCompleted).isTrue()
@@ -198,7 +199,7 @@ internal class PagingSharedFlowTest {
             collectCount++
             awaitCancellation()
         }
-        val sharedFlow = PagingSharedFlow(
+        val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = UNLIMITED,
@@ -206,15 +207,15 @@ internal class PagingSharedFlowTest {
             canRepeatCollectAfterCancel = false,
         )
 
-        val job1 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
-        val job2 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        val job1 = launch(start = UNDISPATCHED) { stateFlow.collect() }
+        val job2 = launch(start = UNDISPATCHED) { stateFlow.collect() }
         job1.cancelAndJoin()
         assertThat(collectCount).isEqualTo(1)
         job2.cancelAndJoin()
         assertThat(collectCount).isEqualTo(1)
 
         // 此处断言Job3立即完成，不需要取消Job3
-        launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        launch(start = UNDISPATCHED) { stateFlow.collect() }
         assertThat(collectCount).isEqualTo(1)
     }
 
@@ -223,7 +224,7 @@ internal class PagingSharedFlowTest {
         var collectCount = 0
         val scope = CoroutineScope(Job())
         val upstream = flow<Int> { collectCount++ }
-        val sharedFlow = PagingSharedFlow(
+        val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = UNLIMITED,
@@ -231,15 +232,16 @@ internal class PagingSharedFlowTest {
             canRepeatCollectAfterCancel = false,
         )
 
-        val job1 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
-        val job2 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        val job1 = launch(start = UNDISPATCHED) { stateFlow.collect() }
+        val job2 = launch(start = UNDISPATCHED) { stateFlow.collect() }
         job1.cancelAndJoin()
         assertThat(collectCount).isEqualTo(1)
+
         job2.cancelAndJoin()
         assertThat(collectCount).isEqualTo(1)
 
         // 此处断言Job3立即完成，不需要取消Job3
-        launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        launch(start = UNDISPATCHED) { stateFlow.collect() }
         assertThat(collectCount).isEqualTo(1)
     }
 
@@ -251,7 +253,7 @@ internal class PagingSharedFlowTest {
             collectCount++
             awaitCancellation()
         }
-        val sharedFlow = PagingSharedFlow(
+        val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = UNLIMITED,
@@ -259,8 +261,8 @@ internal class PagingSharedFlowTest {
             canRepeatCollectAfterCancel = true,
         )
 
-        val job1 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
-        val job2 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        val job1 = launch(start = UNDISPATCHED) { stateFlow.collect() }
+        val job2 = launch(start = UNDISPATCHED) { stateFlow.collect() }
         delay(100)
         job1.cancelAndJoin()
         assertThat(collectCount).isEqualTo(1)
@@ -269,7 +271,7 @@ internal class PagingSharedFlowTest {
         job2.cancelAndJoin()
         assertThat(collectCount).isEqualTo(1)
 
-        val job3 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
+        val job3 = launch(start = UNDISPATCHED) { stateFlow.collect() }
         delay(100)
         job3.cancelAndJoin()
         assertThat(collectCount).isEqualTo(2)
@@ -277,24 +279,26 @@ internal class PagingSharedFlowTest {
 
     @Test
     fun multipleCollectValue(): Unit = runBlocking {
-        val list = (1..2).toList()
-        val upstream = list.asFlow()
+        val upstream = (1..2).asFlow().onEach { delay(100) }
         val scope = CoroutineScope(Job())
-        val sharedFlow = PagingSharedFlow(
+        val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
             limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
-            canRepeatCollectAfterCancel = false
+            canRepeatCollectAfterCancel = true,
         )
 
         val outcome1 = mutableListOf<Int>()
         val outcome2 = mutableListOf<Int>()
-        val job1 = launch(start = UNDISPATCHED) { sharedFlow.toList(outcome1) }
-        val job2 = launch(start = UNDISPATCHED) { sharedFlow.toList(outcome2) }
+        val job1 = launch(start = UNDISPATCHED) { stateFlow.toList(outcome1) }
+        val job2 = launch(start = UNDISPATCHED) { stateFlow.toList(outcome2) }
         job1.join()
         job2.join()
-        assertThat(list).isEqualTo(outcome1)
-        assertThat(list).isEqualTo(outcome2)
+
+        // upstream发射完成，PagingStateFlow会立即发射取消标志，
+        // 这可能会覆盖最后一次发射的值，因此断言至少收集的数量。
+        assertThat(outcome1.size > 0).isTrue()
+        assertThat(outcome1.size > 0).isTrue()
     }
 }

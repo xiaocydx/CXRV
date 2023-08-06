@@ -51,39 +51,35 @@ import kotlinx.coroutines.flow.map
  * ```
  */
 fun <T : Any> Flow<PagingData<T>>.broadcastIn(scope: CoroutineScope): Flow<PagingData<T>> {
-    if (this is BroadcastInPagingDataSharedFlow) return this
-    var previous: BroadcastInPagingEventStateFlow<T>? = null
+    if (this is BroadcastInPagingDataStateFlow) return this
+    var previous: BroadcastInPagingEventShareFlow<T>? = null
     val upstream: Flow<PagingData<T>> = map { data ->
         data.ensureBeforeStoreInOperator { "Flow<PagingData<T>>.broadcastIn()" }
         previous?.cancel()
-        previous = BroadcastInPagingEventStateFlow(scope, data.flow)
+        previous = BroadcastInPagingEventShareFlow(scope, data.flow)
         PagingData(previous!!, data.mediator)
     }
-    return BroadcastInPagingDataSharedFlow(scope, upstream)
+    return BroadcastInPagingDataStateFlow(scope, upstream)
 }
 
-private class BroadcastInPagingDataSharedFlow<T : Any>(
+private class BroadcastInPagingDataStateFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingData<T>>
-) : PagingSharedFlow<PagingData<T>>(
+) : PagingStateFlow<PagingData<T>>(
     scope = scope,
     upstream = upstream,
-    withoutCollectorNeedCancel = true
-) {
-    private var state: PagingData<T>? = null
+    limitCollectorCount = UNLIMITED,
+    withoutCollectorNeedCancel = true,
+    canRepeatCollectAfterCancel = true,
+)
 
-    override fun onActive(): PagingData<T>? = state
-
-    override fun onReceive(value: PagingData<T>?) {
-        state = value
-    }
-}
-
-private class BroadcastInPagingEventStateFlow<T : Any>(
+private class BroadcastInPagingEventShareFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingEvent<T>>
 ) : PagingSharedFlow<PagingEvent<T>>(
     scope = scope,
     upstream = upstream,
-    withoutCollectorNeedCancel = true
+    limitCollectorCount = UNLIMITED,
+    withoutCollectorNeedCancel = true,
+    canRepeatCollectAfterCancel = false
 )
