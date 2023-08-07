@@ -54,27 +54,15 @@ internal class TransformTransition(
     }
 
     override fun captureStartValues(transitionValues: TransitionValues) {
-        val fragment = fragmentRef.get()
-        val target = when {
-            fragment == null -> null
-            fragment.isAdded -> senderView()
-            else -> fragment.view
-        }
-        captureValues(target, transitionValues, start = true)
+        captureValues(transitionValues, start = true)
     }
 
     override fun captureEndValues(transitionValues: TransitionValues) {
-        val fragment = fragmentRef.get()
-        val target = when {
-            fragment == null -> null
-            fragment.isAdded -> fragment.view
-            else -> senderView()
-        }
-        captureValues(target, transitionValues, start = false)
+        captureValues(transitionValues, start = false)
     }
 
     @Suppress("SENSELESS_COMPARISON")
-    private fun captureValues(target: View?, transitionValues: TransitionValues, start: Boolean) {
+    private fun captureValues(transitionValues: TransitionValues, start: Boolean) {
         // 捕获流程调用自Transition.captureValues()，或者Transition.captureHierarchy()，
         // 对于这两种情况，将sceneRoot的起始和结束捕获委托给transform，确保能创建属性动画。
         val view = transitionValues.view
@@ -83,6 +71,7 @@ internal class TransformTransition(
         // 当transform.createAnimator()创建属性动画时，会向上递归查找drawingView，
         // 若查找不到，则抛出异常，因此在创建属性动画之前，先判断target能否进行查找，
         // return表示不捕获，startValues或endValues会缺一个，也就不会创建属性动画。
+        val target = getTarget(start)
         if (target == null || !canFindDrawingViewById(target)) return
 
         // 当前Transition和transform可能被添加了target，先移除再添加，确保元素不重复
@@ -100,6 +89,15 @@ internal class TransformTransition(
         }
         this.removeTarget(target)
         transform.removeTarget(target)
+    }
+
+    private fun getTarget(start: Boolean): View? {
+        val fragment = fragmentRef.get()
+        return when {
+            fragment == null -> null
+            fragment.isAdded -> if (start) senderView() else fragment.view
+            else -> if (start) fragment.view else senderView()
+        }
     }
 
     private fun Transition.addTargetSafely(target: View) {

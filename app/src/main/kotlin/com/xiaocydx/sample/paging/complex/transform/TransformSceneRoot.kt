@@ -16,14 +16,15 @@
 
 package com.xiaocydx.sample.paging.complex.transform
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.transition.Transition
 import android.view.View
-import android.widget.FrameLayout
+import android.view.ViewGroup
 import androidx.core.view.doOnAttach
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks
 import androidx.lifecycle.Lifecycle.State
@@ -42,61 +43,65 @@ import kotlin.reflect.KClass
  * @author xcc
  * @date 2023/8/1
  */
-@SuppressLint("ViewConstructor")
-internal class TransformSceneRoot(
-    context: Context,
-    private val fragmentManager: FragmentManager,
-) : FrameLayout(context) {
+internal class TransformSceneRoot(context: Context, private val fragmentManager: FragmentManager) {
     private var hasContentPendingTransaction = false
     private var hasTransformPendingTransaction = false
     private var transformViewRef: WeakReference<View>? = null
-    private var transformCallbacks = TransformFragmentLifecycleCallbacks()
+    private val fragmentContainer = FragmentContainerView(context)
     private val contentFragment: Fragment?
         get() = fragmentManager.findFragmentByTag(TAG_CONTENT)
     private val transformFragment: Fragment?
         get() = fragmentManager.findFragmentByTag(TAG_TRANSFORM)
 
     init {
-        layoutParams(matchParent, matchParent)
-        id = R.id.transform_scene_root_fragment_container
+        fragmentContainer.apply {
+            layoutParams(matchParent, matchParent)
+            id = R.id.transform_scene_root_fragment_container
+            transformSceneRoot = this@TransformSceneRoot
+            addOnAttachStateChangeListener(TransformFragmentLifecycleCallbacks())
+        }
     }
 
-    // TODO: 防止创建两个
-    fun installContentFragmentOnAttach(
+    fun toContentView() = fragmentContainer
+
+    fun installOnAttach(
         fragmentClass: KClass<out Fragment>,
         primaryNavigationFragment: Fragment? = null
     ): Boolean {
         if (hasContentPendingTransaction || contentFragment != null) return false
         hasContentPendingTransaction = true
-        doOnAttach {
+        fragmentContainer.doOnAttach { container ->
             require(contentFragment == null)
             hasContentPendingTransaction = false
             if (primaryNavigationFragment != null) {
-                require(primaryNavigationFragment.view === this)
+                require(primaryNavigationFragment.view === container)
                 primaryNavigationFragment.parentFragmentManager.beginTransaction()
                     .setPrimaryNavigationFragment(primaryNavigationFragment)
                     .commitNow()
             }
             fragmentManager.beginTransaction()
-                .add(id, fragmentClass.java, null, TAG_CONTENT)
+                .setReorderingAllowed(true)
+                .add(container.id, fragmentClass.java, null, TAG_CONTENT)
                 .commitNow()
         }
         return true
     }
 
-    fun installTransformFragment(
+    fun forwardTransform(
         fragmentClass: KClass<out Fragment>,
         args: Bundle? = null,
         allowStateLoss: Boolean = false
     ): Boolean {
         if (hasTransformPendingTransaction || transformFragment != null) return false
         hasTransformPendingTransaction = true
+        // transformFragment的生命周期状态，在过渡动画结束后才转换为RESUMED，
+        // 此时就将contentFragment的生命周期状态回退至STARTED，是为了确保过渡动画流畅。
         setContentFragmentMaxLifecycle(STARTED)
         val transaction = fragmentManager
             .beginTransaction()
             .setReorderingAllowed(true)
             .addToBackStack(null)
-            .add(id, fragmentClass.java, args, TAG_TRANSFORM)
+            .add(fragmentContainer.id, fragmentClass.java, args, TAG_TRANSFORM)
         if (allowStateLoss) {
             transaction.commitAllowingStateLoss()
         } else {
@@ -113,17 +118,7 @@ internal class TransformSceneRoot(
     fun createTransformTransition(fragment: Fragment, transform: MaterialContainerTransform): Transition {
         val senderView = { transformViewRef?.get() }
         val fragmentRef = WeakReference(fragment)
-        return TransformTransition(sceneRootId = id, senderView, fragmentRef, transform)
-    }
-
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        fragmentManager.registerFragmentLifecycleCallbacks(transformCallbacks, false)
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        fragmentManager.unregisterFragmentLifecycleCallbacks(transformCallbacks)
+        return TransformTransition(fragmentContainer.id, senderView, fragmentRef, transform)
     }
 
     private fun setContentFragmentMaxLifecycle(state: State) {
@@ -133,15 +128,24 @@ internal class TransformSceneRoot(
             .commitNow()
     }
 
-    private inner class TransformFragmentLifecycleCallbacks : FragmentLifecycleCallbacks() {
+    private inner class TransformFragmentLifecycleCallbacks :
+            FragmentLifecycleCallbacks(), View.OnAttachStateChangeListener {
+
+        override fun onViewAttachedToWindow(v: View) {
+            fragmentManager.registerFragmentLifecycleCallbacks(this, false)
+        }
+
+        override fun onViewDetachedFromWindow(v: View) {
+            fragmentManager.unregisterFragmentLifecycleCallbacks(this)
+        }
+
         override fun onFragmentCreated(fm: FragmentManager, f: Fragment, savedInstanceState: Bundle?) {
-            // TODO: 补充更多判断条件
             if (f.tag === TAG_TRANSFORM) hasTransformPendingTransaction = false
         }
 
         override fun onFragmentDestroyed(fm: FragmentManager, f: Fragment) {
-            // TODO: 补充更多判断条件
-            // 在Destroyed才resume是为了避免f的过渡动画卡顿
+            // transformFragment的生命周期状态，在过渡动画结束后才转换为DESTROYED，
+            // 此时才将contentFragment的生命周期状态恢复至RESUMED，是为了确保过渡动画流畅。
             if (f.tag === TAG_TRANSFORM) setContentFragmentMaxLifecycle(RESUMED)
         }
     }
@@ -150,4 +154,36 @@ internal class TransformSceneRoot(
         const val TAG_CONTENT = "com.xiaocydx.sample.paging.complex.transform.TAG_CONTENT"
         const val TAG_TRANSFORM = "com.xiaocydx.sample.paging.complex.transform.TAG_TRANSFORM"
     }
+}
+
+internal fun Fragment.findTransformSceneRoot(): TransformSceneRoot? {
+    var parent = parentFragment
+    while (parent != null && parent.view?.transformSceneRoot == null) {
+        parent = parent.parentFragment
+    }
+    val root = parent?.view?.transformSceneRoot
+    return root ?: activity?.contentParent?.findTransformSceneRoot()
+}
+
+private val FragmentActivity.contentParent: ViewGroup
+    get() = findViewById(android.R.id.content)
+
+private var View.transformSceneRoot: TransformSceneRoot?
+    get() = getTag(R.id.transform_scene_root) as? TransformSceneRoot
+    set(value) {
+        setTag(R.id.transform_scene_root, value)
+    }
+
+private fun View.findTransformSceneRoot(): TransformSceneRoot? = when {
+    transformSceneRoot != null -> transformSceneRoot
+    this is ViewGroup -> {
+        var root: TransformSceneRoot? = null
+        val childCount = childCount
+        for (i in 0 until childCount) {
+            root = getChildAt(i).findTransformSceneRoot()
+            if (root != null) break
+        }
+        root
+    }
+    else -> null
 }

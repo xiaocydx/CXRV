@@ -20,9 +20,13 @@ import com.bumptech.glide.request.target.Target
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.ListState
+import com.xiaocydx.cxrv.paging.Pager
+import com.xiaocydx.cxrv.paging.broadcastIn
 import com.xiaocydx.cxrv.paging.isSuccess
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
+import com.xiaocydx.cxrv.paging.storeIn
 import com.xiaocydx.sample.databinding.FragmetVideoStreamBinding
 import com.xiaocydx.sample.databinding.ItemVideoStreamBinding
 import com.xiaocydx.sample.doOnApplyWindowInsets
@@ -47,6 +51,26 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
 /**
+ * 视频流页面
+ *
+ * 在实际场景中，视频流页面可能会供多处业务复用，视频流的数据通过其他业务数据过滤、转换而来，
+ * 分页加载是处理起来比较麻烦的场景，需要调用处页面和视频流页面共享分页数据来源和加载状态，
+ * 共享分页数据来源和加载状态的做法，能彻底解决两个页面分开加载再进行同步而产生的一致性问题。
+ *
+ * 示例代码是构建一个分页数据流，它会发射分页数据容器，其中包含分页初始配置和分页事件流，
+ * 分页事件流发射加载过程产生的事件，分页事件携带加载状态和列表数据，加载状态保存在[Pager]，
+ * 列表数据保存在[ListState]。
+ *
+ * [Pager]提供原始分页数据流和保存加载状态，原始分页数据流通过[broadcastIn]转换为可共享，
+ * 可共享的分页数据流通过[storeIn]转换可保存，可共享的分页数据流保留在两个页面的父级作用域，
+ * 可保存的分页数据流在各自的作用域内构建，有单独的[ListState]。
+ *
+ * 若两个页面的[ListState]还需要同步，例如在视频流页面的删除操作，需要同步到调用处页面，
+ * 则通过发送事件完成[ListState]的同步即可，这种不涉及分页加载的同步需求，并不难处理。
+ *
+ * 视频流的数据通过其他业务数据过滤、转换而来，因此存在一页数据过滤完后，没有视频流数据的问题，
+ * `AppendTrigger`的实现能解决这个问题，当视频流页面收集到一页空数据时，会自动触发下一页加载。
+ *
  * @author xcc
  * @date 2023/7/30
  */
@@ -97,11 +121,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        viewLifecycle.doOnStateChanged { source, event ->
-            val currentState = source.lifecycle.currentState
-            Log.d("VideoStreamFragment", "currentState = ${currentState}, event = $event")
-        }
-
+        setupDebugLog()
         val isFirstCreate = savedInstanceState == null
         val enterTransition = setTransformEnterTransition()
         enterTransition.duration = 200
@@ -147,6 +167,16 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             .onEach(videoAdapter.pagingCollector)
             .repeatOnLifecycle(viewLifecycle)
             .launchInLifecycleScope()
+    }
+
+    private fun setupDebugLog() {
+        viewLifecycle.doOnStateChanged { source, event ->
+            val currentState = source.lifecycle.currentState
+            Log.d("VideoStreamFragment", "currentState = ${currentState}, event = $event")
+        }
+        videoAdapter.pagingCollector.addLoadStatesListener { _, current ->
+            Log.d("VideoStreamFragment", "loadStates = $current")
+        }
     }
 
     private class EnterTransitionListener(

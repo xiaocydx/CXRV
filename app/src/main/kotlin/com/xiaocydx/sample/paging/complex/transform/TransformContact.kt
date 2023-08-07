@@ -19,7 +19,7 @@ package com.xiaocydx.sample.paging.complex.transform
 import android.os.Bundle
 import android.transition.Transition
 import android.view.View
-import android.view.ViewGroup
+import android.view.WindowInsets
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -31,27 +31,80 @@ import kotlin.reflect.KClass
  */
 interface TransformContainer {
 
+    /**
+     * 将[FragmentActivity]作为[TransformContainer]的载体，设置`ContentView`
+     *
+     * ```
+     * class TransformContainerActivity : AppCompatActivity(), TransformContainer {
+     *
+     *     override fun onCreate(savedInstanceState: Bundle?) {
+     *         super.onCreate(savedInstanceState)
+     *         setContentView(ContentFragment::class)
+     *     }
+     * }
+     * ```
+     */
     fun <C> C.setContentView(
         fragmentClass: KClass<out Fragment>
     ) where C : FragmentActivity, C : TransformContainer {
         setContentView(createContentView(fragmentClass))
     }
 
+    /**
+     * 将[FragmentActivity]作为[TransformContainer]的载体，创建`ContentView`
+     *
+     * ```
+     * // BaseActivity为已有的基类，子类需要实现createContentView()创建ContentView
+     * class TransformContainerActivity : BaseActivity(), TransformContainer {
+     *
+     *     override fun createContentView() = createContentView(ContentFragment::class)
+     * }
+     * ```
+     */
     fun <C> C.createContentView(
         fragmentClass: KClass<out Fragment>
     ): View where C : FragmentActivity, C : TransformContainer {
         return TransformSceneRoot(this, supportFragmentManager)
-            .apply { installContentFragmentOnAttach(fragmentClass) }
+            .apply { installOnAttach(fragmentClass) }.toContentView()
     }
 
+    /**
+     * 将[Fragment]作为[TransformContainer]的载体，创建`ContentView`
+     *
+     * ```
+     * class TransformContainerFragment : Fragment(), TransformContainer {
+     *
+     *     override fun onCreateView(
+     *         inflater: LayoutInflater,
+     *         container: ViewGroup?,
+     *         savedInstanceState: Bundle?
+     *     ): View = createContentView(ContentFragment::class)
+     * }
+     * ```
+     */
     fun <C> C.createContentView(
         fragmentClass: KClass<out Fragment>
     ): View where C : Fragment, C : TransformContainer {
         val primaryNavigationFragment = this
         return TransformSceneRoot(requireContext(), childFragmentManager)
-            .apply { installContentFragmentOnAttach(fragmentClass, primaryNavigationFragment) }
+            .apply { installOnAttach(fragmentClass, primaryNavigationFragment) }
+            .toContentView()
     }
 
+    /**
+     * 禁用`Window.decorView`对[WindowInsets]的处理，去除间距实现和系统栏背景色
+     *
+     * ```
+     * class TransformContainerActivity : AppCompatActivity(), TransformContainer {
+     *
+     *     override fun onCreate(savedInstanceState: Bundle?) {
+     *         super.onCreate(savedInstanceState)
+     *         disableDecorFitsSystemWindows()
+     *         setContentView(ContentFragment::class)
+     *     }
+     * }
+     * ```
+     */
     fun <C> C.disableDecorFitsSystemWindows() where C : FragmentActivity, C : TransformContainer {
         SystemBarsContainer.disableDecorFitsSystemWindows(window)
     }
@@ -87,7 +140,7 @@ interface TransformSender {
                      R : Fragment, R : TransformReceiver {
         val root = findTransformSceneRoot() ?: return false
         root.setTransformView(transformView)
-        return root.installTransformFragment(fragmentClass, args, allowStateLoss)
+        return root.forwardTransform(fragmentClass, args, allowStateLoss)
     }
 }
 
@@ -115,35 +168,9 @@ interface TransformReceiver {
     }
 }
 
-private val FragmentActivity.contentParent: ViewGroup
-    get() = findViewById(android.R.id.content)
-
 private fun Fragment.requireTransformSceneRoot(): TransformSceneRoot {
     return requireNotNull(findTransformSceneRoot()) {
         "请先调用TransformContainer提供的FragmentActivity.setContentView()，" +
-                "或者FragmentActivity.createView()，又或者Fragment.createView()。"
+                "或者FragmentActivity.createContentView()，又或者Fragment.createContentView()。"
     }
-}
-
-private fun View.findTransformSceneRoot(): TransformSceneRoot? = when (this) {
-    is TransformSceneRoot -> this
-    is ViewGroup -> {
-        var view: TransformSceneRoot? = null
-        val childCount = childCount
-        for (i in 0 until childCount) {
-            view = getChildAt(i).findTransformSceneRoot()
-            if (view != null) break
-        }
-        view
-    }
-    else -> null
-}
-
-private fun Fragment.findTransformSceneRoot(): TransformSceneRoot? {
-    var parent = parentFragment
-    while (parent != null && parent.view !is TransformSceneRoot) {
-        parent = parent.parentFragment
-    }
-    val root = parent?.view as? TransformSceneRoot
-    return root ?: activity?.contentParent?.findTransformSceneRoot()
 }
