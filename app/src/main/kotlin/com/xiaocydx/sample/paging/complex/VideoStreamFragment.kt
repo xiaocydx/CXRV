@@ -10,6 +10,7 @@ import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
+import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.ORIENTATION_VERTICAL
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
@@ -125,15 +126,16 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         val isFirstCreate = savedInstanceState == null
         val enterTransition = setTransformEnterTransition()
         enterTransition.duration = 200
+        val viewPager2 = binding.viewPager2
         if (isFirstCreate) {
             // Fragment首次创建，推迟过渡动画，直到选中位置的图片加载结束，
             // 过渡动画结束时，才将viewPager2.offscreenPageLimit修改为1，
             // 确保startPostponedEnterTransition()不受两侧加载图片影响。
             EnterTransitionListener(this, requestManager).postpone()
-            enterTransition.doOnEnd(once = true) { binding.viewPager2.offscreenPageLimit = 1 }
+            enterTransition.doOnEnd(once = true) { viewPager2.offscreenPageLimit = 1 }
         } else {
             // Fragment重新创建，直接将viewPager2.offscreenPageLimit修改为1
-            binding.viewPager2.offscreenPageLimit = 1
+            viewPager2.offscreenPageLimit = 1
         }
 
         viewLifecycleScope.launchSafely {
@@ -142,11 +144,16 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
 
             // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重新创建同样适用
             videoAdapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
-            binding.viewPager2.setCurrentItem(videoViewModel.selectPosition.value, false)
-            binding.viewPager2.registerOnPageChangeCallback(onSelected = videoViewModel::selectVideo)
+            viewPager2.setCurrentItem(videoViewModel.selectPosition.value, false)
+            viewPager2.registerOnPageChangeCallback(onScrollStateChanged = callback@{ state ->
+                // 不依靠onSelected()更新选中位置，因为该函数被调用时仍在进行平滑滚动，
+                // 状态更改为IDLE时才更新选中位置，避免平滑滚动期间同步申请布局造成卡顿。
+                if (state != ViewPager2.SCROLL_STATE_IDLE) return@callback
+                videoViewModel.selectVideo(viewPager2.currentItem)
+            })
 
             // Fragment首次创建，需要丢弃一次选中值，避免冗余的同步，
-            // Fragment重建流程，需要根据最新选中值，同步选中的位置。
+            // Fragment重新创建，需要根据最新选中值，同步选中的位置。
             var selectVideoId = videoViewModel.selectVideoId
             if (isFirstCreate) selectVideoId = selectVideoId.drop(count = 1)
             selectVideoId.collect(complexViewModel::syncSelectId)

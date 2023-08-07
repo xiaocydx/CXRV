@@ -19,9 +19,9 @@ import com.xiaocydx.sample.itemselect.MultiSelectionActivity
 import com.xiaocydx.sample.itemselect.SingleSelectionActivity
 import com.xiaocydx.sample.itemtouch.ItemTouchActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
-import com.xiaocydx.sample.paging.PagingActivity
 import com.xiaocydx.sample.paging.article.ArticleListActivity
 import com.xiaocydx.sample.paging.complex.ComplexContainerActivity
+import com.xiaocydx.sample.paging.local.PagingActivity
 import com.xiaocydx.sample.payload.PayloadActivity
 import com.xiaocydx.sample.transition.EnterTransitionActivity
 import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity

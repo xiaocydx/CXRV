@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.paging
+package com.xiaocydx.sample.paging.local
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -24,17 +24,17 @@ import com.xiaocydx.sample.foo.FooListViewModel
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
-import com.xiaocydx.sample.paging.MenuAction.ADAPTER_INSERT_ITEM
-import com.xiaocydx.sample.paging.MenuAction.ADAPTER_REMOVE_ITEM
-import com.xiaocydx.sample.paging.MenuAction.CLEAR_ALL_ITEM
-import com.xiaocydx.sample.paging.MenuAction.CLEAR_EVEN_ITEM
-import com.xiaocydx.sample.paging.MenuAction.CLEAR_ODD_ITEM
-import com.xiaocydx.sample.paging.MenuAction.DECREASE_SPAN_COUNT
-import com.xiaocydx.sample.paging.MenuAction.INCREASE_SPAN_COUNT
-import com.xiaocydx.sample.paging.MenuAction.LIST_STATE_INSERT_ITEM
-import com.xiaocydx.sample.paging.MenuAction.LIST_STATE_REMOVE_ITEM
-import com.xiaocydx.sample.paging.MenuAction.REFRESH
-import com.xiaocydx.sample.paging.MenuAction.REVERSE_LAYOUT
+import com.xiaocydx.sample.paging.local.MenuAction.ADAPTER_INSERT_ITEM
+import com.xiaocydx.sample.paging.local.MenuAction.ADAPTER_REMOVE_ITEM
+import com.xiaocydx.sample.paging.local.MenuAction.CLEAR_ALL_ITEM
+import com.xiaocydx.sample.paging.local.MenuAction.CLEAR_EVEN_ITEM
+import com.xiaocydx.sample.paging.local.MenuAction.CLEAR_ODD_ITEM
+import com.xiaocydx.sample.paging.local.MenuAction.DECREASE_SPAN_COUNT
+import com.xiaocydx.sample.paging.local.MenuAction.INCREASE_SPAN_COUNT
+import com.xiaocydx.sample.paging.local.MenuAction.LIST_STATE_INSERT_ITEM
+import com.xiaocydx.sample.paging.local.MenuAction.LIST_STATE_REMOVE_ITEM
+import com.xiaocydx.sample.paging.local.MenuAction.REFRESH
+import com.xiaocydx.sample.paging.local.MenuAction.REVERSE_LAYOUT
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach

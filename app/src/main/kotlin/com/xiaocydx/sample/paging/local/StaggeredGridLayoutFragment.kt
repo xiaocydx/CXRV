@@ -1,10 +1,10 @@
-package com.xiaocydx.sample.paging
+package com.xiaocydx.sample.paging.local
 
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
-import com.xiaocydx.cxrv.list.grid
+import com.xiaocydx.cxrv.list.staggered
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.dp
@@ -17,11 +17,11 @@ import com.xiaocydx.sample.viewLifecycle
  * @author xcc
  * @date 2022/2/17
  */
-class GridLayoutFragment : PagingFragment() {
+class StaggeredGridLayoutFragment : PagingFragment() {
 
     override fun initView() {
         rvPaging
-            .grid(spanCount = 3)
+            .staggered(spanCount = 3)
             .fixedSize()
             .divider(5.dp, 5.dp) {
                 edge(Edge.all())
@@ -33,6 +33,7 @@ class GridLayoutFragment : PagingFragment() {
 
     override fun initCollect() {
         super.initCollect()
+        fooViewModel.enableMultiTypeFoo()
         fooViewModel.flow
             .onEach(fooAdapter.pagingCollector)
             .repeatOnLifecycle(viewLifecycle)

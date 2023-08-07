@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.paging
+package com.xiaocydx.sample.paging.local
 
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider

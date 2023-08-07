@@ -219,8 +219,8 @@ fun SystemBarsContainer.setWindowNavigationBarColor(fragment: Fragment) =
         setWindowNavigationBarColor(fragment.requireActivity().window)
 
 fun SystemBarsContainer.setWindowSystemBarsColor(window: Window) = apply {
-    setStatusBarColor(window.statusBarColor)
-    setNavigationBarColor(window.navigationBarColor)
+    setWindowStatusBarColor(window)
+    setWindowNavigationBarColor(window)
 }
 
 fun SystemBarsContainer.setWindowStatusBarColor(window: Window) = apply {

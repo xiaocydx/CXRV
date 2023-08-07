@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.paging
+package com.xiaocydx.sample.paging.local
 
 import android.os.Bundle
 import androidx.activity.viewModels
@@ -17,9 +17,9 @@ import com.xiaocydx.sample.databinding.ActivityPagingBinding
 import com.xiaocydx.sample.databinding.ItemMenuBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
-import com.xiaocydx.sample.paging.MenuAction.GIRD_LAYOUT
-import com.xiaocydx.sample.paging.MenuAction.LINEAR_LAYOUT
-import com.xiaocydx.sample.paging.MenuAction.STAGGERED_GRID_LAYOUT
+import com.xiaocydx.sample.paging.local.MenuAction.GIRD_LAYOUT
+import com.xiaocydx.sample.paging.local.MenuAction.LINEAR_LAYOUT
+import com.xiaocydx.sample.paging.local.MenuAction.STAGGERED_GRID_LAYOUT
 import com.xiaocydx.sample.showToast
 
 /**
