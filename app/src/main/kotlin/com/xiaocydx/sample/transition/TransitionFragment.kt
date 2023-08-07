@@ -41,11 +41,6 @@ abstract class TransitionFragment : Fragment() {
     protected lateinit var recyclerView: RecyclerView
         private set
 
-    final override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enterTransition = Slide(Gravity.END).apply { duration = TRANSITION_DURATION }
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -58,6 +53,13 @@ abstract class TransitionFragment : Fragment() {
         adapter(contentAdapter.withHeader(loadingAdapter))
         layoutParams(matchParent, matchParent)
         recyclerView = this
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        enterTransition = Slide(Gravity.END).apply {
+            addTarget(view)
+            duration = TRANSITION_DURATION
+        }
     }
 }
 

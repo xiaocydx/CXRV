@@ -187,8 +187,12 @@ class SystemBarsContainer(context: Context) : FrameLayout(context) {
 fun SystemBarsContainer.Companion.disableDecorFitsSystemWindows(window: Window) {
     WindowCompat.setDecorFitsSystemWindows(window, false)
     window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-    // 拦截decorView.onApplyWindowInsets()的逻辑
-    window.decorView.doOnApplyWindowInsets { _, _, _ -> }
+    // 拦截DecorView.onApplyWindowInsets()处理WindowInsets的逻辑，
+    // 注意：以下拦截方式仅作为示例代码，Android 9.0以下WindowInsets是可变的，
+    // Android 9.0以下DecorView.onApplyWindowInsets()返回新创建的WindowInsets，
+    // 不会引用ViewRootImpl的成员属性mDispatchContentInsets和mDispatchStableInsets（变的不可变）,
+    // 若不返回DecorView新创建的WindowInsets，则需要兼容WindowInsets可变引起的问题（确保不可变）。
+    ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets -> insets }
 }
 
 fun SystemBarsContainer.setLightStatusBarOnResume(activity: ComponentActivity) =
@@ -218,13 +222,13 @@ fun SystemBarsContainer.setWindowSystemBarsColor(window: Window) = apply {
 }
 
 fun SystemBarsContainer.setWindowStatusBarColor(window: Window) = apply {
-    // 执行完decorView的创建流程，才能拿到颜色值
+    // 执行完decorView的创建流程，才能获取到颜色值
     window.decorView
     setStatusBarColor(window.statusBarColor)
 }
 
 fun SystemBarsContainer.setWindowNavigationBarColor(window: Window) = apply {
-    // 执行完decorView的创建流程，才能拿到颜色值
+    // 执行完decorView的创建流程，才能获取到颜色值
     window.decorView
     setNavigationBarColor(window.navigationBarColor)
 }

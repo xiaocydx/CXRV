@@ -79,7 +79,10 @@ class ComplexListFragment : Fragment(), TransformSender {
                         viewModel.setPendingInitialState(item.id)
                         forwardTransform(holder.itemView, VideoStreamFragment::class)
                     }
-                    ComplexItem.TYPE_AD -> forwardTransform(holder.itemView, AdFragment::class)
+                    ComplexItem.TYPE_AD -> {
+                        val args = AdFragment.createArgs(item.id)
+                        forwardTransform(holder.itemView, AdFragment::class, args)
+                    }
                 }
             }
         }

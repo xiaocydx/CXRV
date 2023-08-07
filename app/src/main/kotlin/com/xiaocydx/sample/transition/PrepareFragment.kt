@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 class PrepareFragment : TransitionFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         viewLifecycleScope.launch {
             recyclerView.prepareScrap(
                 prepareAdapter = contentAdapter,

@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.onEach
  * @date 2023/7/30
  */
 class VideoStreamFragment : Fragment(), TransformReceiver {
+    private lateinit var requestManager: RequestManager
     private lateinit var binding: FragmetVideoStreamBinding
     private lateinit var videoAdapter: ListAdapter<VideoStreamItem, *>
     private val complexViewModel: ComplexListViewModel by viewModels(
@@ -65,11 +66,9 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val requestManager = Glide.with(this)
-        setupEnterTransition(requestManager)
-        binding = FragmetVideoStreamBinding.inflate(
-            inflater, container, false
-        )
+        requestManager = Glide.with(this)
+        binding = FragmetVideoStreamBinding
+            .inflate(inflater, container, false)
         videoAdapter = bindingAdapter(
             uniqueId = VideoStreamItem::id,
             inflate = ItemVideoStreamBinding::inflate
@@ -103,12 +102,25 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             Log.d("VideoStreamFragment", "currentState = ${currentState}, event = $event")
         }
 
+        val isFirstCreate = savedInstanceState == null
+        val enterTransition = setTransformEnterTransition()
+        enterTransition.duration = 200
+        if (isFirstCreate) {
+            // Fragment首次创建，推迟过渡动画，直到选中位置的图片加载结束，
+            // 过渡动画结束时，才将viewPager2.offscreenPageLimit修改为1，
+            // 确保startPostponedEnterTransition()不受两侧加载图片影响。
+            EnterTransitionListener(this, requestManager).postpone()
+            enterTransition.doOnEnd(once = true) { binding.viewPager2.offscreenPageLimit = 1 }
+        } else {
+            // Fragment重新创建，直接将viewPager2.offscreenPageLimit修改为1
+            binding.viewPager2.offscreenPageLimit = 1
+        }
+
         viewLifecycleScope.launchSafely {
             // Fragment首次创建，同步初始状态，下面的selectPosition是同步后的结果
-            val initialState = complexViewModel.consumePendingInitialState()
-            initialState?.let(videoViewModel::syncInitialState)
+            complexViewModel.consumePendingInitialState()?.let(videoViewModel::syncInitialState)
 
-            // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重建流程同样适用
+            // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重新创建同样适用
             videoAdapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
             binding.viewPager2.setCurrentItem(videoViewModel.selectPosition.value, false)
             binding.viewPager2.registerOnPageChangeCallback(onSelected = videoViewModel::selectVideo)
@@ -116,8 +128,8 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             // Fragment首次创建，需要丢弃一次选中值，避免冗余的同步，
             // Fragment重建流程，需要根据最新选中值，同步选中的位置。
             var selectVideoId = videoViewModel.selectVideoId
-            if (initialState != null) selectVideoId = selectVideoId.drop(count = 1)
-            selectVideoId.collect(complexViewModel::syncSelectVideo)
+            if (isFirstCreate) selectVideoId = selectVideoId.drop(count = 1)
+            selectVideoId.collect(complexViewModel::syncSelectId)
         }
 
         binding.tvTitle.doOnApplyWindowInsets { v, insets, initialState ->
@@ -135,20 +147,6 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             .onEach(videoAdapter.pagingCollector)
             .repeatOnLifecycle(viewLifecycle)
             .launchInLifecycleScope()
-    }
-
-    private fun setupEnterTransition(requestManager: RequestManager) {
-        // 1. 初始化enterTransition
-        val enterTransition = setTransformEnterTransition()
-        enterTransition.duration = 200
-
-        // 2. 推迟过渡动画，直至图片加载结束
-        EnterTransitionListener(this, requestManager).postpone()
-        enterTransition.doOnEnd(once = true) {
-            // 过渡动画结束时，才将viewPager2.offscreenPageLimit修改为1，
-            // 确保startPostponedEnterTransition()不受两侧加载图片影响。
-            binding.viewPager2.offscreenPageLimit = 1
-        }
     }
 
     private class EnterTransitionListener(

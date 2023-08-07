@@ -28,7 +28,7 @@ class ComplexListViewModel(repository: ComplexRepository = ComplexRepository()) 
     val complexFlow = broadcastFlow.storeIn(state, viewModelScope)
     val scrollEvent = _scrollEvent.receiveAsFlow()
 
-    fun syncSelectVideo(id: String) {
+    fun syncSelectId(id: String) {
         state.currentList.indexOfFirst { it.id == id }
             .takeIf { it != -1 }?.let(_scrollEvent::trySend)
     }

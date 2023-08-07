@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.onEach
 class NotWaitEndFragment : TransitionFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         val controller = EnterTransitionController(this)
         controller.postponeEnterTransition(timeMillis = LOADING_DURATION + 50L)
         viewModel.state

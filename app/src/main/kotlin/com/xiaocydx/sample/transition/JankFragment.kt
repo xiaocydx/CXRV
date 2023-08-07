@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.onEach
 class JankFragment : TransitionFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         viewModel.state
             .flowWithLifecycle(viewLifecycle)
             .distinctUntilChanged()
