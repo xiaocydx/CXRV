@@ -29,12 +29,13 @@ import com.xiaocydx.cxrv.internal.accessEach
 internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
     private var isComplete = false
     private val types = SparseArray<Type<out T>>()
-    private val typeGroups: MutableMap<Class<out T>, Any> = mutableMapOf()
+    private val typeGroups = mutableMapOf<Class<*>, Any>()
     override val size: Int
         get() = types.size()
 
     override fun register(type: Type<out T>) {
         check(!isComplete) { "已完成多类型注册" }
+        checkType(type)
         val viewType = type.delegate.viewType
         if (types.indexOfKey(viewType) < 0) {
             types.put(viewType, type)
@@ -50,14 +51,30 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
         return types.valueAt(index)
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun itemAt(item: T): Type<out T>? {
-        return when (val group = typeGroups[item.javaClass]) {
+        return itemAtInternal(item, item.javaClass)
+    }
+
+    private fun checkType(type: Type<out T>) {
+        val clazz = type.clazz
+        val errorType = when {
+            clazz.isArray -> "Array"
+            clazz.isInterface -> "interface"
+            clazz.isAnnotation -> "annotation"
+            else -> null
+        }
+        require(errorType.isNullOrEmpty()) { "${clazz.canonicalName}是$errorType，不支持注册" }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun itemAtInternal(item: T, clazz: Class<*>): Type<out T>? {
+        val type = when (val group = typeGroups[clazz]) {
             is Type<*> -> group as Type<out T>
             is ArrayList<*> -> (group as ArrayList<Type<out T>>)
                 .firstOrNull { it.delegate.typeLinker?.invoke(item) == true }
             else -> null
         }
+        return type ?: clazz.superclass?.let { itemAtInternal(item, it) }
     }
 
     @Suppress("UNCHECKED_CAST")
