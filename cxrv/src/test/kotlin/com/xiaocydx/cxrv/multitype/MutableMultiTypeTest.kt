@@ -38,6 +38,33 @@ internal class MutableMultiTypeTest {
     private val typeBDelegate: TypeBDelegate = spyk(TypeBDelegate())
 
     @Test
+    fun registerArray() {
+        val delegate = object : AbsTestDelegate<Array<TestItem>>() {}
+        val result = runCatching {
+            mutableMultiTypeOf<Any>().init { register(delegate) }
+        }
+        assertThat(result.exceptionOrNull()).isNotNull()
+    }
+
+    @Test
+    fun registerInterface() {
+        val delegate = object : AbsTestDelegate<TestInterface>() {}
+        val result = runCatching {
+            mutableMultiTypeOf<Any>().init { register(delegate) }
+        }
+        assertThat(result.exceptionOrNull()).isNotNull()
+    }
+
+    @Test
+    fun registerAnnotation() {
+        val delegate = object : AbsTestDelegate<TestAnnotation>() {}
+        val result = runCatching {
+            mutableMultiTypeOf<Any>().init { register(delegate) }
+        }
+        assertThat(result.exceptionOrNull()).isNotNull()
+    }
+
+    @Test
     fun registerOneToOne() {
         mutableMultiTypeOf<Any>().init {
             register(testDelegate)
@@ -89,14 +116,39 @@ internal class MutableMultiTypeTest {
         }
     }
 
+    @Test
+    fun getTypeBySubClassItem() {
+        val testDelegate = TestDelegate()
+        val typeADelegate = TypeADelegate()
+        val typeBDelegate = TypeBDelegate()
+        val multiType = mutableMultiTypeOf<Any>().init {
+            register(testDelegate)
+            register(typeADelegate) { it.type == TestType.TYPE_A }
+            register(typeBDelegate) { it.type == TestType.TYPE_B }
+        }
+
+        class TestItemSub : TestItem()
+        class TypeTestItemSub(type: TestType) : TypeTestItem(type)
+
+        val testItemSub = TestItemSub()
+        val typeTestItemSubA = TypeTestItemSub(TestType.TYPE_A)
+        val typeTestItemSubB = TypeTestItemSub(TestType.TYPE_B)
+        assertThat(multiType.itemAt(testItemSub)?.delegate).isEqualTo(testDelegate)
+        assertThat(multiType.itemAt(typeTestItemSubA)?.delegate).isEqualTo(typeADelegate)
+        assertThat(multiType.itemAt(typeTestItemSubB)?.delegate).isEqualTo(typeBDelegate)
+    }
+
     private fun <T : Any> MultiType<T>.assertRegistered(delegate: ViewTypeDelegate<*, *>) {
         assertThat(keyAt(delegate.viewType)?.delegate).isEqualTo(delegate)
     }
 
     private inline fun <T : Any> MutableMultiTypeImpl<T>.init(
         block: MutableMultiType<T>.() -> Unit
-    ) {
+    ) = apply {
         block()
         complete()
     }
+
+    private interface TestInterface
+    private annotation class TestAnnotation
 }

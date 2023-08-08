@@ -59,9 +59,16 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
         val clazz = type.clazz
         val errorType = when {
             clazz.isArray -> "Array"
-            clazz.isInterface -> "interface"
             clazz.isAnnotation -> "annotation"
-            else -> null
+            clazz.isInterface -> "interface"
+            else -> {
+                // inline得来的class，不会是ParameterizedType，
+                // 因此无法直接确定泛型实参为ParameterizedType，
+                // 虽然可以通过判断class.typeParameters不为空，
+                // 来间接确定泛型实参是ParameterizedType，
+                // 但是这个属性的访问代价较高，不值得这么做。
+                null
+            }
         }
         require(errorType.isNullOrEmpty()) { "${clazz.canonicalName}是$errorType，不支持注册" }
     }
