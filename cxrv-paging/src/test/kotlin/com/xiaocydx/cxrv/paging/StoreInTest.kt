@@ -65,7 +65,7 @@ internal class StoreInTest {
 
         val scope = CoroutineScope(Job())
         upstream.storeInTest(scope)
-        delay(100)
+        awaitEventLoopScheduled()
         assertThat(collectPagingData).isFalse()
         assertThat(collectPagingEvent).isFalse()
     }
@@ -81,7 +81,7 @@ internal class StoreInTest {
             .onEach { it.flow.collect() }
             .launchIn(UNDISPATCHED, this)
 
-        delay(100)
+        awaitEventLoopScheduled()
         children = scope.coroutineContext.job.children.toList()
         assertThat(children).hasSize(2)
 
@@ -120,7 +120,7 @@ internal class StoreInTest {
                 val storeIn = upstream.storeInTest(scope)
                 storeIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
                 storeIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
-                delay(100)
+                awaitEventLoopScheduled()
                 coroutineContext.job.cancel()
             }
         }
@@ -136,8 +136,8 @@ internal class StoreInTest {
             upstreamPagingDataList.add(it)
             it.flow.collect(upstreamPagingEventList::add)
         }.launchIn(UNDISPATCHED, this)
-        // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(100)
+
+        awaitEventLoopScheduled()
         job.cancelAndJoin()
 
         val scope = CoroutineScope(Job())
@@ -148,10 +148,9 @@ internal class StoreInTest {
             storeInPagingDataList.add(it)
             it.flow.collect(storeInPagingEventList::add)
         }.launchIn(UNDISPATCHED, this)
-        // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(100)
-        scope.coroutineContext.job.cancelAndJoin()
 
+        awaitEventLoopScheduled()
+        scope.coroutineContext.job.cancelAndJoin()
         assertThat(upstreamPagingDataList.size).isEqualTo(storeInPagingDataList.size)
         assertThat(upstreamPagingEventList.size).isEqualTo(storeInPagingEventList.size)
     }
@@ -166,8 +165,8 @@ internal class StoreInTest {
             prevPagingData = data
             data.flow.collect()
         }.launchIn(UNDISPATCHED, this)
-        // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(100)
+
+        awaitEventLoopScheduled()
         job.cancelAndJoin()
         assertThat(prevPagingData).isNotNull()
 
@@ -177,9 +176,9 @@ internal class StoreInTest {
             lastPagingData = data
             data.flow.collect { lastPagingEvent = it }
         }.launchIn(UNDISPATCHED, this)
-        delay(100)
-        job.cancelAndJoin()
 
+        awaitEventLoopScheduled()
+        job.cancelAndJoin()
         assertThat(lastPagingData).isEqualTo(prevPagingData)
         assertThat(lastPagingEvent).isInstanceOf(PagingEvent.ListStateUpdate::class.java)
     }

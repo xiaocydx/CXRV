@@ -121,6 +121,10 @@ internal open class PagingSharedFlow<T : Any>(
                 }
             }
 
+            // 如果收集处协程都是UNDISPATCHED启动，并且是立即收集sharedFlow，
+            // 那么对于EventLoop，collectorCount = 1的恢复会进入调度事件队列，
+            // 这也就表示collectJob收集collectorCount，当collectorCount = 1时，
+            // 全部收集器已完成对sharedFlow的收集，upstream发射的事件都能收到。
             cancellableSharedFlow.collect(collector)
         }
     }

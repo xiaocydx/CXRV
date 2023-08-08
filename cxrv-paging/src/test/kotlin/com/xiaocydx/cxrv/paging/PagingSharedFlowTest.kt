@@ -60,7 +60,7 @@ internal class PagingSharedFlowTest {
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
-        delay(100)
+        awaitEventLoopScheduled()
         assertThat(collect).isFalse()
     }
 
@@ -261,16 +261,16 @@ internal class PagingSharedFlowTest {
 
         val job1 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
         val job2 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
-        delay(100)
+        awaitEventLoopScheduled()
         job1.cancelAndJoin()
         assertThat(collectCount).isEqualTo(1)
 
-        delay(100)
+        awaitEventLoopScheduled()
         job2.cancelAndJoin()
         assertThat(collectCount).isEqualTo(1)
 
         val job3 = launch(start = UNDISPATCHED) { sharedFlow.collect() }
-        delay(100)
+        awaitEventLoopScheduled()
         job3.cancelAndJoin()
         assertThat(collectCount).isEqualTo(2)
     }

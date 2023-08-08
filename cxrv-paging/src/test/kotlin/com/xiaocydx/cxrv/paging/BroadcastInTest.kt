@@ -69,7 +69,7 @@ internal class BroadcastInTest {
 
         val scope = CoroutineScope(Job())
         upstream.broadcastIn(scope)
-        delay(100)
+        awaitEventLoopScheduled()
         assertThat(collectPagingData).isFalse()
         assertThat(collectPagingEvent).isFalse()
     }
@@ -85,7 +85,7 @@ internal class BroadcastInTest {
             .onEach { it.flow.collect() }
             .launchIn(UNDISPATCHED, this)
 
-        delay(100)
+        awaitEventLoopScheduled()
         children = scope.coroutineContext.job.children.toList()
         assertThat(children).hasSize(2)
 
@@ -123,7 +123,7 @@ internal class BroadcastInTest {
                 val broadcastIn = upstream.broadcastIn(scope)
                 broadcastIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
                 broadcastIn.onEach { it.flow.collect() }.launchIn(UNDISPATCHED, this)
-                delay(100)
+                awaitEventLoopScheduled()
                 coroutineContext.job.cancel()
             }
         }
@@ -139,8 +139,8 @@ internal class BroadcastInTest {
             upstreamPagingDataList.add(it)
             it.flow.collect(upstreamPagingEventList::add)
         }.launchIn(UNDISPATCHED, this)
-        // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(100)
+
+        awaitEventLoopScheduled()
         job.cancelAndJoin()
 
         val scope = CoroutineScope(Job())
@@ -151,10 +151,9 @@ internal class BroadcastInTest {
             broadcastInPagingDataList.add(it)
             it.flow.collect(broadcastInPagingEventList::add)
         }.launchIn(UNDISPATCHED, this)
-        // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(100)
-        scope.coroutineContext.job.cancelAndJoin()
 
+        awaitEventLoopScheduled()
+        scope.coroutineContext.job.cancelAndJoin()
         assertThat(upstreamPagingDataList.size).isEqualTo(broadcastInPagingDataList.size)
         assertThat(upstreamPagingEventList.size).isEqualTo(broadcastInPagingEventList.size)
     }
@@ -169,8 +168,8 @@ internal class BroadcastInTest {
             prevPagingData = data
             data.flow.collect()
         }.launchIn(UNDISPATCHED, this)
-        // 不需要知道收集具体什么时候完成，用延时错开即可
-        delay(100)
+
+        awaitEventLoopScheduled()
         job.cancelAndJoin()
         assertThat(prevPagingData).isNotNull()
 
@@ -180,9 +179,9 @@ internal class BroadcastInTest {
             lastPagingData = data
             data.flow.collect { lastPagingEvent = it }
         }.launchIn(UNDISPATCHED, this)
-        delay(100)
-        job.cancelAndJoin()
 
+        awaitEventLoopScheduled()
+        job.cancelAndJoin()
         assertThat(lastPagingData).isNotNull()
         assertThat(lastPagingEvent).isNotNull()
         assertThat(prevPagingData).isNotEqualTo(lastPagingData)
@@ -208,7 +207,7 @@ internal class BroadcastInTest {
             data.flow.collect(pagingEventList2::add)
         }.launchIn(UNDISPATCHED, this)
 
-        delay(100)
+        awaitEventLoopScheduled()
         job1.cancelAndJoin()
         job2.cancelAndJoin()
         assertThat(pagingDataList1.size).isEqualTo(pagingDataList2.size)

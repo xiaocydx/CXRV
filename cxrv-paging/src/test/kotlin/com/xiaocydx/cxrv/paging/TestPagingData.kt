@@ -19,11 +19,18 @@ package com.xiaocydx.cxrv.paging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+
+/**
+ * 用足够长的延时等待EventLoop处理完前面和将要添加的调度事件，
+ * 不需要分析调度事件具体的执行时机，这是一个比较麻烦的工作。
+ */
+internal suspend fun awaitEventLoopScheduled() = delay(200)
 
 @Suppress("TestFunctionName")
 internal fun TestPagingLoadingEvent() = PagingEvent.LoadStateUpdate<Int>(

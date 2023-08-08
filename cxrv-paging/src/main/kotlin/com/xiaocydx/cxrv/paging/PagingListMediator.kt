@@ -24,6 +24,7 @@ import com.xiaocydx.cxrv.internal.flowOnMain
 import com.xiaocydx.cxrv.list.ListMediator
 import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.UpdateOp
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -47,7 +48,7 @@ internal open class PagingListMediator<T : Any>(
         get() = listState.currentList
 
     open val flow: Flow<PagingEvent<T>> = callbackFlow {
-        launch {
+        launch(start = UNDISPATCHED) {
             data.flow.collect { event ->
                 if (event is PagingEvent.LoadDataSuccess) {
                     updateList(event.toUpdateOp())
