@@ -22,6 +22,10 @@ import kotlinx.coroutines.flow.map
 class VideoStreamViewModel(videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewModel() {
     private val state = ListState<VideoStreamItem>()
     private val _selectPosition = MutableStateFlow(0)
+    val selectPosition = _selectPosition.asStateFlow()
+    val selectVideoTitle = selectPosition.map { state.getItemOrNull(it)?.title ?: "" }
+    val selectVideoId: String
+        get() = state.getItemOrNull(selectPosition.value)?.id ?: ""
 
     /**
      * 视频流页面的item铺满全屏，转换末尾加载的预期策略，提前指定item个数预取分页数据
@@ -29,9 +33,6 @@ class VideoStreamViewModel(videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewM
     val videoFlow = videoFlow
         .appendPrefetch(ItemCount(3))
         .storeIn(state, viewModelScope)
-    val selectPosition = _selectPosition.asStateFlow()
-    val selectVideoId = selectPosition.map { state.getItemOrNull(it)?.id ?: "" }
-    val selectVideoTitle = selectPosition.map { state.getItemOrNull(it)?.title ?: "" }
 
     /**
      * 先同步初始状态，后收集[videoFlow]，收集时发射的分页事件会完成状态的同步

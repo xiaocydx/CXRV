@@ -51,6 +51,7 @@ internal class TransformTransition(
 
     init {
         addTransition(transform)
+        transform.drawingViewId = sceneRootId
     }
 
     override fun captureStartValues(transitionValues: TransitionValues) {
