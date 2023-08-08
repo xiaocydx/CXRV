@@ -58,12 +58,11 @@ internal open class PagingSharedFlow<T : Any>(
     private val upstream: Flow<T>,
     private val limitCollectorCount: Int,
     private val withoutCollectorNeedCancel: Boolean,
-    private val canRepeatCollectAfterCancel: Boolean,
-    private val collectUpstreamEmitUnlimited: Boolean = false
+    private val canRepeatCollectAfterCancel: Boolean
 ) : Flow<T> {
     private val collectJob: Job
     private val cancelValue: T? = null
-    private val sharedFlow = MutableSharedFlow<T?>(extraBufferCapacity = extraBufferCapacity())
+    private val sharedFlow = MutableSharedFlow<T?>()
     private val cancellableSharedFlow = sharedFlow.takeWhile { it != cancelValue }.mapNotNull { it }
     private val collectorCount = sharedFlow.subscriptionCount
 
@@ -119,10 +118,6 @@ internal open class PagingSharedFlow<T : Any>(
             // 全部收集器已完成对sharedFlow的收集，upstream发射的事件都能收到。
             cancellableSharedFlow.collect(collector)
         }
-    }
-
-    private fun extraBufferCapacity(): Int {
-        return if (collectUpstreamEmitUnlimited) Int.MAX_VALUE else 0
     }
 
     private fun checkCollectorCount() {

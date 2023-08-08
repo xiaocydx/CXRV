@@ -113,8 +113,7 @@ internal class StoreInPagingEventSharedFlow<T : Any>(
     upstream = upstream,
     limitCollectorCount = 1,
     withoutCollectorNeedCancel = false,
-    canRepeatCollectAfterCancel = false,
-    collectUpstreamEmitUnlimited = true // 丢弃非活跃状态期间upstream发射的事件
+    canRepeatCollectAfterCancel = false
 ) {
     private var isFirstActive = true
 
