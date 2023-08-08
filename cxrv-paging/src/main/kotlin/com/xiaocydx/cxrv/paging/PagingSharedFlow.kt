@@ -112,15 +112,7 @@ internal open class PagingSharedFlow<T : Any>(
                 cancelSharedFlow()
             }
 
-            launch {
-                // 先收集sharedFlow，后发射activeValue，
-                // 确保先activeValue后upstream的发射顺序。
-                val activeValue = getActiveValue()
-                if (activeValue != null) {
-                    sharedFlow.emit(activeValue)
-                }
-            }
-
+            beforeCollect()
             // 如果收集处协程都是UNDISPATCHED启动，并且是立即收集sharedFlow，
             // 那么对于EventLoop，collectorCount = 1的恢复会进入调度事件队列，
             // 这也就表示collectJob收集collectorCount，当collectorCount = 1时，
@@ -140,15 +132,16 @@ internal open class PagingSharedFlow<T : Any>(
         }
     }
 
-    private suspend fun cancelSharedFlow() {
-        sharedFlow.emit(cancelValue)
-    }
+    private suspend fun cancelSharedFlow() = sharedFlow.emit(cancelValue)
+
+    protected suspend fun emitSharedFlow(value: T) = sharedFlow.emit(value)
 
     /**
      * 每个收集器收集[cancellableSharedFlow]之前，都会调用该函数，
-     * 若返回不为`null`的值，则先对收集器发射该值，然后再进行收集。
+     * 若启动的子协程需要在收集之后运行，则不能使用[UNDISPATCHED]，
+     * 并且不能替换当前上下文的调度器。
      */
-    protected open suspend fun getActiveValue(): T? = null
+    protected open fun CoroutineScope.beforeCollect() = Unit
 
     suspend fun cancel() = collectJob.cancelAndJoin()
 

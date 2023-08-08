@@ -27,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -117,10 +118,18 @@ internal class StoreInPagingEventSharedFlow<T : Any>(
 ) {
     private var isFirstActive = true
 
+    override fun CoroutineScope.beforeCollect() {
+        launch {
+            // 确保先activeValue后upstream的发射顺序
+            val activeValue = getActiveValue()
+            if (activeValue != null) emitSharedFlow(activeValue)
+        }
+    }
+
     /**
      * 丢弃非活跃状态期间[upstream]发射的事件，当恢复活跃状态时，主动发射事件进行差异更新
      */
-    override suspend fun getActiveValue(): PagingEvent<T>? = withMainDispatcher {
+    private suspend fun getActiveValue(): PagingEvent<T>? = withMainDispatcher {
         mediator.run {
             val isFirstActive = consumeFirstActive()
             if (isFirstActive
