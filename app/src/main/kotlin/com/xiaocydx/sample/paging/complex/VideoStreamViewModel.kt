@@ -28,7 +28,7 @@ class VideoStreamViewModel(videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewM
         get() = state.getItemOrNull(selectPosition.value)?.id ?: ""
 
     /**
-     * 视频流页面的item铺满全屏，转换末尾加载的预期策略，提前指定item个数预取分页数据
+     * 视频流页面的item铺满全屏，转换末尾加载的预取策略，提前指定item个数预取分页数据
      */
     val videoFlow = videoFlow
         .appendPrefetch(ItemCount(3))

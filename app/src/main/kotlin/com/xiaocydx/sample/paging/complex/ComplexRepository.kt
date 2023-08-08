@@ -19,7 +19,8 @@ class ComplexRepository(
 
     fun getComplexPager(
         config: PagingConfig,
-        initKey: Int = 1
+        initKey: Int = 1,
+        adKeyRange: Boolean = false
     ): Pager<Int, ComplexItem> = Pager(
         initKey = initKey,
         config = config,
@@ -29,6 +30,7 @@ class ComplexRepository(
                 val id = "${params.key}-$num"
                 val url = urls[num % urls.size]
                 val type = when {
+                    adKeyRange && params.key in 2..4 -> ComplexItem.TYPE_AD
                     num % 4 == 0 -> ComplexItem.TYPE_AD
                     else -> ComplexItem.TYPE_VIDEO
                 }

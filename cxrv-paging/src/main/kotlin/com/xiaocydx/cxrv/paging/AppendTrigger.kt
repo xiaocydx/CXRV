@@ -285,11 +285,23 @@ internal class AppendTrigger(
     /**
      * 在列表状态和分页加载状态更改时调整末尾加载的启用方案
      */
-    private inner class AppendStateListener : ListChangedListener<Any>, LoadStatesListener {
+    private inner class AppendStateListener :
+            HandleEventListener<Any>, ListChangedListener<Any>, LoadStatesListener {
+        private var forceAppend = false
 
         init {
             adapter.addListChangedListener(this)
             collector.addLoadStatesListener(this)
+            collector.addHandleEventListener(this)
+        }
+
+        override suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<Any>) {
+            // PagingFetcher的加载过程已确保末尾加载data不为空，
+            // 若仍然收到data为空的事件，则表示操作符过滤了data，
+            // 对于这种情况，强制触发末尾加载。
+            forceAppend = event.loadType == LoadType.APPEND
+                    && event is PagingEvent.LoadDataSuccess
+                    && event.data.isEmpty()
         }
 
         /**
@@ -308,6 +320,14 @@ internal class AppendTrigger(
             if (appendRequested && previous.append != current.append) {
                 appendRequested = false
             }
+
+            val forceAppend = forceAppend.also { forceAppend = false }
+            if (forceAppend && loadStates.isAllowAppend) {
+                log { "AppendStateListener force trigger append, loadStates = $loadStates" }
+                append()
+                return
+            }
+
             if (previous.refreshToSuccess(current)
                     || (previous.refresh.isIncomplete && current.refresh.isSuccess)) {
                 // 1. previous.refreshToSuccess(current)
@@ -322,8 +342,10 @@ internal class AppendTrigger(
         }
 
         fun removeListener() {
+            forceAppend = false
             adapter.removeListChangedListener(this)
             collector.removeLoadStatesListener(this)
+            collector.removeHandleEventListener(this)
         }
     }
 }

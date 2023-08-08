@@ -69,7 +69,9 @@ import kotlinx.coroutines.flow.onEach
  * 则通过发送事件完成[ListState]的同步即可，这种不涉及分页加载的同步需求，并不难处理。
  *
  * 视频流的数据通过其他业务数据过滤、转换而来，因此存在一页数据过滤完后，没有视频流数据的问题，
- * `AppendTrigger`的实现能解决这个问题，当视频流页面收集到一页空数据时，会自动触发下一页加载。
+ * `AppendTrigger`的实现已解决这个问题，当视频流页面收集到一页空数据时，会自动触发下一页加载，
+ * [ComplexRepository.getComplexPager]形参`adKeyRange`的默认值修改为`true`，可以验证此效果，
+ * `adKeyRange = true`，表示连续几页不包含视频流数据。
  *
  * @author xcc
  * @date 2023/7/30
