@@ -199,6 +199,9 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      * 对应[DiffUtil.ItemCallback.areItemsTheSame]
      *
      * [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
+     *
+     * 确定不是remove和insert更新后，再确定是否为change更新，返回`false`表示change更新，
+     * 默认实现是[oldItem]和[newItem]进行`equals()`对比，推荐数据实体使用data class。
      */
     @MainThread
     @WorkerThread
@@ -209,6 +212,9 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      *
      * 1. [areItemsTheSame]返回true -> 调用[areContentsTheSame]。
      * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
+     *
+     * 确定不是remove和insert更新后，再确定是否为change更新，返回`false`表示change更新，
+     * 默认实现是[oldItem]和[newItem]进行`equals()`对比，推荐数据实体使用data class。
      */
     @MainThread
     @WorkerThread
@@ -219,6 +225,8 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      *
      * 1. [areItemsTheSame]返回true -> [areContentsTheSame]返回false -> 调用[getChangePayload]。
      * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
+     *
+     * 确定是change更新后，再获取Payload对象，默认实现是返回`null`。
      */
     @MainThread
     open fun getChangePayload(oldItem: ITEM, newItem: ITEM): Any? = null

@@ -25,18 +25,16 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 
 /**
- * 分页的主要入口，提供[PagingData]数据流，当调用了[refresh]，
+ * 分页的主要入口，提供[PagingData]数据流，调用[refresh]，
  * 会发射新的[PagingData]并取消旧的[PagingData]的事件流。
  *
- * 1.在Repository下创建[Pager]，对外提供[Pager.flow]
+ * 1.在Repository下创建[Pager]，对外提供[Pager]或者[Pager.flow]
  * ```
  * class FooRepository {
  *     private val pager: Pager<String, Foo> = ...
  *     val flow = pager.flow
  *
- *     fun refresh() {
- *         pager.refresh()
- *     }
+ *     fun refresh() = pager.refresh()
  * }
  * ```
  *
@@ -63,7 +61,7 @@ import kotlinx.coroutines.flow.onStart
  *          // 或者仅在视图控制器活跃期间内收集viewModel.flow
  *          lifecycleScope.launch {
  *              repeatOnLifecycle(Lifecycle.State.STARTED) {
- *                  adapter.pagingCollector.emitAll(viewModel.flow)
+ *                  viewModel.flow.onEach(adapter.pagingCollector).collect()
  *              }
  *          }
  *     }

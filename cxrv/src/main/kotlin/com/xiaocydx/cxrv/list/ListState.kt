@@ -50,7 +50,7 @@ import kotlinx.coroutines.flow.callbackFlow
  *          // 或者仅在视图控制器活跃期间内收集viewModel.flow
  *          lifecycleScope.launch {
  *              repeatOnLifecycle(Lifecycle.State.STARTED) {
- *                  adapter.listCollector.emitAll(viewModel.flow)
+ *                  viewModel.flow.onEach(adapter.listCollector).collect()
  *              }
  *          }
  *     }

@@ -66,6 +66,18 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
         super.requestSimpleAnimationsInNextLayout()
     }
 
+    override fun onLayoutChildren(recycler: Recycler, state: State) {
+        checkRunAnimations(state)
+        checkRecalculateAnchor(state)
+        if (!isEnabled) invalidateOnNextLayout = false
+        if (invalidateOnNextLayout) {
+            markItemDecorInsetsDirty()
+            // 若当前是preLayout，则让realLayout重新计算DecorInsets
+            invalidateOnNextLayout = state.isPreLayout
+        }
+        super.onLayoutChildren(recycler, state)
+    }
+
     private fun checkRunAnimations(state: State) {
         if (invalidateOnNextLayout) return
         if (layout is StaggeredGridLayoutManager) {
@@ -85,18 +97,6 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
         val lm = layout as? StaggeredGridLayoutManager ?: return
         val recalculateAnchor = state.itemCount > 0 && lm.mPendingScrollPosition != NO_POSITION
         invalidateOnNextLayout = recalculateAnchor
-    }
-
-    override fun onLayoutChildren(recycler: Recycler, state: State) {
-        checkRunAnimations(state)
-        checkRecalculateAnchor(state)
-        if (!isEnabled) invalidateOnNextLayout = false
-        if (invalidateOnNextLayout) {
-            markItemDecorInsetsDirty()
-            // 若当前是preLayout，则让realLayout重新计算DecorInsets
-            invalidateOnNextLayout = state.isPreLayout
-        }
-        super.onLayoutChildren(recycler, state)
     }
 
     private fun markItemDecorInsetsDirty() {
