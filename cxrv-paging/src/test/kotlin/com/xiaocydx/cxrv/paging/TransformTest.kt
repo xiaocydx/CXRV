@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -49,7 +50,7 @@ internal class TransformTest {
             runBlocking {
                 val flow = TestPagingDataFlow()
                 val scope = CoroutineScope(Job(coroutineContext.job))
-                flow.storeInTest(scope).flowMap { it }.collect()
+                flow.storeInTest(scope).onEach {  }.flowMap { it }.collect()
             }
         }
         assertThat(result.exceptionOrNull()).isNotNull()

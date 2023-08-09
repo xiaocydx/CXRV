@@ -51,7 +51,6 @@ import kotlinx.coroutines.flow.map
  * ```
  */
 fun <T : Any> Flow<PagingData<T>>.broadcastIn(scope: CoroutineScope): Flow<PagingData<T>> {
-    if (this is BroadcastInPagingDataStateFlow) return this
     var previous: BroadcastInPagingEventShareFlow<T>? = null
     val upstream: Flow<PagingData<T>> = map { data ->
         data.ensureBeforeStoreInOperator { "Flow<PagingData<T>>.broadcastIn()" }

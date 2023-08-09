@@ -65,11 +65,15 @@ fun <T : Any> Flow<PagingData<T>>.storeIn(scope: CoroutineScope) = storeIn(ListS
 
 @PublishedApi
 internal val PagingData<*>.isFromStoreInOperator: Boolean
-    get() = mediator.asListMediator<Any>() != null
+    get() = flow is StoreInPagingEventSharedFlow
 
 @PublishedApi
 internal inline fun PagingData<*>.ensureBeforeStoreInOperator(lazyFunctionName: () -> String) {
     check(!isFromStoreInOperator) { "${lazyFunctionName()}必须在Flow<PagingData<T>>.storeIn()之前调用" }
+}
+
+private fun PagingData<*>.ensureSingleStoreInOperator() {
+    check(!isFromStoreInOperator) { "已调用Flow<PagingData<T>>.storeIn()构建最终分页数据流" }
 }
 
 @VisibleForTesting
@@ -78,9 +82,9 @@ internal inline fun <T : Any> Flow<PagingData<T>>.storeInInternal(
     scope: CoroutineScope,
     crossinline transform: (PagingData<T>, ListState<T>) -> PagingListMediator<T>
 ): Flow<PagingData<T>> {
-    if (this is StoreInPagingDataStateFlow) return this
     var previous: StoreInPagingEventSharedFlow<T>? = null
     val upstream: Flow<PagingData<T>> = map { data ->
+        data.ensureSingleStoreInOperator()
         previous?.cancel()
         val mediator = transform(data, state)
         val flow = StoreInPagingEventSharedFlow(scope, mediator.flow, mediator)

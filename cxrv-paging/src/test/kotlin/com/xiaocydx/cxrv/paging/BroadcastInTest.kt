@@ -51,7 +51,7 @@ internal class BroadcastInTest {
             runBlocking {
                 val flow = TestPagingDataFlow()
                 val scope = CoroutineScope(Job(coroutineContext.job))
-                flow.storeInTest(scope).broadcastIn(scope).collect()
+                flow.storeInTest(scope).onEach {  }.broadcastIn(scope).collect()
             }
         }
         assertThat(result.exceptionOrNull()).isNotNull()

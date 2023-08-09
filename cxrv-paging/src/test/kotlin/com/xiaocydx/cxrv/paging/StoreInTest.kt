@@ -54,6 +54,18 @@ import org.robolectric.annotation.Config
 internal class StoreInTest {
 
     @Test
+    fun singleStoreIn() {
+        val result = runCatching {
+            runBlocking {
+                val flow = TestPagingDataFlow()
+                val scope = CoroutineScope(Job(coroutineContext.job))
+                flow.storeInTest(scope).onEach { }.storeInTest(scope).collect()
+            }
+        }
+        assertThat(result.exceptionOrNull()).isNotNull()
+    }
+
+    @Test
     fun lazyCollect(): Unit = runBlocking {
         var collectPagingData = false
         var collectPagingEvent = false
