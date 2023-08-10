@@ -22,7 +22,7 @@ import androidx.annotation.MainThread
  * 列表所有者
  *
  * [ListOwner]的主要实现类有[ListState]和[ListAdapter]，
- * [ListState]和[ListAdapter]可以建立基于[ListOwner]的双向通信，
+ * [ListState]和[ListAdapter]建立基于[ListOwner]的双向通信，
  * 通常[ListState]位于ViewModel，[ListAdapter]位于视图控制器。
  *
  * **注意**：虽然支持[ListState]和[ListAdapter]之间的双向通信，
@@ -103,6 +103,9 @@ fun ListOwner<*>.isLastItem(position: Int): Boolean {
  * 提交新列表，该函数必须在主线程调用
  *
  * 通过[submitChange]、[submitTransform]可以方便的更改列表。
+ *
+ * 当知道列表的具体更新操作时，尽量使用[setItem]、[addItem]、[removeItemAt]、[moveItem]等函数更新列表，
+ * 因为[submitList]在必要时会进行差异计算，应当在合适的场景使用它，例如列表下拉刷新和页面恢复活跃状态。
  *
  * @param newList 需要是新的列表对象，若传入旧的列表对象，则不会更改。
  * 若[newList]的类型是[SafeMutableList]，则表示可作为内部的可变列表，
