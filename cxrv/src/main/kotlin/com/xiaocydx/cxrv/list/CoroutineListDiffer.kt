@@ -158,15 +158,15 @@ class CoroutineListDiffer<T : Any>(
     fun updateList(op: UpdateOp<T>, dispatch: Boolean = true): UpdateResult {
         assertMainThread()
         return if (isLaunchNeeded(op)) {
-            scope.launch {
+            scope.async {
                 runner.afterPrevious { execute(op, dispatch) }
             }.let(::DeferredResult)
         } else {
             // 该分支下调用execute()不会产生挂起，
             // 因此直接执行execute()的状态机逻辑。
             @Suppress("UNCHECKED_CAST")
-            execute(this, op as UpdateOp<Any>, dispatch, NopSymbol)
-            CompleteResult
+            val succeed = execute(this, op as UpdateOp<Any>, dispatch, NopSymbol)
+            if (succeed == true) SuccessResult else FailureResult
         }
     }
 
@@ -213,11 +213,11 @@ class CoroutineListDiffer<T : Any>(
     }
 
     @MainThread
-    private suspend fun execute(op: UpdateOp<T>, dispatch: Boolean) {
+    private suspend fun execute(op: UpdateOp<T>, dispatch: Boolean): Boolean {
         if (dispatch) {
             executeListeners.reverseAccessEach { it.onExecute(op) }
         }
-        when (op) {
+        val succeed = when (op) {
             is UpdateOp.SubmitList -> submitList(op.newList)
             is UpdateOp.SetItem -> setItem(op.position, op.item)
             is UpdateOp.SetItems -> setItems(op.position, op.items)
@@ -226,7 +226,10 @@ class CoroutineListDiffer<T : Any>(
             is UpdateOp.RemoveItems -> removeItems(op.position, op.itemCount)
             is UpdateOp.MoveItem -> moveItem(op.fromPosition, op.toPosition)
         }
-        changedListeners.reverseAccessEach { it.onListChanged(currentList) }
+        if (succeed) {
+            changedListeners.reverseAccessEach { it.onListChanged(currentList) }
+        }
+        return succeed
     }
 
     @MainThread
@@ -485,7 +488,7 @@ class CoroutineListDiffer<T : Any>(
     private companion object NopSymbol : Continuation<Any?> {
         @Suppress("UNCHECKED_CAST")
         private val execute = CoroutineListDiffer<Any>::execute
-                as Function4<Any, UpdateOp<Any>, Boolean, Continuation<Unit>, Any?>
+                as Function4<Any, UpdateOp<Any>, Boolean, Continuation<Unit>, Boolean?>
         override val context: CoroutineContext = EmptyCoroutineContext
         override fun resumeWith(result: Result<Any?>) = Unit
     }

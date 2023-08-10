@@ -16,7 +16,7 @@
 
 package com.xiaocydx.cxrv.list
 
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.Deferred
 
 /**
  * 列表更新操作
@@ -47,12 +47,14 @@ interface UpdateResult {
     /**
      * 是否更新完成
      */
-    val isComplete: Boolean
+    val isCompleted: Boolean
 
     /**
      * 若未更新完成，则挂起等待更新完成，响应调用处协程的取消
+     *
+     * @return `true`-更新成功，`false`-更新失败
      */
-    suspend fun await()
+    suspend fun await(): Boolean
 }
 
 /**
@@ -63,25 +65,39 @@ internal interface CompleteCompat {
 }
 
 /**
- * 执行[UpdateOp]未产生挂起，更新完成
+ * 执行[UpdateOp]未产生挂起，更新成功
  */
-internal object CompleteResult : UpdateResult {
-    override val isComplete: Boolean = true
-    override suspend fun await() = Unit
+internal object SuccessResult : UpdateResult {
+    override val isCompleted = true
+    override suspend fun await() = true
 }
 
 /**
- * 执行[UpdateOp]产生挂起，通过[job]等待更新完成
+ * 执行[UpdateOp]未产生挂起，更新失败
+ */
+internal object FailureResult : UpdateResult {
+    override val isCompleted = true
+    override suspend fun await() = false
+}
+
+/**
+ * 执行[UpdateOp]产生挂起，通过[deferred]等待更新结果
  */
 internal class DeferredResult(
-    private val job: Job
+    private val deferred: Deferred<Boolean>
 ) : UpdateResult, CompleteCompat {
-    override val isComplete: Boolean
-        get() = job.isCompleted
+    override val isCompleted: Boolean
+        get() = deferred.isCompleted
 
-    override suspend fun await(): Unit = job.join()
+    override suspend fun await(): Boolean {
+        // 不直接调用deferred.await()返回结果，是为了规避deferred被取消抛出CancellationException,
+        // deferred被取消，deferred.join()只会正常完成，并且deferred.join()能响应当前协程的取消。
+        deferred.join()
+        if (deferred.isCancelled) return false
+        return deferred.await()
+    }
 
     override fun invokeOnCompletion(complete: ((exception: Throwable?) -> Unit)?) {
-        complete?.let(job::invokeOnCompletion)
+        complete?.let(deferred::invokeOnCompletion)
     }
 }

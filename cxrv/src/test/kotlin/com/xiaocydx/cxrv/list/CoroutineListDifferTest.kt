@@ -76,12 +76,12 @@ class CoroutineListDifferTest {
     fun submitListAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A")
-        differ.updateList(UpdateOp.SubmitList(initList)).await()
+        differ.updateList(UpdateOp.SubmitList(initList)).awaitTrue()
         assertThat(differ.currentList).isEqualTo(initList)
         verify(exactly = 1) { updateCallback.onInserted(0, initList.size) }
 
         val newList = listOf("A", "B")
-        differ.updateList(UpdateOp.SubmitList(newList)).await()
+        differ.updateList(UpdateOp.SubmitList(newList)).awaitTrue()
         assertThat(differ.currentList).isEqualTo(newList)
         verify(atLeast = 1) { diffCallback.areItemsTheSame(initList[0], newList[0]) }
         verify(exactly = 1) { updateCallback.onInserted(initList.size, newList.size - initList.size) }
@@ -91,8 +91,8 @@ class CoroutineListDifferTest {
     fun setItemAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A", "B")
-        differ.updateList(UpdateOp.SubmitList(initList)).await()
-        differ.updateList(UpdateOp.SetItem(1, "&B")).await()
+        differ.updateList(UpdateOp.SubmitList(initList)).awaitTrue()
+        differ.updateList(UpdateOp.SetItem(1, "&B")).awaitTrue()
         assertThat(differ.currentList).isEqualTo(listOf("A", "&B"))
         verify(exactly = 1) { diffCallback.areItemsTheSame("B", "&B") }
         verify(exactly = 1) { updateCallback.onRemoved(1, 1) }
@@ -103,8 +103,8 @@ class CoroutineListDifferTest {
     fun setItemsAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A", "B", "C")
-        differ.updateList(UpdateOp.SubmitList(initList)).await()
-        differ.updateList(UpdateOp.SetItems(1, listOf("&B", "&C", "D"))).await()
+        differ.updateList(UpdateOp.SubmitList(initList)).awaitTrue()
+        differ.updateList(UpdateOp.SetItems(1, listOf("&B", "&C", "D"))).awaitTrue()
         assertThat(differ.currentList).isEqualTo(listOf("A", "&B", "&C"))
         verify(exactly = 1) { diffCallback.areItemsTheSame("B", "&B") }
         verify(exactly = 1) { diffCallback.areItemsTheSame("C", "&C") }
@@ -116,8 +116,8 @@ class CoroutineListDifferTest {
     fun addItemAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A")
-        differ.updateList(UpdateOp.SubmitList(initList)).await()
-        differ.updateList(UpdateOp.AddItem(initList.size, "B")).await()
+        differ.updateList(UpdateOp.SubmitList(initList)).awaitTrue()
+        differ.updateList(UpdateOp.AddItem(initList.size, "B")).awaitTrue()
         assertThat(differ.currentList).isEqualTo(listOf("A", "B"))
         verify(exactly = 0) { diffCallback.areItemsTheSame(any(), any()) }
         verify(exactly = 1) { updateCallback.onInserted(initList.size, 1) }
@@ -127,8 +127,8 @@ class CoroutineListDifferTest {
     fun addItemsAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A")
-        differ.updateList(UpdateOp.SubmitList(initList)).await()
-        differ.updateList(UpdateOp.AddItems(initList.size, listOf("B", "C"))).await()
+        differ.updateList(UpdateOp.SubmitList(initList)).awaitTrue()
+        differ.updateList(UpdateOp.AddItems(initList.size, listOf("B", "C"))).awaitTrue()
         assertThat(differ.currentList).isEqualTo(listOf("A", "B", "C"))
         verify(exactly = 0) { diffCallback.areItemsTheSame(any(), any()) }
         verify(exactly = 1) { updateCallback.onInserted(initList.size, 2) }
@@ -138,8 +138,8 @@ class CoroutineListDifferTest {
     fun removeItemsAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A", "B", "C")
-        differ.updateList(UpdateOp.SubmitList(initList)).await()
-        differ.updateList(UpdateOp.RemoveItems(position = 0, itemCount = 2)).await()
+        differ.updateList(UpdateOp.SubmitList(initList)).awaitTrue()
+        differ.updateList(UpdateOp.RemoveItems(position = 0, itemCount = 2)).awaitTrue()
         assertThat(differ.currentList).isEqualTo(listOf("C"))
         verify(exactly = 0) { diffCallback.areItemsTheSame(any(), any()) }
         verify(exactly = 1) { updateCallback.onRemoved(0, 2) }
@@ -149,8 +149,8 @@ class CoroutineListDifferTest {
     fun moveItemAwait(): Unit = runBlockingTest {
         val (differ, diffCallback, updateCallback) = it
         val initList = listOf("A", "B", "C")
-        differ.updateList(UpdateOp.SubmitList(initList)).await()
-        differ.updateList(UpdateOp.MoveItem(0, 2)).await()
+        differ.updateList(UpdateOp.SubmitList(initList)).awaitTrue()
+        differ.updateList(UpdateOp.MoveItem(0, 2)).awaitTrue()
         assertThat(differ.currentList).isEqualTo(listOf("B", "C", "A"))
         verify(exactly = 0) { diffCallback.areItemsTheSame(any(), any()) }
         verify(exactly = 1) { updateCallback.onMoved(0, 2) }
@@ -186,25 +186,25 @@ class CoroutineListDifferTest {
     @Test
     fun currentAwait(): Unit = runBlockingTest {
         val differ = it.differ
-        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
-        differ.updateList(UpdateOp.SubmitList(listOf("C", "D"))).await()
+        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).awaitTrue()
+        differ.updateList(UpdateOp.SubmitList(listOf("C", "D"))).awaitTrue()
         assertThat(differ.currentList).isEqualTo(listOf("C", "D"))
     }
 
     @Test
     fun queueAwait(): Unit = runBlockingTest {
         val differ = it.differ
-        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
+        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).awaitTrue()
         differ.updateList(UpdateOp.SubmitList(listOf("C", "D")))
         differ.updateList(UpdateOp.SetItem(0, "E"))
-        differ.updateList(UpdateOp.RemoveItems(1, 1)).await()
+        differ.updateList(UpdateOp.RemoveItems(1, 1)).awaitTrue()
         assertThat(differ.currentList).isEqualTo(listOf("E"))
     }
 
     @Test
     fun currentCancel(): Unit = runBlockingTest {
         val differ = it.differ
-        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
+        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).awaitTrue()
         val result = differ.updateList(UpdateOp.SubmitList(listOf("C", "D")))
         differ.cancel()
         result.await()
@@ -214,7 +214,7 @@ class CoroutineListDifferTest {
     @Test
     fun queueCancel(): Unit = runBlockingTest {
         val differ = it.differ
-        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).await()
+        differ.updateList(UpdateOp.SubmitList(listOf("A", "B"))).awaitTrue()
         differ.updateList(UpdateOp.SubmitList(listOf("C", "D")))
         differ.updateList(UpdateOp.SetItem(0, "E"))
         val result = differ.updateList(UpdateOp.RemoveItems(1, 1))
@@ -229,12 +229,8 @@ class CoroutineListDifferTest {
         differ.setDiffDispatcher(differ.mainDispatcher)
         val initList = listOf("A", "B")
         val newList = listOf("C", "D")
-
-        var result = differ.updateList(UpdateOp.SubmitList(initList))
-        assertThat(result).isEqualTo(CompleteResult)
-
-        result = differ.updateList(UpdateOp.SubmitList(newList))
-        assertThat(result).isEqualTo(CompleteResult)
+        differ.updateList(UpdateOp.SubmitList(initList)).awaitTrue()
+        differ.updateList(UpdateOp.SubmitList(newList)).awaitTrue()
         assertThat(differ.currentList).isEqualTo(newList)
     }
 
@@ -244,16 +240,11 @@ class CoroutineListDifferTest {
         val initList = listOf("A", "B")
         val newList1 = listOf("C", "D")
         val newList2 = listOf("E", "F")
-
-        var result = differ.updateList(UpdateOp.SubmitList(initList))
-        assertThat(result).isEqualTo(CompleteResult)
-
-        result = differ.updateList(UpdateOp.SubmitList(newList1))
-        assertThat(result).isNotEqualTo(CompleteResult)
+        differ.updateList(UpdateOp.SubmitList(initList)).awaitTrue()
+        differ.updateList(UpdateOp.SubmitList(newList1)).awaitTrue()
 
         differ.setDiffDispatcher(differ.mainDispatcher)
-        result = differ.updateList(UpdateOp.SubmitList(newList2))
-        assertThat(result).isEqualTo(CompleteResult)
+        differ.updateList(UpdateOp.SubmitList(newList2)).awaitTrue()
         assertThat(differ.currentList).isEqualTo(newList2)
     }
 
@@ -263,18 +254,18 @@ class CoroutineListDifferTest {
         val position = 1
         val itemA = "A"
         val itemB = "B"
-        differ.updateList(UpdateOp.AddItems(0, listOf("X", itemA))).await()
+        differ.updateList(UpdateOp.AddItems(0, listOf("X", itemA))).awaitTrue()
 
         // itemA和copyItemA内容一致，不需要更新
         val copyItemA = String(itemA.toCharArray())
-        differ.updateList(UpdateOp.SubmitList(listOf("X", copyItemA))).await()
+        differ.updateList(UpdateOp.SubmitList(listOf("X", copyItemA))).awaitTrue()
         verify(atLeast = 1) { diffCallback.areItemsTheSame(itemA, copyItemA) }
         verify(exactly = 1) { diffCallback.areContentsTheSame(itemA, copyItemA) }
         verify(exactly = 0) { diffCallback.getChangePayload(itemA, copyItemA) }
         verify(exactly = 0) { updateCallback.onChanged(position, 1, null) }
 
         // A和B，areItemsTheSame()为false，按removeAndInsert更新
-        differ.updateList(UpdateOp.SubmitList(listOf("X", itemB))).await()
+        differ.updateList(UpdateOp.SubmitList(listOf("X", itemB))).awaitTrue()
         verify(atLeast = 1) { diffCallback.areItemsTheSame(copyItemA, itemB) }
         verify(exactly = 0) { diffCallback.areContentsTheSame(copyItemA, itemB) }
         verify(exactly = 0) { diffCallback.getChangePayload(copyItemA, itemB) }
@@ -288,10 +279,10 @@ class CoroutineListDifferTest {
         val position = 1
         val itemA = "A"
         val itemB = "B"
-        differ.updateList(UpdateOp.AddItems(0, listOf("X", itemA))).await()
+        differ.updateList(UpdateOp.AddItems(0, listOf("X", itemA))).awaitTrue()
 
         // A对象未改变，确保payload为null的更新
-        differ.updateList(UpdateOp.SetItem(position, itemA)).await()
+        differ.updateList(UpdateOp.SetItem(position, itemA)).awaitTrue()
         verify(exactly = 0) { diffCallback.areItemsTheSame(itemA, itemA) }
         verify(exactly = 0) { diffCallback.areContentsTheSame(itemA, itemA) }
         verify(exactly = 0) { diffCallback.getChangePayload(itemA, itemA) }
@@ -299,14 +290,14 @@ class CoroutineListDifferTest {
 
         // itemA和copyItemA内容一致，不需要更新，跟差异计算结果一致
         val copyItemA = String(itemA.toCharArray())
-        differ.updateList(UpdateOp.SetItem(position, copyItemA)).await()
+        differ.updateList(UpdateOp.SetItem(position, copyItemA)).awaitTrue()
         verify(exactly = 1) { diffCallback.areItemsTheSame(itemA, copyItemA) }
         verify(exactly = 1) { diffCallback.areContentsTheSame(itemA, copyItemA) }
         verify(exactly = 0) { diffCallback.getChangePayload(itemA, copyItemA) }
         verify(exactly = 1) { updateCallback.onChanged(position, 1, null) }
 
         // A和B，areItemsTheSame()为false，按removeAndInsert更新，跟差异计算结果一致
-        differ.updateList(UpdateOp.SetItem(position, itemB)).await()
+        differ.updateList(UpdateOp.SetItem(position, itemB)).awaitTrue()
         verify(exactly = 1) { diffCallback.areItemsTheSame(copyItemA, itemB) }
         verify(exactly = 0) { diffCallback.areContentsTheSame(copyItemA, itemB) }
         verify(exactly = 0) { diffCallback.getChangePayload(copyItemA, itemB) }
@@ -325,8 +316,8 @@ class CoroutineListDifferTest {
 
         val initList = listOf("A", "B", itemC, itemD, "E", "F")
         val newList = listOf("A", "B", copyItemC, copyItemD, "&E", "&F")
-        differ.updateList(UpdateOp.SubmitList(initList)).await()
-        differ.updateList(UpdateOp.SubmitList(newList)).await()
+        differ.updateList(UpdateOp.SubmitList(initList)).awaitTrue()
+        differ.updateList(UpdateOp.SubmitList(newList)).awaitTrue()
 
         // itemC和copyItemC，itemD和copyItemD内容一致，不需要更新
         listOf(itemC, itemD).forEach { item ->
@@ -357,8 +348,8 @@ class CoroutineListDifferTest {
 
         val initList = listOf("A", "B", itemC, itemD, "E", "F")
         val items = listOf("A", "B", copyItemC, copyItemD, "&E", "&F")
-        differ.updateList(UpdateOp.AddItems(position, initList)).await()
-        differ.updateList(UpdateOp.SetItems(position, items)).await()
+        differ.updateList(UpdateOp.AddItems(position, initList)).awaitTrue()
+        differ.updateList(UpdateOp.SetItems(position, items)).awaitTrue()
 
         // A、B对象未改变，确保payload为null的更新
         listOf("A", "B").forEach { item ->
@@ -385,6 +376,45 @@ class CoroutineListDifferTest {
             verify(exactly = 1) { updateCallback.onInserted(position + 4, 2) }
         }
     }
+
+    @Test
+    fun setItemFailure(): Unit = runBlockingTest {
+        val (differ, _, _) = it
+        differ.updateList(UpdateOp.SetItem(0, "A")).awaitFalse()
+    }
+
+    @Test
+    fun setItemsFailure(): Unit = runBlockingTest {
+        val (differ, _, _) = it
+        differ.updateList(UpdateOp.SetItems(0, listOf("A"))).awaitFalse()
+    }
+
+    @Test
+    fun addItemFailure(): Unit = runBlockingTest {
+        val (differ, _, _) = it
+        differ.updateList(UpdateOp.AddItem(1, "A")).awaitFalse()
+    }
+
+    @Test
+    fun addItemsFailure(): Unit = runBlockingTest {
+        val (differ, _, _) = it
+        differ.updateList(UpdateOp.AddItems(1, listOf("A"))).awaitFalse()
+    }
+
+    @Test
+    fun removeItemsFailure(): Unit = runBlockingTest {
+        val (differ, _, _) = it
+        differ.updateList(UpdateOp.RemoveItems(0, 1)).awaitFalse()
+    }
+
+    @Test
+    fun moveItemFailure(): Unit = runBlockingTest {
+        val (differ, _, _) = it
+        differ.updateList(UpdateOp.MoveItem(0, 1)).awaitFalse()
+    }
+
+    private suspend fun UpdateResult.awaitTrue() = assertThat(await()).isTrue()
+    private suspend fun UpdateResult.awaitFalse() = assertThat(await()).isFalse()
 
     private fun <T> runBlockingTest(
         block: suspend CoroutineScope.(TestProperty) -> T
