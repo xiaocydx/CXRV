@@ -27,14 +27,14 @@ import com.xiaocydx.cxrv.internal.accessEach
  */
 @PublishedApi
 internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
-    private var isComplete = false
+    private var isCompleted = false
     private val types = SparseArray<Type<out T>>()
     private val typeGroups = mutableMapOf<Class<*>, Any>()
     override val size: Int
         get() = types.size()
 
     override fun register(type: Type<out T>) {
-        check(!isComplete) { "已完成多类型注册" }
+        check(!isCompleted) { "已完成多类型注册" }
         checkType(type)
         val viewType = type.delegate.viewType
         if (types.indexOfKey(viewType) < 0) {
@@ -127,8 +127,8 @@ internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
     }
 
     fun complete(): MultiType<T> {
-        if (!isComplete) {
-            isComplete = true
+        if (!isCompleted) {
+            isCompleted = true
             checkTypeGroups()
         }
         return this

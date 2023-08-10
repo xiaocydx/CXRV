@@ -39,7 +39,7 @@ open class PagingConcatScope {
     private var loadFooter: ViewAdapter<*>? = null
     private var initHeader: (LoadHeaderConfig.() -> Unit)? = null
     private var initFooter: (LoadFooterConfig.() -> Unit)? = null
-    private var isComplete = false
+    private var isCompleted = false
 
     /**
      * 设置加载头部适配器
@@ -47,7 +47,7 @@ open class PagingConcatScope {
      * @param adapter 传入`null`表示不需要加载头部
      */
     fun loadHeader(adapter: ViewAdapter<*>?) {
-        checkComplete()
+        checkCompleted()
         loadHeader = adapter
         initHeader = null
         isNeedHeader = adapter != null
@@ -80,7 +80,7 @@ open class PagingConcatScope {
      * ```
      */
     fun loadHeader(block: LoadHeaderConfig.() -> Unit) {
-        checkComplete()
+        checkCompleted()
         loadHeader = null
         initHeader = block
         isNeedHeader = true
@@ -92,7 +92,7 @@ open class PagingConcatScope {
      * @param adapter 传入`null`表示不需要加载尾部
      */
     fun loadFooter(adapter: ViewAdapter<*>?) {
-        checkComplete()
+        checkCompleted()
         loadFooter = adapter
         initFooter = null
         isNeedFooter = adapter != null
@@ -125,7 +125,7 @@ open class PagingConcatScope {
      * ```
      */
     fun loadFooter(block: LoadFooterConfig.() -> Unit) {
-        checkComplete()
+        checkCompleted()
         loadFooter = null
         initFooter = block
         isNeedFooter = true
@@ -141,16 +141,16 @@ open class PagingConcatScope {
      */
     protected open fun LoadFooterConfig.withDefault(): Boolean = false
 
-    protected fun checkComplete() {
-        check(!isComplete) { "已完成适配器的连接工作" }
+    protected fun checkCompleted() {
+        check(!isCompleted) { "已完成适配器的连接工作" }
     }
 
     /**
      * 完成适配器的连接工作，返回连接后的结果，该函数只能被调用一次
      */
     protected fun completeConcat(adapter: ListAdapter<*, *>): Adapter<*> {
-        checkComplete()
-        isComplete = true
+        checkCompleted()
+        isCompleted = true
         var outcome: Adapter<*> = adapter
         getLoadHeader(adapter)?.let {
             outcome = outcome.withHeader(it)

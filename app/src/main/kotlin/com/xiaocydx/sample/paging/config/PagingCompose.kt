@@ -65,7 +65,7 @@ class DefaultPagingConcatScope
      */
     var enabledItemAnimator: Boolean = true
         set(value) {
-            checkComplete()
+            checkCompleted()
             field = value
         }
 

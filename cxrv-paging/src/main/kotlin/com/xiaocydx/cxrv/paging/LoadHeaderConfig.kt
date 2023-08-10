@@ -33,26 +33,26 @@ import com.xiaocydx.cxrv.list.ListAdapter
  */
 @RvDslMarker
 class LoadHeaderConfig @PublishedApi internal constructor() {
-    private var isComplete = false
+    private var isCompleted = false
 
     @PublishedApi
     internal var loadingScope: LoadViewScope<out View>? = null
         set(value) {
-            checkComplete()
+            checkCompleted()
             field = value
         }
 
     @PublishedApi
     internal var emptyScope: LoadViewScope<out View>? = null
         set(value) {
-            checkComplete()
+            checkCompleted()
             field = value
         }
 
     @PublishedApi
     internal var failureScope: LoadViewScope<out View>? = null
         set(value) {
-            checkComplete()
+            checkCompleted()
             field = value
         }
 
@@ -63,7 +63,7 @@ class LoadHeaderConfig @PublishedApi internal constructor() {
     @setparam:Px
     var width: Int = MATCH_PARENT
         set(value) {
-            checkComplete()
+            checkCompleted()
             field = value
         }
 
@@ -74,7 +74,7 @@ class LoadHeaderConfig @PublishedApi internal constructor() {
     @setparam:Px
     var height: Int = MATCH_PARENT
         set(value) {
-            checkComplete()
+            checkCompleted()
             field = value
         }
 
@@ -169,15 +169,15 @@ class LoadHeaderConfig @PublishedApi internal constructor() {
     }
 
     internal fun complete(retry: () -> Unit, exception: () -> Throwable?) {
-        checkComplete()
-        isComplete = true
+        checkCompleted()
+        isCompleted = true
         loadingScope?.complete(retry, exception)
         emptyScope?.complete(retry, exception)
         failureScope?.complete(retry, exception)
     }
 
-    private fun checkComplete() {
-        check(!isComplete) { "已完成加载头部配置" }
+    private fun checkCompleted() {
+        check(!isCompleted) { "已完成加载头部配置" }
     }
 }
 

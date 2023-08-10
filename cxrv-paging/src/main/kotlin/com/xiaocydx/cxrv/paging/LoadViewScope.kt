@@ -34,7 +34,7 @@ import com.xiaocydx.cxrv.internal.isVisible
  */
 @RvDslMarker
 class LoadViewScope<V : View> @PublishedApi internal constructor() {
-    private var isComplete = false
+    private var isCompleted = false
     private var retry: (() -> Unit)? = null
     private var exception: (() -> Throwable?)? = null
     private var onCreateView: OnCreateView<V>? = null
@@ -58,7 +58,7 @@ class LoadViewScope<V : View> @PublishedApi internal constructor() {
      * 首次显示加载视图时，调用[block]
      */
     fun onCreateView(block: OnCreateView<V>) {
-        checkComplete()
+        checkCompleted()
         onCreateView = block
     }
 
@@ -66,13 +66,13 @@ class LoadViewScope<V : View> @PublishedApi internal constructor() {
      * 显示、隐藏加载视图时，调用[block]
      */
     fun onVisibleChanged(block: OnVisibleChanged<V>) {
-        checkComplete()
+        checkCompleted()
         onVisibleChanged = block
     }
 
     internal fun complete(retry: () -> Unit, exception: () -> Throwable?) {
-        checkComplete()
-        isComplete = true
+        checkCompleted()
+        isCompleted = true
         this.retry = retry
         this.exception = exception
     }
@@ -82,8 +82,8 @@ class LoadViewScope<V : View> @PublishedApi internal constructor() {
         return LoadViewItem(this, onCreateView!!, onVisibleChanged)
     }
 
-    private fun checkComplete() {
-        check(!isComplete) { "已完成加载视图的配置" }
+    private fun checkCompleted() {
+        check(!isCompleted) { "已完成加载视图的配置" }
     }
 }
 

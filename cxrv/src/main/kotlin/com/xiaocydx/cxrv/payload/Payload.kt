@@ -28,7 +28,7 @@ import androidx.annotation.IntRange
  */
 sealed class Payload {
     private var values = EMPTY
-    private var isComplete = false
+    private var isCompleted = false
 
     /**
      * 添加[value]
@@ -41,12 +41,12 @@ sealed class Payload {
      * @param value 若不是2的幂次方，则为无效添加
      */
     fun add(@IntRange(from = 1) value: Int) {
-        checkComplete()
+        checkCompleted()
         if (!check(value)) return
         values = values or value
     }
 
-    protected fun checkComplete() = check(!isComplete) { "已完成添加" }
+    protected fun checkCompleted() = check(!isCompleted) { "已完成添加" }
 
     /**
      * [values]是否为空，若为空，则表示未调用[add]添加`value`
@@ -90,14 +90,14 @@ sealed class Payload {
      * 设置`values`，[values]已通过检查
      */
     internal fun setValuesChecked(values: Int) {
-        checkComplete()
+        checkCompleted()
         this.values = values
     }
 
     @PublishedApi
     @CallSuper
     internal open fun complete(): Payload {
-        isComplete = true
+        isCompleted = true
         return this
     }
 
@@ -106,13 +106,13 @@ sealed class Payload {
         if (javaClass != other?.javaClass) return false
         other as Payload
         if (values != other.values) return false
-        if (isComplete != other.isComplete) return false
+        if (isCompleted != other.isCompleted) return false
         return true
     }
 
     override fun hashCode(): Int {
         var result = values
-        result = 31 * result + isComplete.hashCode()
+        result = 31 * result + isCompleted.hashCode()
         return result
     }
 

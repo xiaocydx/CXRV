@@ -30,7 +30,7 @@ class DiffPayload<T : Any> internal constructor() : Payload() {
 
     @PublishedApi
     internal fun init(oldItem: T, newItem: T): DiffPayload<T> {
-        checkComplete()
+        checkCompleted()
         this.oldItem = oldItem
         this.newItem = newItem
         return this
@@ -41,7 +41,7 @@ class DiffPayload<T : Any> internal constructor() : Payload() {
      */
     @PublishedApi
     internal fun oldItem(): T {
-        checkComplete()
+        checkCompleted()
         return oldItem!!
     }
 
@@ -50,7 +50,7 @@ class DiffPayload<T : Any> internal constructor() : Payload() {
      */
     @PublishedApi
     internal fun newItem(): T {
-        checkComplete()
+        checkCompleted()
         return newItem!!
     }
 
