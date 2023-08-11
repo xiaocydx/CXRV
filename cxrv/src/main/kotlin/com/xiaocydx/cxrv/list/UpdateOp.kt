@@ -69,11 +69,11 @@ interface UpdateResult {
  */
 fun UpdateResult.get(): Boolean? {
     if (!isCompleted) return null
-    return awaitFun(this, NoOpContinuation) as? Boolean
+    return await(this, NoOpContinuation) as? Boolean
 }
 
 @Suppress("UNCHECKED_CAST")
-private val awaitFun = UpdateResult::await as Function2<UpdateResult, Continuation<Boolean?>, *>
+private val await = UpdateResult::await as Function2<UpdateResult, Continuation<Boolean>, *>
 
 private object NoOpContinuation : Continuation<Any?> {
     override val context: CoroutineContext = EmptyCoroutineContext
