@@ -150,9 +150,7 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
     override fun getItemCount() = differ.currentList.size
 
     @MainThread
-    final override fun updateList(op: UpdateOp<ITEM>) {
-        updateList(op, dispatch = true)
-    }
+    final override fun updateList(op: UpdateOp<ITEM>) = updateList(op, dispatch = true)
 
     /**
      * 启用在主线程执行差异计算

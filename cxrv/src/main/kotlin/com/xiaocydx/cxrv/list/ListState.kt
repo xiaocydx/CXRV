@@ -65,8 +65,8 @@ class ListState<T : Any> : ListOwner<T> {
         private set
 
     @MainThread
-    override fun updateList(op: UpdateOp<T>) {
-        updateList(op, dispatch = true)
+    override fun updateList(op: UpdateOp<T>): UpdateResult {
+        return updateList(op, dispatch = true)
     }
 
     /**
@@ -75,7 +75,7 @@ class ListState<T : Any> : ListOwner<T> {
      * @param dispatch 是否将更新操作分发给[listeners]
      */
     @MainThread
-    internal fun updateList(op: UpdateOp<T>, dispatch: Boolean) {
+    internal fun updateList(op: UpdateOp<T>, dispatch: Boolean): UpdateResult {
         assertMainThread()
         val succeed = when (op) {
             is UpdateOp.SubmitList -> submitList(op.newList)
@@ -86,11 +86,11 @@ class ListState<T : Any> : ListOwner<T> {
             is UpdateOp.RemoveItems -> removeItems(op.position, op.itemCount)
             is UpdateOp.MoveItem -> moveItem(op.fromPosition, op.toPosition)
         }
-        if (!succeed) return
-        version++
-        if (dispatch) {
-            listeners.reverseAccessEach { it(op) }
+        if (succeed) {
+            version++
+            if (dispatch) listeners.reverseAccessEach { it(op) }
         }
+        return if (succeed) SuccessResult else FailureResult
     }
 
     @MainThread

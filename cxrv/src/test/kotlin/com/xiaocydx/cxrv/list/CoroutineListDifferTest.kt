@@ -413,8 +413,15 @@ class CoroutineListDifferTest {
         differ.updateList(UpdateOp.MoveItem(0, 1)).awaitFalse()
     }
 
-    private suspend fun UpdateResult.awaitTrue() = assertThat(await()).isTrue()
-    private suspend fun UpdateResult.awaitFalse() = assertThat(await()).isFalse()
+    private suspend fun UpdateResult.awaitTrue() {
+        assertThat(await()).isTrue()
+        assertThat(get()).isTrue()
+    }
+
+    private suspend fun UpdateResult.awaitFalse() {
+        assertThat(await()).isFalse()
+        assertThat(get()).isFalse()
+    }
 
     private fun <T> runBlockingTest(
         block: suspend CoroutineScope.(TestProperty) -> T

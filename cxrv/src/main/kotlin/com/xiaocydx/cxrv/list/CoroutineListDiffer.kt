@@ -487,8 +487,8 @@ class CoroutineListDiffer<T : Any>(
 
     private companion object NopSymbol : Continuation<Any?> {
         @Suppress("UNCHECKED_CAST")
-        private val execute = CoroutineListDiffer<Any>::execute
-                as Function4<Any, UpdateOp<Any>, Boolean, Continuation<Unit>, Boolean?>
+        private val execute = CoroutineListDiffer<*>::execute
+                as Function4<CoroutineListDiffer<*>, UpdateOp<*>, Boolean, Continuation<Boolean>, *>
         override val context: CoroutineContext = EmptyCoroutineContext
         override fun resumeWith(result: Result<Any?>) = Unit
     }

@@ -17,6 +17,9 @@
 package com.xiaocydx.cxrv.list
 
 import kotlinx.coroutines.Deferred
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * 列表更新操作
@@ -55,6 +58,26 @@ interface UpdateResult {
      * @return `true`-更新成功，`false`-更新失败
      */
     suspend fun await(): Boolean
+}
+
+/**
+ * 获取结果
+ *
+ * 1. `null`-未更新完成，此时`isCompleted = false`
+ * 2. `true`-更新成功，此时`isCompleted = true`
+ * 3. `false`-更新失败，此时`isCompleted = true`
+ */
+fun UpdateResult.get(): Boolean? {
+    if (!isCompleted) return null
+    return awaitFun(this, NoOpContinuation) as? Boolean
+}
+
+@Suppress("UNCHECKED_CAST")
+private val awaitFun = UpdateResult::await as Function2<UpdateResult, Continuation<Boolean?>, *>
+
+private object NoOpContinuation : Continuation<Any?> {
+    override val context: CoroutineContext = EmptyCoroutineContext
+    override fun resumeWith(result: Result<Any?>) = Unit
 }
 
 /**

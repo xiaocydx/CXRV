@@ -49,15 +49,18 @@ interface ListOwner<T : Any> {
      *
      * 通过[submitList]、[setItem]等扩展函数可以更新列表。
      *
-     * 1. 当实现类是[ListState]时，会立即执行[op]更新列表，
-     * [updateList]执行完成后，[currentList]就是最新列表。
+     * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
+     * 1. 当实现类是[ListState]时，会立即执行[op]更新列表，[updateList]执行完成后，
+     * [currentList]就是最新列表，[UpdateResult.await]不会挂起，而是立即返回结果。
      *
      * 2. 当实现类是[ListAdapter]时，若当前没有[UpdateOp.SubmitList]进行差异计算，
-     * 则立即执行[op]更新列表，否则需要等待[UpdateOp.SubmitList]完成后再执行[op]，
-     * [updateList]执行完成后，[currentList]不一定是最新列表。
+     * 则立即执行[op]更新列表，[updateList]执行完成后，[currentList]就是最新列表，
+     * [UpdateResult.await]不会挂起，而是立即返回结果。
+     * 若当前有[UpdateOp.SubmitList]进行差异计算，则等待[UpdateOp.SubmitList]完成后再执行[op]，
+     * [updateList]执行完成后，[currentList]不是最新列表，[UpdateResult.await]会挂起等待结果。
      */
     @MainThread
-    fun updateList(op: UpdateOp<T>)
+    fun updateList(op: UpdateOp<T>): UpdateResult
 }
 
 /**
@@ -110,10 +113,11 @@ fun ListOwner<*>.isLastItem(position: Int): Boolean {
  * @param newList 需要是新的列表对象，若传入旧的列表对象，则不会更改。
  * 若[newList]的类型是[SafeMutableList]，则表示可作为内部的可变列表，
  * 当[ListOwner]的实现类是[ListAdapter]时，该函数会进行差异计算。
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
-fun <T : Any> ListOwner<T>.submitList(newList: List<T>) {
-    updateList(UpdateOp.SubmitList(newList))
+fun <T : Any> ListOwner<T>.submitList(newList: List<T>): UpdateResult {
+    return updateList(UpdateOp.SubmitList(newList))
 }
 
 /**
@@ -121,10 +125,11 @@ fun <T : Any> ListOwner<T>.submitList(newList: List<T>) {
  *
  * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作，
  * @param item     若是新的对象，则跟旧对象进行差异对比，否则是全量更新。
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
-fun <T : Any> ListOwner<T>.setItem(position: Int, item: T) {
-    updateList(UpdateOp.SetItem(position, item))
+fun <T : Any> ListOwner<T>.setItem(position: Int, item: T): UpdateResult {
+    return updateList(UpdateOp.SetItem(position, item))
 }
 
 /**
@@ -133,30 +138,33 @@ fun <T : Any> ListOwner<T>.setItem(position: Int, item: T) {
  * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  * @param items    设置范围[position, size)，item数量越界时不会抛出异常，
  * 若item是新的对象，则跟旧对象进行差异对比，否则是全量更新。
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
-fun <T : Any> ListOwner<T>.setItems(position: Int, items: List<T>) {
-    updateList(UpdateOp.SetItems(position, items))
+fun <T : Any> ListOwner<T>.setItems(position: Int, items: List<T>): UpdateResult {
+    return updateList(UpdateOp.SetItems(position, items))
 }
 
 /**
  * 添加item，该函数必须在主线程调用
  *
  * @param position 取值范围[0, size]，越界时不会抛出异常，仅作为无效操作。
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
-fun <T : Any> ListOwner<T>.addItem(position: Int, item: T) {
-    updateList(UpdateOp.AddItem(position, item))
+fun <T : Any> ListOwner<T>.addItem(position: Int, item: T): UpdateResult {
+    return updateList(UpdateOp.AddItem(position, item))
 }
 
 /**
  * 添加items，该函数必须在主线程调用
  *
  * @param position 取值范围[0, size]，越界时不会抛出异常，仅作为无效操作。
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
-fun <T : Any> ListOwner<T>.addItems(position: Int, items: List<T>) {
-    updateList(UpdateOp.AddItems(position, items))
+fun <T : Any> ListOwner<T>.addItems(position: Int, items: List<T>): UpdateResult {
+    return updateList(UpdateOp.AddItems(position, items))
 }
 
 /**
@@ -164,10 +172,11 @@ fun <T : Any> ListOwner<T>.addItems(position: Int, items: List<T>) {
  *
  * @param position  取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  * @param itemCount 小于1不会抛出异常，仅作为无效操作。
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
-fun ListOwner<*>.removeItems(position: Int, itemCount: Int) {
-    updateList(UpdateOp.RemoveItems(position, itemCount))
+fun ListOwner<*>.removeItems(position: Int, itemCount: Int): UpdateResult {
+    return updateList(UpdateOp.RemoveItems(position, itemCount))
 }
 
 /**
@@ -175,10 +184,11 @@ fun ListOwner<*>.removeItems(position: Int, itemCount: Int) {
  *
  * @param fromPosition 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  * @param toPosition   取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
-fun ListOwner<*>.moveItem(fromPosition: Int, toPosition: Int) {
-    updateList(UpdateOp.MoveItem(fromPosition, toPosition))
+fun ListOwner<*>.moveItem(fromPosition: Int, toPosition: Int): UpdateResult {
+    return updateList(UpdateOp.MoveItem(fromPosition, toPosition))
 }
 
 /**
@@ -186,24 +196,29 @@ fun ListOwner<*>.moveItem(fromPosition: Int, toPosition: Int) {
  *
  * @param fromPosition 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
  * @param toPosition   取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
 @Deprecated(
     message = "早期理解错误，以为局部更新的move等同于swap",
     replaceWith = ReplaceWith("moveItem(fromPosition, toPosition)")
 )
-fun ListOwner<*>.swapItem(fromPosition: Int, toPosition: Int) {
-    moveItem(fromPosition, toPosition)
+fun ListOwner<*>.swapItem(fromPosition: Int, toPosition: Int): UpdateResult {
+    return moveItem(fromPosition, toPosition)
 }
 
 /**
  * 往首位插入item，该函数必须在主线程调用
+ *
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
 fun <T : Any> ListOwner<T>.insertItem(item: T) = addItem(0, item)
 
 /**
  * 往首位插入items，该函数必须在主线程调用
+ *
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
 fun <T : Any> ListOwner<T>.insertItems(items: List<T>) = addItems(0, items)
@@ -212,18 +227,23 @@ fun <T : Any> ListOwner<T>.insertItems(items: List<T>) = addItems(0, items)
  * 移除下标为[position]的item，该函数必须在主线程调用
  *
  * @param position 取值范围[0, size)，越界时不会抛出异常，仅作为无效操作。
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
 fun ListOwner<*>.removeItemAt(position: Int) = removeItems(position, itemCount = 1)
 
 /**
  * 移除item，该函数必须在主线程调用
+ *
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
 fun <T : Any> ListOwner<T>.removeItem(item: T) = removeItemAt(currentList.indexOfFirst { it === item })
 
 /**
  * 清空列表，该函数必须在主线程调用
+ *
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
 fun ListOwner<*>.clear() = submitList(emptyList())
@@ -237,11 +257,13 @@ fun ListOwner<*>.clear() = submitList(emptyList())
  * }
  * ```
  * 当[ListOwner]的实现类是[ListAdapter]时，该函数会进行差异计算。
+ *
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
-inline fun <T : Any> ListOwner<T>.submitChange(change: MutableList<T>.() -> Unit) {
-    currentList.toSafeMutableList().apply(change).also(::submitList)
-}
+inline fun <T : Any> ListOwner<T>.submitChange(
+    change: MutableList<T>.() -> Unit
+): UpdateResult = currentList.toSafeMutableList().apply(change).let(::submitList)
 
 /**
  * 提交转换的列表，该函数必须在主线程调用
@@ -252,11 +274,13 @@ inline fun <T : Any> ListOwner<T>.submitChange(change: MutableList<T>.() -> Unit
  * }
  * ```
  * 当[ListOwner]的实现类是[ListAdapter]时，该函数会进行差异计算。
+ *
+ * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
 @MainThread
-inline fun <T : Any> ListOwner<T>.submitTransform(transform: MutableList<T>.() -> List<T>) {
-    currentList.toSafeMutableList().transform().also(::submitList)
-}
+inline fun <T : Any> ListOwner<T>.submitTransform(
+    transform: MutableList<T>.() -> List<T>
+): UpdateResult = currentList.toSafeMutableList().transform().let(::submitList)
 
 /**
  * 遍历[ListOwner.currentList]，设置[block]返回的第一个不空的item，该函数必须在主线程调用
@@ -267,7 +291,7 @@ inline fun <T : Any> ListOwner<T>.submitTransform(transform: MutableList<T>.() -
 inline fun <T : Any> ListOwner<T>.setFirstNotNull(block: (item: T) -> T?) {
     for (position in currentList.indices) {
         val item = block(getItem(position))
-        if (item != null) return setItem(position, item)
+        if (item != null) setItem(position, item).let { return }
     }
 }
 
@@ -280,7 +304,7 @@ inline fun <T : Any> ListOwner<T>.setFirstNotNull(block: (item: T) -> T?) {
 inline fun <T : Any> ListOwner<T>.setLastNotNull(block: (item: T) -> T?) {
     for (position in currentList.indices.reversed()) {
         val item = block(getItem(position))
-        if (item != null) return setItem(position, item)
+        if (item != null) setItem(position, item).let { return }
     }
 }
 
