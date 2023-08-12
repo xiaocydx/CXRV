@@ -277,6 +277,9 @@ internal class PagingSharedFlowTest {
 
     @Test
     fun multipleCollectValue(): Unit = runBlocking {
+        // 单元测试是runBlocking()首次恢复进入EventLoop，
+        // 实际场景是对Pager.refreshEvent发送刷新事件后，
+        // 恢复收集Pager.refreshEvent的协程进入EventLoop。
         val list = (1..2).toList()
         val upstream = list.asFlow()
         val scope = CoroutineScope(Job())
