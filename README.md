@@ -11,6 +11,8 @@ CXRV是一个基于RecyclerView 1.2.0，提供常用功能的库，全称是Coro
 [CXRV（五）ListState的使用说明](https://www.yuque.com/u12192380/khwdgb/uvgw43)
 
 [CXRV（六）分页组件的使用说明](https://www.yuque.com/u12192380/khwdgb/gh9sbc)
+
+[CXRV（七）常见问题](https://www.yuque.com/u12192380/khwdgb/davrngc6pginrq2w)
 <br><br>
 1. 在根目录的build.gradle添加
 ```
@@ -28,7 +30,7 @@ dependencies {
     // RecyclerView的版本需要1.2.0或以上
     implementation "androidx.recyclerview:recyclerview:1.2.0"
     
-    def version = "1.3.5"
+    def version = "1.3.6"
     implementation "com.github.xiaocydx.CXRV:cxrv:${version}"
     implementation "com.github.xiaocydx.CXRV:cxrv-binding:${version}"
     implementation "com.github.xiaocydx.CXRV:cxrv-paging:${version}"
