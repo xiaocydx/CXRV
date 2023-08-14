@@ -51,7 +51,7 @@ internal class PagingFetcher<K : Any, T : Any>(
     @Volatile var loadStates: LoadStates = LoadStates.Incomplete; private set
 
     val flow: Flow<PagingEvent<T>> = safeChannelFlow { channel ->
-        check(!isCollected) { "分页事件流Flow<PagingEvent<*>>只能被收集一次" }
+        check(!isCollected) { "分页事件流Flow<PagingEvent<T>>只能被收集1次" }
         isCollected = true
         completableJob.invokeOnCompletion {
             // 注意：此处不要用channel::close简化代码，

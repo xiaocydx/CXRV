@@ -19,10 +19,13 @@
 package com.xiaocydx.cxrv.paging
 
 import com.xiaocydx.cxrv.internal.flowOnMain
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.job
 
 /**
  * 分页的主要入口，提供[PagingData]数据流，调用[refresh]，
@@ -76,23 +79,30 @@ class Pager<K : Any, T : Any>(
     private val source: PagingSource<K, T>
 ) {
     private val refreshEvent = ConflatedEvent<Unit>()
+    private var isCollected = false
     @Volatile private var fetcher: PagingFetcher<K, T>? = null
     val loadStates: LoadStates
         get() = fetcher?.loadStates ?: LoadStates.Incomplete
 
     val flow: Flow<PagingData<T>> = flow {
-        refreshEvent.flow
-            .onStart {
-                // 触发初始化加载
-                emit(Unit)
-            }.collect {
-                fetcher?.close()
-                fetcher = PagingFetcher(initKey, config, source)
-                emit(PagingData(
-                    flow = fetcher!!.flow,
-                    mediator = PagingMediatorImpl(config, fetcher!!, refreshEvent)
-                ))
-            }
+        coroutineScope {
+            check(!isCollected) { "分页数据流Flow<PagingData<T>>只能被1个收集器收集" }
+            isCollected = true
+            val scope = currentCoroutineContext().job
+            scope.invokeOnCompletion { isCollected = false }
+            refreshEvent.flow
+                .onStart {
+                    // 触发初始化加载
+                    emit(Unit)
+                }.collect {
+                    fetcher?.close()
+                    fetcher = PagingFetcher(initKey, config, source)
+                    emit(PagingData(
+                        flow = fetcher!!.flow,
+                        mediator = PagingMediatorImpl(config, fetcher!!, refreshEvent)
+                    ))
+                }
+        }
     }.conflate().flowOnMain()
 
     fun refresh() {

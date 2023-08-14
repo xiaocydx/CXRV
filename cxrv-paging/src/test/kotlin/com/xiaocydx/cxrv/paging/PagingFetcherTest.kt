@@ -20,6 +20,7 @@ import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -37,6 +38,18 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
 internal class PagingFetcherTest {
+
+    @Test
+    fun limitedCollectOnce() {
+        val result = runCatching {
+            runBlocking {
+                val fetcher = getTestFetcher(maxPage = 1, result = Result.NORMAL)
+                fetcher.flow.launchIn(this)
+                fetcher.flow.launchIn(this)
+            }
+        }
+        assertThat(result.exceptionOrNull()).isNotNull()
+    }
 
     @Test
     fun collectRefreshSuccessPagingEvent(): Unit = runBlocking {
