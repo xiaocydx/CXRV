@@ -19,6 +19,7 @@ import com.xiaocydx.cxrv.list.onEach
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
+import com.xiaocydx.cxrv.viewpager2.loop.setPageTransformer
 import com.xiaocydx.sample.databinding.ActivityLoopPagerBinding
 import com.xiaocydx.sample.databinding.ItemButtonBinding
 import com.xiaocydx.sample.dp

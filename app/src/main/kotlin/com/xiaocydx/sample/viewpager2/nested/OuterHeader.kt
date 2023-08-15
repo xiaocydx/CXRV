@@ -9,6 +9,7 @@ import androidx.viewpager2.widget.MarginPageTransformer
 import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.concat.toAdapter
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
+import com.xiaocydx.cxrv.viewpager2.loop.isVp2NestedScrollable
 import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
 import com.xiaocydx.sample.databinding.ItemNestedInnerBinding
 import com.xiaocydx.sample.dp

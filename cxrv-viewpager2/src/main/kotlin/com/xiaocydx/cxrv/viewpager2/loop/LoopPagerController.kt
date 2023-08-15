@@ -16,19 +16,26 @@
 
 package com.xiaocydx.cxrv.viewpager2.loop
 
+import android.content.Context
+import android.view.View
+import android.view.View.OnAttachStateChangeListener
+import android.view.ViewGroup
 import androidx.annotation.Px
 import androidx.recyclerview.widget.LoopPagerAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.RecyclerView.SmoothScroller
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.pendingSavedState
 import androidx.recyclerview.widget.recyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import androidx.viewpager2.widget.ViewPager2.PageTransformer
+import androidx.viewpager2.widget.ViewPager2.SCROLL_STATE_IDLE
 import androidx.viewpager2.widget.ViewPager2.ScrollState
+import com.xiaocydx.cxrv.viewpager2.R
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.DEFAULT_EXTRA_PAGE_LIMIT
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.DEFAULT_SUPPORT_LOOP_COUNT
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTRA_PAGE_LIMIT
@@ -52,22 +59,14 @@ import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTR
  * @date 2023/5/9
  */
 class LoopPagerController(
-    private val viewPager2: ViewPager2,
+    internal val viewPager2: ViewPager2,
     supportLoopCount: Int = DEFAULT_SUPPORT_LOOP_COUNT
 ) {
     private var extraPageLimit = DEFAULT_EXTRA_PAGE_LIMIT
     private var content: LoopPagerContent? = null
     private var scroller: LoopPagerScroller? = null
     private var observer: NotEmptyDataObserver? = null
-    private var listener: LoopPagerScrollableListener? = null
     private var callbacks: MutableMap<OnPageChangeCallback, CallbackWrapper>? = null
-
-    /**
-     * [ViewPager2]的滚动状态，等同于`ViewPager2.scrollState`
-     */
-    @ScrollState
-    val scrollState: Int
-        get() = viewPager2.scrollState
 
     /**
      * 当前选择的位置
@@ -82,24 +81,6 @@ class LoopPagerController(
      * 支持循环的`adapter.itemCount`至少数量，该属性不会小于[DEFAULT_SUPPORT_LOOP_COUNT]
      */
     val supportLoopCount = supportLoopCount.coerceAtLeast(DEFAULT_SUPPORT_LOOP_COUNT)
-
-    /**
-     * 是否处理[ViewPager2]嵌套[ViewPager2]（LoopPager）的滚动冲突
-     *
-     * 1. 处理相同方向的滚动冲突，Child需要循环滚动，不允许Parent拦截触摸事件。
-     * 2. 处理不同方向的滚动冲突，Parent拦截触摸事件的条件更严格，不会那么“灵敏”。
-     */
-    var isVp2NestedScrollable: Boolean
-        get() = listener != null
-        set(value) {
-            if (value && listener == null) {
-                listener = LoopPagerScrollableListener()
-                viewPager2.recyclerView.addOnItemTouchListener(listener!!)
-            } else if (!value && listener != null) {
-                viewPager2.recyclerView.removeOnItemTouchListener(listener!!)
-                listener = null
-            }
-        }
 
     /**
      * 对[ViewPager2]设置[adapter]的循环页面适配器
@@ -255,14 +236,6 @@ class LoopPagerController(
         viewPager2.unregisterOnPageChangeCallback(wrapper)
     }
 
-    /**
-     * 设置多个[PageTransformer]的简化函数
-     */
-    fun setPageTransformer(vararg transformers: PageTransformer) {
-        viewPager2.setPageTransformer(CompositePageTransformer()
-            .apply { transformers.forEach(::addTransformer) })
-    }
-
     private fun getCallbacks(): MutableMap<OnPageChangeCallback, CallbackWrapper> {
         if (callbacks == null) callbacks = mutableMapOf()
         return callbacks!!
@@ -300,4 +273,78 @@ enum class LookupDirection {
      * 往结束方向查找
      */
     END
+}
+
+/**
+ * [ViewPager2]的[Context]，等同于`ViewPager2.context`
+ */
+val LoopPagerController.context: Context
+    get() = viewPager2.context
+
+/**
+ * [ViewPager2]的滚动状态，等同于`ViewPager2.scrollState`
+ */
+@ScrollState
+val LoopPagerController.scrollState: Int
+    get() = viewPager2.scrollState
+
+/**
+ * 当前选择的`itemView`，当[scrollState]为[SCROLL_STATE_IDLE]时，可以跟[currentChildren]做对比
+ */
+val LoopPagerController.currentItemView: View?
+    get() = viewPager2.recyclerView.findViewHolderForLayoutPosition(viewPager2.currentItem)?.itemView
+
+/**
+ * 当前`itemView`序列，当[scrollState]为[SCROLL_STATE_IDLE]时，可以跟[currentItemView]做对比
+ */
+val LoopPagerController.currentChildren: Sequence<View>
+    get() = object : Sequence<View> {
+        override fun iterator() = viewPager2.recyclerView.iterator()
+    }
+
+/**
+ * 是否处理[ViewPager2]嵌套[ViewPager2]（LoopPager）的滚动冲突
+ *
+ * 1. 处理相同方向的滚动冲突，Child需要循环滚动，不允许Parent拦截触摸事件。
+ * 2. 处理不同方向的滚动冲突，Parent拦截触摸事件的条件更严格，不会那么“灵敏”。
+ */
+var LoopPagerController.isVp2NestedScrollable: Boolean
+    get() = viewPager2.getTag(R.id.tag_vp2_nested_scrollable) != null
+    set(value) {
+        val key = R.id.tag_vp2_nested_scrollable
+        var listener = viewPager2.getTag(key) as? LoopPagerScrollableListener
+        if (value && listener == null) {
+            listener = LoopPagerScrollableListener()
+            viewPager2.setTag(key, listener)
+            viewPager2.recyclerView.addOnItemTouchListener(listener)
+        } else if (!value && listener != null) {
+            viewPager2.setTag(key, null)
+            viewPager2.recyclerView.removeOnItemTouchListener(listener)
+        }
+    }
+
+/**
+ * 设置多个[PageTransformer]的简化函数
+ */
+fun LoopPagerController.setPageTransformer(vararg transformers: PageTransformer) {
+    viewPager2.setPageTransformer(CompositePageTransformer()
+        .apply { transformers.forEach(::addTransformer) })
+}
+
+fun LoopPagerController.getChildViewHolder(child: View): ViewHolder? {
+    return viewPager2.recyclerView.getChildViewHolder(child)
+}
+
+fun LoopPagerController.addOnAttachStateChangeListener(listener: OnAttachStateChangeListener) {
+    viewPager2.addOnAttachStateChangeListener(listener)
+}
+
+fun LoopPagerController.removeOnAttachStateChangeListener(listener: OnAttachStateChangeListener) {
+    viewPager2.removeOnAttachStateChangeListener(listener)
+}
+
+private fun ViewGroup.iterator() = object : Iterator<View> {
+    private var index = 0
+    override fun hasNext() = index < childCount
+    override fun next() = getChildAt(index++) ?: throw IndexOutOfBoundsException()
 }

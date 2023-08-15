@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView.State
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.cxrv.viewpager2.loop.SmoothScrollerProvider
+import com.xiaocydx.cxrv.viewpager2.loop.scrollState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
