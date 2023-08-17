@@ -125,12 +125,11 @@ suspend fun <T : Any> Flow<PagingData<T>>.collect(
  * 开始处理分页事件的监听
  */
 fun interface HandleEventListener<T : Any> {
+
     /**
-     * [PagingCollector]接收到[event]后，[handleEvent]最先被调用，
-     * 若`event.loadType == null`，则表示是列表状态更新事件或者视图控制器恢复事件。
-     *
-     * 对于刷新流程，可以在刷新开始时将列表滚动到首个item，并在滚动完成后才继续处理事件，
-     * 此时下游在等待列表滚动完成，上游在获取分页数据，这是一种高效的处理方式。
+     * 当[PagingCollector]收集到[event]时，最先分发调用[handleEvent]，
+     * 若`event.loadType == null`，则是[PagingEvent.ListStateUpdate]，
+     * 此时[PagingCollector]会同步最新的列表状态和加载状态。
      */
     suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<T>)
 }
@@ -239,11 +238,21 @@ class PagingCollector<T : Any> internal constructor(
         value: PagingData<T>
     ) = withContext(mainDispatcher.immediate) {
         if (mediator !== value.mediator) {
-            version = 0
-            mediator = value.mediator
+            setMediator(value.mediator)
             setAppendTrigger(value.mediator)
         }
         value.flow.collect(::handleEvent)
+    }
+
+    @MainThread
+    private fun setMediator(mediator: PagingMediator) {
+        val previousMediator = this.mediator?.asListMediator<T>()
+        val currentMediator = mediator.asListMediator<T>()
+        if (previousMediator == null || currentMediator == null
+                || !previousMediator.isSameList(currentMediator)) {
+            version = 0
+        }
+        this.mediator = mediator
     }
 
     @MainThread
@@ -331,7 +340,7 @@ class PagingCollector<T : Any> internal constructor(
         override suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<Any>) {
             val loadType = event.loadType
             val loadState = event.loadStates.refresh
-            if (loadType != LoadType.REFRESH || !loadState.isLoading
+            if (loadType != null || !loadState.isIncomplete
                     || rv.childCount == 0 || rv.isFirstItemCompletelyVisible) {
                 return
             }

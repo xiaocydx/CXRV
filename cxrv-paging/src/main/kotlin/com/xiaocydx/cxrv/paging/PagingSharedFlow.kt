@@ -61,9 +61,8 @@ internal open class PagingSharedFlow<T : Any>(
     private val canRepeatCollectAfterCancel: Boolean
 ) : Flow<T> {
     private val collectJob: Job
-    private val cancelValue: T? = null
-    private val sharedFlow = MutableSharedFlow<T?>()
-    private val cancellableSharedFlow = sharedFlow.takeWhile { it != cancelValue }.mapNotNull { it }
+    private val sharedFlow = MutableSharedFlow<Any>()
+    private val cancellableSharedFlow = sharedFlow.takeWhile { it != cancelValue }
     private val collectorCount = sharedFlow.subscriptionCount
 
     init {
@@ -114,12 +113,17 @@ internal open class PagingSharedFlow<T : Any>(
                 cancelSharedFlow()
             }
 
-            beforeCollect()
+            val collectorId = System.identityHashCode(collector)
+            beforeCollect(collectorId)
             // 如果收集处协程都是UNDISPATCHED启动，并且是立即收集sharedFlow，
             // 那么对于EventLoop，collectorCount = 1的恢复会进入调度事件队列，
             // 这也就表示collectJob收集collectorCount，当collectorCount = 1时，
             // 全部收集器已完成对sharedFlow的收集，upstream发射的事件都能收到。
-            cancellableSharedFlow.collect(collector)
+            @Suppress("UNCHECKED_CAST")
+            cancellableSharedFlow.mapNotNull {
+                val value = it as? CollectorValue<T>
+                if (value != null) value.get(collectorId) else it as T
+            }.collect(collector)
         }
     }
 
@@ -132,18 +136,25 @@ internal open class PagingSharedFlow<T : Any>(
 
     private suspend fun cancelSharedFlow() = sharedFlow.emit(cancelValue)
 
-    protected suspend fun emitSharedFlow(value: T) = sharedFlow.emit(value)
+    protected suspend fun emitSharedFlow(collectorId: Int, value: T) {
+        sharedFlow.emit(CollectorValue(collectorId, value))
+    }
 
     /**
      * 每个收集器收集[cancellableSharedFlow]之前，都会调用该函数，
      * 若启动的子协程需要在收集之后运行，则不能使用[UNDISPATCHED]，
      * 并且不能替换当前上下文的调度器。
      */
-    protected open fun CoroutineScope.beforeCollect() = Unit
+    protected open fun CoroutineScope.beforeCollect(collectorId: Int) = Unit
+
+    private class CollectorValue<T : Any>(private val id: Int, private val value: T) {
+        fun get(collectorId: Int) = if (id == collectorId) value else null
+    }
 
     suspend fun cancel() = collectJob.cancelAndJoin()
 
     companion object {
+        private val cancelValue = this
         const val UNLIMITED = -1
     }
 }

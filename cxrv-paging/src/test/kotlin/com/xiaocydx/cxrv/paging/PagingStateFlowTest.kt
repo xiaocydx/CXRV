@@ -18,7 +18,7 @@ package com.xiaocydx.cxrv.paging
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
-import com.xiaocydx.cxrv.paging.PagingStateFlow.CancelValue.UNLIMITED
+import com.xiaocydx.cxrv.paging.PagingStateFlow.Companion.UNLIMITED
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job

@@ -68,6 +68,11 @@ internal open class PagingListMediator<T : Any>(
         listState.updateList(op, dispatch = false)
     }
 
+    override fun isSameList(other: ListMediator<T>?): Boolean {
+        if (other !is PagingListMediator) return false
+        return listState === other.listState
+    }
+
     @MainThread
     private fun PagingEvent.LoadDataSuccess<T>.toUpdateOp(): UpdateOp<T> {
         return when (loadType) {

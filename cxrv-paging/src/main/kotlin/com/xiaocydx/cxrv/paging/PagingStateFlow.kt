@@ -62,7 +62,7 @@ internal open class PagingStateFlow<T : Any>(
 ) : Flow<T> {
     private val collectJob: Job
     private val stateFlow = MutableStateFlow<Any?>(null)
-    private val cancellableStateFlow = stateFlow.mapNotNull { it }.takeWhile { it != CancelValue }
+    private val cancellableStateFlow = stateFlow.mapNotNull { it }.takeWhile { it != cancelValue }
     private val collectorCount = stateFlow.subscriptionCount
 
     init {
@@ -90,7 +90,7 @@ internal open class PagingStateFlow<T : Any>(
                     upstream.collect(stateFlow::emit)
                 }
             } finally {
-                // 当前协程可能被取消，用NonCancellable确保发射CancelValue
+                // 当前协程可能被取消，用NonCancellable确保发射cancelValue
                 withContext(NonCancellable) { cancelStateFlow() }
             }
         }
@@ -123,12 +123,13 @@ internal open class PagingStateFlow<T : Any>(
     }
 
     private suspend fun cancelStateFlow() {
-        stateFlow.emit(CancelValue)
+        stateFlow.emit(cancelValue)
     }
 
     suspend fun cancel() = collectJob.cancelAndJoin()
 
-    companion object CancelValue {
+    companion object {
+        private val cancelValue = this
         const val UNLIMITED = -1
     }
 }

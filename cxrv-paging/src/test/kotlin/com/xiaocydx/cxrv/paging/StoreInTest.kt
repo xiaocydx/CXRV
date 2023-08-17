@@ -164,7 +164,8 @@ internal class StoreInTest {
         awaitEventLoopScheduled()
         scope.coroutineContext.job.cancelAndJoin()
         assertThat(upstreamPagingDataList.size).isEqualTo(storeInPagingDataList.size)
-        assertThat(upstreamPagingEventList.size).isEqualTo(storeInPagingEventList.size)
+        assertThat(upstreamPagingEventList.size + 1).isEqualTo(storeInPagingEventList.size)
+        assertThat(storeInPagingEventList.first()).isInstanceOf(PagingEvent.ListStateUpdate::class.java)
     }
 
     @Test
@@ -200,7 +201,12 @@ internal class StoreInTest {
         fun <T : Any> Flow<PagingData<T>>.storeInTest(
             scope: CoroutineScope,
             state: ListState<T> = ListState()
-        ): Flow<PagingData<T>> = storeInInternal(state, scope, ::TestPagingListMediator)
+        ): Flow<PagingData<T>> = storeInInternal(
+            state = state,
+            scope = scope,
+            limitCollector = true,
+            transform = ::TestPagingListMediator
+        )
 
         private class TestPagingListMediator<T : Any>(
             data: PagingData<T>,

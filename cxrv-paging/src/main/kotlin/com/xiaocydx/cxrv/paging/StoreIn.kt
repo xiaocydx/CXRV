@@ -55,13 +55,17 @@ import kotlin.coroutines.EmptyCoroutineContext
  */
 fun <T : Any> Flow<PagingData<T>>.storeIn(
     state: ListState<T>,
-    scope: CoroutineScope
-): Flow<PagingData<T>> = storeInInternal(state, scope, ::PagingListMediator)
+    scope: CoroutineScope,
+    limitCollector: Boolean = true
+): Flow<PagingData<T>> = storeInInternal(state, scope, limitCollector, ::PagingListMediator)
 
 /**
  * [storeIn]的简化函数，适用于只需要重建恢复列表状态，不需要主动更新列表状态的场景
  */
-fun <T : Any> Flow<PagingData<T>>.storeIn(scope: CoroutineScope) = storeIn(ListState(), scope)
+fun <T : Any> Flow<PagingData<T>>.storeIn(
+    scope: CoroutineScope,
+    limitCollector: Boolean = true
+) = storeIn(ListState(), scope, limitCollector)
 
 @PublishedApi
 internal val PagingData<*>.isFromStoreInOperator: Boolean
@@ -80,6 +84,7 @@ private fun PagingData<*>.ensureSingleStoreInOperator() {
 internal inline fun <T : Any> Flow<PagingData<T>>.storeInInternal(
     state: ListState<T>,
     scope: CoroutineScope,
+    limitCollector: Boolean,
     crossinline transform: (PagingData<T>, ListState<T>) -> PagingListMediator<T>
 ): Flow<PagingData<T>> {
     var previous: StoreInPagingEventSharedFlow<T>? = null
@@ -87,21 +92,22 @@ internal inline fun <T : Any> Flow<PagingData<T>>.storeInInternal(
         data.ensureSingleStoreInOperator()
         previous?.cancel()
         val mediator = transform(data, state)
-        val flow = StoreInPagingEventSharedFlow(scope, mediator.flow, mediator)
+        val flow = StoreInPagingEventSharedFlow(scope, limitCollector, mediator.flow, mediator)
         previous = flow
         PagingData(flow, mediator)
     }
-    return StoreInPagingDataStateFlow(scope, upstream)
+    return StoreInPagingDataStateFlow(scope, limitCollector, upstream)
 }
 
 @VisibleForTesting
 internal class StoreInPagingDataStateFlow<T : Any>(
     scope: CoroutineScope,
+    limitCollector: Boolean,
     upstream: Flow<PagingData<T>>
 ) : PagingStateFlow<PagingData<T>>(
     scope = scope,
     upstream = upstream,
-    limitCollectorCount = 1,
+    limitCollectorCount = if (limitCollector) 1 else UNLIMITED,
     withoutCollectorNeedCancel = false,
     canRepeatCollectAfterCancel = false
 )
@@ -109,45 +115,34 @@ internal class StoreInPagingDataStateFlow<T : Any>(
 @VisibleForTesting
 internal class StoreInPagingEventSharedFlow<T : Any>(
     scope: CoroutineScope,
+    limitCollector: Boolean,
     upstream: Flow<PagingEvent<T>>,
     private val mediator: PagingListMediator<T>,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) : PagingSharedFlow<PagingEvent<T>>(
     scope = scope,
     upstream = upstream,
-    limitCollectorCount = 1,
+    limitCollectorCount = if (limitCollector) 1 else UNLIMITED,
     withoutCollectorNeedCancel = false,
     canRepeatCollectAfterCancel = false
 ) {
-    private var isFirstActive = true
 
-    override fun CoroutineScope.beforeCollect() {
+    override fun CoroutineScope.beforeCollect(collectorId: Int) {
         launch {
             // 确保先activeValue后upstream的发射顺序
-            val activeValue = getActiveValue()
-            if (activeValue != null) emitSharedFlow(activeValue)
+            emitSharedFlow(collectorId, getActiveValue())
         }
     }
 
     /**
      * 丢弃非活跃状态期间[upstream]发射的事件，当恢复活跃状态时，主动发射事件进行差异更新
      */
-    private suspend fun getActiveValue(): PagingEvent<T>? = withMainDispatcher {
-        mediator.run {
-            val isFirstActive = consumeFirstActive()
-            if (isFirstActive
-                    && loadStates.refresh.isIncomplete
-                    && loadStates.append.isIncomplete) {
-                return@run null
-            }
-            // 对于共享分页数据流和加载状态的场景，初始加载状态可能不是Incomplete，
-            // 此时需要发射事件，同步列表状态和加载状态，同步完成后才进入共享状态。
-            val op: UpdateOp<T> = UpdateOp.SubmitList(currentList)
-            PagingEvent.ListStateUpdate(op, loadStates).fusion(version)
-        }
+    private suspend fun getActiveValue(): PagingEvent<T> = withMainDispatcher {
+        // 对于共享分页数据流和加载状态的场景，初始加载状态可能不是Incomplete，
+        // 此时需要发射事件，同步列表状态和加载状态，同步完成后才进入共享状态。
+        val op: UpdateOp<T> = UpdateOp.SubmitList(mediator.currentList)
+        PagingEvent.ListStateUpdate(op, mediator.loadStates).fusion(mediator.version)
     }
-
-    private fun consumeFirstActive() = isFirstActive.also { isFirstActive = false }
 
     private suspend inline fun <R> withMainDispatcher(
         context: CoroutineContext = EmptyCoroutineContext,
