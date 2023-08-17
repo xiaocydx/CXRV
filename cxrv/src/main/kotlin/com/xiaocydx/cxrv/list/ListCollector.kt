@@ -16,6 +16,7 @@
 
 package com.xiaocydx.cxrv.list
 
+import androidx.annotation.MainThread
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -106,7 +107,10 @@ class ListCollector<T : Any> internal constructor(
 
     init {
         adapter.addListExecuteListener { op ->
+            // 先得到期望的version，用于拦截同步发送的更新事件
+            version++
             mediator?.updateList(op)
+            // 再得到实际的version，确保不会因为失败而增加version
             version = mediator?.version ?: 0
         }
     }
@@ -114,10 +118,7 @@ class ListCollector<T : Any> internal constructor(
     override suspend fun emit(
         value: ListData<T>
     ): Unit = withContext(mainDispatcher.immediate) {
-        if (mediator !== value.mediator) {
-            version = 0
-            mediator = value.mediator
-        }
+        setMediator(value.mediator)
         value.flow.collect { event ->
             val newVersion = event.version
             if (newVersion <= version) return@collect
@@ -125,5 +126,17 @@ class ListCollector<T : Any> internal constructor(
             // 更新列表完成后才保存版本号
             version = newVersion
         }
+    }
+
+    @MainThread
+    private fun setMediator(mediator: ListMediator<T>?) {
+        if (this.mediator === mediator) return
+        val previousMediator = this.mediator
+        val currentMediator = mediator
+        if (previousMediator == null || currentMediator == null
+                || !previousMediator.isSameList(currentMediator)) {
+            version = 0
+        }
+        this.mediator = mediator
     }
 }

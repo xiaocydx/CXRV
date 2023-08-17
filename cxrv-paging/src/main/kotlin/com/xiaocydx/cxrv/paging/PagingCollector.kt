@@ -153,7 +153,10 @@ class PagingCollector<T : Any> internal constructor(
         assertMainThread()
         addHandleEventListener(RefreshStartScrollToFirst())
         adapter.addListExecuteListener { op ->
+            // 先得到期望的version，用于拦截同步发送的分页事件
+            version++
             mediator?.asListMediator<T>()?.updateList(op)
+            // 再得到实际的version，确保不会因为失败而增加version
             version = mediator?.asListMediator<T>()?.version ?: 0
         }
     }

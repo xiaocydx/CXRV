@@ -65,7 +65,7 @@ internal open class PagingListMediator<T : Any>(
     }.buffer(UNLIMITED).flowOnMain()
 
     override fun updateList(op: UpdateOp<T>) {
-        listState.updateList(op, dispatch = false)
+        listState.updateList(op)
     }
 
     override fun isSameList(other: ListMediator<T>?): Boolean {
