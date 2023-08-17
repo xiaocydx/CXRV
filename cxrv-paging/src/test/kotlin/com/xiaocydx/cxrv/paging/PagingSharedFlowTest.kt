@@ -18,7 +18,7 @@ package com.xiaocydx.cxrv.paging
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
-import com.xiaocydx.cxrv.paging.PagingSharedFlow.Companion.UNLIMITED
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job
@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -56,7 +57,6 @@ internal class PagingSharedFlowTest {
         PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -65,13 +65,12 @@ internal class PagingSharedFlowTest {
     }
 
     @Test
-    fun limitCollectorCount(): Unit = runBlocking {
+    fun unlimitedCollector(): Unit = runBlocking {
         val scope = CoroutineScope(Job())
         val upstream = flow<Int> { awaitCancellation() }
         val sharedFlow = PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = 1,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -79,9 +78,11 @@ internal class PagingSharedFlowTest {
             coroutineScope {
                 launch(start = UNDISPATCHED) { sharedFlow.collect() }
                 launch(start = UNDISPATCHED) { sharedFlow.collect() }
+                awaitEventLoopScheduled()
+                coroutineContext.job.cancel()
             }
         }
-        assertThat(result.exceptionOrNull()).isNotNull()
+        assertThat(result.exceptionOrNull()).isInstanceOf(CancellationException::class.java)
     }
 
     @Test
@@ -91,7 +92,6 @@ internal class PagingSharedFlowTest {
         val sharedFlow = PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -110,7 +110,6 @@ internal class PagingSharedFlowTest {
         val sharedFlow = PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -129,7 +128,6 @@ internal class PagingSharedFlowTest {
         val sharedFlow = PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -152,7 +150,6 @@ internal class PagingSharedFlowTest {
         val sharedFlow = PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -178,7 +175,6 @@ internal class PagingSharedFlowTest {
         val sharedFlow = PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -201,7 +197,6 @@ internal class PagingSharedFlowTest {
         val sharedFlow = PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = true,
             canRepeatCollectAfterCancel = false,
         )
@@ -226,7 +221,6 @@ internal class PagingSharedFlowTest {
         val sharedFlow = PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = true,
             canRepeatCollectAfterCancel = false,
         )
@@ -254,7 +248,6 @@ internal class PagingSharedFlowTest {
         val sharedFlow = PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = true,
             canRepeatCollectAfterCancel = true,
         )
@@ -286,7 +279,6 @@ internal class PagingSharedFlowTest {
         val sharedFlow = PagingSharedFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false
         )

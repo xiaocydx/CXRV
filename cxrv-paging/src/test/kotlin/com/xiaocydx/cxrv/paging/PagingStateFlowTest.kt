@@ -18,7 +18,7 @@ package com.xiaocydx.cxrv.paging
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
-import com.xiaocydx.cxrv.paging.PagingStateFlow.Companion.UNLIMITED
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job
@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -57,7 +58,6 @@ internal class PagingStateFlowTest {
         PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -66,13 +66,12 @@ internal class PagingStateFlowTest {
     }
 
     @Test
-    fun limitCollectorCount(): Unit = runBlocking {
+    fun unlimitedCollector(): Unit = runBlocking {
         val scope = CoroutineScope(Job())
         val upstream = flow<Int> { awaitCancellation() }
         val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = 1,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -80,9 +79,11 @@ internal class PagingStateFlowTest {
             coroutineScope {
                 launch(start = UNDISPATCHED) { stateFlow.collect() }
                 launch(start = UNDISPATCHED) { stateFlow.collect() }
+                awaitEventLoopScheduled()
+                coroutineContext.job.cancel()
             }
         }
-        assertThat(result.exceptionOrNull()).isNotNull()
+        assertThat(result.exceptionOrNull()).isInstanceOf(CancellationException::class.java)
     }
 
     @Test
@@ -92,7 +93,6 @@ internal class PagingStateFlowTest {
         val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -111,7 +111,6 @@ internal class PagingStateFlowTest {
         val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -130,7 +129,6 @@ internal class PagingStateFlowTest {
         val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -153,7 +151,6 @@ internal class PagingStateFlowTest {
         val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -179,7 +176,6 @@ internal class PagingStateFlowTest {
         val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = false,
         )
@@ -202,7 +198,6 @@ internal class PagingStateFlowTest {
         val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = true,
             canRepeatCollectAfterCancel = false,
         )
@@ -227,7 +222,6 @@ internal class PagingStateFlowTest {
         val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = true,
             canRepeatCollectAfterCancel = false,
         )
@@ -256,7 +250,6 @@ internal class PagingStateFlowTest {
         val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = true,
             canRepeatCollectAfterCancel = true,
         )
@@ -284,7 +277,6 @@ internal class PagingStateFlowTest {
         val stateFlow = PagingStateFlow(
             scope = scope,
             upstream = upstream,
-            limitCollectorCount = UNLIMITED,
             withoutCollectorNeedCancel = false,
             canRepeatCollectAfterCancel = true,
         )

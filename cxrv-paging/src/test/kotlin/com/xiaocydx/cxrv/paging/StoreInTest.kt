@@ -21,6 +21,7 @@ package com.xiaocydx.cxrv.paging
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import com.xiaocydx.cxrv.list.ListState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Job
@@ -124,7 +125,7 @@ internal class StoreInTest {
     }
 
     @Test
-    fun limitedOneCollector(): Unit = runBlocking {
+    fun unlimitedCollector(): Unit = runBlocking {
         val upstream = TestPagingDataFlow()
         val result = runCatching {
             coroutineScope {
@@ -136,7 +137,7 @@ internal class StoreInTest {
                 coroutineContext.job.cancel()
             }
         }
-        assertThat(result.exceptionOrNull()).isNotNull()
+        assertThat(result.exceptionOrNull()).isInstanceOf(CancellationException::class.java)
     }
 
     @Test
@@ -201,12 +202,7 @@ internal class StoreInTest {
         fun <T : Any> Flow<PagingData<T>>.storeInTest(
             scope: CoroutineScope,
             state: ListState<T> = ListState()
-        ): Flow<PagingData<T>> = storeInInternal(
-            state = state,
-            scope = scope,
-            limitCollector = true,
-            transform = ::TestPagingListMediator
-        )
+        ): Flow<PagingData<T>> = storeInInternal(state, scope, ::TestPagingListMediator)
 
         private class TestPagingListMediator<T : Any>(
             data: PagingData<T>,

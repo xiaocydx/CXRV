@@ -37,7 +37,6 @@ import kotlinx.coroutines.withContext
 /**
  * 用于分页加载的可取消[StateFlow]
  *
- * [PagingStateFlow]可以被重复收集，同时只能被[limitCollectorCount]个收集器收集，
  * 当被首次收集时，才开始收集[upstream]，以下[withoutCollectorNeedCancel]的作用：
  * 1. 若为`false`，则直到主动调用[cancel]或者`scope`被取消，才取消收集[upstream]。
  * 2. 若为`true`，则直到主动调用[cancel]或者`scope`被取消，才取消收集[upstream]，
@@ -56,13 +55,12 @@ import kotlinx.coroutines.withContext
 internal open class PagingStateFlow<T : Any>(
     scope: CoroutineScope,
     private val upstream: Flow<T>,
-    private val limitCollectorCount: Int,
     private val withoutCollectorNeedCancel: Boolean,
     private val canRepeatCollectAfterCancel: Boolean,
 ) : Flow<T> {
     private val collectJob: Job
     private val stateFlow = MutableStateFlow<Any?>(null)
-    private val cancellableStateFlow = stateFlow.mapNotNull { it }.takeWhile { it != cancelValue }
+    private val cancellableStateFlow = stateFlow.mapNotNull { it }.takeWhile { it != CancelValue }
     private val collectorCount = stateFlow.subscriptionCount
 
     init {
@@ -90,7 +88,7 @@ internal open class PagingStateFlow<T : Any>(
                     upstream.collect(stateFlow::emit)
                 }
             } finally {
-                // 当前协程可能被取消，用NonCancellable确保发射cancelValue
+                // 当前协程可能被取消，用NonCancellable确保发射CancelValue
                 withContext(NonCancellable) { cancelStateFlow() }
             }
         }
@@ -99,7 +97,6 @@ internal open class PagingStateFlow<T : Any>(
     override suspend fun collect(collector: FlowCollector<T>) {
         // 快路径判断
         if (!collectJob.isActive) return
-        checkCollectorCount()
         coroutineScope {
             launch {
                 // 处理边界情况，在collectJob调用cancelStateFlow()之后进行收集，
@@ -115,21 +112,9 @@ internal open class PagingStateFlow<T : Any>(
         }
     }
 
-    private fun checkCollectorCount() {
-        val count = limitCollectorCount.takeIf { it >= 0 } ?: return
-        check(collectorCount.value < count) {
-            "${javaClass.simpleName}只能被${count}个收集器收集"
-        }
-    }
-
-    private suspend fun cancelStateFlow() {
-        stateFlow.emit(cancelValue)
-    }
+    private suspend fun cancelStateFlow() = stateFlow.emit(CancelValue)
 
     suspend fun cancel() = collectJob.cancelAndJoin()
 
-    companion object {
-        private val cancelValue = this
-        const val UNLIMITED = -1
-    }
+    private companion object CancelValue
 }
