@@ -42,13 +42,13 @@
             android:name=".concat.HeaderFooterActivity"
             android:exported="false" />
         <activity
+            android:name=".liststate.ListStateActivity"
+            android:exported="false" />
+        <activity
             android:name=".paging.article.ArticleListActivity"
             android:exported="false" />
         <activity
             android:name=".paging.local.PagingActivity"
-            android:exported="false" />
-        <activity
-            android:name=".liststate.ListStateActivity"
             android:exported="false" />
         <activity
             android:name=".paging.complex.ComplexContainerActivity"

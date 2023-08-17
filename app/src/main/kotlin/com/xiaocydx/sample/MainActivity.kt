@@ -18,6 +18,7 @@ import com.xiaocydx.sample.itemclick.ItemClickActivity
 import com.xiaocydx.sample.itemselect.MultiSelectionActivity
 import com.xiaocydx.sample.itemselect.SingleSelectionActivity
 import com.xiaocydx.sample.itemtouch.ItemTouchActivity
+import com.xiaocydx.sample.liststate.ListStateActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
 import com.xiaocydx.sample.paging.article.ArticleListActivity
 import com.xiaocydx.sample.paging.complex.ComplexContainerActivity
@@ -63,6 +64,7 @@ class MainActivity : AppCompatActivity() {
         "item多类型示例" to MultiTypeActivity::class,
         "Payload更新示例" to PayloadActivity::class,
         "HeaderFooter示例" to HeaderFooterActivity::class,
+        "ListState示例" to ListStateActivity::class,
         "分页加载示例（本地测试）" to PagingActivity::class,
         "分页加载示例（网络请求）" to ArticleListActivity::class,
         "ViewPager2共享池示例" to SharedPoolActivity::class,

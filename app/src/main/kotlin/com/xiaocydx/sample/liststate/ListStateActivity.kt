@@ -8,6 +8,7 @@ import androidx.fragment.app.commit
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
+import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
@@ -21,6 +22,8 @@ import com.xiaocydx.sample.liststate.MenuAction.PAGING
 import com.xiaocydx.sample.showToast
 
 /**
+ * [ListState]示例代码
+ *
  * @author xcc
  * @date 2023/8/17
  */
@@ -38,8 +41,7 @@ class ListStateActivity : AppCompatActivity() {
 
     private fun initMenuDrawer() {
         binding.rvMenu
-            .linear()
-            .fixedSize()
+            .linear().fixedSize()
             .divider(height = 0.5f.dp) {
                 color(0xFFD5D5D5.toInt())
             }
@@ -64,11 +66,11 @@ class ListStateActivity : AppCompatActivity() {
     }
 
     private fun initNormalHome() {
-        replaceFragment(NormalHomeFragment())
+        replaceFragment(NormalListStateFragment())
     }
 
     private fun initPagingHome() {
-        replaceFragment(PagingHomeFragment())
+        replaceFragment(PagingListStateFragment())
     }
 
     private fun replaceFragment(fragment: Fragment) {

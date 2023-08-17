@@ -22,10 +22,10 @@ class NormalListStateViewModel : ViewModel() {
         refresh()
     }
 
-    fun flow() = state.asFlow()
+    val flow = state.asFlow()
 
     fun refresh() {
-        val newList = (1..100).map { createFoo(num = it) }
+        val newList = (1..100).map(::createFoo)
         state.submitList(newList)
     }
 

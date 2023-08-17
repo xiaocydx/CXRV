@@ -5,32 +5,36 @@
     android:orientation="vertical">
 
     <TextView
+        android:id="@+id/tvFoo1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingVertical="6dp"
+        android:paddingVertical="8dp"
         android:paddingStart="12dp"
         android:text="List-1"
         android:textColor="@color/black"
         android:textSize="14sp" />
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/container1"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvFoo1"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:overScrollMode="never" />
 
     <TextView
+        android:id="@+id/tvFoo2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingVertical="6dp"
+        android:paddingVertical="8dp"
         android:paddingStart="12dp"
         android:text="List-2"
         android:textColor="@color/black"
         android:textSize="14sp" />
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/container2"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvFoo2"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:overScrollMode="never" />
 </LinearLayout>

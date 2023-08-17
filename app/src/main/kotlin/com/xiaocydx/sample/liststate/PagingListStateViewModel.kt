@@ -24,12 +24,8 @@ class PagingListStateViewModel(
     )
 ) : ViewModel() {
     private val state = ListState<Foo>()
-    private val pager = repository.getFooPager(
-        initKey = 1,
-        config = PagingConfig(pageSize = 10)
-    )
-
-    val flow = pager.flow.storeIn(state, viewModelScope, limitCollector = false)
+    private val pager = repository.getFooPager(initKey = 1, PagingConfig(pageSize = 10))
+    val flow = pager.flow.storeIn(state, viewModelScope)
 
     fun refresh() {
         pager.refresh()

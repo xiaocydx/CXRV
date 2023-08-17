@@ -44,8 +44,7 @@ class PagingActivity : AppCompatActivity() {
 
     private fun initMenuDrawer() {
         binding.rvMenu
-            .linear()
-            .fixedSize()
+            .linear().fixedSize()
             .divider(height = 0.5f.dp) {
                 color(0xFFD5D5D5.toInt())
             }
