@@ -23,28 +23,35 @@ import kotlinx.coroutines.flow.map
 /**
  * ### 函数作用
  * 1. 将`Flow<PagingData<T>>`转换为热流，以广播的形式发射[PagingData]。
- * 2. 热流可以被重复收集，同时能被多个收集器收集，当热流被首次收集时，才开始收集上游，
+ * 2. 转换的热流可以被多个收集器收集，当热流被首次收集时，才开始收集上游，
  * 直到[scope]被取消，或者当收集器数量为`0`时取消收集上游，大于`0`时重新收集上游。
  *
  * ### 调用顺序
- * 若对`Flow<PagingData<T>>`先调用[storeIn]，后调用[broadcastIn]，
- * 则会抛出[IllegalArgumentException]异常，详细原因可以看[storeIn]的注释。
+ * 不允许在[storeIn]之后，调用[broadcastIn]转换`Flow<PagingData<T>>`，
+ * 这会抛出[IllegalArgumentException]，详细原因可以看[storeIn]的注释。
  *
- * 在Activity内共享[broadcastIn]的转换结果：
+ * 在Activity内共享[broadcastIn]的转换结果（[Pager]的注释解释了如何收集`flow`）：
  * ```
- * // 跟Activity作用域关联的ActivityViewModel
- * class ActivityViewModel : ViewModel(private val repository: FooRepository) {
- *     private val state = ListState<Foo>()
- *     val broadcastFlow = repository.flow.broadcastIn(viewModelScope)
- *     val fooFlow = broadcastFlow.storeIn(state, viewModelScope)
+ * // FooViewModel跟Activity作用域关联
+ * class FooViewModel : ViewModel(repository: FooRepository) {
+ *     private val pager = repository.pager
+ *     val broadcastFlow = pager.flow.broadcastIn(viewModelScope)
  * }
  *
- * // 将ActivityViewModel.broadcastFlow传递给跟Fragment作用域关联的FragmentViewModel，
- * // ActivityViewModel和FragmentViewModel共享分页数据流和加载状态，同时分离列表状态。
- * class FragmentViewModel : ViewModel(broadcastFlow: Flow<PagingData<Foo>>) {
+ * // 将FooViewModel.broadcastFlow传递给Fragment的ViewModel，
+ * // Fragment1和Fragment2共享分页数据流和加载状态，分离列表状态。
+ * class Fragment1ViewModel : ViewModel(broadcastFlow: Flow<PagingData<Foo>>) {
  *     private val state = ListState<Foo>()
- *     val fooFlow = broadcastFlow
- *         .flowMap {...} // 转换分页事件流的分页数据
+ *     val flow = broadcastFlow
+ *         .flowMap {...} // 转换分页事件流的列表数据
+ *         .appendPrefetch(prefetch) // 转换末尾加载的预取策略
+ *         .storeIn(state, viewModelScope)
+ * }
+ *
+ * class Fragment2ViewModel : ViewModel(broadcastFlow: Flow<PagingData<Foo>>) {
+ *     private val state = ListState<Foo>()
+ *     val flow = broadcastFlow
+ *         .flowMap {...} // 转换分页事件流的列表数据
  *         .appendPrefetch(prefetch) // 转换末尾加载的预取策略
  *         .storeIn(state, viewModelScope)
  * }
@@ -67,7 +74,6 @@ private class BroadcastInPagingDataStateFlow<T : Any>(
 ) : PagingStateFlow<PagingData<T>>(
     scope = scope,
     upstream = upstream,
-    limitCollectorCount = UNLIMITED,
     withoutCollectorNeedCancel = true,
     canRepeatCollectAfterCancel = true,
 )
@@ -78,7 +84,6 @@ private class BroadcastInPagingEventShareFlow<T : Any>(
 ) : PagingSharedFlow<PagingEvent<T>>(
     scope = scope,
     upstream = upstream,
-    limitCollectorCount = UNLIMITED,
     withoutCollectorNeedCancel = true,
     canRepeatCollectAfterCancel = false
 )

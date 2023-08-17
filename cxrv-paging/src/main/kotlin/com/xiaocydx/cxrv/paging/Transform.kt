@@ -23,14 +23,12 @@ import kotlinx.coroutines.flow.map
 /**
  * 通过[itemMap]或者[dataMap]转换[PagingData.flow]
  *
- * **注意**：若对`Flow<PagingData<T>>`先调用[storeIn]，后调用[flowMap]，
- * 则会抛出[IllegalArgumentException]异常，详细原因可以看[storeIn]的注释。
+ * 不允许在[storeIn]之后，调用[flowMap]转换`Flow<PagingData<T>>`，
+ * 这会抛出[IllegalArgumentException]，详细原因可以看[storeIn]的注释。
  * ```
  * val flow: Flow<PagingData<T>> = ...
- * flow.flowMap { eventFlow ->
- *     eventFlow.itemMap { loadType, item ->
- *         ...
- *     }
+ * flow.flowMap { flow ->
+ *     flow.itemMap { loadType, item -> ...}
  * }
  * ```
  *
@@ -83,8 +81,7 @@ inline fun <T : Any, R : Any> Flow<PagingEvent<T>>.dataMap(
 }
 
 /**
- * 将上游[APPEND]加载的预取策略转换为[prefetch]，最初的预取策略来自[PagingConfig.appendPrefetch]，
- * 该函数在搭配[broadcastIn]共享分页数据流和加载状态时才有意义，详细描述可以看[broadcastIn]的注释。
+ * 将上游[APPEND]加载的预取策略转换为[prefetch]，最初的预取策略来自[PagingConfig.appendPrefetch]
  */
 fun <T : Any> Flow<PagingData<T>>.appendPrefetch(
     prefetch: PagingPrefetch

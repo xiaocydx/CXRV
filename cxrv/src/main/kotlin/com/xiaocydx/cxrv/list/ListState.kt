@@ -46,8 +46,25 @@ import kotlinx.coroutines.flow.callbackFlow
  *          viewModel.flow
  *                 .onEach(adapter.listCollector)
  *                 .launchIn(lifecycleScope)
+ *     }
+ * }
+ * ```
  *
- *          // 或者仅在视图控制器活跃期间内收集viewModel.flow
+ * 3.仅在视图控制器活跃期间收集`viewModel.flow`
+ * ```
+ * class FooActivity : AppCompatActivity() {
+ *     private val viewModel: FooViewModel by viewModels()
+ *     private val adapter: ListAdapter<Foo, *> = ...
+ *
+ *     override fun onCreate(savedInstanceState: Bundle?) {
+ *          super.onCreate(savedInstanceState)
+ *          // 注意：flowWithLifecycle()在onEach(adapter.listCollector)之后调用
+ *          viewModel.flow
+ *               .onEach(adapter.listCollector)
+ *               .flowWithLifecycle(lifecycle)
+ *               .launchIn(lifecycleScope)
+ *
+ *          // 或者直接通过repeatOnLifecycle()进行收集，选中其中一种写法即可
  *          lifecycleScope.launch {
  *              repeatOnLifecycle(Lifecycle.State.STARTED) {
  *                  viewModel.flow.onEach(adapter.listCollector).collect()
@@ -56,6 +73,9 @@ import kotlinx.coroutines.flow.callbackFlow
  *     }
  * }
  * ```
+ *
+ * @author xcc
+ * @date 2022/2/17
  */
 class ListState<T : Any> : ListOwner<T> {
     private var listeners = InlineList<(UpdateOp<T>) -> Unit>()

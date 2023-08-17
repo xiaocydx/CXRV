@@ -150,15 +150,9 @@ internal class PagingFetcher<K : Any, T : Any>(
         pageSize = if (loadType === LoadType.REFRESH) config.initPageSize else config.pageSize
     )
 
-    fun append() {
-        appendEvent.send(Unit)
-    }
+    fun append() = appendEvent.send(Unit)
 
-    fun retry() {
-        retryEvent.send(Unit)
-    }
+    fun retry() = retryEvent.send(Unit)
 
-    fun close() {
-        completableJob.cancel()
-    }
+    fun close() = completableJob.cancel()
 }

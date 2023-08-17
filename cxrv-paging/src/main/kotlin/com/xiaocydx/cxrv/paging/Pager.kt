@@ -34,17 +34,14 @@ import kotlinx.coroutines.job
  * 1.在Repository下创建[Pager]，对外提供[Pager]或者[Pager.flow]
  * ```
  * class FooRepository {
- *     private val pager: Pager<String, Foo> = ...
+ *     val pager: Pager<String, Foo> = ...
  *     val flow = pager.flow
- *
- *     fun refresh() = pager.refresh()
  * }
  * ```
  *
  * 2.对ViewModel注入Repository
  * ```
- * class FooViewModel(private val repository: FooRepository) : ViewModel() {
- *     // 可以对分页事件流做数据变换
+ * class FooViewModel(repository: FooRepository) : ViewModel() {
  *     val flow = repository.flow
  * }
  * ```
@@ -58,10 +55,31 @@ import kotlinx.coroutines.job
  *     override fun onCreate(savedInstanceState: Bundle?) {
  *          super.onCreate(savedInstanceState)
  *          viewModel.flow
- *                 .onEach(adapter.pagingCollector)
- *                 .launchIn(lifecycleScope)
+ *               .onEach(adapter.pagingCollector)
+ *               .launchIn(lifecycleScope)
+ *     }
+ * }
+ * ```
  *
- *          // 或者仅在视图控制器活跃期间内收集viewModel.flow
+ * 4.仅在视图控制器活跃期间收集`viewModel.flow`，使用操作符[storeIn]
+ * ```
+ * class FooViewModel(repository: FooRepository) : ViewModel() {
+ *     val flow = repository.flow.storeIn(viewModelScope)
+ * }
+ *
+ * class FooActivity : AppCompatActivity() {
+ *     private val viewModel: FooViewModel by viewModels()
+ *     private val adapter: ListAdapter<Foo, *> = ...
+ *
+ *     override fun onCreate(savedInstanceState: Bundle?) {
+ *          super.onCreate(savedInstanceState)
+ *          // 注意：flowWithLifecycle()在onEach(adapter.pagingCollector)之后调用
+ *          viewModel.flow
+ *               .onEach(adapter.pagingCollector)
+ *               .flowWithLifecycle(lifecycle)
+ *               .launchIn(lifecycleScope)
+ *
+ *          // 或者直接通过repeatOnLifecycle()进行收集，选中其中一种写法即可
  *          lifecycleScope.launch {
  *              repeatOnLifecycle(Lifecycle.State.STARTED) {
  *                  viewModel.flow.onEach(adapter.pagingCollector).collect()
@@ -70,6 +88,7 @@ import kotlinx.coroutines.job
  *     }
  * }
  * ```
+ *
  * @author xcc
  * @date 2021/9/13
  */
@@ -124,16 +143,10 @@ class Pager<K : Any, T : Any>(
         override val appendPrefetch: PagingPrefetch
             get() = config.appendPrefetch
 
-        override fun refresh() {
-            refreshEvent.send(Unit)
-        }
+        override fun refresh() = refreshEvent.send(Unit)
 
-        override fun append() {
-            fetcher.append()
-        }
+        override fun append() = fetcher.append()
 
-        override fun retry() {
-            fetcher.retry()
-        }
+        override fun retry() = fetcher.retry()
     }
 }

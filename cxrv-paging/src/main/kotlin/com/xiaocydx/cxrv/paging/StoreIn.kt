@@ -34,38 +34,47 @@ import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * ### 函数作用
- * 1. 将`Flow<PagingData<T>>`发射的事件的列表数据保存到[state]中。
+ * 1. 将`Flow<PagingData<T>>`发射的事件的列表数据保存到[state]。
  * 2. [state]和视图控制器建立基于[ListOwner]的双向通信。
- * 3. 将`Flow<PagingData<T>>`转换为热流，热流可以被重复收集，
- * 但同时只能被一个收集器收集，当热流被首次收集时，才开始收集上游，直到[scope]被取消。
+ * 3. 将`Flow<PagingData<T>>`转换为热流，热流可以被多个收集器收集，
+ * 当热流被首次收集时，才开始收集上游，直到[scope]被取消。
  *
  * ### 调用顺序
- * 不允许在[storeIn]之后，调用[broadcastIn]或[flowMap]转换[PagingData.flow]，
- * [state]和视图控制器会建立双向通信，需要确保[state]跟视图控制器的数据一致。
+ * 不允许在[storeIn]之后，调用[broadcastIn]或[flowMap]转换`Flow<PagingData<T>>`，
+ * 因为[state]和视图控制器会建立双向通信，需要确保[state]跟视图控制器的数据一致。
  *
- * 在ViewModel中使用[storeIn]：
+ * 在ViewModel中使用[storeIn]（[Pager]的注释解释了如何收集`flow`）：
  * ```
- * class FooViewModel : ViewModel(private val repository: FooRepository) {
+ * class FooViewModel : ViewModel(repository: FooRepository) {
  *     private val state = ListState<Foo>()
- *     val flow = repository.flow
- *         .flowMap {...} // 转换分页事件流的分页数据
+ *     private val pager = repository.pager
+ *     val flow = pager.flow
+ *         .flowMap {...} // 转换分页事件流的列表数据
  *         .storeIn(state, viewModelScope)
+ * }
+ * ```
+ *
+ * 在Activity内共享[storeIn]的转换结果（[Pager]的注释解释了如何收集`flow`）：
+ * ```
+ * // FooViewModel跟Activity作用域关联，Fragment1和Fragment2共享分页数据流、加载状态、列表状态
+ * class Fragment1 : Fragment(R.layout.fragment1) {
+ *     private val viewModel: FooViewModel by activityViewModels()
+ * }
+ *
+ * class Fragment2 : Fragment(R.layout.fragment2) {
+ *     private val viewModel: FooViewModel by activityViewModels()
  * }
  * ```
  */
 fun <T : Any> Flow<PagingData<T>>.storeIn(
     state: ListState<T>,
-    scope: CoroutineScope,
-    limitCollector: Boolean = true
-): Flow<PagingData<T>> = storeInInternal(state, scope, limitCollector, ::PagingListMediator)
+    scope: CoroutineScope
+): Flow<PagingData<T>> = storeInInternal(state, scope, ::PagingListMediator)
 
 /**
  * [storeIn]的简化函数，适用于只需要重建恢复列表状态，不需要主动更新列表状态的场景
  */
-fun <T : Any> Flow<PagingData<T>>.storeIn(
-    scope: CoroutineScope,
-    limitCollector: Boolean = true
-) = storeIn(ListState(), scope, limitCollector)
+fun <T : Any> Flow<PagingData<T>>.storeIn(scope: CoroutineScope) = storeIn(ListState(), scope)
 
 @PublishedApi
 internal val PagingData<*>.isFromStoreInOperator: Boolean
@@ -84,7 +93,6 @@ private fun PagingData<*>.ensureSingleStoreInOperator() {
 internal inline fun <T : Any> Flow<PagingData<T>>.storeInInternal(
     state: ListState<T>,
     scope: CoroutineScope,
-    limitCollector: Boolean,
     crossinline transform: (PagingData<T>, ListState<T>) -> PagingListMediator<T>
 ): Flow<PagingData<T>> {
     var previous: StoreInPagingEventSharedFlow<T>? = null
@@ -92,22 +100,20 @@ internal inline fun <T : Any> Flow<PagingData<T>>.storeInInternal(
         data.ensureSingleStoreInOperator()
         previous?.cancel()
         val mediator = transform(data, state)
-        val flow = StoreInPagingEventSharedFlow(scope, limitCollector, mediator.flow, mediator)
+        val flow = StoreInPagingEventSharedFlow(scope, mediator.flow, mediator)
         previous = flow
         PagingData(flow, mediator)
     }
-    return StoreInPagingDataStateFlow(scope, limitCollector, upstream)
+    return StoreInPagingDataStateFlow(scope, upstream)
 }
 
 @VisibleForTesting
 internal class StoreInPagingDataStateFlow<T : Any>(
     scope: CoroutineScope,
-    limitCollector: Boolean,
     upstream: Flow<PagingData<T>>
 ) : PagingStateFlow<PagingData<T>>(
     scope = scope,
     upstream = upstream,
-    limitCollectorCount = if (limitCollector) 1 else UNLIMITED,
     withoutCollectorNeedCancel = false,
     canRepeatCollectAfterCancel = false
 )
@@ -115,14 +121,12 @@ internal class StoreInPagingDataStateFlow<T : Any>(
 @VisibleForTesting
 internal class StoreInPagingEventSharedFlow<T : Any>(
     scope: CoroutineScope,
-    limitCollector: Boolean,
     upstream: Flow<PagingEvent<T>>,
     private val mediator: PagingListMediator<T>,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
 ) : PagingSharedFlow<PagingEvent<T>>(
     scope = scope,
     upstream = upstream,
-    limitCollectorCount = if (limitCollector) 1 else UNLIMITED,
     withoutCollectorNeedCancel = false,
     canRepeatCollectAfterCancel = false
 ) {
