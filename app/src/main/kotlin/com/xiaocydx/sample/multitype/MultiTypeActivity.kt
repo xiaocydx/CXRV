@@ -20,7 +20,7 @@ class MultiTypeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_multitype)
-        initOneToOneFragment(null)
+        if (savedInstanceState == null) initOneToOneFragment(null)
     }
 
     fun initOneToOneFragment(view: View?) {
@@ -32,9 +32,6 @@ class MultiTypeActivity : AppCompatActivity() {
     }
 
     private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager.commit {
-            replace(R.id.flContainer, fragment)
-        }
-        supportActionBar?.title = fragment.javaClass.simpleName
+        supportFragmentManager.commit { replace(R.id.container, fragment) }
     }
 }

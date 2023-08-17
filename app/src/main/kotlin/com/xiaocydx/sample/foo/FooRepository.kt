@@ -87,10 +87,7 @@ class FooSource(
         is ResultType.AppendFailure -> failureResult(params)
     }
 
-    fun createFoo(
-        num: Int,
-        tag: String = javaClass.simpleName
-    ): Foo {
+    fun createFoo(num: Int, tag: String = javaClass.simpleName): Foo {
         val type = when {
             !multiTypeFoo -> FooType.TYPE1
             num % 2 != 0 -> FooType.TYPE1

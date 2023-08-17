@@ -12,7 +12,6 @@ import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
-import com.xiaocydx.sample.R
 import com.xiaocydx.sample.databinding.ActivityPagingBinding
 import com.xiaocydx.sample.databinding.ItemMenuBinding
 import com.xiaocydx.sample.dp
@@ -32,7 +31,6 @@ import com.xiaocydx.sample.showToast
  */
 class PagingActivity : AppCompatActivity() {
     private val sharedViewModel: PagingSharedViewModel by viewModels()
-    private val fragmentTag = PagingFragment::class.java.simpleName
     private lateinit var binding: ActivityPagingBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +38,7 @@ class PagingActivity : AppCompatActivity() {
         binding = ActivityPagingBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initMenuDrawer()
-        initPagingFragment()
+        if (savedInstanceState == null) initLinearLayout()
         window.enableGestureNavBarEdgeToEdge()
     }
 
@@ -72,15 +70,6 @@ class PagingActivity : AppCompatActivity() {
         showToast(action.text)
     }
 
-    private fun initPagingFragment() {
-        val fragment = supportFragmentManager.findFragmentByTag(fragmentTag)
-        if (fragment == null) {
-            initLinearLayout()
-        } else {
-            setActionBarTitle(fragment)
-        }
-    }
-
     private fun initLinearLayout() {
         replaceFragment(LinearLayoutFragment())
     }
@@ -94,13 +83,6 @@ class PagingActivity : AppCompatActivity() {
     }
 
     private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager.commit {
-            replace(R.id.flContainer, fragment, fragmentTag)
-        }
-        setActionBarTitle(fragment)
-    }
-
-    private fun setActionBarTitle(fragment: Fragment) {
-        supportActionBar?.title = fragment.javaClass.simpleName
+        supportFragmentManager.commit { replace(binding.container.id, fragment) }
     }
 }
