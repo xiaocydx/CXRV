@@ -220,6 +220,11 @@ internal class ListMediatorImpl<T : Any>(
         awaitClose { listState.removeUpdatedListener(listener) }
     }.buffer(UNLIMITED).flowOnMain()
 
+    override fun isSameList(other: ListMediator<T>?): Boolean {
+        if (other !is ListMediatorImpl) return false
+        return listState === other.listState
+    }
+
     override fun updateList(op: UpdateOp<T>) {
         listState.updateList(op, dispatch = false)
     }

@@ -39,4 +39,9 @@ internal interface ListMediator<T : Any> {
      * 执行列表更新操作
      */
     fun updateList(op: UpdateOp<T>)
+
+    /**
+     * 当前[ListMediator]跟[other]是否为相同的列表
+     */
+    fun isSameList(other: ListMediator<T>?): Boolean
 }
