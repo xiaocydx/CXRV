@@ -21,7 +21,6 @@ import com.xiaocydx.cxrv.internal.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.flow
 
 /**
  * 列表状态，和视图控制器建立基于[ListOwner]的双向通信
@@ -205,7 +204,7 @@ internal class ListMediatorImpl<T : Any>(
     override val currentList: List<T>
         get() = listState.currentList
 
-    val flow: Flow<ListEvent<T>> = flow {
+    val flow: Flow<ListEvent<T>> = unsafeFlow {
         check(!isCollected) { "更新事件流Flow<ListEvent<*>>只能被收集一次" }
         isCollected = true
         // 先发射最新的列表数据和版本号，让下游判断是否需要更新

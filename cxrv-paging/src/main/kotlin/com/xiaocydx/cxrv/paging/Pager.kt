@@ -19,11 +19,11 @@
 package com.xiaocydx.cxrv.paging
 
 import com.xiaocydx.cxrv.internal.flowOnMain
+import com.xiaocydx.cxrv.internal.unsafeFlow
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.job
 
@@ -103,7 +103,7 @@ class Pager<K : Any, T : Any>(
     val loadStates: LoadStates
         get() = fetcher?.loadStates ?: LoadStates.Incomplete
 
-    val flow: Flow<PagingData<T>> = flow {
+    val flow: Flow<PagingData<T>> = unsafeFlow {
         coroutineScope {
             check(!isCollected) { "分页数据流Flow<PagingData<T>>只能被1个收集器收集" }
             isCollected = true
@@ -116,10 +116,8 @@ class Pager<K : Any, T : Any>(
                 }.collect {
                     fetcher?.close()
                     fetcher = PagingFetcher(initKey, config, source)
-                    emit(PagingData(
-                        flow = fetcher!!.flow,
-                        mediator = PagingMediatorImpl(config, fetcher!!, refreshEvent)
-                    ))
+                    val mediator = PagingMediatorImpl(config, fetcher!!, refreshEvent)
+                    emit(PagingData(fetcher!!.flow, mediator))
                 }
         }
     }.conflate().flowOnMain()
