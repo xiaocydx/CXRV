@@ -6,10 +6,15 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.LiveData
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
+import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.ListOwner
+import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.adapter
+import com.xiaocydx.cxrv.list.asFlow
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.list.linear
@@ -23,10 +28,23 @@ import com.xiaocydx.sample.foo.FooListAdapter
 import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
 /**
+ * [ListState]和[ListAdapter]建立基于[ListOwner]的双向通信，
+ * [ListState.asFlow]可以同时被多个收集器收集，共享列表状态。
+ *
+ * **注意**：虽然支持[ListState]和[ListAdapter]之间的双向通信，
+ * 但是建议以单向数据流的方式更新列表，即仅通过[ListState]更新列表，
+ * 这会提高代码的可读性和可维护性。
+ *
+ * ### 为什么不用[LiveData]或者[StateFlow]？
+ * [LiveData]和[StateFlow]只能替换列表，让视图控制器执行一次差异计算，不支持细粒度的更新操作。
+ * [ListState]支持细粒度的更新操作，例如在视图控制器处于活跃状态时，调用[ListState.addItem]，
+ * 只需要将更新操作以事件的形式发送到视图控制器即可，不需要执行一次差异计算。
+ *
  * @author xcc
  * @date 2023/8/17
  */

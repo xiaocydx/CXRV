@@ -24,6 +24,10 @@ import com.xiaocydx.sample.showToast
 /**
  * [ListState]示例代码
  *
+ * [ListState]可用于普通列表和分页列表两种场景，
+ * [NormalListStateFragment]展示了普通列表场景，
+ * [PagingListStateFragment]展示了分页列表场景。
+ *
  * @author xcc
  * @date 2023/8/17
  */
@@ -36,7 +40,7 @@ class ListStateActivity : AppCompatActivity() {
         binding = ActivityListStateBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initMenuDrawer()
-        if (savedInstanceState == null) initNormalHome()
+        if (savedInstanceState == null) initNormalListState()
     }
 
     private fun initMenuDrawer() {
@@ -57,19 +61,19 @@ class ListStateActivity : AppCompatActivity() {
 
     private fun performMenuAction(action: MenuAction) {
         when (action) {
-            NORMAL -> initNormalHome()
-            PAGING -> initPagingHome()
+            NORMAL -> initNormalListState()
+            PAGING -> initPagingListState()
             else -> sharedViewModel.submitMenuAction(action)
         }
         binding.root.closeDrawer(binding.rvMenu)
         showToast(action.text)
     }
 
-    private fun initNormalHome() {
+    private fun initNormalListState() {
         replaceFragment(NormalListStateFragment())
     }
 
-    private fun initPagingHome() {
+    private fun initPagingListState() {
         replaceFragment(PagingListStateFragment())
     }
 
