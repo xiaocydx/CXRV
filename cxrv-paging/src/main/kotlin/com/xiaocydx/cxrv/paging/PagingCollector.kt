@@ -22,6 +22,7 @@ import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
+import androidx.recyclerview.widget.optimizeNextFrameScroll
 import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.awaitNextLayout
@@ -354,6 +355,7 @@ class PagingCollector<T : Any> internal constructor(
                 rv.scrollToPosition(0)
             }
             if (rv.isLayoutRequested) {
+                rv.optimizeNextFrameScroll()
                 // 等待下一帧rv布局完成，确保滚动不受影响
                 rv.awaitNextLayout()
             }
