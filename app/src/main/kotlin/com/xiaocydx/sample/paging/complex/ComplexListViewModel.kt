@@ -11,7 +11,6 @@ import com.xiaocydx.cxrv.paging.flowMap
 import com.xiaocydx.cxrv.paging.storeIn
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -30,7 +29,7 @@ class ComplexListViewModel(repository: ComplexRepository = ComplexRepository()) 
     val rvId = ViewCompat.generateViewId()
     val complexFlow = broadcastFlow.storeIn(state, viewModelScope)
     val scrollEvent = _syncSelectId.receiveAsFlow()
-        .distinctUntilChanged().map(::findPositionForId).filter { it != -1 }
+        .map(::findPositionForId).filter { it != -1 }
 
     fun syncSelectId(id: String) {
         _syncSelectId.trySend(id)

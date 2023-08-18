@@ -45,7 +45,7 @@ import com.xiaocydx.sample.transition.EnterTransitionController
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 
 /**
@@ -147,8 +147,8 @@ class ComplexListFragment : Fragment(), TransformSender {
             .onEach(rvComplex::scrollToPosition)
             .onEach { rvComplex.optimizeNextFrameScroll() }
             .onEach { rvComplex.awaitPreDraw() }
-            .mapNotNull(rvComplex::findViewHolderForAdapterPosition)
-            .onEach { setTransformView(it.itemView) }
+            .map(rvComplex::findViewHolderForAdapterPosition)
+            .onEach { setTransformView(it?.itemView) }
             .launchIn(viewLifecycleScope)
     }
 
