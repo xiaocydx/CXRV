@@ -36,11 +36,11 @@ import kotlin.coroutines.resume
 /**
  * 按[PrepareScope.add]的添加顺序，预创建ViewHolder并放入[RecycledViewPool]
  *
- * **注意**：该函数需要在视图初始化阶段调用，如果有自定义的[RecycledViewPool]，
- * 那么在调用该函数之前，先对RecyclerView设置自定义的[RecycledViewPool]，例如：
+ * **注意**：该函数需要在视图初始化阶段调用，如果有自定义[RecycledViewPool]，
+ * 那么在调用该函数之前，先对RecyclerView设置自定义[RecycledViewPool]，例如：
  * ```
  * lifecycleScope.launch {
- *     recyclerView = CustomRecycledViewPool()
+ *     recyclerView.setRecycledViewPool(CustomRecycledViewPool())
  *     val result = recyclerView.prepareScrap(
  *         prepareAdapter = adapter,
  *         prepareDeadline = PrepareDeadline.FOREVER_NS,
