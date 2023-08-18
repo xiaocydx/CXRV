@@ -18,11 +18,13 @@ package com.xiaocydx.cxrv.list
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
-import io.mockk.spyk
-import io.mockk.verify
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.toList
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -128,12 +130,52 @@ internal class ListStateTest {
     }
 
     @Test
-    fun dispatchUpdatedListener(): Unit = runBlockingTest { listState ->
-        val listener: (UpdateOp<String>) -> Unit = spyk()
-        listState.addUpdatedListener(listener)
+    fun emitLatest(): Unit = runBlockingTest { listState ->
+        val events = mutableListOf<ListEvent<String>>()
+        val flow = listState.asFlow()
+        val job = flow.onEach { data ->
+            data.flow.toList(events)
+        }.launchIn(this)
+        delay(200)
+        job.cancelAndJoin()
+        assertThat(events).hasSize(1)
+        assertThat(events.first().op).isInstanceOf(UpdateOp.SubmitList::class.java)
+        assertThat(events.first().version).isEqualTo(0)
+    }
+
+    @Test
+    fun emitUpdateOp(): Unit = runBlockingTest { listState ->
+        val ops = mutableListOf<UpdateOp<String>>()
+        val flow = listState.asFlow()
+        val job = flow.onEach { data ->
+            data.flow.map { it.op }.toList(ops)
+        }.launchIn(this)
         val op: UpdateOp<String> = UpdateOp.SubmitList(listOf("A"))
         listState.updateList(op).awaitTrue()
-        verify(exactly = 1) { listener.invoke(op) }
+        delay(200)
+        job.cancelAndJoin()
+        assertThat(ops).hasSize(1)
+        assertThat(ops.first()).isEqualTo(op)
+    }
+
+    @Test
+    fun clearUpdateOp(): Unit = runBlockingTest { listState ->
+        val flow = listState.asFlow()
+        val job1 = flow.onEach { data ->
+            data.flow.collect { awaitCancellation() }
+        }.launchIn(this)
+
+        repeat(10) { listState.updateList(UpdateOp.SubmitList(listOf("A"))) }
+        delay(200)
+        job1.cancelAndJoin()
+
+        val ops = mutableListOf<UpdateOp<String>>()
+        val job2 = flow.onEach { data ->
+            data.flow.map { it.op }.toList(ops)
+        }.launchIn(this)
+        delay(200)
+        job2.cancelAndJoin()
+        assertThat(ops).hasSize(1)
     }
 
     @Test

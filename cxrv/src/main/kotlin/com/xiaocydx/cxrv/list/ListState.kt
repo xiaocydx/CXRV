@@ -18,11 +18,10 @@ package com.xiaocydx.cxrv.list
 
 import androidx.annotation.MainThread
 import com.xiaocydx.cxrv.internal.*
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.flow
 
 /**
  * 列表状态，和视图控制器建立基于[ListOwner]的双向通信
@@ -78,9 +77,10 @@ import kotlinx.coroutines.flow.callbackFlow
  * @date 2022/2/17
  */
 class ListState<T : Any> : ListOwner<T> {
-    private var listeners = InlineList<(UpdateOp<T>) -> Unit>()
+    private val _updateEvent = MutableSharedFlow<UpdateOp<T>>(extraBufferCapacity = Int.MAX_VALUE)
     private val sourceList: ArrayList<T> = arrayListOf()
     override val currentList: List<T> = sourceList.toUnmodifiableList()
+    internal val updateEvent: Flow<UpdateOp<T>> = _updateEvent.asSharedFlow()
     internal var version: Int = 0
         private set
 
@@ -98,21 +98,9 @@ class ListState<T : Any> : ListOwner<T> {
         }
         if (succeed) {
             version++
-            listeners.reverseAccessEach { it(op) }
+            _updateEvent.tryEmit(op)
         }
         return if (succeed) SuccessResult else FailureResult
-    }
-
-    @MainThread
-    internal fun addUpdatedListener(listener: (UpdateOp<T>) -> Unit) {
-        assertMainThread()
-        listeners += listener
-    }
-
-    @MainThread
-    internal fun removeUpdatedListener(listener: (UpdateOp<T>) -> Unit) {
-        assertMainThread()
-        listeners -= listener
     }
 
     @MainThread
@@ -211,24 +199,19 @@ fun <T : Any> ListState<T>.asFlow(): Flow<ListData<T>> = unsafeFlow {
 internal class ListMediatorImpl<T : Any>(
     private val listState: ListState<T>
 ) : ListMediator<T> {
-    private var collected = false
+    private var isCollected = false
     override val version: Int
         get() = listState.version
     override val currentList: List<T>
         get() = listState.currentList
 
-    val flow: Flow<ListEvent<T>> = callbackFlow {
-        check(!collected) { "列表更新流Flow<ListEvent<*>>只能被收集一次" }
-        collected = true
+    val flow: Flow<ListEvent<T>> = flow {
+        check(!isCollected) { "更新事件流Flow<ListEvent<*>>只能被收集一次" }
+        isCollected = true
         // 先发射最新的列表数据和版本号，让下游判断是否需要更新
-        send(ListEvent(UpdateOp.SubmitList(currentList), version))
-
-        val listener: (UpdateOp<T>) -> Unit = {
-            trySend(ListEvent(it, version))
-        }
-        listState.addUpdatedListener(listener)
-        awaitClose { listState.removeUpdatedListener(listener) }
-    }.buffer(UNLIMITED).flowOnMain()
+        emit(ListEvent(UpdateOp.SubmitList(currentList), version))
+        listState.updateEvent.collect { emit(ListEvent(it, version)) }
+    }.flowOnMain()
 
     override fun isSameList(other: ListMediator<T>?): Boolean {
         if (other !is ListMediatorImpl) return false
