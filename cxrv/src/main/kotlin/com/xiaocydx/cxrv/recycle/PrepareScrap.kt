@@ -20,6 +20,7 @@
 package androidx.recyclerview.widget
 
 import android.os.Looper
+import android.util.SparseIntArray
 import android.view.Choreographer
 import androidx.annotation.IntRange
 import androidx.annotation.MainThread
@@ -66,7 +67,7 @@ import kotlin.coroutines.resume
  * 供多处调用该函数的地方使用。
  *
  * @param block 调用[PrepareScope.add]，添加预创建的键值对，添加顺序决定创建顺序，
- * 如果对RecyclerView设置的[RecycledViewPool]，已经存在ViewHolder（共享池场景）
+ * 如果对RecyclerView设置的[RecycledViewPool]，已经存在ViewHolder（共享池场景），
  * 那么可以先减去[RecycledViewPool.getRecycledViewCount]，再添加预创建的键值对。
  *
  * @return [PrepareResult]提供数量查询函数，可用于数据统计或者单元测试。
@@ -169,14 +170,14 @@ class PrepareResult private constructor(
     initialCapacity: Int,
     private val recycledViewPool: RecycledViewPool
 ) {
-    private val preparedScrapList: List<ViewHolder>
+    private val preparedScrapCount: SparseIntArray?
     internal val channelCapacity: Int
 
     init {
         var capacity = CHANNEL_DEFAULT_CAPACITY
         if (initialCapacity > capacity) capacity = UNLIMITED
         channelCapacity = capacity
-        preparedScrapList = if (initialCapacity > 0) ArrayList(initialCapacity) else emptyList()
+        preparedScrapCount = if (initialCapacity > 0) SparseIntArray() else null
     }
 
     /**
@@ -195,15 +196,16 @@ class PrepareResult private constructor(
      */
     fun getPreparedScrapCount(viewType: Int): Int {
         assertMainThread()
-        return preparedScrapList.fold(0) { acc, scrap ->
-            if (scrap.itemViewType == viewType) acc + 1 else acc
-        }
+        return preparedScrapCount?.get(viewType) ?: 0
     }
 
     internal fun putScrapToRecycledViewPool(scrap: ViewHolder) {
         assertMainThread()
         recycledViewPool.putScrap(scrap)
-        preparedScrapList.let { it as? MutableList<ViewHolder> }?.add(scrap)
+        preparedScrapCount?.apply {
+            val count = get(scrap.itemViewType)
+            put(scrap.itemViewType, count + 1)
+        }
     }
 
     private fun RecycledViewPool.putScrap(scrap: ViewHolder) {
@@ -233,8 +235,8 @@ private class DeadlineNsObserver(
     private val adapter: Adapter<*>,
     private val cont: CancellableContinuation<Long>
 ) : AdapterDataObserver() {
+    private var isResumed = false
     private var isRegister = false
-    private var isResume = false
 
     fun attach() {
         if (adapter.itemCount > 0) return resume()
@@ -258,10 +260,10 @@ private class DeadlineNsObserver(
     }
 
     private fun resume() {
-        if (isResume) return
-        isResume = true
+        if (isResumed) return
+        isResumed = true
+        unregisterAdapterDataObserver()
         Choreographer.getInstance().postFrameCallbackDelayed({ frameTimeNs ->
-            unregisterAdapterDataObserver()
             cont.resume(frameTimeNs)
         }, Long.MIN_VALUE)
     }

@@ -87,8 +87,14 @@ enum class SlideState {
 
 class ContentAdapter : RecyclerView.Adapter<ContentAdapter.Holder>() {
     private var count = 0
+    private var onCreateViewHolder: ((Int) -> Unit)? = null
+
+    fun onCreateViewHolder(block: (Int) -> Unit) {
+        onCreateViewHolder = block
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
+        onCreateViewHolder?.invoke(viewType)
         val view = ItemSlideContentBinding.inflate(
             LayoutInflater.from(parent.context), parent, false)
         return Holder(view)
