@@ -37,7 +37,7 @@ internal sealed class DispatchTarget(
         private set
 
     fun setCurrentTargetView(itemView: View, event: MotionEvent): Boolean {
-        val targetView = targetView(itemView, event)
+        val targetView = targetView(itemView, event)?.takeIf { it.isAttachedToWindow }
         if (targetView !== currentTargetView) {
             // 当前目标视图改变，清除之前目标视图的全部监听
             clearCurrentTargetViewListeners()
