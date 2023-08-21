@@ -27,8 +27,11 @@ import androidx.annotation.IntRange
  * @date 2022/11/22
  */
 sealed class Payload {
-    private var values = EMPTY
     private var isCompleted = false
+
+    @PublishedApi
+    internal var values = EMPTY
+        private set
 
     /**
      * 添加[value]
@@ -48,35 +51,7 @@ sealed class Payload {
 
     protected fun checkCompleted() = check(!isCompleted) { "已完成添加" }
 
-    /**
-     * [values]是否为空，若为空，则表示未调用[add]添加`value`
-     */
-    @PublishedApi
-    internal fun isEmpty() = values == EMPTY
-
-    /**
-     * 取[values]的最高位1，可作为遍历的起始值
-     */
-    @PublishedApi
-    internal fun takeHighestValue() = values.takeHighestOneBit()
-
-    /**
-     * 取[values]的最低位1，可作为遍历的结束值
-     */
-    @PublishedApi
-    internal fun takeLowestValue() = values.takeLowestOneBit()
-
-    /**
-     * 检查[value]是否为2的幂次方
-     */
-    @PublishedApi
-    internal fun check(@IntRange(from = 1) value: Int) = (value and (value - 1)) == 0
-
-    /**
-     * [values]是否包含[value]
-     */
-    @PublishedApi
-    internal fun contains(@IntRange(from = 1) value: Int) = (values and value) == value
+    private fun check(value: Int) = (value and (value - 1)) == 0
 
     /**
      * 去除重复的`value`，合并为一个`values`，[values]已通过检查
@@ -150,15 +125,21 @@ internal fun Payload.Companion.merge(payloads: List<Any>): Payload {
 }
 
 /**
+ * [values]是否为空，若为空，则表示未调用[Payload.add]添加`value`
+ */
+@PublishedApi
+internal fun Payload.isEmpty() = values == Payload.EMPTY
+
+/**
  * 对每个`value`执行[action]
  */
 @PublishedApi
 internal inline fun Payload.forEach(action: (value: Int) -> Unit): Payload {
-    var value = takeHighestValue()
-    val endValue = takeLowestValue()
-    while (value != Payload.EMPTY && value >= endValue) {
-        if (contains(value)) action(value)
-        value = value ushr 1
+    var values = values
+    while (values != 0) {
+        val removed = values and (values - 1)
+        action(values - removed)
+        values = removed
     }
     return this
 }

@@ -82,6 +82,27 @@ internal class PayloadTest {
 
     @Test
     @Suppress("LocalVariableName")
+    fun forEach() {
+        val VALUES = listOf(
+            Payload.value(1),
+            Payload.value(2),
+            Payload.value(3),
+            Payload.value(29),
+            Payload.value(30),
+            Payload.value(31)
+        )
+        val payload = Payload { VALUES.forEach(::add) }
+
+        val outcome = mutableListOf<Int>()
+        payload.forEach { outcome.add(it) }
+        assertThat(outcome).hasSize(VALUES.size)
+        outcome.forEachIndexed { index, value ->
+            assertThat(value).isEqualTo(VALUES[index])
+        }
+    }
+
+    @Test
+    @Suppress("LocalVariableName")
     fun takeForEach() {
         val VALUE1 = Payload.value(1)
         val VALUE2 = Payload.value(2)
