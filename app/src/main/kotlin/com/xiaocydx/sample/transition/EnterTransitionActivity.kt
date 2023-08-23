@@ -45,22 +45,25 @@ class EnterTransitionActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityEnterTransitionBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        binding.rvAction
-            .linear(HORIZONTAL)
-            .divider(10.dp, 10.dp) {
-                edge(Edge.all())
-            }
-            .adapter(bindingAdapter(
-                uniqueId = TransitionAction::ordinal,
-                inflate = ItemButtonBinding::inflate
-            ) {
-                submitList(TransitionAction.values().toList())
-                doOnSimpleItemClick(::performTransitionAction)
-                onBindView { root.text = it.text }
-            })
+        setContentView(contentView())
     }
+
+    private fun contentView() = ActivityEnterTransitionBinding
+        .inflate(layoutInflater).apply {
+            rvAction
+                .linear(HORIZONTAL)
+                .divider(10.dp, 10.dp) {
+                    edge(Edge.all())
+                }
+                .adapter(bindingAdapter(
+                    uniqueId = TransitionAction::ordinal,
+                    inflate = ItemButtonBinding::inflate
+                ) {
+                    submitList(TransitionAction.values().toList())
+                    doOnSimpleItemClick(::performTransitionAction)
+                    onBindView { root.text = it.text }
+                })
+        }.root
 
     private fun performTransitionAction(action: TransitionAction) {
         when (action) {

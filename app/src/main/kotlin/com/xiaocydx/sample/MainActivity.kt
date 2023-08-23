@@ -15,8 +15,7 @@ import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.concat.HeaderFooterActivity
 import com.xiaocydx.sample.databinding.ItemStartBinding
 import com.xiaocydx.sample.itemclick.ItemClickActivity
-import com.xiaocydx.sample.itemselect.MultiSelectionActivity
-import com.xiaocydx.sample.itemselect.SingleSelectionActivity
+import com.xiaocydx.sample.itemselect.ItemSelectActivity
 import com.xiaocydx.sample.itemtouch.ItemTouchActivity
 import com.xiaocydx.sample.liststate.ListStateActivity
 import com.xiaocydx.sample.multitype.MultiTypeActivity
@@ -59,8 +58,7 @@ class MainActivity : AppCompatActivity() {
     private fun startActionList() = listOf(
         "item点击、长按示例" to ItemClickActivity::class,
         "item拖动、侧滑示例" to ItemTouchActivity::class,
-        "item单项选择示例" to SingleSelectionActivity::class,
-        "item多项选择示例" to MultiSelectionActivity::class,
+        "item单选、多选示例" to ItemSelectActivity::class,
         "item多类型示例" to MultiTypeActivity::class,
         "Payload更新示例" to PayloadActivity::class,
         "HeaderFooter示例" to HeaderFooterActivity::class,

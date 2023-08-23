@@ -27,10 +27,7 @@
             android:name=".itemtouch.ItemTouchActivity"
             android:exported="false" />
         <activity
-            android:name=".itemselect.SingleSelectionActivity"
-            android:exported="false" />
-        <activity
-            android:name=".itemselect.MultiSelectionActivity"
+            android:name=".itemselect.ItemSelectActivity"
             android:exported="false" />
         <activity
             android:name=".multitype.MultiTypeActivity"

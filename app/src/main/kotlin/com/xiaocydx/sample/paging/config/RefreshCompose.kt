@@ -139,9 +139,7 @@ internal class DefaultSwipeRefreshLayout(context: Context) : SwipeRefreshLayout(
             val loadType = event.loadType
             val loadState = event.loadStates.refresh
             if (loadType != LoadType.REFRESH || !loadState.isComplete) return
-            val timeMillis = refreshCompleteWhen - SystemClock.uptimeMillis()
-            if (timeMillis <= 0) return
-            delay(timeMillis)
+            delay(timeMillis = refreshCompleteWhen - SystemClock.uptimeMillis())
         }
 
         override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {

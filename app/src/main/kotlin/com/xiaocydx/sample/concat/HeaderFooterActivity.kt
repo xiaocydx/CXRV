@@ -33,35 +33,34 @@ class HeaderFooterActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityHeaderFooterBinding.inflate(layoutInflater)
-        setContentView(binding.initHeader().initFooter().initFoo().root)
+        setContentView(contentView())
     }
 
-    private fun ActivityHeaderFooterBinding.initHeader() = apply {
-        header = createView(isHeader = true)
-        btnAddHeader.onClick { rvFoo.addHeader(header) }
-        btnRemoveHeader.onClick { rvFoo.removeHeader(header)?.let { checkRemoved(it) } }
-    }
+    private fun contentView() = ActivityHeaderFooterBinding
+        .inflate(layoutInflater).apply {
+            // initHeader
+            header = createView(isHeader = true)
+            btnAddHeader.onClick { rvFoo.addHeader(header) }
+            btnRemoveHeader.onClick { rvFoo.removeHeader(header)?.let { checkRemoved(it) } }
 
-    private fun ActivityHeaderFooterBinding.initFooter() = apply {
-        footer = createView(isHeader = false)
-        btnAddFooter.onClick { rvFoo.addFooter(footer) }
-        btnRemoveFooter.onClick { rvFoo.removeFooter(footer)?.let { checkRemoved(it) } }
-    }
+            // initFooter
+            footer = createView(isHeader = false)
+            btnAddFooter.onClick { rvFoo.addFooter(footer) }
+            btnRemoveFooter.onClick { rvFoo.removeFooter(footer)?.let { checkRemoved(it) } }
 
-    private fun ActivityHeaderFooterBinding.initFoo() = apply {
-        val fooAdapter = FooListAdapter().apply {
-            submitList((1..3).map(::createFoo))
-        }
-        // 注意：先设置fooAdapter确定内容区，再添加header和footer
-        rvFoo.linear().divider(height = 5.dp).adapter(fooAdapter)
+            // initFoo
+            val fooAdapter = FooListAdapter().apply {
+                submitList((1..3).map(::createFoo))
+            }
+            // 注意：先设置fooAdapter确定内容区，再添加header和footer
+            rvFoo.linear().divider(height = 5.dp).adapter(fooAdapter)
 
-        // 对初始化阶段不添加header和footer，而是后续动态添加和移除的场景而言，
-        // 先设置HeaderFooterConcatAdapter，能让首次添加有动画效果且性能更高。
-        // rvFoo.adapter(HeaderFooterConcatAdapter(fooAdapter))
-        rvFoo.addHeader(header)
-        rvFoo.addFooter(footer)
-    }
+            // 对初始化阶段不添加header和footer，而是后续动态添加和移除的场景而言，
+            // 先设置HeaderFooterConcatAdapter，能让首次添加有动画效果且性能更高。
+            // rvFoo.adapter(HeaderFooterConcatAdapter(fooAdapter))
+            rvFoo.addHeader(header)
+            rvFoo.addFooter(footer)
+        }.root
 
     /**
      * HeaderFooter的实现确保从RecyclerView的缓存中清除已移除的Header和Footer，

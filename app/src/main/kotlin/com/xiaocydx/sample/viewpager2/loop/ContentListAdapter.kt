@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.sample.SimpleViewHolder
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 
@@ -29,7 +30,7 @@ class ContentListAdapter : ListAdapter<ContentItem, ViewHolder>() {
             setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15f)
             layoutParams(matchParent, matchParent)
         }
-        return object : ViewHolder(textView) {}
+        return SimpleViewHolder(textView)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, item: ContentItem) {

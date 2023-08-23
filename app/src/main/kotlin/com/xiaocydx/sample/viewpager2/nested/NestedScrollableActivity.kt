@@ -28,20 +28,20 @@ class NestedScrollableActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityNestedScrollableBinding.inflate(layoutInflater)
-        setContentView(binding.initView().root)
+        setContentView(contentView())
     }
 
-    private fun ActivityNestedScrollableBinding.initView() = apply {
-        viewPager2.offscreenPageLimit = 2
-        viewPager2.adapter = NestedPageAdapter()
-        TabLayoutMediator(
-            tabLayout,
-            viewPager2,
-            /* autoRefresh */true,
-            /* smoothScroll */true
-        ) { tab, position ->
-            tab.text = "Nested-${position + 1}"
-        }.attach()
-    }
+    private fun contentView() = ActivityNestedScrollableBinding
+        .inflate(layoutInflater).apply {
+            viewPager2.offscreenPageLimit = 2
+            viewPager2.adapter = NestedPageAdapter()
+            TabLayoutMediator(
+                tabLayout,
+                viewPager2,
+                /* autoRefresh */true,
+                /* smoothScroll */true
+            ) { tab, position ->
+                tab.text = "Nested-${position + 1}"
+            }.attach()
+        }.root
 }

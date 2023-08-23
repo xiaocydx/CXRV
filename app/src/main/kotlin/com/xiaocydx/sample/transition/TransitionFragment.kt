@@ -20,6 +20,7 @@ import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.grid
+import com.xiaocydx.sample.SimpleViewHolder
 import com.xiaocydx.sample.databinding.ItemSlideContentBinding
 import com.xiaocydx.sample.databinding.ItemSlideLoadingBinding
 import com.xiaocydx.sample.dp
@@ -119,7 +120,7 @@ class LoadingAdapter : ViewAdapter<ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = ItemSlideLoadingBinding.inflate(
             LayoutInflater.from(parent.context), parent, false)
-        return object : ViewHolder(view.root) {}
+        return SimpleViewHolder(view.root)
     }
 
     override fun getItemViewType(): Int = javaClass.hashCode()

@@ -8,6 +8,7 @@ import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
+import com.xiaocydx.sample.SimpleViewHolder
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
@@ -26,7 +27,7 @@ class NestedPageAdapter : RecyclerView.Adapter<ViewHolder>() {
             .layoutParams(matchParent, matchParent)
             .overScrollNever().linear().fixedSize()
             .adapter(OuterListAdapter(15).withHeader(header))
-        return object : ViewHolder(view) {}
+        return SimpleViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) = Unit

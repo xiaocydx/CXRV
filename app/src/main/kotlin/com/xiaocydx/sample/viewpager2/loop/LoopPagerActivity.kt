@@ -35,20 +35,17 @@ import kotlinx.coroutines.Job
  */
 class LoopPagerActivity : AppCompatActivity() {
     private val viewModel: ContentViewModel by viewModels()
-    private lateinit var binding: ActivityLoopPagerBinding
     private lateinit var adapter: ContentListAdapter
     private lateinit var controller: LoopPagerController
     private var bannerJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityLoopPagerBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        initView()
-        initCollect()
+        val binding = ActivityLoopPagerBinding.inflate(layoutInflater)
+        setContentView(binding.initView().initCollect().root)
     }
 
-    private fun initView() = with(binding) {
+    private fun ActivityLoopPagerBinding.initView() = apply {
         adapter = ContentListAdapter()
         adapter.doOnItemClick { holder, item ->
             showToast("item.text = ${item.text}\n" +
@@ -83,7 +80,7 @@ class LoopPagerActivity : AppCompatActivity() {
             })
     }
 
-    private fun initCollect() {
+    private fun ActivityLoopPagerBinding.initCollect() = apply {
         adapter.doOnListChanged changed@{
             if (!viewModel.consumeScrollToFirst()) return@changed
             controller.scrollToPosition(0)

@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.Px
 import androidx.core.view.doOnPreDraw
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -64,9 +65,12 @@ inline fun ViewPager2.registerOnPageChangeCallback(
     override fun onPageScrollStateChanged(state: Int) = onScrollStateChanged(state)
 }.also(::registerOnPageChangeCallback)
 
-internal suspend fun View.awaitPreDraw() {
+suspend fun View.awaitPreDraw() {
     suspendCancellableCoroutine { cont ->
         val listener = doOnPreDraw { cont.resume(Unit) }
         cont.invokeOnCancellation { listener.removeListener() }
     }
 }
+
+@Suppress("FunctionName")
+fun SimpleViewHolder(itemView: View) = object : RecyclerView.ViewHolder(itemView) {}

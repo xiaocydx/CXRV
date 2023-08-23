@@ -23,30 +23,31 @@ class ItemClickActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(ActivityItemClickBinding.inflate(layoutInflater).initView().root)
+        setContentView(contentView())
     }
 
-    private fun ActivityItemClickBinding.initView() = apply {
-        rvClick.linear()
-        val scenesList = ItemClickScenesList()
-        var disposable = scenesList.first().apply(rvClick)
-        rvScenes
-            .linear(HORIZONTAL)
-            .divider(10.dp, 10.dp) {
-                edge(Edge.all())
-            }
-            .adapter(bindingAdapter(
-                uniqueId = ItemClickScenes::text,
-                inflate = ItemButtonBinding::inflate
-            ) {
-                submitList(scenesList)
-                doOnItemClick { _, item ->
-                    disposable.dispose()
-                    disposable = item.apply(rvClick)
+    private fun contentView() = ActivityItemClickBinding
+        .inflate(layoutInflater).apply {
+            rvClick.linear()
+            val scenesList = ItemClickScenesList()
+            var disposable = scenesList.first().apply(rvClick)
+            rvScenes
+                .linear(HORIZONTAL)
+                .divider(10.dp, 10.dp) {
+                    edge(Edge.all())
                 }
-                onBindView { root.text = it.text }
-            })
-    }
+                .adapter(bindingAdapter(
+                    uniqueId = ItemClickScenes::text,
+                    inflate = ItemButtonBinding::inflate
+                ) {
+                    submitList(scenesList)
+                    doOnItemClick { _, item ->
+                        disposable.dispose()
+                        disposable = item.apply(rvClick)
+                    }
+                    onBindView { root.text = it.text }
+                })
+        }.root
 
     /**
      * [ItemClickScenes]演示了从基础函数开始，逐步增强和简化的过程

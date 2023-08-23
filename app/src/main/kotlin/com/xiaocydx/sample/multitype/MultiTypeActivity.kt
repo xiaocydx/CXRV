@@ -1,13 +1,14 @@
 package com.xiaocydx.sample.multitype
 
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import com.xiaocydx.sample.R
+import com.xiaocydx.sample.databinding.ActivityMultitypeBinding
 import com.xiaocydx.sample.multitype.onetomany.OneToManyFragment
 import com.xiaocydx.sample.multitype.onetoone.OneToOneFragment
+import com.xiaocydx.sample.onClick
 
 /**
  * item多类型示例代码
@@ -19,15 +20,21 @@ class MultiTypeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_multitype)
-        if (savedInstanceState == null) initOneToOneFragment(null)
+        setContentView(contentView())
+        if (savedInstanceState == null) initOneToOneFragment()
     }
 
-    fun initOneToOneFragment(view: View?) {
+    private fun contentView() = ActivityMultitypeBinding
+        .inflate(layoutInflater).apply {
+            btnOneToOne.onClick(::initOneToOneFragment)
+            btnOneToMany.onClick(::initOneToManyFragment)
+        }.root
+
+    private fun initOneToOneFragment() {
         replaceFragment(OneToOneFragment())
     }
 
-    fun initOneToManyFragment(view: View?) {
+    private fun initOneToManyFragment() {
         replaceFragment(OneToManyFragment())
     }
 

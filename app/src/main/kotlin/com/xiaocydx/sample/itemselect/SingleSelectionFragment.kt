@@ -1,11 +1,13 @@
 package com.xiaocydx.sample.itemselect
 
 import android.os.Bundle
-import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.cxrv.binding.BindingAdapter
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
@@ -32,18 +34,17 @@ import com.xiaocydx.sample.overScrollNever
  * @author xcc
  * @date 2022/2/18
  */
-class SingleSelectionActivity : AppCompatActivity() {
+class SingleSelectionFragment : Fragment() {
     private val viewModel: SelectionViewModel by viewModels()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(contentView())
-    }
-
     /**
-     * [BindingAdapter]的构建函数，适用于简单列表场景
+     * [bindingAdapter]适用于简单列表场景
      */
-    private fun contentView() = RecyclerView(this)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View = RecyclerView(requireContext())
         .apply { id = viewModel.rvId }
         .layoutParams(matchParent, matchParent)
         .overScrollNever().linear().fixedSize()

@@ -8,30 +8,30 @@
         android:id="@+id/container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/btnOneToOne"
+        app:layout_constraintBottom_toTopOf="@id/btnSingleSelection"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/btnOneToOne"
+        android:id="@+id/btnSingleSelection"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:onClick="initOneToOneFragment"
-        android:text="OneToOne多类型"
+        android:text="单项选择"
         android:textAllCaps="false"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnMultiSelection"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:id="@+id/btnOneToMany"
+        android:id="@+id/btnMultiSelection"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="20dp"
-        android:onClick="initOneToManyFragment"
-        android:text="OneToMany多类型"
+        android:text="多项选择"
         android:textAllCaps="false"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnSingleSelection" />
 </androidx.constraintlayout.widget.ConstraintLayout>
