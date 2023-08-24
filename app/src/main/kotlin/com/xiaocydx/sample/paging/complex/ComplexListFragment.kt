@@ -22,7 +22,6 @@ import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.R
-import com.xiaocydx.sample.awaitPreDraw
 import com.xiaocydx.sample.databinding.ItemComplexBinding
 import com.xiaocydx.sample.doOnStateChanged
 import com.xiaocydx.sample.dp
@@ -104,15 +103,14 @@ class ComplexListFragment : Fragment(), TransformSender {
             }
 
             doOnItemClick { holder, item ->
+                viewModel.setPendingState(item.id)
                 when (item.type) {
-                    ComplexItem.TYPE_VIDEO -> {
-                        viewModel.setPendingInitialState(item.id)
-                        forwardTransform(holder.itemView, VideoStreamFragment::class)
-                    }
-                    ComplexItem.TYPE_AD -> {
-                        val args = AdFragment.createArgs(item.id)
-                        forwardTransform(holder.itemView, AdFragment::class, args)
-                    }
+                    ComplexItem.TYPE_VIDEO -> forwardTransform(
+                        holder.itemView, VideoStreamFragment::class
+                    )
+                    ComplexItem.TYPE_AD -> forwardTransform(
+                        holder.itemView, AdFragment::class
+                    )
                 }
             }
         }
@@ -139,14 +137,16 @@ class ComplexListFragment : Fragment(), TransformSender {
             .repeatOnLifecycle(viewLifecycle)
             .launchInLifecycleScope()
 
-        // 1. rvComplex.optimizeNextFrameScroll()
+        // rvComplex.optimizeNextFrameScroll()
         // 非平滑滚动布局流程的优化方案，可用于替代增加缓存上限的方案
-        // 2. rvComplex.awaitPreDraw()
-        // 等待下一帧非平滑滚动布局完成，再查找指定位置的目标view
         viewModel.scrollEvent
             .onEach(rvComplex::scrollToPosition)
             .onEach { rvComplex.optimizeNextFrameScroll() }
-            .onEach { rvComplex.awaitPreDraw() }
+            .launchIn(viewLifecycleScope)
+
+        // 当退出页面时，消费同步位置，Fragment重新创建不需要恢复同步位置
+        transformReturn
+            .map { viewModel.consumeSyncPosition() }
             .map(rvComplex::findViewHolderForAdapterPosition)
             .onEach { setTransformView(it?.itemView) }
             .launchIn(viewLifecycleScope)

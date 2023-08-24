@@ -4,6 +4,7 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListState
+import com.xiaocydx.cxrv.list.getItemOrNull
 import com.xiaocydx.cxrv.paging.PagingConfig
 import com.xiaocydx.cxrv.paging.broadcastIn
 import com.xiaocydx.cxrv.paging.dataMap
@@ -13,6 +14,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 
 /**
@@ -20,28 +22,39 @@ import kotlinx.coroutines.flow.receiveAsFlow
  * @date 2023/7/30
  */
 class ComplexListViewModel(repository: ComplexRepository = ComplexRepository()) : ViewModel() {
-    private var pendingInitialState: VideoStreamInitialState? = null
-    private val _syncSelectId = Channel<String>(CONFLATED)
     private val state = ListState<ComplexItem>()
     private val pager = repository.getComplexPager(PagingConfig(pageSize = 16))
     private val broadcastFlow = pager.flow.broadcastIn(viewModelScope)
+    private val syncEvent = Channel<String>(CONFLATED)
+    private var syncId = ""
+    private var pendingState: VideoStreamInitialState? = null
 
     val rvId = ViewCompat.generateViewId()
     val complexFlow = broadcastFlow.storeIn(state, viewModelScope)
-    val scrollEvent = _syncSelectId.receiveAsFlow()
+    val scrollEvent = syncEvent.receiveAsFlow()
+        .onStart { if (syncId.isNotEmpty()) emit(syncId) }
         .map(::findPositionForId).filter { it != -1 }
 
-    fun syncSelectId(id: String) {
-        _syncSelectId.trySend(id)
+    fun syncSelect(id: String) {
+        if (syncId == id) return
+        syncId = id
+        syncEvent.trySend(syncId)
     }
 
-    fun setPendingInitialState(currentId: String) {
-        val videoList = state.currentList.toViewStreamList()
-        val position = videoList.indexOfFirst { it.id == currentId }.coerceAtLeast(0)
-        pendingInitialState = VideoStreamInitialState(position, videoList)
+    fun setPendingState(id: String) {
+        val item = findPositionForId(id).let(state::getItemOrNull)
+        syncId = item?.id ?: ""
+        pendingState = null
+        if (item?.type == ComplexItem.TYPE_VIDEO) {
+            val videoList = state.currentList.toViewStreamList()
+            val position = videoList.indexOfFirst { it.id == syncId }.coerceAtLeast(0)
+            pendingState = VideoStreamInitialState(position, videoList)
+        }
     }
 
-    fun consumePendingInitialState() = pendingInitialState?.also { pendingInitialState = null }
+    fun consumePendingState() = pendingState?.also { pendingState = null }
+
+    fun consumeSyncPosition() = syncId.also { syncId = "" }.let(::findPositionForId)
 
     fun videoStreamFlow() = broadcastFlow.flowMap { flow ->
         flow.dataMap { _, data -> data.toViewStreamList() }

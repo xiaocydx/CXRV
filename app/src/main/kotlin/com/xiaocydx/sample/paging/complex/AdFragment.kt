@@ -5,7 +5,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
 import com.xiaocydx.sample.doOnStateChanged
 import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
@@ -34,9 +33,6 @@ import kotlinx.coroutines.flow.onEach
  * @date 2023/8/4
  */
 class AdFragment : TransitionFragment(), TransformReceiver {
-    private val complexViewModel: ComplexListViewModel by viewModels(
-        ownerProducer = { parentFragment ?: requireActivity() }
-    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,14 +46,7 @@ class AdFragment : TransitionFragment(), TransformReceiver {
         .attach(super.onCreateView(inflater, container, savedInstanceState))
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        viewLifecycle.doOnStateChanged { source, event ->
-            val currentState = source.lifecycle.currentState
-            Log.d("AdFragment", "currentState = ${currentState}, event = $event")
-        }
-
-        arguments?.getString(KET_ID)
-            .takeIf { savedInstanceState != null }
-            ?.let(complexViewModel::syncSelectId)
+        setupDebugLog()
         setTransformEnterTransition().duration = 200
         recyclerView.enableGestureNavBarEdgeToEdge()
 
@@ -82,10 +71,10 @@ class AdFragment : TransitionFragment(), TransformReceiver {
             .launchIn(viewLifecycleScope)
     }
 
-    companion object {
-        private const val KET_ID = "KEY_ID"
-
-        fun createArgs(currentId: String) = Bundle(1)
-            .apply { putString(KET_ID, currentId) }
+    private fun setupDebugLog() {
+        viewLifecycle.doOnStateChanged { source, event ->
+            val currentState = source.lifecycle.currentState
+            Log.d("AdFragment", "currentState = ${currentState}, event = $event")
+        }
     }
 }

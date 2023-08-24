@@ -20,9 +20,7 @@ import android.transition.Transition
 import android.transition.TransitionSet
 import android.transition.TransitionValues
 import android.view.View
-import androidx.fragment.app.Fragment
 import com.google.android.material.transition.platform.MaterialContainerTransform
-import java.lang.ref.WeakReference
 
 /**
  * [MaterialContainerTransform]不能被继承，利用[TransitionSet]包装一层，
@@ -44,9 +42,8 @@ import java.lang.ref.WeakReference
  */
 internal class TransformTransition(
     private val sceneRootId: Int,
-    private val senderView: () -> View?,
-    private val fragmentRef: WeakReference<Fragment>,
-    private val transform: MaterialContainerTransform
+    private val transform: MaterialContainerTransform,
+    private val targetView: (start: Boolean) -> View?
 ) : TransitionSet() {
 
     init {
@@ -72,7 +69,7 @@ internal class TransformTransition(
         // 当transform.createAnimator()创建属性动画时，会向上递归查找drawingView，
         // 若查找不到，则抛出异常，因此在创建属性动画之前，先判断target能否进行查找，
         // return表示不捕获，startValues或endValues会缺一个，也就不会创建属性动画。
-        val target = getTarget(start)
+        val target = targetView(start)
         if (target == null || !canFindDrawingViewById(target)) return
 
         // 当前Transition和transform可能被添加了target，先移除再添加，确保元素不重复
@@ -90,15 +87,6 @@ internal class TransformTransition(
         }
         this.removeTarget(target)
         transform.removeTarget(target)
-    }
-
-    private fun getTarget(start: Boolean): View? {
-        val fragment = fragmentRef.get()
-        return when {
-            fragment == null -> null
-            fragment.isAdded -> if (start) senderView() else fragment.view
-            else -> if (start) fragment.view else senderView()
-        }
     }
 
     private fun Transition.addTargetSafely(target: View) {

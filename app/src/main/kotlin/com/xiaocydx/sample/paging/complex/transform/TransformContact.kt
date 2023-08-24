@@ -24,6 +24,7 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.google.android.material.transition.platform.MaterialContainerTransform
+import kotlinx.coroutines.flow.SharedFlow
 import kotlin.reflect.KClass
 
 /**
@@ -116,6 +117,13 @@ interface TransformContainer {
 interface TransformSender {
 
     /**
+     * 当退出实现[TransformReceiver]的Fragment时，构建变换过渡动画的过程会发射退出事件，
+     * 收集事件，在下一帧布局完成之前，都可以调用[setTransformView]设置`transformView`。
+     */
+    val <S> S.transformReturn: SharedFlow<Unit> where S : Fragment, S : TransformSender
+        get() = requireTransformSceneRoot().transformReturn
+
+    /**
      * 设置参与变换过渡动画的[View]，内部弱引用持有[View]
      *
      * **注意**：若未设置参与变换过渡动画的[View]，则不会运行动画。
@@ -125,11 +133,11 @@ interface TransformSender {
     }
 
     /**
-     * 跳转至实现了[TransformReceiver]的Fragment，运行变换过渡动画
+     * 跳转至实现[TransformReceiver]的Fragment，运行变换过渡动画
      *
      * @param transformView 参与变换过渡动画的[View]，内部弱引用持有[View]
-     * @param fragmentClass 实现了[TransformReceiver]的Fragment的[Class]
-     * @return 若当前已跳转至实现了[TransformReceiver]的Fragment，则返回`false`，表示跳转失败。
+     * @param fragmentClass 实现[TransformReceiver]的Fragment的[Class]
+     * @return 若当前已跳转至实现[TransformReceiver]的Fragment，则返回`false`，表示跳转失败。
      */
     fun <S, R> S.forwardTransform(
         transformView: View,

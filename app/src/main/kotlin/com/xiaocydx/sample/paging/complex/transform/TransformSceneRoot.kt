@@ -34,6 +34,9 @@ import com.google.android.material.transition.platform.MaterialContainerTransfor
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
+import kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import java.lang.ref.WeakReference
 import kotlin.reflect.KClass
 
@@ -52,6 +55,10 @@ internal class TransformSceneRoot(context: Context, private val fragmentManager:
         get() = fragmentManager.findFragmentByTag(TAG_CONTENT)
     private val transformFragment: Fragment?
         get() = fragmentManager.findFragmentByTag(TAG_TRANSFORM)
+    private val _transformReturn = MutableSharedFlow<Unit>(
+        extraBufferCapacity = 1, onBufferOverflow = DROP_OLDEST
+    )
+    val transformReturn = _transformReturn.asSharedFlow()
 
     init {
         fragmentContainer.apply {
@@ -116,9 +123,19 @@ internal class TransformSceneRoot(context: Context, private val fragmentManager:
     }
 
     fun createTransformTransition(fragment: Fragment, transform: MaterialContainerTransform): Transition {
-        val senderView = { transformViewRef?.get() }
         val fragmentRef = WeakReference(fragment)
-        return TransformTransition(fragmentContainer.id, senderView, fragmentRef, transform)
+        return TransformTransition(fragmentContainer.id, transform) { start ->
+            val f = fragmentRef.get()
+            val targetView = when {
+                f == null -> null
+                f.isAdded -> if (start) transformViewRef?.get() else f.view
+                else -> if (start) f.view else transformViewRef?.get()
+            }
+            if (start && targetView === f?.view) {
+                _transformReturn.tryEmit(Unit)
+            }
+            targetView
+        }
     }
 
     private fun setContentFragmentMaxLifecycle(state: State) {

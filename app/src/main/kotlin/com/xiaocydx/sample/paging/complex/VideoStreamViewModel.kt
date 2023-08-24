@@ -42,10 +42,8 @@ class VideoStreamViewModel(videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewM
         selectVideo(initialState.position)
     }
 
-    fun selectVideo(position: Int): Boolean {
-        val changed = _selectPosition.value != position
-        if (changed) _selectPosition.value = position
-        return changed
+    fun selectVideo(position: Int) {
+        _selectPosition.value = position
     }
 
     class Factory(private val videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewModelProvider.Factory {

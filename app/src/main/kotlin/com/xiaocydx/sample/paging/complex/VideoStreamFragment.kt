@@ -136,25 +136,21 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         } else {
             // Fragment重新创建，直接将viewPager2.offscreenPageLimit修改为1
             viewPager2.offscreenPageLimit = 1
-            // Fragment重新创建，需要根据最新选中值，同步选中的位置
-            complexViewModel.syncSelectId(videoViewModel.selectVideoId)
         }
 
         viewLifecycleScope.launchSafely {
             // Fragment首次创建，同步初始状态，下面的selectPosition是同步后的结果
-            complexViewModel.consumePendingInitialState()?.let(videoViewModel::syncInitialState)
+            complexViewModel.consumePendingState()?.let(videoViewModel::syncInitialState)
             // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重新创建同样适用
             videoAdapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
-            var canSyncSelectId = false
             viewPager2.setCurrentItem(videoViewModel.selectPosition.value, false)
             viewPager2.registerOnPageChangeCallback(
-                onSelected = { canSyncSelectId = videoViewModel.selectVideo(it) },
+                onSelected = videoViewModel::selectVideo,
                 onScrollStateChanged = changed@{ state ->
                     // 不依靠onSelected()同步选中位置，因为该函数被调用时仍在进行平滑滚动，
                     // 状态更改为IDLE时才同步选中位置，避免平滑滚动期间同步申请布局造成卡顿。
                     if (state != ViewPager2.SCROLL_STATE_IDLE) return@changed
-                    if (canSyncSelectId) canSyncSelectId = false else return@changed
-                    complexViewModel.syncSelectId(videoViewModel.selectVideoId)
+                    complexViewModel.syncSelect(videoViewModel.selectVideoId)
                 }
             )
         }
