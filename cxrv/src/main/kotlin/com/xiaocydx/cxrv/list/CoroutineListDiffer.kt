@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.internal.swap
 import com.xiaocydx.cxrv.internal.toUnmodifiableList
 import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.sync.Mutex
 import java.util.*
 import kotlin.collections.ArrayDeque
@@ -158,7 +159,7 @@ class CoroutineListDiffer<T : Any>(
     fun updateList(op: UpdateOp<T>, dispatch: Boolean = true): UpdateResult {
         assertMainThread()
         return if (isLaunchNeeded(op)) {
-            scope.async {
+            scope.async(start = UNDISPATCHED) {
                 runner.afterPrevious { execute(op, dispatch) }
             }.let(::DeferredResult)
         } else {
