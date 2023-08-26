@@ -31,12 +31,16 @@ import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.list.InlineList
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.UpdateOp
+import com.xiaocydx.cxrv.list.UpdateResult
 import com.xiaocydx.cxrv.list.reverseAccessEach
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainCoroutineDispatcher
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 
@@ -236,7 +240,7 @@ class PagingCollector<T : Any> internal constructor(
      * 处理[PagingData]
      *
      * 1. 确保在主线程中设置[mediator]和收集[PagingData.flow]。
-     * 2. 恢复流程先执行恢复任务，再重新收集[PagingData.flow]。
+     * 2. 重新收集[PagingData.flow]，先处理恢复事件，再处理常规事件。
      */
     override suspend fun emit(
         value: PagingData<T>
@@ -245,7 +249,59 @@ class PagingCollector<T : Any> internal constructor(
             setMediator(value.mediator)
             setAppendTrigger(value.mediator)
         }
-        value.flow.collect(::handleEvent)
+
+        // 使用Channel的原因：
+        // 当op是SubmitList时，adapter会清除更新队列，并取消差异计算，
+        // 正在等待的result会结束挂起，保存在Channel的result不会挂起，
+        // for循环快速处理完Channel的result后，挂起等待新的result完成。
+        /*
+           listState.submitList(newList1) // op1
+           listState.addItem(0, item1)    // op2
+           listState.addItem(0, item2)    // op3
+           listState.submitList(newList2) // 清除op2和op3，取消op1
+         */
+        val channel = Channel<PagingEventResult>(UNLIMITED)
+        launch {
+            value.flow.collect { event ->
+                val rv = requireNotNull(adapter.recyclerView) { "ListAdapter未添加到RecyclerView" }
+                handleEventListeners.reverseAccessEach { it.handleEvent(rv, event) }
+
+                val op: UpdateOp<T>? = when (event) {
+                    is PagingEvent.ListStateUpdate -> event.op
+                    is PagingEvent.LoadDataSuccess -> event.toUpdateOp()
+                    is PagingEvent.LoadStateUpdate -> null
+                }
+
+                // 若mediator的类型是ListMediator，则version < newVersion才更新列表
+                val listMediator = mediator?.asListMediator<T>()
+                val newVersion = event.getVersionOrZero()
+                var result: UpdateResult? = null
+                if (op != null && (listMediator == null || version < newVersion)) {
+                    result = adapter.updateList(op, dispatch = false)
+                }
+                channel.send(PagingEventResult(newVersion, event.loadStates, result))
+            }
+            channel.close()
+        }
+
+        for (result in channel) {
+            if (!result.await()) continue
+            val newVersion = result.newVersion
+            if (version < newVersion) version = newVersion
+
+            if (loadStates == result.loadStates) continue
+            val rv = adapter.recyclerView
+            if (rv != null && (rv.isComputingLayout
+                            || rv.scrollState != SCROLL_STATE_IDLE
+                            || rv.mDispatchScrollCounter > 0)) {
+                // 执行onBindViewHolder()或者滚动过程中可能触发末尾加载，
+                // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成，
+                // 此时对listeners分发加载状态，则会因为listeners调用notifyXXX()，
+                // 导致RecyclerView内部逻辑断言为异常情况。
+                yield()
+            }
+            trace(TRACE_DISPATCH_LOAD_STATES_TAG) { setLoadStates(result.loadStates) }
+        }
     }
 
     @MainThread
@@ -273,41 +329,6 @@ class PagingCollector<T : Any> internal constructor(
         appendTrigger?.detach()
         appendTrigger = AppendTrigger(prefetchEnabled, prefetchItemCount, adapter, this)
         appendTrigger?.attach()
-    }
-
-    @MainThread
-    private suspend fun handleEvent(event: PagingEvent<T>) {
-        val rv = requireNotNull(adapter.recyclerView) { "ListAdapter已从RecyclerView上分离" }
-        handleEventListeners.reverseAccessEach { it.handleEvent(rv, event) }
-
-        val op: UpdateOp<T>? = when (event) {
-            is PagingEvent.ListStateUpdate -> event.op
-            is PagingEvent.LoadDataSuccess -> event.toUpdateOp()
-            is PagingEvent.LoadStateUpdate -> null
-        }
-
-        val listMediator = mediator?.asListMediator<T>()
-        val newVersion = event.getVersionOrZero()
-
-        // 若mediator的类型是ListMediator，则version < newVersion时才更新列表
-        if (op != null && (listMediator == null || version < newVersion)) {
-            adapter.updateList(op, dispatch = false).await()
-            // 更新列表完成后才保存版本号
-            version = newVersion
-        }
-
-        if (loadStates == event.loadStates) return
-
-        if (rv.isComputingLayout
-                || rv.scrollState != SCROLL_STATE_IDLE
-                || rv.mDispatchScrollCounter > 0) {
-            // 执行onBindViewHolder()或者滚动过程中可能触发末尾加载，
-            // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成，
-            // 此时对listeners分发加载状态，则会因为listeners调用notifyXXX()，
-            // 导致RecyclerView内部逻辑断言为异常情况。
-            yield()
-        }
-        trace(TRACE_DISPATCH_LOAD_STATES_TAG) { setLoadStates(event.loadStates) }
     }
 
     @MainThread
@@ -344,7 +365,8 @@ class PagingCollector<T : Any> internal constructor(
         override suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<Any>) {
             val loadType = event.loadType
             val loadState = event.loadStates.refresh
-            if (loadType != null || !loadState.isIncomplete
+            if (!(loadType == null || loadType == LoadType.REFRESH)
+                    || !(loadState.isIncomplete || loadState.isLoading)
                     || rv.childCount == 0 || rv.isFirstItemCompletelyVisible) {
                 return
             }
@@ -360,6 +382,14 @@ class PagingCollector<T : Any> internal constructor(
                 rv.awaitNextLayout()
             }
         }
+    }
+
+    private class PagingEventResult(
+        val newVersion: Int,
+        val loadStates: LoadStates,
+        private val result: UpdateResult?
+    ) {
+        suspend fun await() = result == null || result.await()
     }
 
     private companion object {

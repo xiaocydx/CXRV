@@ -19,9 +19,12 @@ package com.xiaocydx.cxrv.list
 import androidx.annotation.MainThread
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainCoroutineDispatcher
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val LIST_COLLECTOR_KEY = "com.xiaocydx.cxrv.list.LIST_COLLECTOR_KEY"
@@ -117,13 +120,34 @@ class ListCollector<T : Any> internal constructor(
 
     override suspend fun emit(
         value: ListData<T>
-    ): Unit = withContext(mainDispatcher.immediate) {
+    ) = withContext(mainDispatcher.immediate) {
         setMediator(value.mediator)
-        value.flow.collect { event ->
-            val newVersion = event.version
-            if (newVersion <= version) return@collect
-            adapter.updateList(event.op, dispatch = false).await()
-            // 更新列表完成后才保存版本号
+
+        // 使用Channel的原因：
+        // 当op是SubmitList时，adapter会清除更新队列，并取消差异计算，
+        // 正在等待的result会结束挂起，保存在Channel的result不会挂起，
+        // for循环快速处理完Channel的result后，挂起等待新的result完成。
+        /*
+           listState.submitList(newList1) // op1
+           listState.addItem(0, item1)    // op2
+           listState.addItem(0, item2)    // op3
+           listState.submitList(newList2) // 清除op2和op3，取消op1
+         */
+        val channel = Channel<ListEventResult>(UNLIMITED)
+        launch {
+            value.flow.collect { event ->
+                val newVersion = event.version
+                if (newVersion <= version) return@collect
+                val result = adapter.updateList(event.op, dispatch = false)
+                channel.send(ListEventResult(newVersion, result))
+            }
+            channel.close()
+        }
+
+        for (result in channel) {
+            if (!result.await()) continue
+            val newVersion = result.newVersion
+            if (newVersion <= version) continue
             version = newVersion
         }
     }
@@ -138,5 +162,12 @@ class ListCollector<T : Any> internal constructor(
             version = 0
         }
         this.mediator = mediator
+    }
+
+    private class ListEventResult(
+        val newVersion: Int,
+        private val result: UpdateResult
+    ) {
+        suspend fun await() = result.await()
     }
 }

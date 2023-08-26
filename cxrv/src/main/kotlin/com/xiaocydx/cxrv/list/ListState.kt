@@ -222,9 +222,7 @@ internal class ListMediatorImpl<T : Any>(
         isCollected = true
         // 先发射最新的列表数据和版本号，让下游判断是否需要更新
         send(ListEvent(UpdateOp.SubmitList(currentList), version))
-        val listener: (UpdateOp<T>) -> Unit = {
-            trySend(ListEvent(it, version))
-        }
+        val listener: (UpdateOp<T>) -> Unit = { trySend(ListEvent(it, version)) }
         listState.addUpdatedListener(listener)
         awaitClose { listState.removeUpdatedListener(listener) }
     }.buffer(UNLIMITED).flowOnMain()
