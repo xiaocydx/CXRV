@@ -17,7 +17,12 @@
 package com.xiaocydx.cxrv.viewpager2.loop
 
 import android.content.Context
+import android.view.View
+import android.view.animation.Interpolator
+import androidx.recyclerview.widget.LinearSmoothScroller
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.SmoothScroller
+import kotlin.math.sqrt
 
 /**
  * [SmoothScroller]的提供者，可用于修改平滑滚动的时长和插值器
@@ -45,4 +50,28 @@ fun interface SmoothScrollerProvider {
      * ```
      */
     fun create(context: Context): SmoothScroller
+}
+
+/**
+ * [LinearSmoothScroller]的提供者
+ *
+ * @param durationMs   平滑滚动的时长
+ * @param interpolator 平滑滚动的插值器，`null`表示使用默认的插值器
+ */
+@Suppress("FunctionName")
+fun LinearSmoothScrollerProvider(
+    durationMs: Long,
+    interpolator: Interpolator? = null
+) = SmoothScrollerProvider { context ->
+    object : LinearSmoothScroller(context) {
+        override fun onTargetFound(targetView: View, state: RecyclerView.State, action: Action) {
+            val dx = calculateDxToMakeVisible(targetView, horizontalSnapPreference)
+            val dy = calculateDyToMakeVisible(targetView, verticalSnapPreference)
+            val distance = sqrt((dx * dx + dy * dy).toDouble()).toInt()
+            var time = calculateTimeForDeceleration(distance)
+            time = durationMs.toInt().coerceAtLeast(time)
+            val finalInterpolator = interpolator ?: mDecelerateInterpolator
+            if (time > 0) action.update(-dx, -dy, time, finalInterpolator)
+        }
+    }
 }

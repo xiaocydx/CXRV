@@ -1,23 +1,18 @@
 package com.xiaocydx.sample.viewpager2.loop
 
-import android.content.Context
 import android.os.Looper
-import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
-import androidx.recyclerview.widget.RecyclerView.SmoothScroller
-import androidx.recyclerview.widget.RecyclerView.State
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
+import com.xiaocydx.cxrv.viewpager2.loop.LinearSmoothScrollerProvider
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
-import com.xiaocydx.cxrv.viewpager2.loop.SmoothScrollerProvider
 import com.xiaocydx.cxrv.viewpager2.loop.scrollState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -25,7 +20,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.yield
 import kotlin.coroutines.resume
-import kotlin.math.sqrt
 
 /**
  * Banner轮播交互的协程示例代码
@@ -45,7 +39,9 @@ fun LoopPagerController.launchBanner(
     intervalMs: Long = 1500,
     durationMs: Long = -1
 ): Job = lifecycle.coroutineScope.launch {
-    val provider = durationMs.takeIf { it > 0 }?.let(::BannerSmoothScrollerProvider)
+    val provider = durationMs.takeIf { it > 0 }?.let {
+        LinearSmoothScrollerProvider(it, AccelerateDecelerateInterpolator())
+    }
     lifecycle.repeatOnLifecycle(state) {
         while (true) {
             awaitSupportLoop(adapter)
@@ -54,27 +50,6 @@ fun LoopPagerController.launchBanner(
             if (currentPosition == NO_POSITION) continue
             val position = (currentPosition + 1) % adapter.itemCount
             smoothScrollToPosition(position, provider = provider)
-        }
-    }
-}
-
-/**
- * 处理轮播平滑滚动的时长和插值器
- */
-private class BannerSmoothScrollerProvider(private val durationMs: Long) : SmoothScrollerProvider {
-    private val interpolator = AccelerateDecelerateInterpolator()
-
-    override fun create(context: Context): SmoothScroller = BannerSmoothScroller(context)
-
-    private inner class BannerSmoothScroller(context: Context) : LinearSmoothScroller(context) {
-
-        override fun onTargetFound(targetView: View, state: State, action: Action) {
-            val dx = calculateDxToMakeVisible(targetView, horizontalSnapPreference)
-            val dy = calculateDyToMakeVisible(targetView, verticalSnapPreference)
-            val distance = sqrt((dx * dx + dy * dy).toDouble()).toInt()
-            var time = calculateTimeForDeceleration(distance)
-            time = durationMs.toInt().coerceAtLeast(time)
-            if (time > 0) action.update(-dx, -dy, time, interpolator)
         }
     }
 }
