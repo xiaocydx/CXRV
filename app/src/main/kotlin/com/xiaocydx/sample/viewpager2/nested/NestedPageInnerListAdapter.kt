@@ -5,18 +5,21 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
+import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.sample.databinding.ItemNestedInnerBinding
 
 /**
+ * 不是所有场景都需要使用[ListAdapter]，应当结合需求选择合适的适配器
+ *
  * @author xcc
  * @date 2022/4/6
  */
-class InnerListAdapter : RecyclerView.Adapter<InnerHolder>() {
+class NestedPageInnerListAdapter : RecyclerView.Adapter<InnerHolder>() {
     private val list = mutableListOf<InnerItem>()
 
     /**
      * 选择调用[notifyDataSetChanged]而不是局部更新的原因：
-     * 1. [submitList]只会在[OuterListAdapter.onBindViewHolder]中被调用，
+     * 1. [submitList]只会在`OuterListAdapter.onBindView`中被调用，
      * 此时外部RecyclerView的布局流程拦截了[RecyclerView.requestLayout]，
      * 因此[notifyDataSetChanged]不会导致`fixedSize`的优化无效。
      *

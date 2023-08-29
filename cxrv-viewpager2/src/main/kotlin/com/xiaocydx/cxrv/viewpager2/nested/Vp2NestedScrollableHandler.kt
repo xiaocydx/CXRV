@@ -19,9 +19,17 @@ package com.xiaocydx.cxrv.viewpager2.nested
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.ViewParent
+import android.widget.HorizontalScrollView
+import android.widget.ScrollView
+import androidx.core.widget.NestedScrollView
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.ORIENTATION_HORIZONTAL
+import androidx.viewpager2.widget.ViewPager2.ORIENTATION_VERTICAL
+import com.xiaocydx.cxrv.viewpager2.R
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
@@ -38,13 +46,22 @@ import kotlin.math.sign
  * @author xcc
  * @date 2022/7/8
  */
-class Vp2NestedScrollableHandler {
+class Vp2NestedScrollableHandler(
+    private val childOrientation: (child: View) -> Int = defaultChildOrientation,
+    private val canScrollHorizontally: (child: View, direction: Int) -> Boolean = defaultCanScrollHorizontally,
+    private val canScrollVertically: (child: View, direction: Int) -> Boolean = defaultCanScrollVertically
+) {
     @ViewPager2.Orientation
     private var vp2Orientation = ORIENTATION_HORIZONTAL
     private var childTouchSlop = 0
     private var initialTouchX = 0
     private var initialTouchY = 0
     private var isNestedScrollableHandled = false
+
+    /**
+     * 处理滚动处理的容器需要实现此接口
+     */
+    interface Host : ViewParent
 
     /**
      * [ViewPager2]的`touchSlop`是[ViewConfiguration.getScaledPagingTouchSlop]，
@@ -57,35 +74,35 @@ class Vp2NestedScrollableHandler {
         when (e.action) {
             MotionEvent.ACTION_DOWN -> {
                 isNestedScrollableHandled = false
-                if (!ensureVp2Orientation(child) || !ensureChildTouchSlop(child)) {
+                child.resetRequestDisallowIntercept()
+                if (!ensureVp2Orientation(child) || !ensureChildTouchSlop(child)
+                        || childOrientation(child) == ORIENTATION_UNKNOWN) {
                     isNestedScrollableHandled = true
                     return
                 }
                 initialTouchX = e.x.toRoundPx()
                 initialTouchY = e.y.toRoundPx()
-                // 不允许ViewPager2拦截触摸事件，接下来才有处理滚动冲突的机会
                 child.requestDisallowInterceptTouchEvent(disallowIntercept = true)
             }
             MotionEvent.ACTION_MOVE -> {
                 val dx = e.x.toRoundPx() - initialTouchX
                 val dy = e.y.toRoundPx() - initialTouchY
                 val isVp2Horizontal = vp2Orientation == ORIENTATION_HORIZONTAL
-                val xDiff = if (isVp2Horizontal) dx.absoluteValue else 0
-                val yDiff = if (isVp2Horizontal) 0 else dy.absoluteValue
-                if (xDiff > childTouchSlop || yDiff > childTouchSlop) {
+                val isChildHorizontal = childOrientation(child) == ORIENTATION_HORIZONTAL
+                val valueX = dx.absoluteValue
+                val valueY = dy.absoluteValue
+                if (valueX > childTouchSlop || valueY > childTouchSlop) {
                     val disallowIntercept = if (isVp2Horizontal) {
-                        if (child.canScrollHorizontally(dx.toDirection())) {
-                            // child能和ViewPager2平行滚动，不允许ViewPager2拦截触摸事件
-                            true
+                        if (canScrollHorizontally(child, dx.toDirection())) {
+                            valueX > 2 * valueY
                         } else {
-                            2 * dy.absoluteValue > dx.absoluteValue
+                            !isChildHorizontal && 2 * valueY > valueX
                         }
                     } else {
-                        if (child.canScrollVertically(dy.toDirection())) {
-                            // child能和ViewPager2平行滚动，不允许ViewPager2拦截触摸事件
-                            true
+                        if (canScrollVertically(child, dy.toDirection())) {
+                            valueY > 2 * valueX
                         } else {
-                            2 * dx.absoluteValue > dy.absoluteValue
+                            isChildHorizontal && 2 * valueX > valueY
                         }
                     }
                     child.requestDisallowInterceptTouchEvent(disallowIntercept)
@@ -112,13 +129,30 @@ class Vp2NestedScrollableHandler {
 
     private fun Float.toRoundPx() = (this + 0.5f).toInt()
 
-    /**
-     * 从[ViewPager2]开始，向上递归不允许拦截，不处理当前View到[ViewPager2]之间的滚动冲突，
-     * 这能确保内部滚动正常，例如[ViewPager2]嵌套[RecyclerView]再嵌套[RecyclerView]的场景。
-     */
+    private var View.requestDisallowIntercept: Boolean?
+        get() = getTag(R.id.tag_vp2_nested_request_disallowIntercept) as? Boolean
+        set(value) {
+            setTag(R.id.tag_vp2_nested_request_disallowIntercept, value)
+        }
+
+    private fun View.resetRequestDisallowIntercept() {
+        this.requestDisallowIntercept = false
+    }
+
     private fun View.requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-        val vp2Rv = findParentViewPager2()?.getChildAt(0) as? RecyclerView
-        vp2Rv?.requestDisallowInterceptTouchEvent(disallowIntercept)
+        this.requestDisallowIntercept = disallowIntercept
+        val notHostParent = if (parent is Host) parent?.parent else parent
+        notHostParent?.requestDisallowInterceptTouchEvent(disallowIntercept)
+        if (!disallowIntercept) {
+            var parent: View? = notHostParent as? View
+            while (parent != null && parent.requestDisallowIntercept == null) {
+                parent = parent.parent as? View
+            }
+            val previousDisallowIntercept = parent?.requestDisallowIntercept
+            if (previousDisallowIntercept == true) {
+                parent?.requestDisallowInterceptTouchEvent(previousDisallowIntercept)
+            }
+        }
     }
 
     private fun View.findParentViewPager2(): ViewPager2? {
@@ -129,5 +163,29 @@ class Vp2NestedScrollableHandler {
             parent = parent.parent as? View
         }
         return parent as? ViewPager2
+    }
+
+    internal companion object {
+        private const val ORIENTATION_UNKNOWN = -1
+        val defaultCanScrollHorizontally = { child: View, direction: Int ->
+            child.canScrollHorizontally(direction)
+        }
+        val defaultCanScrollVertically = { child: View, direction: Int ->
+            child.canScrollVertically(direction)
+        }
+        val defaultChildOrientation = { child: View ->
+            when (child) {
+                is RecyclerView -> when (val lm = child.layoutManager) {
+                    is LinearLayoutManager -> lm.orientation
+                    is StaggeredGridLayoutManager -> lm.orientation
+                    else -> ORIENTATION_UNKNOWN
+                }
+                is ViewPager2 -> child.orientation
+                is ScrollView -> ORIENTATION_VERTICAL
+                is HorizontalScrollView -> ORIENTATION_HORIZONTAL
+                is NestedScrollView -> ORIENTATION_VERTICAL
+                else -> ORIENTATION_UNKNOWN
+            }
+        }
     }
 }
