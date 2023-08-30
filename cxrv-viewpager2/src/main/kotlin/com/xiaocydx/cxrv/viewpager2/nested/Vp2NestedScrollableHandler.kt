@@ -120,7 +120,11 @@ class Vp2NestedScrollableHandler(
 
     private fun ensureChildTouchSlop(child: View): Boolean {
         if (childTouchSlop <= 0) {
-            childTouchSlop = ViewConfiguration.get(child.context).scaledTouchSlop
+            childTouchSlop = if (child is ViewPager2 || child.parent is ViewPager2) {
+                ViewConfiguration.get(child.context).scaledPagingTouchSlop
+            } else {
+                ViewConfiguration.get(child.context).scaledTouchSlop
+            }
         }
         return childTouchSlop > 0
     }
