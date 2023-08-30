@@ -124,7 +124,7 @@ fun RecyclerView.removeFooter(footer: View): ViewAdapter<*>? {
  */
 @CheckResult
 infix fun Adapter<*>.withHeader(
-    header: ViewAdapter<*>
+    header: Adapter<*>
 ): ConcatAdapter = when (this) {
     is ConcatAdapter -> apply { addAdapter(0, header) }
     else -> HeaderFooterConcatAdapter(this, header = header)
@@ -135,7 +135,7 @@ infix fun Adapter<*>.withHeader(
  */
 @CheckResult
 infix fun Adapter<*>.withFooter(
-    footer: ViewAdapter<*>
+    footer: Adapter<*>
 ): ConcatAdapter = when (this) {
     is ConcatAdapter -> apply { addAdapter(footer) }
     else -> HeaderFooterConcatAdapter(this, footer = footer)
@@ -160,13 +160,13 @@ infix fun Adapter<*>.withFooter(
  * Header的ViewHolder和内容区的ViewHolder类型不一致，导致抛出类型转换异常。
  *
  * ### 解决方案
- * 默认不使用隔离ViewType配置，而是将[View.hashCode]作为Header和Footer的ViewType。
+ * 默认不使用隔离ViewType配置，可以将`hashCode`作为Header和Footer的ViewType。
  */
 @Suppress("FunctionName")
 fun HeaderFooterConcatAdapter(
     adapter: Adapter<*>,
-    header: ViewAdapter<*>? = null,
-    footer: ViewAdapter<*>? = null
+    header: Adapter<*>? = null,
+    footer: Adapter<*>? = null
 ): ConcatAdapter {
     val config = ConcatAdapter.Config.Builder()
         .setIsolateViewTypes(false).build()
