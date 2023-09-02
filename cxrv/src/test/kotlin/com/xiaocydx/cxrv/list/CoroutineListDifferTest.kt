@@ -37,7 +37,7 @@ import org.robolectric.annotation.Config
  */
 @Config(sdk = [Build.VERSION_CODES.Q])
 @RunWith(RobolectricTestRunner::class)
-class CoroutineListDifferTest {
+internal class CoroutineListDifferTest {
 
     @Test
     fun updateListCompat(): Unit = runBlockingTest {
