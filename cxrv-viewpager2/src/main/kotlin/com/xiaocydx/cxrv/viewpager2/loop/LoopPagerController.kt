@@ -90,22 +90,17 @@ class LoopPagerController(
      * 这表示不会对使用`holder.bindingAdapter`和`holder.bindingAdapterPosition`实现的功能造成影响，
      * [adapter]的内部逻辑应当通过`holder.bindingAdapterPosition`访问数据源，以确保绘制内容的正确性。
      *
-     * @param adapter 请在同类型更新操作修改`adapter.itemCount`后，立即调用`adapter.notifyXXX()`函数，
-     * [LoopPagerController]基于这个前提实现页面更新逻辑，若不满足这个前提，则无法确保绘制内容的正确性，
-     * 通常是`adapter.itemCount = data.size`，因此主要关注数据源的`add`和`remove`这两种更新操作，例如：
+     * @param adapter 如果是通过`adapter.notifyDataSetChanged()`更新页面，
+     * 那么请确保是先修改数据，再调用`adapter.notifyDataSetChanged()`的顺序，
+     * [LoopPagerController]基于这种顺序支持全量更新。
      * ```
-     * data.removeAt(0)
-     * adapter.notifyItemRemoved(0) // 满足前提
-     *
-     * data.removeAt(0)
-     * data.removeAt(0)
-     * adapter.notifyItemRangeRemoved(0, 2) // 满足前提
-     *
-     * adapter.notifyDataSetChanged() // 不满足前提
+     * // 不符合的顺序
+     * adapter.notifyDataSetChanged()
      * data.removeAt(0)
      *
-     * adapter.notifyItemRemoved(0) // 不满足前提
+     * // 符合的顺序
      * data.removeAt(0)
+     * adapter.notifyDataSetChanged()
      * ```
      */
     fun setAdapter(adapter: Adapter<*>) {

@@ -29,14 +29,26 @@ internal class RecordDataObserver(private val adapter: Adapter<*>) : AdapterData
     var lastItemCount = adapter.itemCount
         private set
 
-    private fun recordItemCount() {
+    private fun reset() {
+        // 用注释提醒调用者，确保是先修改数据，再调用notifyDataSetChanged()的顺序，
+        // 基于这种顺序，才能在notifyDataSetChanged()分发过程得到最新的itemCount。
         lastItemCount = adapter.itemCount
     }
 
-    override fun onChanged() = recordItemCount()
-    override fun onItemRangeChanged(positionStart: Int, itemCount: Int) = onChanged()
-    override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) = onChanged()
-    override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = onChanged()
-    override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) = onChanged()
-    override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) = onChanged()
+    private fun record(diff: Int = 0) {
+        // 对于差异计算，lastItemCount不能直接重置为adapter.itemCount，
+        // 因为差异计算完成后，是先替换数据源，再通知RecyclerView局部更新，
+        // 此时不是修改一次数据，就通知一次RecyclerView局部更新的理想顺序，
+        // 即使不考虑差异计算，让调用者遵守并理解这种调用顺序，也是一种负担，
+        // 因此，对于修改lastItemCount的局部更新，靠计算得出新的itemCount，
+        // 确保所有局部更新的分发过程，都有previous和current的概念。
+        lastItemCount = (lastItemCount + diff).coerceAtLeast(0)
+    }
+
+    override fun onChanged() = reset()
+    override fun onItemRangeChanged(positionStart: Int, itemCount: Int) = record()
+    override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) = record()
+    override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = record(diff = itemCount)
+    override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) = record(diff = -itemCount)
+    override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) = record()
 }
