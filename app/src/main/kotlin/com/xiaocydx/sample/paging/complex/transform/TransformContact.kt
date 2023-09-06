@@ -23,8 +23,18 @@ import android.view.WindowInsets
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.coroutineScope
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.optimizeNextFrameScroll
 import com.google.android.material.transition.platform.MaterialContainerTransform
+import com.xiaocydx.sample.viewLifecycle
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
 /**
@@ -149,6 +159,34 @@ interface TransformSender {
         val root = findTransformSceneRoot() ?: return false
         root.setTransformView(transformView)
         return root.forwardTransform(fragmentClass, args, allowStateLoss)
+    }
+
+    /**
+     * 启动协程，处理[TransformSender]的同步位置
+     *
+     * @param recyclerView  滚动到同步位置的[RecyclerView]
+     * @param transformView 参与变换过渡动画的[View]，内部弱引用持有[View]
+     */
+    fun <S> S.launchTransformSync(
+        recyclerView: RecyclerView,
+        position: TransformSenderPosition,
+        transformView: (holder: ViewHolder) -> View?
+    ): Job where S : Fragment, S : TransformSender {
+        return viewLifecycle.coroutineScope.launch {
+            // recyclerView.optimizeNextFrameScroll()
+            // 非平滑滚动布局流程的优化方案，可用于替代增加缓存上限的方案
+            position.syncEvent
+                .onEach(recyclerView::scrollToPosition)
+                .onEach { recyclerView.optimizeNextFrameScroll() }
+                .launchIn(this)
+
+            // 消费同步位置，Fragment重新创建不需要恢复同步位置
+            transformReturn
+                .map { position.consume() }
+                .map(recyclerView::findViewHolderForAdapterPosition)
+                .onEach { setTransformView(it?.let(transformView)) }
+                .launchIn(this)
+        }
     }
 }
 

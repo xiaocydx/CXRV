@@ -14,10 +14,6 @@ import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.ORIENTATION_VERTICAL
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.target.Target
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -80,11 +76,11 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
     private lateinit var requestManager: RequestManager
     private lateinit var binding: FragmetVideoStreamBinding
     private lateinit var videoAdapter: ListAdapter<VideoStreamItem, *>
-    private val complexViewModel: ComplexListViewModel by viewModels(
+    private val sharedViewModel: ComplexSharedViewModel by viewModels(
         ownerProducer = { parentFragment ?: requireActivity() }
     )
     private val videoViewModel: VideoStreamViewModel by viewModels(
-        factoryProducer = { VideoStreamViewModel.Factory(complexViewModel.videoStreamFlow()) }
+        factoryProducer = { VideoStreamViewModel.Factory(sharedViewModel) }
     )
 
     override fun onCreateView(
@@ -139,8 +135,6 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         }
 
         viewLifecycleScope.launchSafely {
-            // Fragment首次创建，同步初始状态，下面的selectPosition是同步后的结果
-            complexViewModel.consumePendingState()?.let(videoViewModel::syncInitialState)
             // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重新创建同样适用
             videoAdapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
             viewPager2.setCurrentItem(videoViewModel.selectPosition.value, false)
@@ -150,7 +144,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
                     // 不依靠onSelected()同步选中位置，因为该函数被调用时仍在进行平滑滚动，
                     // 状态更改为IDLE时才同步选中位置，避免平滑滚动期间同步申请布局造成卡顿。
                     if (state != ViewPager2.SCROLL_STATE_IDLE) return@changed
-                    complexViewModel.syncSelect(videoViewModel.selectVideoId)
+                    sharedViewModel.syncSenderId(videoViewModel.selectId)
                 }
             )
         }
@@ -160,7 +154,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             v.updatePadding(top = initialState.paddings.top + statusBars.top)
         }
 
-        videoViewModel.selectVideoTitle
+        videoViewModel.selectTitle
             .flowWithLifecycle(viewLifecycle)
             .distinctUntilChanged()
             .onEach(binding.tvTitle::setText)
@@ -179,34 +173,6 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         }
         videoAdapter.pagingCollector.addLoadStatesListener { _, current ->
             Log.d("VideoStreamFragment", "loadStates = $current")
-        }
-    }
-
-    private class EnterTransitionListener(
-        private var fragment: Fragment?,
-        private val requestManager: RequestManager
-    ) : RequestListener<Any> {
-
-        fun postpone() {
-            fragment?.postponeEnterTransition()
-            requestManager.addDefaultRequestListener(this)
-        }
-
-        override fun onResourceReady(
-            resource: Any?, model: Any?,
-            target: Target<Any>?, dataSource: DataSource?, isFirstResource: Boolean
-        ): Boolean = startPostponedEnterTransition()
-
-        override fun onLoadFailed(
-            e: GlideException?, model: Any?,
-            target: Target<Any>?, isFirstResource: Boolean
-        ): Boolean = startPostponedEnterTransition()
-
-        private fun startPostponedEnterTransition(): Boolean {
-            // RequestManager没提供removeDefaultRequestListener()，做置空处理
-            fragment?.startPostponedEnterTransition()
-            fragment = null
-            return false
         }
     }
 }

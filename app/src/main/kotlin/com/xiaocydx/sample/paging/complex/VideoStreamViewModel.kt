@@ -19,13 +19,22 @@ import kotlinx.coroutines.flow.map
  * @author xcc
  * @date 2023/7/30
  */
-class VideoStreamViewModel(videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewModel() {
+class VideoStreamViewModel(
+    initialState: VideoStreamInitialState?,
+    videoFlow: Flow<PagingData<VideoStreamItem>>
+) : ViewModel() {
     private val state = ListState<VideoStreamItem>()
     private val _selectPosition = MutableStateFlow(0)
     val selectPosition = _selectPosition.asStateFlow()
-    val selectVideoTitle = selectPosition.map { state.getItemOrNull(it)?.title ?: "" }
-    val selectVideoId: String
+    val selectTitle = selectPosition.map { state.getItemOrNull(it)?.title ?: "" }
+    val selectId: String
         get() = state.getItemOrNull(selectPosition.value)?.id ?: ""
+
+    init {
+        // 先同步初始状态，后收集videoFlow，收集时发射的分页事件会完成状态的同步
+        initialState?.videoList?.let(state::submitList)
+        initialState?.position?.let(::selectVideo)
+    }
 
     /**
      * 视频流页面的item铺满全屏，转换末尾加载的预取策略，提前指定item个数预取分页数据
@@ -34,24 +43,18 @@ class VideoStreamViewModel(videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewM
         .appendPrefetch(ItemCount(3))
         .storeIn(state, viewModelScope)
 
-    /**
-     * 先同步初始状态，后收集[videoFlow]，收集时发射的分页事件会完成状态的同步
-     */
-    fun syncInitialState(initialState: VideoStreamInitialState) {
-        state.submitList(initialState.videoList)
-        selectVideo(initialState.position)
-    }
-
     fun selectVideo(position: Int) {
         _selectPosition.value = position
     }
 
-    class Factory(private val videoFlow: Flow<PagingData<VideoStreamItem>>) : ViewModelProvider.Factory {
+    class Factory(private val sharedViewModel: ComplexSharedViewModel) : ViewModelProvider.Factory {
 
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass === VideoStreamViewModel::class.java)
-            return VideoStreamViewModel(videoFlow) as T
+            val initialState = sharedViewModel.consumeReceiverState()
+            val videoFlow = sharedViewModel.receiverFlow
+            return VideoStreamViewModel(initialState, videoFlow) as T
         }
     }
 }

@@ -9,7 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.optimizeNextFrameScroll
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.bumptech.glide.Glide
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.Edge
@@ -29,6 +29,8 @@ import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
+import com.xiaocydx.sample.paging.complex.ComplexItem.Companion.TYPE_AD
+import com.xiaocydx.sample.paging.complex.ComplexItem.Companion.TYPE_VIDEO
 import com.xiaocydx.sample.paging.complex.transform.SystemBarsContainer
 import com.xiaocydx.sample.paging.complex.transform.TransformContainer
 import com.xiaocydx.sample.paging.complex.transform.TransformReceiver
@@ -42,10 +44,6 @@ import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.transition.EnterTransitionActivity
 import com.xiaocydx.sample.transition.EnterTransitionController
 import com.xiaocydx.sample.viewLifecycle
-import com.xiaocydx.sample.viewLifecycleScope
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 
 /**
  * 复合列表页面
@@ -75,8 +73,11 @@ import kotlinx.coroutines.flow.onEach
 class ComplexListFragment : Fragment(), TransformSender {
     private lateinit var rvComplex: RecyclerView
     private lateinit var complexAdapter: ListAdapter<ComplexItem, *>
-    private val viewModel: ComplexListViewModel by viewModels(
+    private val sharedViewModel: ComplexSharedViewModel by viewModels(
         ownerProducer = { parentFragment ?: requireActivity() }
+    )
+    private val complexViewModel: ComplexListViewModel by viewModels(
+        factoryProducer = { ComplexListViewModel.Factory(sharedViewModel) }
     )
 
     override fun onCreateView(
@@ -103,20 +104,16 @@ class ComplexListFragment : Fragment(), TransformSender {
             }
 
             doOnItemClick { holder, item ->
-                viewModel.setPendingState(item.id)
+                sharedViewModel.setReceiverState(item.id, complexViewModel.complexState)
                 when (item.type) {
-                    ComplexItem.TYPE_VIDEO -> forwardTransform(
-                        holder.itemView, VideoStreamFragment::class
-                    )
-                    ComplexItem.TYPE_AD -> forwardTransform(
-                        holder.itemView, AdFragment::class
-                    )
+                    TYPE_VIDEO -> forwardTransform(holder.itemView, VideoStreamFragment::class)
+                    TYPE_AD -> forwardTransform(holder.itemView, AdFragment::class)
                 }
             }
         }
 
         rvComplex = RecyclerView(requireContext())
-            .apply { id = viewModel.rvId }
+            .apply { id = complexViewModel.rvId }
             .layoutParams(matchParent, matchParent)
             .apply { enableGestureNavBarEdgeToEdge() }
             .overScrollNever().grid(spanCount = 2).fixedSize()
@@ -132,24 +129,17 @@ class ComplexListFragment : Fragment(), TransformSender {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupDebugLog()
-        viewModel.complexFlow
+        complexViewModel.complexFlow
             .onEach(complexAdapter.pagingCollector)
             .repeatOnLifecycle(viewLifecycle)
             .launchInLifecycleScope()
 
-        // rvComplex.optimizeNextFrameScroll()
-        // 非平滑滚动布局流程的优化方案，可用于替代增加缓存上限的方案
-        viewModel.scrollEvent
-            .onEach(rvComplex::scrollToPosition)
-            .onEach { rvComplex.optimizeNextFrameScroll() }
-            .launchIn(viewLifecycleScope)
-
-        // 当退出页面时，消费同步位置，Fragment重新创建不需要恢复同步位置
-        transformReturn
-            .map { viewModel.consumeSyncPosition() }
-            .map(rvComplex::findViewHolderForAdapterPosition)
-            .onEach { setTransformView(it?.itemView) }
-            .launchIn(viewLifecycleScope)
+        // 同步选中位置的简化函数
+        launchTransformSync(
+            recyclerView = rvComplex,
+            position = complexViewModel.complexPosition,
+            transformView = ViewHolder::itemView
+        )
     }
 
     private fun setupDebugLog() {

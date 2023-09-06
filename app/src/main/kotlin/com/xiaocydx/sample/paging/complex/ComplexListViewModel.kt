@@ -2,63 +2,38 @@ package com.xiaocydx.sample.paging.complex
 
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.getItemOrNull
-import com.xiaocydx.cxrv.paging.PagingConfig
-import com.xiaocydx.cxrv.paging.broadcastIn
-import com.xiaocydx.cxrv.paging.dataMap
-import com.xiaocydx.cxrv.paging.flowMap
+import com.xiaocydx.cxrv.paging.PagingData
 import com.xiaocydx.cxrv.paging.storeIn
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.receiveAsFlow
+import com.xiaocydx.sample.paging.complex.transform.TransformSenderKey
+import com.xiaocydx.sample.paging.complex.transform.asPosition
+import kotlinx.coroutines.flow.Flow
 
 /**
  * @author xcc
  * @date 2023/7/30
  */
-class ComplexListViewModel(repository: ComplexRepository = ComplexRepository()) : ViewModel() {
+class ComplexListViewModel(
+    complexId: TransformSenderKey<String>,
+    complexFlow: Flow<PagingData<ComplexItem>>
+) : ViewModel() {
     private val state = ListState<ComplexItem>()
-    private val pager = repository.getComplexPager(PagingConfig(pageSize = 16))
-    private val broadcastFlow = pager.flow.broadcastIn(viewModelScope)
-    private val syncEvent = Channel<String>(CONFLATED)
-    private var syncId = ""
-    private var pendingState: VideoStreamInitialState? = null
-
     val rvId = ViewCompat.generateViewId()
-    val complexFlow = broadcastFlow.storeIn(state, viewModelScope)
-    val scrollEvent = syncEvent.receiveAsFlow()
-        .onStart { if (syncId.isNotEmpty()) emit(syncId) }
-        .map(::findPositionForId).filter { it != -1 }
+    val complexFlow = complexFlow.storeIn(state, viewModelScope)
+    val complexPosition = complexId.asPosition(state, ComplexItem::id)
+    val complexState: List<ComplexItem>
+        get() = state.currentList
 
-    fun syncSelect(id: String) {
-        if (syncId == id) return
-        syncId = id
-        syncEvent.trySend(syncId)
-    }
+    class Factory(private val sharedViewModel: ComplexSharedViewModel) : ViewModelProvider.Factory {
 
-    fun setPendingState(id: String) {
-        val item = findPositionForId(id).let(state::getItemOrNull)
-        syncId = item?.id ?: ""
-        pendingState = null
-        if (item?.type == ComplexItem.TYPE_VIDEO) {
-            val videoList = state.currentList.toViewStreamList()
-            val position = videoList.indexOfFirst { it.id == syncId }.coerceAtLeast(0)
-            pendingState = VideoStreamInitialState(position, videoList)
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            require(modelClass === ComplexListViewModel::class.java)
+            val complexId = sharedViewModel.senderId
+            val complexFlow = sharedViewModel.senderFlow
+            return ComplexListViewModel(complexId, complexFlow) as T
         }
     }
-
-    fun consumePendingState() = pendingState?.also { pendingState = null }
-
-    fun consumeSyncPosition() = syncId.also { syncId = "" }.let(::findPositionForId)
-
-    fun videoStreamFlow() = broadcastFlow.flowMap { flow ->
-        flow.dataMap { _, data -> data.toViewStreamList() }
-    }
-
-    private fun findPositionForId(id: String) = state.currentList.indexOfFirst { it.id == id }
 }
