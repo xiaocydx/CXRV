@@ -18,7 +18,6 @@ package com.xiaocydx.sample.paging.complex.transform
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import com.xiaocydx.cxrv.list.ListState
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -84,12 +83,12 @@ inline fun <K : Any> TransformSenderKey<K>.asPosition(
 }
 
 /**
- * 结合[ListState]，将[TransformSenderKey]转换为[TransformSenderPosition]
+ * 将[TransformSenderKey]转换为[TransformSenderPosition]
  */
 inline fun <T : Any, K : Any> TransformSenderKey<K>.asPosition(
-    state: ListState<T>,
+    crossinline list: () -> List<T>,
     crossinline key: (item: T) -> K
-) = asPosition { state.currentList.indexOfFirst { item -> key(item) == it } }
+) = asPosition { list().indexOfFirst { item -> key(item) == it } }
 
 /**
  * [TransformSender]的同步Key，需要在[ViewModel]中创建并保留

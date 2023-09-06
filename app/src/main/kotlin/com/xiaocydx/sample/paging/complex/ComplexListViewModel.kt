@@ -22,8 +22,8 @@ class ComplexListViewModel(
     private val state = ListState<ComplexItem>()
     val rvId = ViewCompat.generateViewId()
     val complexFlow = complexFlow.storeIn(state, viewModelScope)
-    val complexPosition = complexId.asPosition(state, ComplexItem::id)
-    val complexState: List<ComplexItem>
+    val complexPosition = complexId.asPosition(state::currentList, ComplexItem::id)
+    val complexList: List<ComplexItem>
         get() = state.currentList
 
     class Factory(private val sharedViewModel: ComplexSharedViewModel) : ViewModelProvider.Factory {

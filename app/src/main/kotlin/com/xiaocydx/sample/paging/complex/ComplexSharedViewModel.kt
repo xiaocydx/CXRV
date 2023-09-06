@@ -33,12 +33,12 @@ class ComplexSharedViewModel(repository: ComplexRepository = ComplexRepository()
         _senderId.sync(id)
     }
 
-    fun setReceiverState(id: String, senderState: List<ComplexItem>) {
+    fun setReceiverState(id: String, list: List<ComplexItem>) {
         _senderId.record(id)
         receiverState = null
-        val item = senderState.firstOrNull { it.id == id }
+        val item = list.firstOrNull { it.id == id }
         if (item?.type == ComplexItem.TYPE_VIDEO) {
-            val videoList = senderState.toViewStreamList()
+            val videoList = list.toViewStreamList()
             val position = videoList.indexOfFirst { it.id == id }.coerceAtLeast(0)
             receiverState = VideoStreamInitialState(position, videoList)
         }

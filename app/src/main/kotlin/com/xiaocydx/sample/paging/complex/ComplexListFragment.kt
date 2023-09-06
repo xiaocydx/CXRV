@@ -104,7 +104,7 @@ class ComplexListFragment : Fragment(), TransformSender {
             }
 
             doOnItemClick { holder, item ->
-                sharedViewModel.setReceiverState(item.id, complexViewModel.complexState)
+                sharedViewModel.setReceiverState(item.id, complexViewModel.complexList)
                 when (item.type) {
                     TYPE_VIDEO -> forwardTransform(holder.itemView, VideoStreamFragment::class)
                     TYPE_AD -> forwardTransform(holder.itemView, AdFragment::class)
