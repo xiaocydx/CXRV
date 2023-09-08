@@ -100,8 +100,8 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
      *
      * [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      *
-     * 确定局部更新的类型，通常对比item的`key`即可，如果[oldItem]和[newItem]的`key`一样，
-     * 函数却返回`false`，那么[oldItem]是remove更新，[newItem]是insert更新，不会是change更新或move更新。
+     * 确定局部更新的类型，通常对比item的`key`即可，如果[oldItem]和[newItem]的`key`不一样，
+     * 函数返回`false`，那么[oldItem]是remove更新，[newItem]是insert更新，不会是change更新或move更新。
      */
     @MainThread
     @WorkerThread

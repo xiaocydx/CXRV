@@ -200,8 +200,8 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      *
      * [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
      *
-     * 确定不是remove和insert更新后，再确定是否为change更新，返回`false`表示change更新，
-     * 默认实现是[oldItem]和[newItem]进行`equals()`对比，推荐数据实体使用data class。
+     * 确定局部更新的类型，通常对比item的`key`即可，如果[oldItem]和[newItem]的`key`不一样，
+     * 函数返回`false`，那么[oldItem]是remove更新，[newItem]是insert更新，不会是change更新或move更新。
      */
     @MainThread
     @WorkerThread
