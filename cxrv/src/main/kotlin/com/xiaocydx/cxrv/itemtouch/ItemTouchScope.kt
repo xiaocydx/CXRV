@@ -159,7 +159,7 @@ class ItemTouchScope<AdapterT : Adapter<out VH>, VH : ViewHolder>
 
     @SinceKotlin(RV_HIDE_MARKER)
     override fun onIntercept(holder: ViewHolder): Boolean {
-        return holder.bindingAdapter == adapter
+        return holder.bindingAdapter === adapter
     }
 
     @SinceKotlin(RV_HIDE_MARKER)
@@ -225,7 +225,7 @@ class ItemTouchScope<AdapterT : Adapter<out VH>, VH : ViewHolder>
                 return false
             }
             val holder = rv.findChildViewUnder(event.x, event.y)
-                ?.holder?.takeIf { it.bindingAdapter == adapter } ?: return false
+                ?.holder?.takeIf { it.bindingAdapter === adapter } ?: return false
             val view = block(adapter, holder as VH)
             if (view.isTouched(event.rawX, event.rawY)) {
                 touchHelper?.startDrag(holder)
