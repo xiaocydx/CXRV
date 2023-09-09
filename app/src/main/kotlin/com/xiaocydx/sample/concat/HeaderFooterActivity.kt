@@ -1,8 +1,11 @@
 package com.xiaocydx.sample.concat
 
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.HeaderFooterRemovedChecker
 import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.cxrv.concat.addFooter
@@ -77,8 +80,11 @@ class HeaderFooterActivity : AppCompatActivity() {
         rvFoo.itemAnimator?.isRunning(checker::check) ?: run(checker::check)
     }
 
-    private fun createView(isHeader: Boolean) = View(this).apply {
+    private fun createView(isHeader: Boolean) = AppCompatTextView(this).apply {
+        gravity = Gravity.CENTER
+        text = if (isHeader) "Header" else "Footer"
         layoutParams(matchParent, 100.dp)
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, 18.dp.toFloat())
         setBackgroundColor(if (isHeader) 0xFF92C3FF.toInt() else 0xFF958CFF.toInt())
     }
 

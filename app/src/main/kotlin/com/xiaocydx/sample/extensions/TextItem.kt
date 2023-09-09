@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName")
+
 package com.xiaocydx.sample.extensions
 
 import com.xiaocydx.cxrv.binding.bindingDelegate
@@ -9,7 +11,7 @@ import kotlin.math.max
 
 data class TextItem(val text: String, val type: String)
 
-fun getTextType1Delegate() = bindingDelegate(
+fun TextType1Delegate() = bindingDelegate(
     uniqueId = TextItem::text,
     inflate = ItemTextType1Binding::inflate
 ) {
@@ -17,7 +19,7 @@ fun getTextType1Delegate() = bindingDelegate(
     onBindView { textView.text = it.text }
 }
 
-fun getTextType2Delegate() = bindingDelegate(
+fun TextType2Delegate() = bindingDelegate(
     uniqueId = TextItem::text,
     inflate = ItemTextType2Binding::inflate
 ) {

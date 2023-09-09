@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName")
+
 package com.xiaocydx.sample.multitype.onetoone
 
 import android.os.Bundle
@@ -6,25 +8,39 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.cxrv.binding.BindingDelegate
+import com.xiaocydx.cxrv.binding.bindingDelegate
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
 import com.xiaocydx.sample.R
+import com.xiaocydx.sample.databinding.ItemMessageImageBinding
+import com.xiaocydx.sample.databinding.ItemMessageTextBinding
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
 import com.xiaocydx.sample.showToast
 
 /**
+ * 一对一类型关系示例代码
+ *
  * @author xcc
  * @date 2022/2/17
  */
 class OneToOneFragment : Fragment() {
 
+    /**
+     * 可以通过以下方式构建[ViewTypeDelegate]：
+     * 1. 继承[ViewTypeDelegate]。
+     * 2. 继承[BindingDelegate]。
+     * 3. 调用[bindingDelegate]。
+     * 示例代码的列表比较简单，因此选择第3种方式。
+     */
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -34,13 +50,33 @@ class OneToOneFragment : Fragment() {
         .overScrollNever().linear().fixedSize()
         .adapter(listAdapter<OneToOneMessage> {
             listAdapter.submitList(messageList())
-            register(OneToOneTextDelegate().apply {
-                doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
-            })
-            register(OneToOneImageDelegate().apply {
-                doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
-            })
+            register(OneToOneTextDelegate())
+            register(OneToOneImageDelegate())
         })
+
+    private fun OneToOneTextDelegate() = bindingDelegate(
+        uniqueId = OneToOneMessage.Text::id,
+        inflate = ItemMessageTextBinding::inflate
+    ) {
+        onBindView { item ->
+            ivAvatar.setImageResource(item.avatar)
+            tvUsername.text = item.username
+            tvContent.text = item.content
+        }
+        doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
+    }
+
+    private fun OneToOneImageDelegate() = bindingDelegate(
+        uniqueId = OneToOneMessage.Image::id,
+        inflate = ItemMessageImageBinding::inflate
+    ) {
+        onBindView { item ->
+            ivAvatar.setImageResource(item.avatar)
+            tvUsername.text = item.username
+            ivContent.setImageResource(item.image)
+        }
+        doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
+    }
 
     private fun messageList(): List<OneToOneMessage> {
         val username = "用户A"

@@ -1,8 +1,11 @@
 package com.xiaocydx.sample.itemtouch
 
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import com.xiaocydx.cxrv.binding.BindingHolder
@@ -23,8 +26,8 @@ import com.xiaocydx.sample.databinding.ItemTextType1Binding
 import com.xiaocydx.sample.databinding.ItemTextType2Binding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.extensions.TextItem
-import com.xiaocydx.sample.extensions.getTextType1Delegate
-import com.xiaocydx.sample.extensions.getTextType2Delegate
+import com.xiaocydx.sample.extensions.TextType1Delegate
+import com.xiaocydx.sample.extensions.TextType2Delegate
 import com.xiaocydx.sample.extensions.initMultiTypeTextItems
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
@@ -47,8 +50,8 @@ class ItemTouchActivity : AppCompatActivity() {
         .layoutParams(matchParent, matchParent)
         .overScrollNever().linear().fixedSize()
         .adapter(listAdapter<TextItem> {
-            register(getTextType1Delegate())
-            register(getTextType2Delegate())
+            register(TextType1Delegate())
+            register(TextType2Delegate())
             listAdapter.initItemTouch()
             listAdapter.initMultiTypeTextItems()
         }.withHeaderFooter())
@@ -103,8 +106,11 @@ class ItemTouchActivity : AppCompatActivity() {
             .withFooter(createView(isHeader = false).toAdapter())
     }
 
-    private fun createView(isHeader: Boolean) = View(this).apply {
+    private fun createView(isHeader: Boolean) = AppCompatTextView(this).apply {
+        gravity = Gravity.CENTER
+        text = if (isHeader) "Header" else "Footer"
         layoutParams(matchParent, 100.dp)
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, 18.dp.toFloat())
         setBackgroundColor(if (isHeader) 0xFF92C3FF.toInt() else 0xFF958CFF.toInt())
     }
 }

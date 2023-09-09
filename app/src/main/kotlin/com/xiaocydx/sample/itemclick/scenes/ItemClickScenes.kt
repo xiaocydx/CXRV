@@ -13,8 +13,8 @@ import com.xiaocydx.cxrv.multitype.register
 import com.xiaocydx.sample.databinding.ItemTextType1Binding
 import com.xiaocydx.sample.databinding.ItemTextType2Binding
 import com.xiaocydx.sample.extensions.TextItem
-import com.xiaocydx.sample.extensions.getTextType1Delegate
-import com.xiaocydx.sample.extensions.getTextType2Delegate
+import com.xiaocydx.sample.extensions.TextType1Delegate
+import com.xiaocydx.sample.extensions.TextType2Delegate
 import com.xiaocydx.sample.extensions.initMultiTypeTextItems
 import com.xiaocydx.sample.showToast
 
@@ -61,8 +61,8 @@ sealed class ItemClickScenes {
         }
 
     protected inner class Sub(val num: Int) {
-        val delegate1 = getTextType1Delegate()
-        val delegate2 = getTextType2Delegate()
+        val delegate1 = TextType1Delegate()
+        val delegate2 = TextType2Delegate()
 
         val listAdapter = listAdapter<TextItem> {
             register(delegate1)

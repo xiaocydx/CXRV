@@ -54,8 +54,9 @@ abstract class PagingFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = FrameLayout(requireContext()).also {
-        fooViewModel = sharedViewModel
-            .getListViewModel(key = this.javaClass.simpleName)
+        fooViewModel = sharedViewModel.getListViewModel(
+            key = this.javaClass.canonicalName ?: ""
+        )
         rvPaging = RecyclerView(requireContext())
             .apply { id = fooViewModel.rvId }
             .layoutParams(matchParent, matchParent)
