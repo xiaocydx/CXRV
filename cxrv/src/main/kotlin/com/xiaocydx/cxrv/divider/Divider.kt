@@ -18,7 +18,11 @@ package com.xiaocydx.cxrv.divider
 
 import android.content.Context
 import androidx.annotation.Px
+import androidx.recyclerview.widget.LayoutManagerCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.cxrv.list.grid
+import com.xiaocydx.cxrv.list.linear
+import com.xiaocydx.cxrv.list.staggered
 
 /**
  * 添加通用间隔，可用于链式调用场景
@@ -42,6 +46,10 @@ fun <T : RecyclerView> T.spacing(
  * }
  * ```
  * 详细的属性描述[DividerItemDecoration.Config]
+ *
+ * **注意**：[DividerItemDecoration]仅支持实现了[LayoutManagerCompat]的兼容类，
+ * 若LayoutManager不是兼容类，则[DividerItemDecoration]会在控制台打印警告信息，
+ * 提示可以通过[linear]、[grid]、[staggered]使用兼容类。
  */
 inline fun <T : RecyclerView> T.divider(
     @Px width: Int = 0,
