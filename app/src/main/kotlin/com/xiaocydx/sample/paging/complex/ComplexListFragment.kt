@@ -137,6 +137,7 @@ class ComplexListFragment : Fragment(), TransformSender {
         // 同步选中位置的简化函数
         launchTransformSync(
             recyclerView = rvComplex,
+            contentAdapter = complexAdapter,
             position = complexViewModel.complexPosition,
             transformView = ViewHolder::itemView
         )
