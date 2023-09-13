@@ -130,6 +130,10 @@ class Pager<K : Any, T : Any>(
         fetcher?.append()
     }
 
+    fun retry() {
+        fetcher?.retry()
+    }
+
     private class PagingMediatorImpl<K : Any, T : Any>(
         private val config: PagingConfig,
         private val fetcher: PagingFetcher<K, T>,
