@@ -31,18 +31,18 @@ import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
 import com.xiaocydx.sample.paging.complex.ComplexItem.Companion.TYPE_AD
 import com.xiaocydx.sample.paging.complex.ComplexItem.Companion.TYPE_VIDEO
-import com.xiaocydx.sample.paging.complex.transform.SystemBarsContainer
-import com.xiaocydx.sample.paging.complex.transform.TransformContainer
-import com.xiaocydx.sample.paging.complex.transform.TransformReceiver
-import com.xiaocydx.sample.paging.complex.transform.TransformSceneRoot
-import com.xiaocydx.sample.paging.complex.transform.TransformSender
-import com.xiaocydx.sample.paging.complex.transform.setLightStatusBarOnResume
-import com.xiaocydx.sample.paging.complex.transform.setWindowSystemBarsColor
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.transition.EnterTransitionActivity
 import com.xiaocydx.sample.transition.EnterTransitionController
+import com.xiaocydx.sample.transition.transform.SystemBarsContainer
+import com.xiaocydx.sample.transition.transform.TransformContainer
+import com.xiaocydx.sample.transition.transform.TransformReceiver
+import com.xiaocydx.sample.transition.transform.TransformSceneRoot
+import com.xiaocydx.sample.transition.transform.TransformSender
+import com.xiaocydx.sample.transition.transform.setLightStatusBarOnResume
+import com.xiaocydx.sample.transition.transform.setWindowSystemBarsColor
 import com.xiaocydx.sample.viewLifecycle
 
 /**

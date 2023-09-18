@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.paging.complex.transform
+package com.xiaocydx.sample.transition.transform
 
 import android.transition.Transition
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.fragment.app.Fragment
 import com.google.android.material.transition.platform.MaterialContainerTransform
+import com.xiaocydx.sample.transition.compat.setEnterTransitionCompat
 
 /**
  * 变换过渡动画的Receiver，[Fragment]实现该接口完成完成初始化配置
@@ -42,8 +43,7 @@ interface TransformReceiver {
         val transform = MaterialContainerTransform()
         transform.interpolator = AccelerateDecelerateInterpolator()
         block?.invoke(transform)
-        val enterTransition = root.createTransformTransition(this, transform)
-        this.enterTransition = enterTransition
-        return enterTransition
+        return root.createTransformTransition(this, transform)
+            .also(::setEnterTransitionCompat)
     }
 }

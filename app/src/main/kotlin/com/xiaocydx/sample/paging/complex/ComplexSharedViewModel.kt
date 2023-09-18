@@ -6,9 +6,9 @@ import com.xiaocydx.cxrv.paging.PagingConfig
 import com.xiaocydx.cxrv.paging.broadcastIn
 import com.xiaocydx.cxrv.paging.dataMap
 import com.xiaocydx.cxrv.paging.flowMap
-import com.xiaocydx.sample.paging.complex.transform.SenderKey
-import com.xiaocydx.sample.paging.complex.transform.TransformReceiver
-import com.xiaocydx.sample.paging.complex.transform.TransformSender
+import com.xiaocydx.sample.transition.transform.SenderKey
+import com.xiaocydx.sample.transition.transform.TransformReceiver
+import com.xiaocydx.sample.transition.transform.TransformSender
 
 /**
  * [TransformSender]和[TransformReceiver]共享的ViewModel，

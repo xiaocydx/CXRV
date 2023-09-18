@@ -2,7 +2,7 @@ package com.xiaocydx.sample.paging.complex
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.xiaocydx.sample.paging.complex.transform.TransformContainer
+import com.xiaocydx.sample.transition.transform.TransformContainer
 
 /**
  * 视频流的过渡动画和分页加载示例

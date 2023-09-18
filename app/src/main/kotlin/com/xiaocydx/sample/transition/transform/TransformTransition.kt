@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.paging.complex.transform
+package com.xiaocydx.sample.transition.transform
 
 import android.transition.Transition
 import android.transition.TransitionSet
@@ -47,6 +47,7 @@ internal class TransformTransition(
 ) : TransitionSet() {
 
     init {
+        addTarget(sceneRootId)
         addTransition(transform)
         transform.drawingViewId = sceneRootId
     }

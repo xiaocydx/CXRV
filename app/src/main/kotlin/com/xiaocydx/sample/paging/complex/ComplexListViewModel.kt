@@ -7,8 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.paging.PagingData
 import com.xiaocydx.cxrv.paging.storeIn
-import com.xiaocydx.sample.paging.complex.transform.TransformSenderKey
-import com.xiaocydx.sample.paging.complex.transform.asPosition
+import com.xiaocydx.sample.transition.transform.TransformSenderKey
+import com.xiaocydx.sample.transition.transform.asPosition
 import kotlinx.coroutines.flow.Flow
 
 /**

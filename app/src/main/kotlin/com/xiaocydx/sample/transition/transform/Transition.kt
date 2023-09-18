@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.paging.complex.transform
+package com.xiaocydx.sample.transition.transform
 
 import android.transition.Transition
 import android.transition.Transition.TransitionListener

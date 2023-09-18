@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.paging.complex.transform
+package com.xiaocydx.sample.transition.transform
 
 import android.content.Context
 import android.graphics.Canvas
@@ -43,7 +43,7 @@ import com.xiaocydx.sample.viewLifecycle
 /**
  * 简易的SystemBars容器
  *
- * 此类只是单Activity处理[WindowInsets]的示例代码，在实景场景中应当选择更容易配置和管理的处理方案。
+ * 此类只是单Activity处理[WindowInsets]的示例代码，实景场景应当选择更容易配置和管理的方案。
  *
  * @author xcc
  * @date 2023/8/4
@@ -57,6 +57,10 @@ class SystemBarsContainer(context: Context) : FrameLayout(context) {
     private val navigationBarDrawable = ColorDrawable()
     private var observer: AppearanceLightStatusBarObserver? = null
     private var contentView: View? = null
+
+    init {
+        isTransitionGroup = true
+    }
 
     fun setStatusBarEdgeToEdge(edgeToEdge: Boolean) = apply {
         if (statusBarEdgeToEdge != edgeToEdge) {

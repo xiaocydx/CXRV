@@ -26,6 +26,7 @@ import com.xiaocydx.sample.databinding.ItemSlideLoadingBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
+import com.xiaocydx.sample.transition.compat.setEnterTransitionCompat
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted.Companion.Lazily
 import kotlinx.coroutines.flow.flow
@@ -57,10 +58,10 @@ abstract class TransitionFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        enterTransition = Slide(Gravity.END).apply {
+        setEnterTransitionCompat(Slide(Gravity.END).apply {
             addTarget(view)
             duration = TRANSITION_DURATION
-        }
+        })
     }
 }
 

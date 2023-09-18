@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commitNow
-import com.xiaocydx.sample.paging.complex.transform.TransformContainer
+import com.xiaocydx.sample.transition.transform.TransformContainer
 
 /**
  * 视频流的过渡动画和分页加载示例
