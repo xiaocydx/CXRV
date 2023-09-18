@@ -237,6 +237,8 @@ internal class PagingFetcherTest {
         initKey = 1,
         config = PagingConfig(pageSize = 10),
         source = TestSource(maxPage, retryCount = 1, result),
+        appendEvent = ConflatedEvent(),
+        retryEvent = ConflatedEvent()
     )
 
     private class TestSource(

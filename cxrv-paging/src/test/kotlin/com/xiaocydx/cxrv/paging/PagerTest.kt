@@ -84,7 +84,23 @@ internal class PagerTest {
     }
 
     @Test
-    fun refresh(): Unit = runBlocking {
+    fun refreshBeforeCollect(): Unit = runBlocking {
+        var refreshCount = 0
+        val pager = Pager<Int, String>(
+            initKey = 1,
+            config = PagingConfig(10),
+            source = {
+                refreshCount++
+                awaitCancellation()
+            }
+        )
+        pager.refresh()
+        delay(200)
+        assertThat(refreshCount).isEqualTo(0)
+    }
+
+    @Test
+    fun refreshAfterCollect(): Unit = runBlocking {
         var refreshCount = 0
         val pager = Pager<Int, String>(
             initKey = 1,
@@ -102,5 +118,120 @@ internal class PagerTest {
         delay(200)
         job.cancelAndJoin()
         assertThat(refreshCount).isEqualTo(2)
+    }
+
+    @Test
+    fun appendBeforeCollect(): Unit = runBlocking {
+        var appendCount = 0
+        val pager = Pager(
+            initKey = 1,
+            config = PagingConfig(10),
+            source = { params ->
+                if (params is LoadParams.Append) appendCount++
+                val start = params.pageSize * (params.key - 1) + 1
+                val end = start + params.pageSize - 1
+                val data = (start..end).map { it.toString() }
+                LoadResult.Success(data, nextKey = params.key + 1)
+            }
+        )
+        pager.refresh()
+        pager.append()
+        delay(200)
+        assertThat(appendCount).isEqualTo(0)
+    }
+
+    @Test
+    fun appendAfterCollect(): Unit = runBlocking {
+        var appendCount = 0
+        val pager = Pager(
+            initKey = 1,
+            config = PagingConfig(10),
+            source = { params ->
+                if (params is LoadParams.Append) appendCount++
+                val start = params.pageSize * (params.key - 1) + 1
+                val end = start + params.pageSize - 1
+                val data = (start..end).map { it.toString() }
+                LoadResult.Success(data, nextKey = params.key + 1)
+            }
+        )
+        val job = pager.flow
+            .onEach { it.flow.collect() }
+            .launchIn(this)
+        delay(200)
+        pager.append()
+        delay(200)
+        job.cancelAndJoin()
+        assertThat(appendCount).isEqualTo(1)
+    }
+
+    @Test
+    fun retryBeforeCollect(): Unit = runBlocking {
+        var retryCount = -1 // 去除一次refresh
+        val pager = Pager<Int, String>(
+            initKey = 1,
+            config = PagingConfig(10),
+            source = {
+                retryCount++
+                throw IllegalArgumentException()
+            }
+        )
+        pager.refresh()
+        pager.retry()
+        delay(200)
+        assertThat(retryCount).isEqualTo(-1)
+    }
+
+    @Test
+    fun retryAfterCollect(): Unit = runBlocking {
+        var retryCount = -1 // 去除一次refresh
+        val pager = Pager<Int, String>(
+            initKey = 1,
+            config = PagingConfig(10),
+            source = {
+                retryCount++
+                throw IllegalArgumentException()
+            }
+        )
+        val job = pager.flow
+            .onEach { it.flow.collect() }
+            .launchIn(this)
+        delay(200)
+        pager.retry()
+        delay(200)
+        job.cancelAndJoin()
+        assertThat(retryCount).isEqualTo(1)
+    }
+
+    @Test
+    fun clearAppendAndRetry(): Unit = runBlocking {
+        var refreshCount = 0
+        var appendCount = 0
+        var retryCount = -2 // 去除两次refresh
+        val pager = Pager<Int, String>(
+            initKey = 1,
+            config = PagingConfig(10),
+            source = { params ->
+                if (params is LoadParams.Refresh) refreshCount++
+                if (params is LoadParams.Append) appendCount++
+                retryCount++
+                awaitCancellation()
+            }
+        )
+        val job = pager.flow
+            .onEach { it.flow.collect() }
+            .launchIn(this)
+
+        delay(200)
+        pager.append()
+        delay(200)
+        pager.retry()
+        delay(200)
+        pager.refresh()
+        delay(200)
+        job.cancelAndJoin()
+
+        assertThat(refreshCount).isEqualTo(2)
+        assertThat(appendCount).isEqualTo(0)
+        assertThat(retryCount).isEqualTo(0)
     }
 }

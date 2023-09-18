@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.asSharedFlow
  * @date 2021/9/15
  */
 internal class ConflatedEvent<T> {
-    private val sharedFlow: MutableSharedFlow<T> = MutableSharedFlow(
+    private val sharedFlow = MutableSharedFlow<T>(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )

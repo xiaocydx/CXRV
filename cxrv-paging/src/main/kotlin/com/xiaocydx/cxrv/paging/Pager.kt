@@ -98,6 +98,8 @@ class Pager<K : Any, T : Any>(
     private val source: PagingSource<K, T>
 ) {
     private val refreshEvent = ConflatedEvent<Unit>()
+    private val appendEvent = ConflatedEvent<Unit>()
+    private val retryEvent = ConflatedEvent<Unit>()
     private var isCollected = false
     @Volatile private var fetcher: PagingFetcher<K, T>? = null
     val loadStates: LoadStates
@@ -109,16 +111,14 @@ class Pager<K : Any, T : Any>(
             isCollected = true
             val scope = currentCoroutineContext().job
             scope.invokeOnCompletion { isCollected = false }
-            refreshEvent.flow
-                .onStart {
-                    // 触发初始化加载
-                    emit(Unit)
-                }.collect {
-                    fetcher?.close()
-                    fetcher = PagingFetcher(initKey, config, source)
-                    val mediator = PagingMediatorImpl(config, fetcher!!, refreshEvent)
-                    emit(PagingData(fetcher!!.flow, mediator))
-                }
+            refreshEvent.flow.onStart {
+                // 触发初始化加载
+                emit(Unit)
+            }.collect {
+                fetcher?.close()
+                fetcher = PagingFetcher(initKey, config, source, appendEvent, retryEvent)
+                emit(PagingData(fetcher!!.flow, mediator = PagingMediatorImpl(fetcher!!)))
+            }
         }
     }.conflate().flowOnMain()
 
@@ -127,17 +127,15 @@ class Pager<K : Any, T : Any>(
     }
 
     fun append() {
-        fetcher?.append()
+        appendEvent.send(Unit)
     }
 
     fun retry() {
-        fetcher?.retry()
+        retryEvent.send(Unit)
     }
 
-    private class PagingMediatorImpl<K : Any, T : Any>(
-        private val config: PagingConfig,
-        private val fetcher: PagingFetcher<K, T>,
-        private val refreshEvent: ConflatedEvent<Unit>
+    private inner class PagingMediatorImpl(
+        private val fetcher: PagingFetcher<*, *>
     ) : PagingMediator {
         override val loadStates: LoadStates
             get() = fetcher.loadStates
@@ -145,10 +143,10 @@ class Pager<K : Any, T : Any>(
         override val appendPrefetch: PagingPrefetch
             get() = config.appendPrefetch
 
-        override fun refresh() = refreshEvent.send(Unit)
+        override fun refresh() = this@Pager.refresh()
 
-        override fun append() = fetcher.append()
+        override fun append() = this@Pager.append()
 
-        override fun retry() = fetcher.retry()
+        override fun retry() = this@Pager.retry()
     }
 }

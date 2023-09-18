@@ -19,6 +19,7 @@
 package com.xiaocydx.cxrv.paging
 
 import androidx.annotation.MainThread
+import androidx.annotation.VisibleForTesting
 import com.xiaocydx.cxrv.internal.flowOnMain
 import com.xiaocydx.cxrv.internal.log
 import kotlinx.coroutines.CancellationException
@@ -41,12 +42,12 @@ import kotlinx.coroutines.yield
 internal class PagingFetcher<K : Any, T : Any>(
     private val initKey: K,
     private val config: PagingConfig,
-    private val source: PagingSource<K, T>
+    private val source: PagingSource<K, T>,
+    private val appendEvent: ConflatedEvent<Unit>,
+    private val retryEvent: ConflatedEvent<Unit>
 ) {
     private var isCollected = false
     private var nextKey: K? = null
-    private val appendEvent = ConflatedEvent<Unit>()
-    private val retryEvent = ConflatedEvent<Unit>()
     private val completableJob: CompletableJob = Job()
     @Volatile var loadStates: LoadStates = LoadStates.Incomplete; private set
 
@@ -150,8 +151,10 @@ internal class PagingFetcher<K : Any, T : Any>(
         pageSize = if (loadType === LoadType.REFRESH) config.initPageSize else config.pageSize
     )
 
+    @VisibleForTesting
     fun append() = appendEvent.send(Unit)
 
+    @VisibleForTesting
     fun retry() = retryEvent.send(Unit)
 
     fun close() = completableJob.cancel()
