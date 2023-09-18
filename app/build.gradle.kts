@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.xiaocydx.sample"
-    compileSdk = 31
+    compileSdk = 33
 
     defaultConfig {
         applicationId = "com.xiaocydx.sample"
         minSdk = 21
-        targetSdk = 31
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -39,7 +39,8 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.4.2")
     implementation("com.google.android.material:material:1.3.0")
     implementation("androidx.constraintlayout:constraintlayout:2.0.4")
-    implementation("androidx.fragment:fragment-ktx:1.3.6")
+    implementation("androidx.fragment:fragment-ktx:1.6.1")
+    implementation("androidx.fragment:fragment:1.6.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0")
     implementation("androidx.drawerlayout:drawerlayout:1.1.1")
     implementation("androidx.recyclerview:recyclerview:1.2.0")
