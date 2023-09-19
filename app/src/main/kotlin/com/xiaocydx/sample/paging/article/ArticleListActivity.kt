@@ -72,8 +72,7 @@ class ArticleListActivity : AppCompatActivity() {
     private fun initCollect() {
         viewModel.flow
             .onEach(listAdapter.pagingCollector)
-            .repeatOnLifecycle(lifecycle)
-            .launchInLifecycleScope()
+            .launchRepeatOnLifecycle(lifecycle)
     }
 
     private fun initEdgeToEdge() {

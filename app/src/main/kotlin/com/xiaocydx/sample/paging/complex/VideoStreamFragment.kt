@@ -28,11 +28,11 @@ import com.xiaocydx.sample.databinding.FragmetVideoStreamBinding
 import com.xiaocydx.sample.databinding.ItemVideoStreamBinding
 import com.xiaocydx.sample.doOnApplyWindowInsets
 import com.xiaocydx.sample.doOnStateChanged
+import com.xiaocydx.sample.launchRepeatOnLifecycle
 import com.xiaocydx.sample.launchSafely
 import com.xiaocydx.sample.paging.config.loadStatesFlow
 import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
 import com.xiaocydx.sample.registerOnPageChangeCallback
-import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.showToast
 import com.xiaocydx.sample.transition.transform.SystemBarsContainer
 import com.xiaocydx.sample.transition.transform.TransformReceiver
@@ -163,8 +163,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
 
         videoViewModel.videoFlow
             .onEach(videoAdapter.pagingCollector)
-            .repeatOnLifecycle(viewLifecycle)
-            .launchInLifecycleScope()
+            .launchRepeatOnLifecycle(viewLifecycle)
     }
 
     private fun setupDebugLog() {

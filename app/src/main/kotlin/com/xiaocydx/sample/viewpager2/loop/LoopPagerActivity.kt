@@ -23,7 +23,7 @@ import com.xiaocydx.cxrv.viewpager2.loop.setPageTransformer
 import com.xiaocydx.sample.databinding.ActivityLoopPagerBinding
 import com.xiaocydx.sample.databinding.ItemButtonBinding
 import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.repeatOnLifecycle
+import com.xiaocydx.sample.launchRepeatOnLifecycle
 import com.xiaocydx.sample.showToast
 import kotlinx.coroutines.Job
 
@@ -87,8 +87,7 @@ class LoopPagerActivity : AppCompatActivity() {
         }
         viewModel.flow
             .onEach(adapter.listCollector)
-            .repeatOnLifecycle(lifecycle)
-            .launchInLifecycleScope()
+            .launchRepeatOnLifecycle(lifecycle)
     }
 
     private fun performLoopPagerAction(action: LoopPagerAction) {

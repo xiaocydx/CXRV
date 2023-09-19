@@ -25,9 +25,9 @@ import com.xiaocydx.sample.R
 import com.xiaocydx.sample.databinding.FragmentListStateBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.foo.FooListAdapter
+import com.xiaocydx.sample.launchRepeatOnLifecycle
 import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
 import com.xiaocydx.sample.paging.config.withPaging
-import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.StateFlow
@@ -78,13 +78,11 @@ class PagingListStateFragment : Fragment(R.layout.fragment_list_state) {
     private fun FragmentListStateBinding.initCollect() = apply {
         pagingViewModel.flow
             .onEach(fooAdapter1.pagingCollector)
-            .repeatOnLifecycle(viewLifecycle)
-            .launchInLifecycleScope()
+            .launchRepeatOnLifecycle(viewLifecycle)
 
         pagingViewModel.flow
             .onEach(fooAdapter2.pagingCollector)
-            .repeatOnLifecycle(viewLifecycle)
-            .launchInLifecycleScope()
+            .launchRepeatOnLifecycle(viewLifecycle)
 
         sharedViewModel.menuAction.onEach { action ->
             when (action) {

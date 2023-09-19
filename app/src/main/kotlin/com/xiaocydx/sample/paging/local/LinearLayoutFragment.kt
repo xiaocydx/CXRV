@@ -8,9 +8,9 @@ import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.launchRepeatOnLifecycle
 import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
 import com.xiaocydx.sample.paging.config.withPaging
-import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.viewLifecycle
 
 /**
@@ -35,7 +35,6 @@ class LinearLayoutFragment : PagingFragment() {
         super.initCollect()
         fooViewModel.flow
             .onEach(fooAdapter.pagingCollector)
-            .repeatOnLifecycle(viewLifecycle)
-            .launchInLifecycleScope()
+            .launchRepeatOnLifecycle(viewLifecycle)
     }
 }

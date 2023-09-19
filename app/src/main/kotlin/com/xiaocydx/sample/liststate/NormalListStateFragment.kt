@@ -25,7 +25,7 @@ import com.xiaocydx.sample.R
 import com.xiaocydx.sample.databinding.FragmentListStateBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.foo.FooListAdapter
-import com.xiaocydx.sample.repeatOnLifecycle
+import com.xiaocydx.sample.launchRepeatOnLifecycle
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.StateFlow
@@ -74,13 +74,11 @@ class NormalListStateFragment : Fragment(R.layout.fragment_list_state) {
     private fun FragmentListStateBinding.initCollect() = apply {
         normalViewModel.flow
             .onEach(fooAdapter1.listCollector)
-            .repeatOnLifecycle(viewLifecycle)
-            .launchInLifecycleScope()
+            .launchRepeatOnLifecycle(viewLifecycle)
 
         normalViewModel.flow
             .onEach(fooAdapter2.listCollector)
-            .repeatOnLifecycle(viewLifecycle)
-            .launchInLifecycleScope()
+            .launchRepeatOnLifecycle(viewLifecycle)
 
         sharedViewModel.menuAction.onEach { action ->
             when (action) {

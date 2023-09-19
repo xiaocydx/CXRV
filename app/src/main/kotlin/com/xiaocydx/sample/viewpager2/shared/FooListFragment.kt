@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.core.view.doOnAttach
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
@@ -33,12 +32,12 @@ import com.xiaocydx.sample.doOnTargetState
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.foo.Foo
 import com.xiaocydx.sample.foo.FooListViewModel
+import com.xiaocydx.sample.launchRepeatOnLifecycle
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
-import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.viewLifecycle
 
 /**
@@ -95,7 +94,7 @@ class FooListFragment : Fragment() {
         adapter = fooAdapter.withPaging()
     }
 
-    private fun RecyclerView.initParentViewPager2() = doOnAttach {
+    private fun RecyclerView.initParentViewPager2() {
         // 1. 处理ViewPager2嵌套RecyclerView的滚动冲突
         isVp2NestedScrollable = true
 
@@ -130,8 +129,7 @@ class FooListFragment : Fragment() {
         viewLifecycle.doOnTargetState(if (fooViewModel.isLoaded) STARTED else RESUMED) {
             fooViewModel.flow
                 .onEach(fooAdapter.pagingCollector)
-                .repeatOnLifecycle(viewLifecycle)
-                .launchInLifecycleScope()
+                .launchRepeatOnLifecycle(viewLifecycle)
         }
     }
 

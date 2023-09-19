@@ -39,8 +39,7 @@ class NestedScrollableActivity : AppCompatActivity() {
             viewPager2.offscreenPageLimit = 2
             viewPager2.adapter = NestedPageAdapter()
             TabLayoutMediator(
-                tabLayout,
-                viewPager2,
+                tabLayout, viewPager2,
                 /* autoRefresh */true,
                 /* smoothScroll */true
             ) { tab, position ->

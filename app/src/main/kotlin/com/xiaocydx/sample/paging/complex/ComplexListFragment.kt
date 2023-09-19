@@ -26,6 +26,7 @@ import com.xiaocydx.sample.databinding.ItemComplexBinding
 import com.xiaocydx.sample.doOnStateChanged
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
+import com.xiaocydx.sample.launchRepeatOnLifecycle
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
@@ -33,7 +34,6 @@ import com.xiaocydx.sample.paging.complex.ComplexItem.Companion.TYPE_AD
 import com.xiaocydx.sample.paging.complex.ComplexItem.Companion.TYPE_VIDEO
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
-import com.xiaocydx.sample.repeatOnLifecycle
 import com.xiaocydx.sample.transition.EnterTransitionActivity
 import com.xiaocydx.sample.transition.EnterTransitionController
 import com.xiaocydx.sample.transition.transform.SystemBarsContainer
@@ -131,8 +131,7 @@ class ComplexListFragment : Fragment(), TransformSender {
         setupDebugLog()
         complexViewModel.complexFlow
             .onEach(complexAdapter.pagingCollector)
-            .repeatOnLifecycle(viewLifecycle)
-            .launchInLifecycleScope()
+            .launchRepeatOnLifecycle(viewLifecycle)
 
         // 同步选中位置的简化函数
         launchTransformSync(
