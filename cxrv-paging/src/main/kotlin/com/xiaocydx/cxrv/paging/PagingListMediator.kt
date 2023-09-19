@@ -51,7 +51,8 @@ internal open class PagingListMediator<T : Any>(
         launch(start = UNDISPATCHED) {
             data.flow.collect { event ->
                 if (event is PagingEvent.LoadDataSuccess) {
-                    updateList(event.toUpdateOp())
+                    val op = event.toUpdateOp()
+                    listState.updateList(op, dispatch = false)
                 }
                 send(event.fusion(version))
             }

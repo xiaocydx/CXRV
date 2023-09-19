@@ -86,6 +86,11 @@ class ListState<T : Any> : ListOwner<T> {
 
     @MainThread
     override fun updateList(op: UpdateOp<T>): UpdateResult {
+        return updateList(op, dispatch = true)
+    }
+
+    @MainThread
+    internal fun updateList(op: UpdateOp<T>, dispatch: Boolean): UpdateResult {
         assertMainThread()
         val succeed = when (op) {
             is UpdateOp.SubmitList -> submitList(op.newList)
@@ -98,7 +103,7 @@ class ListState<T : Any> : ListOwner<T> {
         }
         if (succeed) {
             version++
-            listeners.reverseAccessEach { it(op) }
+            if (dispatch) listeners.reverseAccessEach { it(op) }
         }
         return if (succeed) SuccessResult else FailureResult
     }
