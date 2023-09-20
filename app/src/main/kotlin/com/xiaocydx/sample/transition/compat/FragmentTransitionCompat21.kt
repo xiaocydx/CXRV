@@ -196,29 +196,34 @@ private class FragmentTransitionCompat21Set constructor() : TransitionSet() {
             if (transition !is Transition) return
             val targets = mutableSetOf<View>()
             val targetIds = mutableSetOf<Int>()
-            val skip = transition !is FragmentTransitionCompat21Set
-            recursionSet(transition, targets, targetIds, skip)
+            recursion(transition, targets, targetIds)
+            distinct(transition, targets, targetIds)
             targets.forEach(transition::addTarget)
             targetIds.forEach(transition::addTarget)
             // 调整匹配顺序，支持捕获的values.view不同，但targetId相同的情况
             transition.setMatchOrder(MATCH_NAME, MATCH_ID, MATCH_INSTANCE, MATCH_ITEM_ID)
         }
 
-        private fun recursionSet(
-            transition: Transition,
-            targets: MutableSet<View>,
-            targetIds: MutableSet<Int>,
-            skip: Boolean
-        ) {
-            if (transition is FragmentTransitionCompat21Set && !skip) {
-                transition.getChildTargets(targets)
-                transition.getChildTargetIds(targetIds)
-            }
-            if (transition is TransitionSet) {
-                val transitionCount = transition.transitionCount
-                for (i in 0 until transitionCount) {
-                    recursionSet(transition.getTransitionAt(i), targets, targetIds, skip = false)
+        private fun recursion(transition: Transition, targets: MutableSet<View>, targetIds: MutableSet<Int>) {
+            when (transition) {
+                is FragmentTransitionCompat21Set -> {
+                    transition.getChildTargets(targets)
+                    transition.getChildTargetIds(targetIds)
                 }
+                is TransitionSet -> for (i in 0 until transition.transitionCount) {
+                    recursion(transition.getTransitionAt(i), targets, targetIds)
+                }
+            }
+        }
+
+        private fun distinct(transition: Transition, targets: MutableSet<View>, targetIds: MutableSet<Int>) {
+            if (targets.isNotEmpty()) {
+                val existed = transition.targets ?: emptyList()
+                for (i in existed.indices) targets.remove(existed[i])
+            }
+            if (targetIds.isNotEmpty()) {
+                val existed = transition.targetIds ?: emptyList()
+                for (i in existed.indices) targetIds.remove(existed[i])
             }
         }
     }
