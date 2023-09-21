@@ -1,7 +1,6 @@
-package com.xiaocydx.sample.transition
+package com.xiaocydx.sample.transition.enter
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.lifecycle.flowWithLifecycle
 import androidx.recyclerview.widget.PrepareDeadline
@@ -25,47 +24,35 @@ import kotlinx.coroutines.launch
  * @date 2023/5/21
  */
 class PrepareFragment : TransitionFragment() {
-    private val TAG = javaClass.simpleName
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupDebugLog()
-        viewLifecycleScope.launch {
-            // 0是默认值
-            val viewType = 0
-            val result = recyclerView.prepareScrap(
-                prepareAdapter = contentAdapter,
-                prepareDeadline = PrepareDeadline.FRAME_NS,
-                block = { add(viewType, count = 50) }
-            )
-            val recycledScrapCount = result.getRecycledScrapCount(viewType)
-            val prepareScrapCount = result.getPreparedScrapCount(viewType)
-            Log.d(TAG, "recycledScrapCount = $recycledScrapCount")
-            Log.d(TAG, "prepareScrapCount = $prepareScrapCount")
-        }
-
+        prepareScrap()
         viewModel.state
             .flowWithLifecycle(viewLifecycle)
             .distinctUntilChanged()
             .onEach { state ->
                 when (state) {
-                    SlideState.LOADING -> {
-                        loadingAdapter.showLoading()
+                    TransitionState.LOADING -> {
+                        loadingAdapter.show()
                     }
-                    SlideState.CONTENT -> {
-                        loadingAdapter.hideLoading()
-                        contentAdapter.insertItems()
+                    TransitionState.CONTENT -> {
+                        loadingAdapter.hide()
+                        contentAdapter.show()
                     }
                 }
             }
             .launchIn(viewLifecycleScope)
     }
 
-    private fun setupDebugLog() {
-        var count = 0
-        contentAdapter.onCreateViewHolder { viewType ->
-            val threadName = Thread.currentThread().name
-            Log.d(TAG, "createHolder-${++count}：viewType = ${viewType}, threadName = $threadName")
+    private fun prepareScrap() {
+        // viewType = 0是默认值
+        viewLifecycleScope.launch {
+            recyclerView?.prepareScrap(
+                prepareAdapter = contentAdapter,
+                prepareDeadline = PrepareDeadline.FRAME_NS,
+                block = { add(viewType = 0, count = 50) }
+            )
         }
     }
 }

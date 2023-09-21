@@ -34,8 +34,8 @@ import com.xiaocydx.sample.paging.complex.ComplexItem.Companion.TYPE_AD
 import com.xiaocydx.sample.paging.complex.ComplexItem.Companion.TYPE_VIDEO
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
-import com.xiaocydx.sample.transition.EnterTransitionActivity
-import com.xiaocydx.sample.transition.EnterTransitionController
+import com.xiaocydx.sample.transition.enter.EnterTransitionActivity
+import com.xiaocydx.sample.transition.enter.EnterTransitionController
 import com.xiaocydx.sample.transition.transform.SystemBarsContainer
 import com.xiaocydx.sample.transition.transform.TransformContainer
 import com.xiaocydx.sample.transition.transform.TransformReceiver

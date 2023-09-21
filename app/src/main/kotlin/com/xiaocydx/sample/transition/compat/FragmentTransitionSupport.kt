@@ -33,11 +33,11 @@ internal class FragmentTransitionSupportEnhance(
         return delegate.canHandle(transition)
     }
 
-    override fun cloneTransition(transition: Any?): Any {
+    override fun cloneTransition(transition: Any?): Any? {
         return delegate.cloneTransition(transition)
     }
 
-    override fun wrapTransitionInSet(transition: Any?): Any {
+    override fun wrapTransitionInSet(transition: Any?): Any? {
         return delegate.wrapTransitionInSet(transition)
     }
 
@@ -57,7 +57,7 @@ internal class FragmentTransitionSupportEnhance(
         delegate.addTargets(transitionObj, views)
     }
 
-    override fun mergeTransitionsTogether(transition1: Any?, transition2: Any?, transition3: Any?): Any {
+    override fun mergeTransitionsTogether(transition1: Any?, transition2: Any?, transition3: Any?): Any? {
         return delegate.mergeTransitionsTogether(transition1, transition2, transition3)
     }
 
@@ -65,7 +65,7 @@ internal class FragmentTransitionSupportEnhance(
         return delegate.scheduleHideFragmentView(exitTransitionObj, fragmentView, exitingViews)
     }
 
-    override fun mergeTransitionsInSequence(exitTransitionObj: Any?, enterTransitionObj: Any?, sharedElementTransitionObj: Any?): Any {
+    override fun mergeTransitionsInSequence(exitTransitionObj: Any?, enterTransitionObj: Any?, sharedElementTransitionObj: Any?): Any? {
         return delegate.mergeTransitionsInSequence(exitTransitionObj, enterTransitionObj, sharedElementTransitionObj)
     }
 

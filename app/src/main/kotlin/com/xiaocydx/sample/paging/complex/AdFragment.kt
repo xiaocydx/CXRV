@@ -8,10 +8,10 @@ import android.view.ViewGroup
 import androidx.lifecycle.flowWithLifecycle
 import com.xiaocydx.sample.doOnStateChanged
 import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
-import com.xiaocydx.sample.transition.EnterTransitionController
-import com.xiaocydx.sample.transition.LOADING_DURATION
-import com.xiaocydx.sample.transition.SlideState
-import com.xiaocydx.sample.transition.TransitionFragment
+import com.xiaocydx.sample.transition.enter.EnterTransitionController
+import com.xiaocydx.sample.transition.enter.LOADING_DURATION
+import com.xiaocydx.sample.transition.enter.TransitionFragment
+import com.xiaocydx.sample.transition.enter.TransitionState
 import com.xiaocydx.sample.transition.transform.SystemBarsContainer
 import com.xiaocydx.sample.transition.transform.TransformReceiver
 import com.xiaocydx.sample.transition.transform.setLightStatusBarOnResume
@@ -48,7 +48,7 @@ class AdFragment : TransitionFragment(), TransformReceiver {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupDebugLog()
         setTransformEnterTransition().duration = 200
-        recyclerView.enableGestureNavBarEdgeToEdge()
+        recyclerView?.enableGestureNavBarEdgeToEdge()
 
         // 沿用EnterTransitionController解决过渡动画卡顿的问题
         val controller = EnterTransitionController(this)
@@ -58,13 +58,13 @@ class AdFragment : TransitionFragment(), TransformReceiver {
             .distinctUntilChanged()
             .onEach { state ->
                 when (state) {
-                    SlideState.LOADING -> {
-                        loadingAdapter.showLoading()
+                    TransitionState.LOADING -> {
+                        loadingAdapter.show()
                     }
-                    SlideState.CONTENT -> {
+                    TransitionState.CONTENT -> {
                         controller.startPostponeEnterTransitionOrAwait()
-                        loadingAdapter.hideLoading()
-                        contentAdapter.insertItems()
+                        loadingAdapter.hide()
+                        contentAdapter.show()
                     }
                 }
             }

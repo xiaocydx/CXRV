@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.transition
+package com.xiaocydx.sample.transition.enter
 
 import android.os.Bundle
 import android.view.View
@@ -24,12 +24,12 @@ class JankFragment : TransitionFragment() {
             .distinctUntilChanged()
             .onEach { state ->
                 when (state) {
-                    SlideState.LOADING -> {
-                        loadingAdapter.showLoading()
+                    TransitionState.LOADING -> {
+                        loadingAdapter.show()
                     }
-                    SlideState.CONTENT -> {
-                        loadingAdapter.hideLoading()
-                        contentAdapter.insertItems()
+                    TransitionState.CONTENT -> {
+                        loadingAdapter.hide()
+                        contentAdapter.show()
                     }
                 }
             }

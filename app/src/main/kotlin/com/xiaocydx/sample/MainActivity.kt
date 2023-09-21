@@ -23,7 +23,7 @@ import com.xiaocydx.sample.paging.article.ArticleListActivity
 import com.xiaocydx.sample.paging.complex.ComplexContainerActivity
 import com.xiaocydx.sample.paging.local.PagingActivity
 import com.xiaocydx.sample.payload.PayloadActivity
-import com.xiaocydx.sample.transition.EnterTransitionActivity
+import com.xiaocydx.sample.transition.enter.EnterTransitionActivity
 import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity
 import com.xiaocydx.sample.viewpager2.nested.NestedScrollableActivity
 import com.xiaocydx.sample.viewpager2.shared.SharedPoolActivity

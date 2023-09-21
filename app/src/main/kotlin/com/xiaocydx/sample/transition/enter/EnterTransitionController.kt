@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.sample.transition
+package com.xiaocydx.sample.transition.enter
 
 import android.os.Build
 import android.os.Bundle
@@ -27,13 +27,18 @@ import androidx.annotation.MainThread
 import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.savedstate.SavedStateRegistry
-import kotlinx.coroutines.*
-import kotlin.coroutines.Continuation
+import com.xiaocydx.sample.doOnTargetState
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CompletionHandler
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
-import android.transition.Transition as AndroidTransition
-import androidx.transition.Transition as AndroidXTransition
 
 /**
  * `Fragment.enterTransition`的控制器
@@ -45,7 +50,6 @@ class EnterTransitionController(private val fragment: Fragment) {
     private var isPostponed = false
     private var postponeEnterJob: Job? = null
     private var enterTransitionJob: Job? = null
-    private var enterTransitionProvider = defaultEnterTransitionProvider
 
     /**
      * 推迟`enterTransition`，可以跟[startPostponeEnterTransitionOrAwait]搭配使用
@@ -77,13 +81,21 @@ class EnterTransitionController(private val fragment: Fragment) {
             postponeEnterJob?.join()
             postponeEnterJob = null
             fragment.startPostponedEnterTransition()
-            fragment.enterTransitionProvider().let(::EnterTransitionCompat).awaitEnd()
+            fragment.lifecycle.awaitResumed()
+            // 无法通过生命周期状态转换为RESUMED确定enterAnimation结束，
+            // 通过Animation.setAnimationListener()实现挂起函数等待结束，
+            // 这不是一个好的选择，因为业务场景可能依赖该监听实现特定需求，
+            // 因此，在enterAnimation运行期间，每一帧都检查是否运行结束。
+            while (true) {
+                val animation = fragment.view?.animation
+                if (animation == null || animation.hasEnded()) break
+                awaitFrame()
+            }
         }
 
         enterTransitionJob!!.invokeOnCompletion {
             postponeEnterJob = null
             enterTransitionJob = null
-            enterTransitionProvider = defaultEnterTransitionProvider
         }
     }
 
@@ -96,15 +108,6 @@ class EnterTransitionController(private val fragment: Fragment) {
         assertMainThread()
         awaitMainThreadIdle()
         postponeEnterJob?.cancel() ?: enterTransitionJob?.join()
-    }
-
-    @MainThread
-    @SinceKotlin("999.9")
-    @Suppress("NEWER_VERSION_IN_SINCE_KOTLIN")
-    fun setEnterTransitionProvider(provider: Fragment.() -> Any) {
-        // fragment.sharedElementEnterTransition的表现待验证
-        assertMainThread()
-        enterTransitionProvider = provider
     }
 
     /**
@@ -181,11 +184,30 @@ class EnterTransitionController(private val fragment: Fragment) {
         }
     }
 
-    private companion object : SavedStateRegistry.SavedStateProvider {
-        private const val KEY = "com.xiaocydx.sample.transition.EnterTransitionController"
-        private val defaultEnterTransitionProvider: Fragment.() -> Any = {
-            requireNotNull(enterTransition) { "Fragment未设置enterTransition" }
+    private fun assertMainThread() {
+        assert(Thread.currentThread() === Looper.getMainLooper().thread) {
+            "当前是处理Fragment过渡动画的流程，必须在主线程调用该函数"
         }
+    }
+
+    private suspend fun Lifecycle.awaitResumed() {
+        val resumed = Lifecycle.State.RESUMED
+        if (currentState === resumed) return
+        suspendCancellableCoroutine { cont ->
+            val observer = doOnTargetState(resumed) { cont.resume(Unit) }
+            cont.invokeOnCancellationSafely { removeObserver(observer) }
+        }
+    }
+
+    private inline fun CancellableContinuation<*>.invokeOnCancellationSafely(
+        crossinline handler: CompletionHandler
+    ) = invokeOnCancellation {
+        assertMainThread()
+        handler.invoke(it)
+    }
+
+    private companion object : SavedStateRegistry.SavedStateProvider {
+        private const val KEY = "com.xiaocydx.sample.transition.enter.EnterTransitionController"
 
         override fun saveState() = Bundle(1)
 
@@ -194,76 +216,9 @@ class EnterTransitionController(private val fragment: Fragment) {
         }
 
         fun Fragment.registerPostponeSavedStateProvider() {
+            // unregister避免重复注册抛出异常
+            savedStateRegistry.unregisterSavedStateProvider(KEY)
             savedStateRegistry.registerSavedStateProvider(KEY, this@Companion)
-        }
-    }
-}
-
-private fun assertMainThread() {
-    assert(Thread.currentThread() === Looper.getMainLooper().thread) {
-        "当前是处理Fragment过渡动画的流程，必须在主线程调用该函数"
-    }
-}
-
-private inline fun CancellableContinuation<*>.invokeOnCancellationSafely(
-    crossinline handler: CompletionHandler
-) = invokeOnCancellation {
-    assertMainThread()
-    handler.invoke(it)
-}
-
-private class EnterTransitionCompat(private val enterTransition: Any) {
-
-    @MainThread
-    suspend fun awaitEnd() {
-        assertMainThread()
-        when (enterTransition) {
-            is AndroidTransition -> enterTransition.awaitEnd()
-            is AndroidXTransition -> enterTransition.awaitEnd()
-            else -> throw IllegalArgumentException(
-                "enterTransition的类型必须是${AndroidTransition::class.java.name}，" +
-                        "或者是${AndroidXTransition::class.java.name}"
-            )
-        }
-    }
-
-    @MainThread
-    private suspend fun AndroidTransition.awaitEnd() = suspendCancellableCoroutine { cont ->
-        val listener = AndroidTransitionOnEnd(cont)
-        addListener(listener)
-        cont.invokeOnCancellationSafely { removeListener(listener) }
-    }
-
-    @MainThread
-    private suspend fun AndroidXTransition.awaitEnd() = suspendCancellableCoroutine { cont ->
-        val listener = AndroidXTransitionOnEnd(cont)
-        addListener(listener)
-        cont.invokeOnCancellationSafely { removeListener(listener) }
-    }
-
-    private class AndroidTransitionOnEnd(
-        private val continuation: Continuation<Unit>
-    ) : AndroidTransition.TransitionListener {
-        override fun onTransitionPause(transition: AndroidTransition) = Unit
-        override fun onTransitionResume(transition: AndroidTransition) = Unit
-        override fun onTransitionStart(transition: AndroidTransition) = Unit
-        override fun onTransitionCancel(transition: AndroidTransition) = Unit
-        override fun onTransitionEnd(transition: AndroidTransition) {
-            transition.removeListener(this)
-            continuation.resume(Unit)
-        }
-    }
-
-    private class AndroidXTransitionOnEnd(
-        private val continuation: Continuation<Unit>
-    ) : AndroidXTransition.TransitionListener {
-        override fun onTransitionPause(transition: AndroidXTransition) = Unit
-        override fun onTransitionResume(transition: AndroidXTransition) = Unit
-        override fun onTransitionStart(transition: AndroidXTransition) = Unit
-        override fun onTransitionCancel(transition: AndroidXTransition) = Unit
-        override fun onTransitionEnd(transition: AndroidXTransition) {
-            transition.removeListener(this)
-            continuation.resume(Unit)
         }
     }
 }

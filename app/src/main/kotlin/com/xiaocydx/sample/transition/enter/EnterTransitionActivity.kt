@@ -1,7 +1,8 @@
-package com.xiaocydx.sample.transition
+package com.xiaocydx.sample.transition.enter
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
@@ -17,6 +18,7 @@ import com.xiaocydx.sample.R
 import com.xiaocydx.sample.databinding.ActivityEnterTransitionBinding
 import com.xiaocydx.sample.databinding.ItemButtonBinding
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.transition.enter.EnterTransitionActivity.Companion.CUSTOM_ANIMATION
 
 /**
  * 对页面导航场景而言，Fragment过渡动画卡顿的主要原因是动画运行期间，
@@ -37,6 +39,9 @@ import com.xiaocydx.sample.dp
  * 4. [NotWaitEndFragment]推迟Fragment过渡动画，推迟时间未到达，列表数据加载完成，申请重新布局，
  * 并开始Fragment过渡动画，此时的交互体验接近Activity的窗口动画，即看到Fragment页面就有列表内容，
  * 而不是先显示Loading，再看到列表内容。
+ *
+ * **注意**：[EnterTransitionController]不只是优化`Fragment.enterTransition`，
+ * 将[CUSTOM_ANIMATION]设为`true`，可以验证[setCustomAnimations]的优化效果。
  *
  * @author xcc
  * @date 2023/5/21
@@ -67,19 +72,35 @@ class EnterTransitionActivity : AppCompatActivity() {
 
     private fun performTransitionAction(action: TransitionAction) {
         when (action) {
-            TransitionAction.JANK -> addFragment(JankFragment())
-            TransitionAction.PREPARE -> addFragment(PrepareFragment())
-            TransitionAction.WAIT_END -> addFragment(WaitEndFragment())
-            TransitionAction.NOT_WAIT_END -> addFragment(NotWaitEndFragment())
+            TransitionAction.JANK -> addFragment<JankFragment>()
+            TransitionAction.PREPARE -> addFragment<PrepareFragment>()
+            TransitionAction.WAIT_END -> addFragment<WaitEndFragment>()
+            TransitionAction.NOT_WAIT_END -> addFragment<NotWaitEndFragment>()
         }
     }
 
-    private fun addFragment(fragment: TransitionFragment) {
+    private inline fun <reified T : TransitionFragment> addFragment() {
+        val clazz = T::class.java
+        val args = TransitionFragment.createArgs(CUSTOM_ANIMATION)
         supportFragmentManager.commit {
             setReorderingAllowed(true)
             addToBackStack(null)
-            add(R.id.container, fragment, fragment.javaClass.canonicalName)
+            if (CUSTOM_ANIMATION) {
+                setCustomAnimations()
+                replace(R.id.container, clazz, args)
+            } else {
+                add(R.id.container, clazz, args)
+            }
         }
+    }
+
+    private fun FragmentTransaction.setCustomAnimations() {
+        setCustomAnimations(
+            /* enter */ R.anim.slide_in,
+            /* exit */ R.anim.fade_out,
+            /* popEnter */ R.anim.fade_in,
+            /* popExit */  R.anim.slide_out
+        )
     }
 
     private enum class TransitionAction(val text: String) {
@@ -87,5 +108,9 @@ class EnterTransitionActivity : AppCompatActivity() {
         PREPARE("Prepare"),
         WAIT_END("WaitEnd"),
         NOT_WAIT_END(" NotWaitEnd")
+    }
+
+    private companion object {
+        const val CUSTOM_ANIMATION = false
     }
 }
