@@ -47,7 +47,7 @@ abstract class TransitionFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         if (arguments?.getBoolean(CUSTOM_ANIMATION) == true) return
-        setEnterTransitionCompat(Slide(Gravity.END).apply {
+        setEnterTransitionCompat(Slide(Gravity.RIGHT).apply {
             addTarget(view)
             duration = 300L
         })

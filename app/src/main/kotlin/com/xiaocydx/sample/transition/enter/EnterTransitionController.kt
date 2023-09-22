@@ -81,11 +81,14 @@ class EnterTransitionController(private val fragment: Fragment) {
             postponeEnterJob?.join()
             postponeEnterJob = null
             fragment.startPostponedEnterTransition()
+            // 生命周期状态转换为RESUMED，enterTransition结束，enterAnimation创建
             fragment.lifecycle.awaitResumed()
             // 无法通过生命周期状态转换为RESUMED确定enterAnimation结束，
             // 通过Animation.setAnimationListener()实现挂起函数等待结束，
             // 这不是一个好的选择，因为业务场景可能依赖该监听实现特定需求，
             // 因此，在enterAnimation运行期间，每一帧都检查是否运行结束。
+            // RecyclerView的优化布局流程，会因为轮询检查，而多等待一帧，
+            // 这种情况对Fragment交互体验没有产生影响，因此不需要做处理。
             while (true) {
                 val animation = fragment.view?.animation
                 if (animation == null || animation.hasEnded()) break
