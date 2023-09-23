@@ -166,12 +166,11 @@ private class FragmentTransitionCompat21Set constructor() : TransitionSet() {
 
     private fun getChildTargets(child: Transition, targets: MutableSet<View>) {
         if (child.targetNames.isNullOrEmpty() && child.targetTypes.isNullOrEmpty()) {
-            val childTargets = child.targets
-            for (i in childTargets.indices) targets.add(childTargets[i])
+            // child.targets是ArrayList，不需要调用targets.addAll()创建迭代器遍历child.targets
+            for (i in child.targets.indices) targets.add(child.targets[i])
         }
         if (child is TransitionSet) {
-            val transitionCount = child.transitionCount
-            for (i in 0 until transitionCount) {
+            for (i in 0 until child.transitionCount) {
                 getChildTargets(child.getTransitionAt(i), targets)
             }
         }
@@ -179,12 +178,11 @@ private class FragmentTransitionCompat21Set constructor() : TransitionSet() {
 
     private fun getChildTargetIds(child: Transition, targetIds: MutableSet<Int>) {
         if (child.targetNames.isNullOrEmpty() && child.targetTypes.isNullOrEmpty()) {
-            val childTargetIds = child.targetIds
-            for (i in childTargetIds.indices) targetIds.add(childTargetIds[i])
+            // child.targetIds是ArrayList，不需要调用targetIds.addAll()创建迭代器遍历child.targetIds
+            for (i in child.targetIds.indices) targetIds.add(child.targetIds[i])
         }
         if (child is TransitionSet) {
-            val transitionCount = child.transitionCount
-            for (i in 0 until transitionCount) {
+            for (i in 0 until child.transitionCount) {
                 getChildTargetIds(child.getTransitionAt(i), targetIds)
             }
         }

@@ -81,7 +81,7 @@ class EnterTransitionController(private val fragment: Fragment) {
             postponeEnterJob?.join()
             postponeEnterJob = null
             fragment.startPostponedEnterTransition()
-            // 生命周期状态转换为RESUMED，enterTransition结束，enterAnimation创建
+            // 生命周期状态转换为RESUMED，enterAnimation创建或者enterTransition结束
             fragment.lifecycle.awaitResumed()
             // 无法通过生命周期状态转换为RESUMED确定enterAnimation结束，
             // 通过Animation.setAnimationListener()实现挂起函数等待结束，
