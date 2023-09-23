@@ -32,3 +32,5 @@ internal val RecyclerView.pendingSavedState: Parcelable?
 
 internal val LayoutManager.smoothScroller: SmoothScroller?
     get() = mSmoothScroller
+
+internal fun RecyclerView.dispatchOnScrolled(dx: Int, dy: Int) = dispatchOnScrolled(dx, dy)

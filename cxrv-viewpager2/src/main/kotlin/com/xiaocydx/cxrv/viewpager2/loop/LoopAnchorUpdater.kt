@@ -142,9 +142,13 @@ internal class LoopAnchorUpdaterImpl : LoopAnchorUpdater {
     private fun hasUpdateAnchorInfoPending() = preDrawListener != null
 
     private fun addUpdateAnchorInfoPending(content: LoopPagerContent) {
-        // 当通知局部更新时，若RecyclerView.hasFixedSize()为true，并且下一帧条件满足，
-        // 则是在Animation回调执行布局流程，此时不能靠同步屏障被移除断言布局流程已完成。
-        preDrawListener = OneShotPreDrawListener.add(content.viewPager2) { preDrawListener = null }
+        // 交换layoutPosition更新锚点信息，下一帧布局流程不会执行dispatchOnScrolled(0, 0)，
+        // 因此主动执行dispatchOnScrolled(0, 0)，确保ScrollEventAdapter下一帧更新选中位置，
+        // 进而确保OnPageChangeCallback.onPageScrolled()的position参数正确。
+        preDrawListener = OneShotPreDrawListener.add(content.viewPager2) {
+            content.viewPager2.recyclerView.dispatchOnScrolled(dx = 0, dy = 0)
+            preDrawListener = null
+        }
     }
 
     override fun removeUpdateAnchorInfoPending() {
