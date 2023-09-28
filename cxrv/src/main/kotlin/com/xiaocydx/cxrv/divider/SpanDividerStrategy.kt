@@ -23,7 +23,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import androidx.recyclerview.widget.isViewHolderRemoved
 import com.xiaocydx.cxrv.R
 import com.xiaocydx.cxrv.internal.childEach
 import com.xiaocydx.cxrv.list.isHeaderOrFooter
@@ -44,13 +43,7 @@ internal object SpanDividerStrategy : DividerStrategy {
         parent: RecyclerView,
         decoration: DividerItemDecoration
     ) = with(decoration) {
-        if (parent.isHeaderOrFooter(view)) {
-            return
-        }
-        if (parent.isViewHolderRemoved(view)) {
-            view.setRemovedItemOffsets()
-            return
-        }
+        if (parent.isHeaderOrFooter(view)) return
         parent.checkSpanCacheEnabled()
         // 保存Span参数，绘制阶段直接获取，不需要再计算
         val span = view.setSpanParams(parent)
@@ -68,9 +61,7 @@ internal object SpanDividerStrategy : DividerStrategy {
         val orientation = parent.orientation
         canvas.clipPadding(parent)
         parent.childEach { child ->
-            if (parent.isHeaderOrFooter(child)) {
-                return@childEach
-            }
+            if (parent.isHeaderOrFooter(child)) return@childEach
             val span = child.getSpanParams() ?: return@childEach
             when (orientation) {
                 VERTICAL -> drawVerticalDivider(canvas, child, parent, span)

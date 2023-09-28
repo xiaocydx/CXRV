@@ -81,14 +81,15 @@ internal class SpanParams {
         else -> NOT_SUPPORT
     }
 
-    private fun RecyclerView.getSpanGroupIndex(child: View): Int =
-            getSpanGroupIndex(getChildAdapterPosition(child))
+    private fun RecyclerView.getSpanGroupIndex(child: View): Int {
+        return getSpanGroupIndex(getChildAdapterPosition(child))
+    }
 
-    private fun RecyclerView.getSpanGroupIndex(
-        globalPosition: Int
-    ): Int = when (val lm: RecyclerView.LayoutManager? = layoutManager) {
-        is GridLayoutManager -> lm.spanSizeLookup.getSpanGroupIndex(globalPosition, lm.spanCount)
-        else -> NOT_SUPPORT
+    private fun RecyclerView.getSpanGroupIndex(globalPosition: Int): Int {
+        return when (val lm: RecyclerView.LayoutManager? = layoutManager) {
+            is GridLayoutManager -> lm.spanSizeLookup.getSpanGroupIndex(globalPosition, lm.spanCount)
+            else -> NOT_SUPPORT
+        }
     }
 
     /**

@@ -64,6 +64,11 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
 
     override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: State) {
         warn(parent.layoutManager)
+        if (state.isPreLayout) {
+            // preLayout阶段不重新计算间距，确保preLayout的布局结果不影响realLayout
+            view.getItemOffsets()?.let(outRect::set)
+            return
+        }
         resetThen(state, outRect) {
             DividerStrategy.get(parent).getItemOffsets(view, parent, this)
         }
@@ -123,14 +128,6 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         }
         offsetRect.set(left, top, right, bottom)
         outRect.set(left, top, right, bottom)
-    }
-
-    /**
-     * 执行item动画时，ViewHolder的localPosition为-1，计算的偏移结果是错误的，导致分割线显示异常，
-     * 因此在[setItemOffsets]中记录之前计算的偏移量，在item被移除的时候，将记录值作为偏移输出结果。
-     */
-    internal fun View.setRemovedItemOffsets() {
-        getItemOffsets()?.let(outRect::set)
     }
 
     internal fun Canvas.drawDivider(

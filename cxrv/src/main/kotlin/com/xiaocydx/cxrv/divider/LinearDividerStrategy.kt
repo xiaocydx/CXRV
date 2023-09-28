@@ -22,7 +22,6 @@ import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
-import androidx.recyclerview.widget.isViewHolderRemoved
 import com.xiaocydx.cxrv.internal.childEach
 import com.xiaocydx.cxrv.list.isFirstChildBindingAdapterPosition
 import com.xiaocydx.cxrv.list.isHeaderOrFooter
@@ -43,13 +42,7 @@ internal object LinearDividerStrategy : DividerStrategy {
         parent: RecyclerView,
         decoration: DividerItemDecoration
     ) = with(decoration) {
-        if (parent.isHeaderOrFooter(view)) {
-            return
-        }
-        if (parent.isViewHolderRemoved(view)) {
-            view.setRemovedItemOffsets()
-            return
-        }
+        if (parent.isHeaderOrFooter(view)) return
         when (parent.orientation) {
             VERTICAL -> setVerticalItemOffsets(view, parent, decoration)
             HORIZONTAL -> setHorizontalItemOffsets(view, parent, decoration)
@@ -64,9 +57,7 @@ internal object LinearDividerStrategy : DividerStrategy {
         val orientation = parent.orientation
         canvas.clipPadding(parent)
         parent.childEach { child ->
-            if (parent.isHeaderOrFooter(child)) {
-                return@childEach
-            }
+            if (parent.isHeaderOrFooter(child)) return@childEach
             val offsets = child.getItemOffsets() ?: return@childEach
             when (orientation) {
                 VERTICAL -> drawVerticalDivider(canvas, child, offsets)

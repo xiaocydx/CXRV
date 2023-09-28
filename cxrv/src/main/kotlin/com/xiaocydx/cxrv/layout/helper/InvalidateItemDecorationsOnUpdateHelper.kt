@@ -53,10 +53,26 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
         previousItemCount = layout.itemCount
     }
 
+    override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
+        requestInvalidateOnNextLayout()
+    }
+
+    override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
+        requestInvalidateOnNextLayout()
+    }
+
     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
         if (previousItemCount == 0) return
         // 兼容插入item的场景，例如分页加载下一页的场景
-        invalidateOnNextLayout = true
+        requestInvalidateOnNextLayout()
+    }
+
+    override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+        requestInvalidateOnNextLayout()
+    }
+
+    override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
+        requestInvalidateOnNextLayout()
     }
 
     override fun requestSimpleAnimationsInNextLayout() {
@@ -69,25 +85,18 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     override fun onLayoutChildren(recycler: Recycler, state: State) {
         checkRunAnimations(state)
         checkRecalculateAnchor(state)
-        if (!isEnabled) invalidateOnNextLayout = false
-        if (invalidateOnNextLayout) {
+        if (isEnabled && invalidateOnNextLayout && !state.isPreLayout) {
+            // preLayout阶段不重新计算间距，确保preLayout的布局结果不影响realLayout
             markItemDecorInsetsDirty()
-            // 若当前是preLayout，则让realLayout重新计算DecorInsets
-            invalidateOnNextLayout = state.isPreLayout
         }
         super.onLayoutChildren(recycler, state)
     }
 
     private fun checkRunAnimations(state: State) {
-        if (invalidateOnNextLayout) return
-        if (layout is StaggeredGridLayoutManager) {
+        if (!invalidateOnNextLayout && layout is StaggeredGridLayoutManager) {
             // 兼容StaggeredGridLayoutManager强制执行简单动画的场景，
             // 例如滚动过程或者滚动状态更改为IDLE需要重新对齐的场景。
             invalidateOnNextLayout = state.willRunSimpleAnimations()
-        }
-        if (!invalidateOnNextLayout) {
-            // 兼容局部更新执行预测动画的场景
-            invalidateOnNextLayout = state.willRunPredictiveAnimations()
         }
     }
 
@@ -103,6 +112,10 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
         val rv = view ?: return
         if (rv.itemDecorationCount == 0) return
         rv.markItemDecorInsetsDirty()
+    }
+
+    private fun requestInvalidateOnNextLayout() {
+        invalidateOnNextLayout = true
     }
 
     override fun onLayoutCompleted(layout: LayoutManager, state: State) {
