@@ -142,7 +142,7 @@ internal class TransformSceneRoot(context: Context, private val fragmentManager:
         val contentFragment = contentFragment ?: return
         fragmentManager.beginTransaction()
             .setMaxLifecycle(contentFragment, state)
-            .commitNow()
+            .commit()
     }
 
     private inner class TransformFragmentLifecycleCallbacks :
