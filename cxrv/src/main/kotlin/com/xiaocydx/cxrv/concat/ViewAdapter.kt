@@ -29,7 +29,7 @@ import com.xiaocydx.cxrv.internal.doOnPreDraw
  * View适配器，用于构建HeaderFooter
  *
  * 当移除HeaderFooter或者RecyclerView从Window分离时，
- * [ViewController]会清除已分离的ViewHolder，拦截要被回收的ViewHolder，
+ * [ViewController]会清除已分离的ViewHolder，拦截将被回收的ViewHolder，
  * 子类不用关注移除HeaderFooter和共享[RecycledViewPool]的场景，可能引起内存泄漏的问题。
  *
  * @author xcc
@@ -44,7 +44,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
     protected val recyclerView: RecyclerView?
         get() = controller.recyclerView
 
-    final override fun getItemCount(): Int = if (currentAsItem) 1 else 0
+    final override fun getItemCount(): Int = if (currentAsItem) controller.itemCount else 0
 
     final override fun getItemViewType(position: Int): Int = getItemViewType()
 
