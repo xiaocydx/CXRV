@@ -21,24 +21,16 @@ class MultiTypeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(contentView())
-        if (savedInstanceState == null) initOneToOneFragment()
+        if (savedInstanceState == null) replace<OneToOneFragment>()
     }
 
     private fun contentView() = ActivityMultitypeBinding
         .inflate(layoutInflater).apply {
-            btnOneToOne.onClick(::initOneToOneFragment)
-            btnOneToMany.onClick(::initOneToManyFragment)
+            btnOneToOne.onClick { replace<OneToOneFragment>() }
+            btnOneToMany.onClick { replace<OneToManyFragment>() }
         }.root
 
-    private fun initOneToOneFragment() {
-        replaceFragment(OneToOneFragment())
-    }
-
-    private fun initOneToManyFragment() {
-        replaceFragment(OneToManyFragment())
-    }
-
-    private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager.commit { replace(R.id.container, fragment) }
+    private inline fun <reified T : Fragment> replace() {
+        supportFragmentManager.commit { replace(R.id.container, T::class.java, null) }
     }
 }

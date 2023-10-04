@@ -13,8 +13,7 @@ import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
-import com.xiaocydx.sample.R
-import com.xiaocydx.sample.databinding.ActivityListStateBinding
+import com.xiaocydx.sample.databinding.ActivityMenuBinding
 import com.xiaocydx.sample.databinding.ItemMenuBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.liststate.MenuAction.NORMAL
@@ -33,14 +32,14 @@ import com.xiaocydx.sample.showToast
  */
 class ListStateActivity : AppCompatActivity() {
     private val sharedViewModel: ListStateSharedViewModel by viewModels()
-    private lateinit var binding: ActivityListStateBinding
+    private lateinit var binding: ActivityMenuBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityListStateBinding.inflate(layoutInflater)
+        binding = ActivityMenuBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initMenuDrawer()
-        if (savedInstanceState == null) initNormalListState()
+        if (savedInstanceState == null) replace<NormalListStateFragment>()
     }
 
     private fun initMenuDrawer() {
@@ -61,23 +60,15 @@ class ListStateActivity : AppCompatActivity() {
 
     private fun performMenuAction(action: MenuAction) {
         when (action) {
-            NORMAL -> initNormalListState()
-            PAGING -> initPagingListState()
+            NORMAL -> replace<NormalListStateFragment>()
+            PAGING -> replace<PagingListStateFragment>()
             else -> sharedViewModel.submitMenuAction(action)
         }
         binding.root.closeDrawer(binding.rvMenu)
         showToast(action.text)
     }
 
-    private fun initNormalListState() {
-        replaceFragment(NormalListStateFragment())
-    }
-
-    private fun initPagingListState() {
-        replaceFragment(PagingListStateFragment())
-    }
-
-    private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager.commit { replace(R.id.container, fragment) }
+    private inline fun <reified T : Fragment> replace() {
+        supportFragmentManager.commit { replace(binding.container.id, T::class.java, null) }
     }
 }

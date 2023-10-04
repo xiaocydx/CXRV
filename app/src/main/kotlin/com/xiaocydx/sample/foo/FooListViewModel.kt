@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListOwner
 import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.addItem
+import com.xiaocydx.cxrv.list.clear
+import com.xiaocydx.cxrv.list.insertItem
 import com.xiaocydx.cxrv.list.removeItemAt
+import com.xiaocydx.cxrv.list.size
 import com.xiaocydx.cxrv.paging.LoadType
 import com.xiaocydx.cxrv.paging.Pager
 import com.xiaocydx.cxrv.paging.PagingConfig
@@ -87,18 +89,19 @@ class FooListViewModel(
     }
 
     fun insertItem() {
-        val item = createFoo(
-            tag = "ListState",
-            num = state.currentList.size
-        )
-        state.addItem(0, item)
+        state.insertItem(createFoo(state.size + 1))
     }
 
-    fun deleteItem() {
+    fun removeItem() {
         state.removeItemAt(0)
     }
 
-    fun createFoo(num: Int, tag: String): Foo {
+    fun clearAll() {
+        state.clear()
+    }
+
+    fun createFoo(num: Int): Foo {
+        val tag: String = javaClass.simpleName
         return repository.createFoo(num, tag)
     }
 

@@ -17,7 +17,7 @@ import com.xiaocydx.sample.viewLifecycle
  * @author xcc
  * @date 2022/2/17
  */
-class GridLayoutFragment : PagingFragment() {
+class GridPagingFragment : PagingFragment() {
 
     override fun initView() {
         rvPaging
@@ -25,7 +25,7 @@ class GridLayoutFragment : PagingFragment() {
             .fixedSize()
             .divider(5.dp, 5.dp) {
                 edge(Edge.all())
-                color(0xFF9DAA8F.toInt())
+                color(0xFF979EC4.toInt())
             }
             .adapter(fooAdapter.withPaging())
             .replaceWithSwipeRefresh(fooAdapter)

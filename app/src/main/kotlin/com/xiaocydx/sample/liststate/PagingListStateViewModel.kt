@@ -3,9 +3,10 @@ package com.xiaocydx.sample.liststate
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.addItem
 import com.xiaocydx.cxrv.list.clear
+import com.xiaocydx.cxrv.list.insertItem
 import com.xiaocydx.cxrv.list.removeItemAt
+import com.xiaocydx.cxrv.list.size
 import com.xiaocydx.cxrv.list.submitTransform
 import com.xiaocydx.cxrv.paging.PagingConfig
 import com.xiaocydx.cxrv.paging.storeIn
@@ -32,26 +33,22 @@ class PagingListStateViewModel(
     }
 
     fun insertItem() {
-        val item = repository.createFoo(
-            tag = javaClass.simpleName,
-            num = state.currentList.size
-        )
-        state.addItem(0, item)
+        state.insertItem(repository.createFoo(state.size, javaClass.simpleName))
     }
 
-    fun deleteItem(position: Int = 0) {
-        state.removeItemAt(position)
+    fun removeItem() {
+        state.removeItemAt(0)
     }
 
-    fun clearOddItem() {
+    fun clearOdd() {
         state.submitTransform { filter { it.num % 2 == 0 } }
     }
 
-    fun clearEvenItem() {
+    fun clearEven() {
         state.submitTransform { filter { it.num % 2 != 0 } }
     }
 
-    fun clearAllItem() {
+    fun clearAll() {
         state.clear()
     }
 }

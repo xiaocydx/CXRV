@@ -19,24 +19,16 @@ class ItemSelectActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(contentView())
-        if (savedInstanceState == null) initSingleSelectionFragment()
+        if (savedInstanceState == null) replace<SingleSelectionFragment>()
     }
 
     private fun contentView() = ActivityItemSelectBinding
         .inflate(layoutInflater).apply {
-            btnSingleSelection.onClick(::initSingleSelectionFragment)
-            btnMultiSelection.onClick(::initMultiSelectionFragment)
+            btnSingleSelection.onClick { replace<SingleSelectionFragment>() }
+            btnMultiSelection.onClick { replace<MultiSelectionFragment>() }
         }.root
 
-    private fun initSingleSelectionFragment() {
-        replaceFragment(SingleSelectionFragment())
-    }
-
-    private fun initMultiSelectionFragment() {
-        replaceFragment(MultiSelectionFragment())
-    }
-
-    private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager.commit { replace(R.id.container, fragment) }
+    private inline fun <reified T : Fragment> replace() {
+        supportFragmentManager.commit { replace(R.id.container, T::class.java, null) }
     }
 }

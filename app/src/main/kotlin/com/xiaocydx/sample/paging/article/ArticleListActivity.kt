@@ -23,7 +23,7 @@ import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.retrofit.ArticleInfo
 
 /**
- * 分页加载示例代码（网络请求）
+ * Paging示例代码（网络请求）
  *
  * @author xcc
  * @date 2022/3/17

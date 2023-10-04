@@ -12,17 +12,17 @@ import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
-import com.xiaocydx.sample.databinding.ActivityPagingBinding
+import com.xiaocydx.sample.databinding.ActivityMenuBinding
 import com.xiaocydx.sample.databinding.ItemMenuBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
-import com.xiaocydx.sample.paging.local.MenuAction.GIRD_LAYOUT
-import com.xiaocydx.sample.paging.local.MenuAction.LINEAR_LAYOUT
-import com.xiaocydx.sample.paging.local.MenuAction.STAGGERED_GRID_LAYOUT
+import com.xiaocydx.sample.paging.local.MenuAction.GIRD
+import com.xiaocydx.sample.paging.local.MenuAction.LINEAR
+import com.xiaocydx.sample.paging.local.MenuAction.STAGGERED
 import com.xiaocydx.sample.showToast
 
 /**
- * 分页加载示例代码（本地测试）
+ * Paging示例代码（本地测试）
  *
  * 页面配置发生变更时（例如旋转屏幕），保留分页加载数据、列表滚动位置。
  *
@@ -31,15 +31,14 @@ import com.xiaocydx.sample.showToast
  */
 class PagingActivity : AppCompatActivity() {
     private val sharedViewModel: PagingSharedViewModel by viewModels()
-    private lateinit var binding: ActivityPagingBinding
+    private lateinit var binding: ActivityMenuBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityPagingBinding.inflate(layoutInflater)
+        binding = ActivityMenuBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initMenuDrawer()
-        if (savedInstanceState == null) initLinearLayout()
-        window.enableGestureNavBarEdgeToEdge()
+        if (savedInstanceState == null) replace<LinearPagingFragment>()
     }
 
     private fun initMenuDrawer() {
@@ -56,32 +55,21 @@ class PagingActivity : AppCompatActivity() {
                 doOnSimpleItemClick(::performMenuAction)
                 onBindView { root.text = it.text }
             })
+        window.enableGestureNavBarEdgeToEdge()
     }
 
     private fun performMenuAction(action: MenuAction) {
         when (action) {
-            LINEAR_LAYOUT -> initLinearLayout()
-            GIRD_LAYOUT -> initGridLayout()
-            STAGGERED_GRID_LAYOUT -> initStaggeredGridLayout()
+            LINEAR -> replace<LinearPagingFragment>()
+            GIRD -> replace<GridPagingFragment>()
+            STAGGERED -> replace<StaggeredPagingFragment>()
             else -> sharedViewModel.submitMenuAction(action)
         }
         binding.root.closeDrawer(binding.rvMenu)
         showToast(action.text)
     }
 
-    private fun initLinearLayout() {
-        replaceFragment(LinearLayoutFragment())
-    }
-
-    private fun initGridLayout() {
-        replaceFragment(GridLayoutFragment())
-    }
-
-    private fun initStaggeredGridLayout() {
-        replaceFragment(StaggeredGridLayoutFragment())
-    }
-
-    private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager.commit { replace(binding.container.id, fragment) }
+    private inline fun <reified T : Fragment> replace() {
+        supportFragmentManager.commit { replace(binding.container.id, T::class.java, null) }
     }
 }

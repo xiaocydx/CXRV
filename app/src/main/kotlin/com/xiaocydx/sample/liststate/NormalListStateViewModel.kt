@@ -2,10 +2,11 @@ package com.xiaocydx.sample.liststate
 
 import androidx.lifecycle.ViewModel
 import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.addItem
 import com.xiaocydx.cxrv.list.asFlow
 import com.xiaocydx.cxrv.list.clear
+import com.xiaocydx.cxrv.list.insertItem
 import com.xiaocydx.cxrv.list.removeItemAt
+import com.xiaocydx.cxrv.list.size
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.list.submitTransform
 import com.xiaocydx.sample.foo.Foo
@@ -25,32 +26,31 @@ class NormalListStateViewModel : ViewModel() {
     val flow = state.asFlow()
 
     fun refresh() {
-        val newList = (1..100).map(::createFoo)
-        state.submitList(newList)
+        state.submitList((1..100).map(::createFoo))
     }
 
     fun insertItem() {
-        val item = createFoo(num = state.currentList.size)
-        state.addItem(0, item)
+        state.insertItem(createFoo(state.size + 1))
     }
 
-    fun deleteItem(position: Int = 0) {
+    fun removeItem(position: Int = 0) {
         state.removeItemAt(position)
     }
 
-    fun clearOddItem() {
+    fun clearOdd() {
         state.submitTransform { filter { it.num % 2 == 0 } }
     }
 
-    fun clearEvenItem() {
+    fun clearEven() {
         state.submitTransform { filter { it.num % 2 != 0 } }
     }
 
-    fun clearAllItem() {
+    fun clearAll() {
         state.clear()
     }
 
-    private fun createFoo(num: Int, tag: String = javaClass.simpleName): Foo {
+    private fun createFoo(num: Int): Foo {
+        val tag = javaClass.simpleName
         return Foo(id = "$tag-$num", name = "Foo-$num", num, "", FooType.TYPE1)
     }
 }

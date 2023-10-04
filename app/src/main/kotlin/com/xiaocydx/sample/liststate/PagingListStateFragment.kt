@@ -26,6 +26,12 @@ import com.xiaocydx.sample.databinding.FragmentListStateBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.foo.FooListAdapter
 import com.xiaocydx.sample.launchRepeatOnLifecycle
+import com.xiaocydx.sample.liststate.MenuAction.CLEAR_ALL
+import com.xiaocydx.sample.liststate.MenuAction.CLEAR_EVEN
+import com.xiaocydx.sample.liststate.MenuAction.CLEAR_ODD
+import com.xiaocydx.sample.liststate.MenuAction.INSERT_ITEM
+import com.xiaocydx.sample.liststate.MenuAction.REFRESH
+import com.xiaocydx.sample.liststate.MenuAction.REMOVE_ITEM
 import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
 import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.viewLifecycle
@@ -86,12 +92,12 @@ class PagingListStateFragment : Fragment(R.layout.fragment_list_state) {
 
         sharedViewModel.menuAction.onEach { action ->
             when (action) {
-                MenuAction.REFRESH -> pagingViewModel.refresh()
-                MenuAction.LIST_STATE_INSERT_ITEM -> pagingViewModel.insertItem()
-                MenuAction.LIST_STATE_REMOVE_ITEM -> pagingViewModel.deleteItem()
-                MenuAction.CLEAR_ODD_ITEM -> pagingViewModel.clearOddItem()
-                MenuAction.CLEAR_EVEN_ITEM -> pagingViewModel.clearEvenItem()
-                MenuAction.CLEAR_ALL_ITEM -> pagingViewModel.clearAllItem()
+                REFRESH -> pagingViewModel.refresh()
+                INSERT_ITEM -> pagingViewModel.insertItem()
+                REMOVE_ITEM -> pagingViewModel.removeItem()
+                CLEAR_ODD -> pagingViewModel.clearOdd()
+                CLEAR_EVEN -> pagingViewModel.clearEven()
+                CLEAR_ALL -> pagingViewModel.clearAll()
                 else -> return@onEach
             }
         }.launchIn(viewLifecycleScope)

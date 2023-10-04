@@ -21,3 +21,14 @@ class ListStateSharedViewModel : ViewModel() {
         _menuAction.tryEmit(action)
     }
 }
+
+enum class MenuAction(val text: String) {
+    NORMAL("普通列表"),
+    PAGING("分页列表"),
+    REFRESH("刷新"),
+    INSERT_ITEM("插入Item"),
+    REMOVE_ITEM("移除Item"),
+    CLEAR_ODD("清除奇数Item"),
+    CLEAR_EVEN("清除偶数Item"),
+    CLEAR_ALL("清除全部Item")
+}

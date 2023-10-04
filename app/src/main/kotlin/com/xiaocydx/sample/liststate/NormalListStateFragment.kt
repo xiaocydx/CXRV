@@ -26,6 +26,12 @@ import com.xiaocydx.sample.databinding.FragmentListStateBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.foo.FooListAdapter
 import com.xiaocydx.sample.launchRepeatOnLifecycle
+import com.xiaocydx.sample.liststate.MenuAction.CLEAR_ALL
+import com.xiaocydx.sample.liststate.MenuAction.CLEAR_EVEN
+import com.xiaocydx.sample.liststate.MenuAction.CLEAR_ODD
+import com.xiaocydx.sample.liststate.MenuAction.INSERT_ITEM
+import com.xiaocydx.sample.liststate.MenuAction.REFRESH
+import com.xiaocydx.sample.liststate.MenuAction.REMOVE_ITEM
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.StateFlow
@@ -82,12 +88,12 @@ class NormalListStateFragment : Fragment(R.layout.fragment_list_state) {
 
         sharedViewModel.menuAction.onEach { action ->
             when (action) {
-                MenuAction.REFRESH -> normalViewModel.refresh()
-                MenuAction.LIST_STATE_INSERT_ITEM -> normalViewModel.insertItem()
-                MenuAction.LIST_STATE_REMOVE_ITEM -> normalViewModel.deleteItem()
-                MenuAction.CLEAR_ODD_ITEM -> normalViewModel.clearOddItem()
-                MenuAction.CLEAR_EVEN_ITEM -> normalViewModel.clearEvenItem()
-                MenuAction.CLEAR_ALL_ITEM -> normalViewModel.clearAllItem()
+                REFRESH -> normalViewModel.refresh()
+                INSERT_ITEM -> normalViewModel.insertItem()
+                REMOVE_ITEM -> normalViewModel.removeItem()
+                CLEAR_ODD -> normalViewModel.clearOdd()
+                CLEAR_EVEN -> normalViewModel.clearEven()
+                CLEAR_ALL -> normalViewModel.clearAll()
                 else -> return@onEach
             }
         }.launchIn(viewLifecycleScope)

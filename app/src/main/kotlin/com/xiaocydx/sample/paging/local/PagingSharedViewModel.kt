@@ -29,3 +29,14 @@ class PagingSharedViewModel : ViewModel() {
         return viewModels.getOrPut(key) { FooListViewModel() }
     }
 }
+
+enum class MenuAction(val text: String) {
+    LINEAR("Linear"),
+    GIRD("Grid"),
+    STAGGERED("Staggered"),
+    REFRESH("刷新"),
+    REVERSE("反转布局"),
+    INSERT_ITEM("插入Item"),
+    REMOVE_ITEM("移除Item"),
+    CLEAR_ALL("清除全部Item")
+}
