@@ -21,9 +21,8 @@ package com.xiaocydx.cxrv.paging
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
+import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.concat.ViewAdapter
-import com.xiaocydx.cxrv.concat.withFooter
-import com.xiaocydx.cxrv.concat.withHeader
 import com.xiaocydx.cxrv.internal.RvDslMarker
 import com.xiaocydx.cxrv.list.ListAdapter
 
@@ -146,14 +145,16 @@ open class PagingScope {
         val sourceAdapter: Adapter<*>? = rv.adapter
         if (sourceAdapter is ConcatAdapter) {
             sourceAdapter.apply {
-                addAdapterIfNonNull(getFinalLoadHeader())
+                getFinalLoadHeader()?.let(::addAdapter)
                 addAdapter(getFinalListAdapter())
-                addAdapterIfNonNull(getFinalLoadFooter())
+                getFinalLoadFooter()?.let(::addAdapter)
             }
         } else {
-            rv.adapter = getFinalListAdapter()
-                .withHeaderIfNonNull(getFinalLoadHeader())
-                .withFooterIfNonNull(getFinalLoadFooter())
+            rv.adapter = Concat
+                .headerOrNull(getFinalLoadHeader())
+                .content(getFinalListAdapter())
+                .footerOrNull(getFinalLoadFooter())
+                .concatIfNecessary()
         }
         if (!enabledItemAnim) {
             rv.itemAnimator = null
@@ -201,18 +202,6 @@ open class PagingScope {
         }
         initFooter?.invoke(config)
         return LoadFooterAdapter(config, getFinalListAdapter())
-    }
-
-    private fun ConcatAdapter.addAdapterIfNonNull(adapter: ViewAdapter<*>?) {
-        adapter?.let(::addAdapter)
-    }
-
-    private fun Adapter<*>.withHeaderIfNonNull(adapter: ViewAdapter<*>?): Adapter<*> {
-        return if (adapter != null) withHeader(adapter) else this
-    }
-
-    private fun Adapter<*>.withFooterIfNonNull(adapter: ViewAdapter<*>?): Adapter<*> {
-        return if (adapter != null) withFooter(adapter) else this
     }
 
     private fun clear() {

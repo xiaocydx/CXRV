@@ -9,7 +9,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.cxrv.concat.withHeader
+import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.adapter
@@ -37,12 +37,12 @@ abstract class TransitionFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext()).apply {
         id = viewModel.rvId
+        recyclerView = this
         setBackgroundColor(0xFFE5E5E5.toInt())
+        layoutParams(matchParent, matchParent)
         grid(spanCount = 4).fixedSize()
         divider(5.dp, 5.dp) { edge(Edge.all()) }
-        adapter(contentAdapter.withHeader(loadingAdapter))
-        layoutParams(matchParent, matchParent)
-        recyclerView = this
+        adapter(Concat.header(loadingAdapter).content(contentAdapter).concat())
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

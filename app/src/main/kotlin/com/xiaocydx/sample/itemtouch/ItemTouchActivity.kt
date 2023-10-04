@@ -7,11 +7,9 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter
 import com.xiaocydx.cxrv.binding.BindingHolder
+import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.concat.toAdapter
-import com.xiaocydx.cxrv.concat.withFooter
-import com.xiaocydx.cxrv.concat.withHeader
 import com.xiaocydx.cxrv.itemtouch.addItemTouchCallback
 import com.xiaocydx.cxrv.itemtouch.itemTouch
 import com.xiaocydx.cxrv.itemtouch.onDragMoveItem
@@ -46,15 +44,16 @@ class ItemTouchActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
+    /**
+     * 连接Header和Footer，拖动时移动item不会跟Header和Footer交换位置
+     */
     private fun contentView() = RecyclerView(this)
         .layoutParams(matchParent, matchParent)
         .overScrollNever().linear().fixedSize()
-        .adapter(listAdapter<TextItem> {
-            register(TextType1Delegate())
-            register(TextType2Delegate())
-            listAdapter.initItemTouch()
-            listAdapter.initMultiTypeTextItems()
-        }.withHeaderFooter())
+        .adapter(Concat.content(createListAdapter())
+            .header(createView(isHeader = true).toAdapter())
+            .footer(createView(isHeader = false).toAdapter())
+            .concat())
 
     /**
      * ItemTouch的配置方式有三种：
@@ -68,23 +67,28 @@ class ItemTouchActivity : AppCompatActivity() {
      *
      * 该函数展示了如何通过[ListAdapter.itemTouch]完成ItemTouch的配置。
      */
-    private fun ListAdapter<TextItem, *>.initItemTouch() = itemTouch {
-        // 拖动时移动item，结合ListAdapter自身特性的简化函数
-        onDragMoveItem()
-        // 侧滑时移除item，结合ListAdapter自身特性的简化函数
-        onSwipeRemoveItem()
-        // ACTION_DOWN触摸到targetView就能开始拖动，
-        // withLongPress = true表示继续启用长按itemView拖动。
-        startDragView(withLongPress = true) { it.targetView }
-        // 拖动开始时放大itemView
-        onSelected {
-            it.itemView.scaleX = 1.1f
-            it.itemView.scaleY = 1.1f
-        }
-        // 拖动结束时恢复itemView
-        clearView {
-            it.itemView.scaleX = 1.0f
-            it.itemView.scaleY = 1.0f
+    private fun createListAdapter() = listAdapter<TextItem> {
+        register(TextType1Delegate())
+        register(TextType2Delegate())
+        listAdapter.initMultiTypeTextItems()
+        listAdapter.itemTouch {
+            // 拖动时移动item，结合ListAdapter自身特性的简化函数
+            onDragMoveItem()
+            // 侧滑时移除item，结合ListAdapter自身特性的简化函数
+            onSwipeRemoveItem()
+            // ACTION_DOWN触摸到targetView就能开始拖动，
+            // withLongPress = true表示继续启用长按itemView拖动。
+            startDragView(withLongPress = true) { it.targetView }
+            // 拖动开始时放大itemView
+            onSelected {
+                it.itemView.scaleX = 1.1f
+                it.itemView.scaleY = 1.1f
+            }
+            // 拖动结束时恢复itemView
+            clearView {
+                it.itemView.scaleX = 1.0f
+                it.itemView.scaleY = 1.0f
+            }
         }
     }
 
@@ -97,14 +101,6 @@ class ItemTouchActivity : AppCompatActivity() {
                 else -> throw IllegalArgumentException()
             }
         }
-
-    /**
-     * 连接Header和Footer，拖动时移动item不会跟Header和Footer交换位置
-     */
-    private fun ListAdapter<TextItem, *>.withHeaderFooter(): Adapter<*> {
-        return withHeader(createView(isHeader = true).toAdapter())
-            .withFooter(createView(isHeader = false).toAdapter())
-    }
 
     private fun createView(isHeader: Boolean) = AppCompatTextView(this).apply {
         gravity = Gravity.CENTER

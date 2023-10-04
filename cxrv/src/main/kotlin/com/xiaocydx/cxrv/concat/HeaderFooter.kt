@@ -29,11 +29,11 @@ import androidx.recyclerview.widget.SimpleViewHolder
  * 添加[header]
  *
  * 1. 添加[header]之前，若未对RecyclerView设置Adapter，则抛出[IllegalArgumentException]异常。
- * 2. 若在初始化RecyclerView时不添加[header]，而是之后根据情况动态添加[header]，
- * 则可以将Adapter设置为[HeaderFooterConcatAdapter]，之后动态添加[header]的性能更高。
+ * 2. 若在初始化RecyclerView时不添加[header]，而是后续根据情况动态添加[header]，则可以先设置：
  * ```
+ * // 先设置ConcatAdapter，后续添加header有动画效果且性能更高
  * val contentAdapter: RecyclerView.Adapter<*> = ...
- * recyclerView.adapter = HeaderFooterConcatAdapter(contentAdapter)
+ * recyclerView.adapter = Concat.content(contentAdapter).concat()
  * ```
  *
  * @return 返回[header]转换后的[ViewAdapter]。
@@ -52,7 +52,7 @@ fun RecyclerView.addHeader(header: View): ViewAdapter<*> {
     } else {
         headerAdapter = header.toAdapter()
         swapAdapter(
-            HeaderFooterConcatAdapter(adapter, header = headerAdapter),
+            Concat.header(headerAdapter).content(adapter).concat(),
             /* removeAndRecycleExistingViews */true
         )
     }
@@ -63,11 +63,11 @@ fun RecyclerView.addHeader(header: View): ViewAdapter<*> {
  * 添加[footer]
  *
  * 1. 添加[footer]之前，若未对RecyclerView设置Adapter，则抛出[IllegalArgumentException]异常。
- * 2. 若在初始化RecyclerView时不添加[footer]，而是之后根据情况动态添加[footer]，
- * 则可以将Adapter设置为[HeaderFooterConcatAdapter]，之后动态添加[footer]的性能更高。
+ * 2. 若在初始化RecyclerView时不添加[footer]，而是后续根据情况动态添加[footer]，则可以先设置：
  * ```
+ * // 先设置ConcatAdapter，后续添加footer有动画效果且性能更高
  * val contentAdapter: RecyclerView.Adapter<*> = ...
- * recyclerView.adapter = HeaderFooterConcatAdapter(contentAdapter)
+ * recyclerView.adapter = Concat.content(contentAdapter).concat()
  * ```
  *
  * @return 返回[footer]转换后的[ViewAdapter]。
@@ -86,7 +86,7 @@ fun RecyclerView.addFooter(footer: View): ViewAdapter<*> {
     } else {
         footerAdapter = footer.toAdapter()
         swapAdapter(
-            HeaderFooterConcatAdapter(adapter, footer = footerAdapter),
+            Concat.content(adapter).footer(footerAdapter).concat(),
             /* removeAndRecycleExistingViews */true
         )
     }
@@ -123,6 +123,10 @@ fun RecyclerView.removeFooter(footer: View): ViewAdapter<*>? {
  * 按[header]、当前适配器的顺序连接为[ConcatAdapter]
  */
 @CheckResult
+@Deprecated(
+    message = "未约束Receiver和形参的类型，函数表现不稳定",
+    replaceWith = ReplaceWith("Concat.header(header).content(this).concat()")
+)
 infix fun Adapter<*>.withHeader(
     header: Adapter<*>
 ): ConcatAdapter = when (this) {
@@ -134,6 +138,10 @@ infix fun Adapter<*>.withHeader(
  * 按当前适配器、[footer]的顺序连接为[ConcatAdapter]
  */
 @CheckResult
+@Deprecated(
+    message = "未约束Receiver和形参的类型，函数表现不稳定",
+    replaceWith = ReplaceWith("Concat.content(this).footer(footer).concat()")
+)
 infix fun Adapter<*>.withFooter(
     footer: Adapter<*>
 ): ConcatAdapter = when (this) {
@@ -162,6 +170,10 @@ infix fun Adapter<*>.withFooter(
  * ### 解决方案
  * 默认不使用隔离ViewType配置，可以将`hashCode`作为Header和Footer的ViewType。
  */
+@Deprecated(
+    message = "未约束形参的类型，函数表现不稳定",
+    replaceWith = ReplaceWith("Concat.header(header).content(adapter).footer(footer).concat()")
+)
 @Suppress("FunctionName")
 fun HeaderFooterConcatAdapter(
     adapter: Adapter<*>,

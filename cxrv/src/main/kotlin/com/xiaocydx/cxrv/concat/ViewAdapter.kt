@@ -16,6 +16,7 @@
 
 package com.xiaocydx.cxrv.concat
 
+import android.view.View
 import androidx.annotation.CallSuper
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
@@ -68,6 +69,9 @@ abstract class ViewAdapter<VH : ViewHolder>(
 
     protected open fun onBindViewHolder(holder: VH) = Unit
 
+    /**
+     * 返回唯一ViewType，不能跟内容区ViewType产生冲突，例如返回[View.hashCode]、[Class.hashCode]
+     */
     abstract fun getItemViewType(): Int
 
     @CallSuper

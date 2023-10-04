@@ -3,8 +3,8 @@ package com.xiaocydx.sample.viewpager2.nested
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.concat.toAdapter
-import com.xiaocydx.cxrv.concat.withHeader
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
@@ -36,7 +36,7 @@ class NestedPageAdapter : RecyclerView.Adapter<ViewHolder>() {
             .apply { isVp2NestedScrollable = true }
             .layoutParams(matchParent, matchParent)
             .overScrollNever().linear().fixedSize()
-            .adapter(pageList.withHeader(pageHeader))
+            .adapter(Concat.header(pageHeader).content(pageList).concat())
         return SimpleViewHolder(pageView)
     }
 

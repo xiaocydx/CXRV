@@ -58,9 +58,9 @@ class HeaderFooterActivity : AppCompatActivity() {
             // 注意：先设置fooAdapter确定内容区，再添加header和footer
             rvFoo.linear().divider(height = 5.dp).adapter(fooAdapter)
 
-            // 对初始化阶段不添加header和footer，而是后续动态添加和移除的场景而言，
-            // 先设置HeaderFooterConcatAdapter，能让首次添加有动画效果且性能更高。
-            // rvFoo.adapter(HeaderFooterConcatAdapter(fooAdapter))
+            // 若在初始化时不添加header和footer，而是后续根据情况动态添加header和footer，
+            // 先设置Concat.content(fooAdapter).concat()，后续添加有动画效果且性能更高。
+            // rvFoo.adapter(Concat.content(fooAdapter).concat())
             rvFoo.addHeader(header)
             rvFoo.addFooter(footer)
         }.root

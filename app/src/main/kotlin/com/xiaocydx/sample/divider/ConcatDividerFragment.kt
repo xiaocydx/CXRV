@@ -1,8 +1,7 @@
 package com.xiaocydx.sample.divider
 
+import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.concat.toAdapter
-import com.xiaocydx.cxrv.concat.withFooter
-import com.xiaocydx.cxrv.concat.withHeader
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.addDividerItemDecoration
 import com.xiaocydx.cxrv.divider.divider
@@ -35,8 +34,10 @@ class ConcatDividerFragment : DividerFragment() {
         val footerAdapter = footer.toAdapter()
         fooAdapter1.submitList((1..5).map(::createFoo))
         fooAdapter2.submitList((1..5).map(::createFoo))
-        rvDivider.linear().adapter(fooAdapter1.withFooter(fooAdapter2)
-            .withHeader(headerAdapter).withFooter(footerAdapter))
+        rvDivider.linear().adapter(
+            Concat.header(headerAdapter).footer(footerAdapter)
+                .content(fooAdapter1).content(fooAdapter2).concat()
+        )
 
         // 扩展函数addDividerItemDecoration()，匹配adapter绘制分割线
         rvDivider.apply {
