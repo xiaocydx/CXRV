@@ -16,7 +16,6 @@
 
 package com.xiaocydx.cxrv.concat
 
-import android.view.View
 import androidx.annotation.CallSuper
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
@@ -70,9 +69,11 @@ abstract class ViewAdapter<VH : ViewHolder>(
     protected open fun onBindViewHolder(holder: VH) = Unit
 
     /**
-     * 返回唯一ViewType，不能跟内容区ViewType产生冲突，例如返回[View.hashCode]、[Class.hashCode]
+     * 唯一ViewType，不能跟内容区ViewType产生冲突，默认为当前对象的[hashCode]
+     *
+     * **注意**：共享[RecycledViewPool]的场景，不能随意将[Class.hashCode]作为返回结果。
      */
-    abstract fun getItemViewType(): Int
+    open fun getItemViewType(): Int = hashCode()
 
     @CallSuper
     override fun onViewRecycled(holder: VH) {

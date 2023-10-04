@@ -16,8 +16,6 @@ class LoadingAdapter : ViewAdapter<RecyclerView.ViewHolder>() {
         return SimpleViewHolder(view.root)
     }
 
-    override fun getItemViewType(): Int = javaClass.hashCode()
-
     fun show() = updateItem(show = true, NeedAnim.NOT_ALL)
 
     fun hide() = updateItem(show = false, NeedAnim.NOT_ALL)
