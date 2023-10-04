@@ -14,6 +14,7 @@ import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.concat.HeaderFooterActivity
 import com.xiaocydx.sample.databinding.ItemStartBinding
+import com.xiaocydx.sample.divider.DividerActivity
 import com.xiaocydx.sample.itemclick.ItemClickActivity
 import com.xiaocydx.sample.itemselect.ItemSelectActivity
 import com.xiaocydx.sample.itemtouch.ItemTouchActivity
@@ -62,9 +63,10 @@ class MainActivity : AppCompatActivity() {
         "item多类型示例" to MultiTypeActivity::class,
         "Payload更新示例" to PayloadActivity::class,
         "HeaderFooter示例" to HeaderFooterActivity::class,
+        "Divider示例" to DividerActivity::class,
         "ListState示例" to ListStateActivity::class,
-        "分页加载示例（本地测试）" to PagingActivity::class,
-        "分页加载示例（网络请求）" to ArticleListActivity::class,
+        "Paging示例（本地测试）" to PagingActivity::class,
+        "Paging示例（网络请求）" to ArticleListActivity::class,
         "ViewPager2共享池示例" to SharedPoolActivity::class,
         "ViewPager2循环页面示例" to LoopPagerActivity::class,
         "ViewPager2滚动冲突处理示例" to NestedScrollableActivity::class,

@@ -62,5 +62,8 @@
         <activity
             android:name=".transition.enter.EnterTransitionActivity"
             android:exported="false" />
+        <activity
+            android:name=".divider.DividerActivity"
+            android:exported="false" />
     </application>
 </manifest>
