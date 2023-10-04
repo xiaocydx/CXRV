@@ -20,12 +20,13 @@ import android.content.Context
 import androidx.annotation.Px
 import androidx.recyclerview.widget.LayoutManagerCompat
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.Adapter
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.staggered
 
 /**
- * 添加通用间隔，可用于链式调用场景
+ * 添加通用间隔，可用于链式调用场景，默认排除Header和Footer
  *
  * @param width  水平方向的间隔size
  * @param height 垂直方向的间隔size
@@ -37,7 +38,7 @@ fun <T : RecyclerView> T.spacing(
 ): T = divider(width, height)
 
 /**
- * 添加通用分割线，可用于链式调用场景
+ * 添加通用分割线，可用于链式调用场景，默认排除Header和Footer
  *
  * ```
  * recyclerView.divider(5.dp, 5.dp) {
@@ -63,7 +64,7 @@ inline fun <T : RecyclerView> T.divider(
 }
 
 /**
- * 创建通用分割线
+ * 创建通用分割线，默认排除Header和Footer
  *
  * ```
  * DividerItemDecoration(context) {
@@ -77,7 +78,26 @@ inline fun <T : RecyclerView> T.divider(
 inline fun DividerItemDecoration(
     context: Context,
     block: DividerItemDecoration.Config.() -> Unit
-): DividerItemDecoration = DividerItemDecoration.Config(context).apply(block).build()
+) = DividerItemDecoration.Config(context).apply(block).build()
+
+/**
+ * 添加匹配[adapter]的通用分割线，跟[divider]不能同时调用
+ *
+ * ```
+ * recyclerView.addDividerItemDecoration(subAdapter1) {
+ *     size(5.dp).edge(Edge.all()).color(0xFF979EC4.toInt())
+ * }
+ * recyclerView.addDividerItemDecoration(subAdapter2) {
+ *     size(5.dp).edge(Edge.all()).color(0xFFD77F7A.toInt())
+ * }
+ * ```
+ */
+inline fun RecyclerView.addDividerItemDecoration(
+    adapter: Adapter<*>,
+    block: DividerItemDecoration.Config.() -> Unit
+) = DividerItemDecoration.Config(context)
+    .adapter(adapter).apply(block)
+    .build().also(::addItemDecoration)
 
 @PublishedApi
 internal fun RecyclerView.setDividerItemDecoration(decor: DividerItemDecoration) {

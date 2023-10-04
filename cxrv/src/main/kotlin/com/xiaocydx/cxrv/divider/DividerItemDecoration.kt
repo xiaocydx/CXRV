@@ -30,6 +30,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import androidx.recyclerview.widget.warn
 import com.xiaocydx.cxrv.R
+import com.xiaocydx.cxrv.list.getChildBindingAdapter
+import com.xiaocydx.cxrv.list.isHeaderOrFooter
 import java.lang.ref.WeakReference
 
 /**
@@ -40,10 +42,11 @@ import java.lang.ref.WeakReference
  */
 @Suppress("DEPRECATION")
 class DividerItemDecoration private constructor(config: Config) : ItemDecoration() {
-    private var outRect: Rect = emptyRect
-    private val divider: Drawable? = config.drawable
-    private var state: State = emptyState
+    private val divider = config.drawable
+    private val adapterRef = config.adapter?.let(::WeakReference)
     private var layoutRef: WeakReference<LayoutManager>? = null
+    private var outRect: Rect = emptyRect
+    private var state: State = emptyState
     private val isSpacing = when (divider) {
         null -> true
         !is ColorDrawable -> false
@@ -66,7 +69,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         warn(parent.layoutManager)
         if (state.isPreLayout) {
             // preLayout阶段不重新计算间距，确保preLayout的布局结果不影响realLayout
-            view.getItemOffsets()?.let(outRect::set)
+            if (isTarget(view, parent)) view.getItemOffsets()?.let(outRect::set)
             return
         }
         resetThen(state, outRect) {
@@ -116,6 +119,12 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         }
     }
 
+    internal fun isTarget(view: View, parent: RecyclerView): Boolean {
+        // adapterRef == null为兼容判断，默认排除Header和Footer
+        if (adapterRef == null) return !parent.isHeaderOrFooter(view)
+        return parent.getChildBindingAdapter(view) === adapterRef.get()
+    }
+
     internal fun View.getItemOffsets(): Rect? {
         return getTag(R.id.tag_divider_offsets_rect) as? Rect
     }
@@ -150,6 +159,7 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
 
     class Config @PublishedApi internal constructor(private val context: Context) {
         private var edge = Edge()
+        internal var adapter: Adapter<*>? = null
 
         /**
          * 水平方向的分割线size
@@ -288,6 +298,11 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         fun height(@Px value: Int) = apply { height = value }
 
         /**
+         * 水平方向和垂直方向的分割线size
+         */
+        fun size(@Px value: Int) = apply { width(value).height(value) }
+
+        /**
          * 分割线颜色值，搭配[width]和[height]使用
          */
         fun color(@ColorInt value: Int) = drawable(ColorDrawable(value))
@@ -298,16 +313,16 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
         fun colorRes(@ColorRes resId: Int) = color(ContextCompat.getColor(context, resId))
 
         /**
+         * 分割线Drawable
+         */
+        fun drawable(value: Drawable) = apply { drawable = value }
+
+        /**
          * 分割线Drawable资源Id
          */
         fun drawableRes(@DrawableRes resId: Int) = drawable(
             requireNotNull(ContextCompat.getDrawable(context, resId))
         )
-
-        /**
-         * 分割线Drawable
-         */
-        fun drawable(value: Drawable) = apply { drawable = value }
 
         /**
          * 边缘分割线，方向不会因为反转布局而改变
@@ -344,6 +359,9 @@ class DividerItemDecoration private constructor(config: Config) : ItemDecoration
             rightMargin = right
             bottomMargin = bottom
         }
+
+        @PublishedApi
+        internal fun adapter(adapter: Adapter<*>) = apply { this.adapter = adapter }
 
         @PublishedApi
         internal fun build(): DividerItemDecoration {

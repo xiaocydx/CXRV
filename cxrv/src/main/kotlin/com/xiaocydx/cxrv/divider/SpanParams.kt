@@ -92,16 +92,10 @@ internal class SpanParams {
         }
     }
 
-    /**
-     * 是否为末尾跨度空间
-     */
     private fun RecyclerView.isLastSpan(child: View, spanIndex: Int): Boolean {
         return spanIndex + getSpanSize(child) == spanCount
     }
 
-    /**
-     * 是否为排除Header后的起始跨度空间所属组
-     */
     private fun RecyclerView.isFirstSpanGroup(child: View, spanGroupIndex: Int): Boolean {
         val localPosition = getChildBindingAdapterPosition(child)
         return when (val lm: RecyclerView.LayoutManager? = layoutManager) {
@@ -116,9 +110,6 @@ internal class SpanParams {
         }
     }
 
-    /**
-     * 是否为排除Footer后的末尾跨度空间所属组
-     */
     private fun RecyclerView.isLastSpanGroup(child: View, spanIndex: Int, spanGroupIndex: Int): Boolean {
         val localPosition = getChildBindingAdapterPosition(child)
         return when (val lm: RecyclerView.LayoutManager? = layoutManager) {
