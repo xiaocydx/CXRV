@@ -30,7 +30,7 @@ dependencies {
     // RecyclerView的版本需要1.2.0或以上
     implementation "androidx.recyclerview:recyclerview:1.2.0"
     
-    def version = "1.3.9"
+    def version = "1.4.0"
     implementation "com.github.xiaocydx.CXRV:cxrv:${version}"
     implementation "com.github.xiaocydx.CXRV:cxrv-binding:${version}"
     implementation "com.github.xiaocydx.CXRV:cxrv-paging:${version}"
