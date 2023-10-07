@@ -23,8 +23,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import com.xiaocydx.cxrv.list.InlineList
+import com.xiaocydx.cxrv.list.accessEach
 import com.xiaocydx.cxrv.list.isHeaderOrFooter
-import com.xiaocydx.cxrv.list.toList
 
 /**
  * [ConcatAdapter]的构建类，[header]、[content]、[footer]之间没有调用顺序限制
@@ -92,13 +92,21 @@ open class Concat private constructor() {
      */
     fun concat(): ConcatAdapter {
         val config = Config.Builder().setIsolateViewTypes(false).build()
-        val adapters = headers.toList() + contents.toList() + footers.toList()
-        return ConcatAdapter(config, adapters)
+        return ConcatAdapter(config, getAdapters())
     }
 
     private fun requireNotConcat(content: Adapter<*>): Adapter<*> {
         require(content !is ConcatAdapter) { "content的类型不能为ConcatAdapter" }
         return content
+    }
+
+    private fun getAdapters(): List<Adapter<*>> {
+        val size = headers.size + contents.size + footers.size
+        val adapters = ArrayList<Adapter<*>>(size)
+        headers.accessEach(adapters::add)
+        contents.accessEach(adapters::add)
+        footers.accessEach(adapters::add)
+        return adapters
     }
 
     @CheckResult
@@ -108,7 +116,7 @@ open class Concat private constructor() {
     internal open fun footerOrNull(footer: ViewAdapter<*>?) = apply { footer?.let { footers += it } }
 
     internal fun concatIfNecessary(): Adapter<*> {
-        val adapters = headers.toList() + contents.toList() + footers.toList()
+        val adapters = getAdapters()
         if (adapters.size == 1) return adapters.first()
         val config = Config.Builder().setIsolateViewTypes(false).build()
         return ConcatAdapter(config, adapters)
