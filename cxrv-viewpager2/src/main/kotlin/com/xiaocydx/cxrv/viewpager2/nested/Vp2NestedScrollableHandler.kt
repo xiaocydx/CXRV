@@ -36,7 +36,7 @@ import kotlin.math.sign
 /**
  * 处理[ViewPager2]嵌套[RecyclerView]等滚动控件的滚动冲突
  *
- * *注意**：
+ * **注意**：
  * 1. 此类可用于实现容器方案，例如[Vp2NestedScrollableHost]。
  * 2. 此类不支持处理多指的滚动冲突，实际场景通常不需要处理多指的滚动冲突。
  *
@@ -59,7 +59,7 @@ class Vp2NestedScrollableHandler(
     private var isNestedScrollableHandled = false
 
     /**
-     * 处理滚动处理的容器需要实现此接口
+     * 处理滚动处理的容器需要实现此接口，可参考[Vp2NestedScrollableHost]的实现
      */
     interface Host : ViewParent
 
