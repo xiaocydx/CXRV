@@ -27,9 +27,12 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.Lifecycle.State.STARTED
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleObserver
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.layoutParams
@@ -46,11 +49,16 @@ import kotlin.reflect.KClass
  * @author xcc
  * @date 2023/8/1
  */
-internal class TransformSceneRoot(context: Context, private val fragmentManager: FragmentManager) {
+internal class TransformSceneRoot(
+    context: Context,
+    private val lifecycle: Lifecycle,
+    private val fragmentManager: FragmentManager
+) {
     private var hasContentPendingTransaction = false
     private var hasTransformPendingTransaction = false
     private var transformViewRef: WeakReference<View>? = null
     private val fragmentContainer = FragmentContainerView(context)
+    private val fragmentMaxLifecycleEnforcer = FragmentMaxLifecycleEnforcer()
     private val contentFragment: Fragment?
         get() = fragmentManager.findFragmentByTag(TAG_CONTENT)
     private val transformFragment: Fragment?
@@ -60,16 +68,28 @@ internal class TransformSceneRoot(context: Context, private val fragmentManager:
     )
     val transformReturn = _transformReturn.asSharedFlow()
 
+    constructor(fragmentActivity: FragmentActivity) : this(
+        context = fragmentActivity,
+        lifecycle = fragmentActivity.lifecycle,
+        fragmentManager = fragmentActivity.supportFragmentManager
+    )
+
+    constructor(fragment: Fragment) : this(
+        context = fragment.requireContext(),
+        lifecycle = fragment.lifecycle,
+        fragmentManager = fragment.childFragmentManager
+    )
+
     init {
         fragmentContainer.apply {
             layoutParams(matchParent, matchParent)
             id = R.id.transform_scene_root_fragment_container
             transformSceneRoot = this@TransformSceneRoot
-            addOnAttachStateChangeListener(TransformFragmentLifecycleCallbacks())
+            addOnAttachStateChangeListener(fragmentMaxLifecycleEnforcer)
         }
     }
 
-    fun toContentView() = fragmentContainer
+    fun toContentView(): View = fragmentContainer
 
     fun installOnAttach(
         fragmentClass: KClass<out Fragment>,
@@ -96,24 +116,19 @@ internal class TransformSceneRoot(context: Context, private val fragmentManager:
 
     fun forwardTransform(
         fragmentClass: KClass<out Fragment>,
-        args: Bundle? = null,
-        allowStateLoss: Boolean = false
+        args: Bundle? = null
     ): Boolean {
         if (hasTransformPendingTransaction || transformFragment != null) return false
         hasTransformPendingTransaction = true
         // transformFragment的生命周期状态，在过渡动画结束后才转换为RESUMED，
-        // 此时就将contentFragment的生命周期状态回退至STARTED，是为了确保过渡动画流畅。
-        setContentFragmentMaxLifecycle(STARTED)
+        // 此时将contentFragment的生命周期状态回退至STARTED，是为了确保过渡动画流畅。
+        fragmentMaxLifecycleEnforcer.updateContentFragmentMaxLifecycle(STARTED)
         val transaction = fragmentManager
             .beginTransaction()
             .setReorderingAllowed(true)
             .addToBackStack(null)
             .add(fragmentContainer.id, fragmentClass.java, args, TAG_TRANSFORM)
-        if (allowStateLoss) {
-            transaction.commitAllowingStateLoss()
-        } else {
-            transaction.commit()
-        }
+        transaction.commit()
         return true
     }
 
@@ -138,32 +153,49 @@ internal class TransformSceneRoot(context: Context, private val fragmentManager:
         }
     }
 
-    private fun setContentFragmentMaxLifecycle(state: State) {
-        val contentFragment = contentFragment ?: return
-        fragmentManager.beginTransaction()
-            .setMaxLifecycle(contentFragment, state)
-            .commit()
-    }
-
-    private inner class TransformFragmentLifecycleCallbacks :
-            FragmentLifecycleCallbacks(), View.OnAttachStateChangeListener {
+    private inner class FragmentMaxLifecycleEnforcer : View.OnAttachStateChangeListener {
+        private var pendingMaxLifecycleState: State? = null
+        private var delayUpdateObserver: LifecycleObserver? = null
+        private var lifecycleCallbacks: FragmentLifecycleCallbacks? = null
 
         override fun onViewAttachedToWindow(v: View) {
-            fragmentManager.registerFragmentLifecycleCallbacks(this, false)
+            delayUpdateObserver = LifecycleEventObserver { _, _ ->
+                // 当动画结束时，可能错过了saveState，不允许提交事务，
+                // 因此观察Lifecycle的状态更改，尝试提交事务修正状态。
+                pendingMaxLifecycleState?.let(::updateContentFragmentMaxLifecycle)
+                pendingMaxLifecycleState = null
+            }
+
+            lifecycleCallbacks = object : FragmentLifecycleCallbacks() {
+                override fun onFragmentCreated(fm: FragmentManager, f: Fragment, savedInstanceState: Bundle?) {
+                    if (f.tag == TAG_TRANSFORM) hasTransformPendingTransaction = false
+                }
+
+                override fun onFragmentDestroyed(fm: FragmentManager, f: Fragment) {
+                    // transformFragment的生命周期状态，在过渡动画结束后才转换为DESTROYED，
+                    // 此时将contentFragment的生命周期状态恢复至RESUMED，是为了确保过渡动画流畅。
+                    if (f.tag == TAG_TRANSFORM) updateContentFragmentMaxLifecycle(RESUMED)
+                }
+            }
+            lifecycle.addObserver(delayUpdateObserver!!)
+            fragmentManager.registerFragmentLifecycleCallbacks(lifecycleCallbacks!!, false)
         }
 
         override fun onViewDetachedFromWindow(v: View) {
-            fragmentManager.unregisterFragmentLifecycleCallbacks(this)
+            delayUpdateObserver?.let(lifecycle::removeObserver)
+            lifecycleCallbacks?.let(fragmentManager::unregisterFragmentLifecycleCallbacks)
+            pendingMaxLifecycleState = null
         }
 
-        override fun onFragmentCreated(fm: FragmentManager, f: Fragment, savedInstanceState: Bundle?) {
-            if (f.tag === TAG_TRANSFORM) hasTransformPendingTransaction = false
-        }
-
-        override fun onFragmentDestroyed(fm: FragmentManager, f: Fragment) {
-            // transformFragment的生命周期状态，在过渡动画结束后才转换为DESTROYED，
-            // 此时才将contentFragment的生命周期状态恢复至RESUMED，是为了确保过渡动画流畅。
-            if (f.tag === TAG_TRANSFORM) setContentFragmentMaxLifecycle(RESUMED)
+        fun updateContentFragmentMaxLifecycle(state: State) {
+            val contentFragment = contentFragment?.takeIf { it.isAdded } ?: return
+            if (fragmentManager.isStateSaved) {
+                pendingMaxLifecycleState = state
+                return
+            }
+            fragmentManager.beginTransaction()
+                .setMaxLifecycle(contentFragment, state)
+                .commit()
         }
     }
 

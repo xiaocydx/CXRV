@@ -63,7 +63,7 @@ interface TransformContainer {
     fun <C> C.createContentView(
         fragmentClass: KClass<out Fragment>
     ): View where C : FragmentActivity, C : TransformContainer {
-        return TransformSceneRoot(this, supportFragmentManager)
+        return TransformSceneRoot(this)
             .apply { installOnAttach(fragmentClass) }.toContentView()
     }
 
@@ -85,7 +85,7 @@ interface TransformContainer {
         fragmentClass: KClass<out Fragment>
     ): View where C : Fragment, C : TransformContainer {
         val primaryNavigationFragment = this
-        return TransformSceneRoot(requireContext(), childFragmentManager)
+        return TransformSceneRoot(this)
             .apply { installOnAttach(fragmentClass, primaryNavigationFragment) }
             .toContentView()
     }

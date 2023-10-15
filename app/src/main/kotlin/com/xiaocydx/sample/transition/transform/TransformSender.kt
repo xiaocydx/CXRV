@@ -69,13 +69,12 @@ interface TransformSender {
     fun <S, R> S.forwardTransform(
         transformView: View,
         fragmentClass: KClass<R>,
-        args: Bundle? = null,
-        allowStateLoss: Boolean = false
+        args: Bundle? = null
     ): Boolean where S : Fragment, S : TransformSender,
                      R : Fragment, R : TransformReceiver {
         val root = findTransformSceneRoot() ?: return false
         root.setTransformView(transformView)
-        return root.forwardTransform(fragmentClass, args, allowStateLoss)
+        return root.forwardTransform(fragmentClass, args)
     }
 
     /**
