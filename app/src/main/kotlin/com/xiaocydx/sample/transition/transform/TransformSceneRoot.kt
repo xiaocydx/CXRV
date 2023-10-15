@@ -162,8 +162,9 @@ internal class TransformSceneRoot(
             delayUpdateObserver = LifecycleEventObserver { _, _ ->
                 // 当动画结束时，可能错过了saveState，不允许提交事务，
                 // 因此观察Lifecycle的状态更改，尝试提交事务修正状态。
-                pendingMaxLifecycleState?.let(::updateContentFragmentMaxLifecycle)
+                val state = pendingMaxLifecycleState
                 pendingMaxLifecycleState = null
+                state?.let(::updateContentFragmentMaxLifecycle)
             }
 
             lifecycleCallbacks = object : FragmentLifecycleCallbacks() {
