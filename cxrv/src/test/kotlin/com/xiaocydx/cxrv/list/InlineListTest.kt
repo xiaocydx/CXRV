@@ -32,11 +32,11 @@ internal class InlineListTest {
     @Test
     fun plus() {
         var list = InlineList<Int>()
-        list += 1
+        repeat(2) { list += 1 }
         assertThat(list.size).isEqualTo(1)
         assertThat(list[0]).isEqualTo(1)
 
-        list += 2
+        repeat(2) { list += 2 }
         assertThat(list.size).isEqualTo(2)
         assertThat(list[0]).isEqualTo(1)
         assertThat(list[1]).isEqualTo(2)

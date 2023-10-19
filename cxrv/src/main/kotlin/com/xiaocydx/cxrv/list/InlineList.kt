@@ -42,7 +42,7 @@ internal value class InlineList<E : Any> private constructor(private val holder:
     }
 
     operator fun plus(element: E): InlineList<E> = when (holder) {
-        null -> InlineList(element)
+        null, element -> InlineList(element)
         is ArrayList<*> -> {
             holder as ArrayList<E>
             if (!holder.contains(element)) holder.add(element)
