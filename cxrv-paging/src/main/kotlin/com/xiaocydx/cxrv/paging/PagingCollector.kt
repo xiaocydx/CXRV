@@ -156,7 +156,8 @@ class PagingCollector<T : Any> internal constructor(
 
     init {
         assertMainThread()
-        addHandleEventListener(RefreshStartScrollToFirst())
+        addHandleEventListener(PostponeHandleEventForRefreshScroll())
+        addHandleEventListener(PostponeHandleEventForDoFrameMessage())
         adapter.addListExecuteListener { op ->
             // 先得到期望的version，用于拦截同步发送的分页事件
             version++
@@ -265,13 +266,11 @@ class PagingCollector<T : Any> internal constructor(
             value.flow.collect { event ->
                 val rv = requireNotNull(adapter.recyclerView) { "ListAdapter未添加到RecyclerView" }
                 handleEventListeners.reverseAccessEach { it.handleEvent(rv, event) }
-
                 val op: UpdateOp<T>? = when (event) {
                     is PagingEvent.ListStateUpdate -> event.op
                     is PagingEvent.LoadDataSuccess -> event.toUpdateOp()
                     is PagingEvent.LoadStateUpdate -> null
                 }
-
                 // 若mediator的类型是ListMediator，则version < newVersion才更新列表
                 val listMediator = mediator?.asListMediator<T>()
                 val newVersion = event.getVersionOrZero()
@@ -288,18 +287,7 @@ class PagingCollector<T : Any> internal constructor(
             if (!result.await()) continue
             val newVersion = result.newVersion
             if (version < newVersion) version = newVersion
-
             if (loadStates == result.loadStates) continue
-            val rv = adapter.recyclerView
-            if (rv != null && (rv.isComputingLayout
-                            || rv.scrollState != SCROLL_STATE_IDLE
-                            || rv.mDispatchScrollCounter > 0)) {
-                // 执行onBindViewHolder()或者滚动过程中可能触发末尾加载，
-                // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成，
-                // 此时对listeners分发加载状态，则会因为listeners调用notifyXXX()，
-                // 导致RecyclerView内部逻辑断言为异常情况。
-                yield()
-            }
             trace(TRACE_DISPATCH_LOAD_STATES_TAG) { setLoadStates(result.loadStates) }
         }
     }
@@ -360,7 +348,7 @@ class PagingCollector<T : Any> internal constructor(
         }
     }
 
-    private class RefreshStartScrollToFirst : HandleEventListener<Any> {
+    private class PostponeHandleEventForRefreshScroll : HandleEventListener<Any> {
 
         override suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<Any>) {
             val loadType = event.loadType
@@ -380,6 +368,23 @@ class PagingCollector<T : Any> internal constructor(
                 rv.optimizeNextFrameScroll()
                 // 等待下一帧rv布局完成，确保滚动不受影响
                 rv.awaitNextLayout()
+            }
+        }
+    }
+
+    private inner class PostponeHandleEventForDoFrameMessage : HandleEventListener<Any> {
+
+        override suspend fun handleEvent(rv: RecyclerView, event: PagingEvent<Any>) {
+            if (loadStates == event.loadStates) return
+            val rv = adapter.recyclerView
+            if (rv != null && (rv.isComputingLayout
+                            || rv.scrollState != SCROLL_STATE_IDLE
+                            || rv.mDispatchScrollCounter > 0)) {
+                // DoFrame消息执行onBindViewHolder()或者滚动过程可能触发末尾加载，
+                // 上游加载下一页之前，会发送加载中事件，整个过程在一个消息中完成，
+                // 此时对listeners分发加载状态，则会因为listeners调用notifyXXX()，
+                // 导致RecyclerView内部逻辑断言为异常情况。
+                yield()
             }
         }
     }
