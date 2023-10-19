@@ -168,7 +168,7 @@ internal class ItemClickDispatcher(
     }
 
     private fun clearPendingLongClickTargets() {
-        pendingClickTargets = pendingClickTargets.clear()
+        pendingLongClickTargets = pendingLongClickTargets.clear()
     }
 
     private class DispatchTargetDisposable : Disposable {
