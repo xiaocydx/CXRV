@@ -169,10 +169,11 @@ fun Selection<*, *>.isSelected(holder: ViewHolder): Boolean = isSelected(holder)
  *
  * @return `true`表示选择成功，`false`表示没有`itemKey`或者选择过。
  */
-fun <ITEM : Any, K : Any> Selection<ITEM, K>.select(item: ITEM): Boolean {
+fun <ITEM : Any> Selection<ITEM, *>.select(item: ITEM): Boolean {
     val itemKey = item.key ?: return false
     if (isSelected(item)) return false
-    return select(item, findPositionByKey(itemKey))
+    @Suppress("UNCHECKED_CAST")
+    return (this as Selection<ITEM, Any>).select(item, findPositionByKey(itemKey))
 }
 
 /**
@@ -193,10 +194,11 @@ fun Selection<*, *>.select(holder: ViewHolder): Boolean {
  *
  * @return `true`表示取消成功，`false`表示没有`itemKey`或者未选择过。
  */
-fun <ITEM : Any, K : Any> Selection<ITEM, K>.unselect(item: ITEM): Boolean {
+fun <ITEM : Any> Selection<ITEM, *>.unselect(item: ITEM): Boolean {
     val itemKey = item.key ?: return false
     if (!isSelected(item)) return false
-    return unselect(item, findPositionByKey(itemKey))
+    @Suppress("UNCHECKED_CAST")
+    return (this as Selection<ITEM, Any>).unselect(item, findPositionByKey(itemKey))
 }
 
 /**
