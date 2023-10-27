@@ -98,36 +98,37 @@ open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager, Layout
 
     @CallSuper
     override fun onAttachedToWindow(view: RecyclerView) {
-        dispatcher.onAttachedToWindow(view)
+        dispatcher.onPreAttachedToWindow(view)
         super.onAttachedToWindow(view)
     }
 
     @CallSuper
     override fun onDetachedFromWindow(view: RecyclerView, recycler: Recycler) {
-        dispatcher.onDetachedFromWindow(view, recycler)
+        dispatcher.onPreDetachedFromWindow(view, recycler)
         super.onDetachedFromWindow(view, recycler)
     }
 
     @CallSuper
     override fun onAdapterChanged(oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
-        dispatcher.onAdapterChanged(layout = this, oldAdapter, newAdapter)
+        dispatcher.onPreAdapterChanged(layout = this, oldAdapter, newAdapter)
+        super.onAdapterChanged(oldAdapter, newAdapter)
     }
 
     @CallSuper
     override fun onLayoutChildren(recycler: Recycler, state: State) {
-        dispatcher.onLayoutChildren(recycler, state)
+        dispatcher.onPreLayoutChildren(recycler, state)
         super.onLayoutChildren(recycler, state)
     }
 
     @CallSuper
     override fun requestSimpleAnimationsInNextLayout() {
-        dispatcher.requestSimpleAnimationsInNextLayout()
+        dispatcher.preRequestSimpleAnimationsInNextLayout()
         super.requestSimpleAnimationsInNextLayout()
     }
 
     @CallSuper
     override fun onLayoutCompleted(state: State) {
-        dispatcher.onLayoutCompleted(layout = this, state)
+        dispatcher.onPreLayoutCompleted(layout = this, state)
         super.onLayoutCompleted(state)
     }
 }

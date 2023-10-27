@@ -38,12 +38,12 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
 
     var isEnabled = true
 
-    override fun onAttachedToWindow(view: RecyclerView) {
+    override fun onPreAttachedToWindow(view: RecyclerView) {
         val layout = view.layoutManager ?: return
-        onAdapterChanged(layout, oldAdapter = adapter, newAdapter = view.adapter)
+        onPreAdapterChanged(layout, oldAdapter = adapter, newAdapter = view.adapter)
     }
 
-    override fun onAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
+    override fun onPreAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
         if (adapter !== newAdapter) {
             adapter?.unregisterAdapterDataObserver(this)
             adapter = newAdapter
@@ -75,21 +75,21 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
         requestInvalidateOnNextLayout()
     }
 
-    override fun requestSimpleAnimationsInNextLayout() {
+    override fun preRequestSimpleAnimationsInNextLayout() {
         if (!isEnabled || invalidateOnNextLayout || layout !is StaggeredGridLayoutManager) return
         // 兼容调用StaggeredGridLayoutManager.onLayoutChildren(recycler, state, false)的场景
         markItemDecorInsetsDirty()
-        super.requestSimpleAnimationsInNextLayout()
+        super.preRequestSimpleAnimationsInNextLayout()
     }
 
-    override fun onLayoutChildren(recycler: Recycler, state: State) {
+    override fun onPreLayoutChildren(recycler: Recycler, state: State) {
         checkRunAnimations(state)
         checkRecalculateAnchor(state)
         if (isEnabled && invalidateOnNextLayout && !state.isPreLayout) {
             // preLayout阶段不重新计算间距，确保preLayout的布局结果不影响realLayout
             markItemDecorInsetsDirty()
         }
-        super.onLayoutChildren(recycler, state)
+        super.onPreLayoutChildren(recycler, state)
     }
 
     private fun checkRunAnimations(state: State) {
@@ -118,7 +118,7 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
         invalidateOnNextLayout = true
     }
 
-    override fun onLayoutCompleted(layout: LayoutManager, state: State) {
+    override fun onPreLayoutCompleted(layout: LayoutManager, state: State) {
         invalidateOnNextLayout = false
         previousItemCount = state.itemCount
     }

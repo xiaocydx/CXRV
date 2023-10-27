@@ -41,12 +41,12 @@ internal class ScrollToFirstOnUpdateHelper : AdapterDataObserver(), LayoutManage
 
     var isEnabled = true
 
-    override fun onAttachedToWindow(view: RecyclerView) {
+    override fun onPreAttachedToWindow(view: RecyclerView) {
         val layout = view.layoutManager ?: return
-        onAdapterChanged(layout, oldAdapter = adapter, newAdapter = view.adapter)
+        onPreAdapterChanged(layout, oldAdapter = adapter, newAdapter = view.adapter)
     }
 
-    override fun onAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
+    override fun onPreAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
         if (adapter !== newAdapter) {
             adapter?.unregisterAdapterDataObserver(this)
             adapter = newAdapter
@@ -75,7 +75,7 @@ internal class ScrollToFirstOnUpdateHelper : AdapterDataObserver(), LayoutManage
         }
     }
 
-    override fun onLayoutCompleted(layout: LayoutManager, state: State) {
+    override fun onPreLayoutCompleted(layout: LayoutManager, state: State) {
         previousItemCount = state.itemCount
     }
 

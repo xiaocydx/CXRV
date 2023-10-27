@@ -24,8 +24,8 @@ import androidx.recyclerview.widget.RecyclerView.Recycler
 import com.xiaocydx.cxrv.layout.callback.LayoutManagerCallback
 
 /**
- * 在[onDetachedFromWindow]时保存[LayoutManager]的状态，
- * 在[onAttachedToWindow]时恢复[LayoutManager]的状态。
+ * 在[onPreDetachedFromWindow]时保存[LayoutManager]的状态，
+ * 在[onPreAttachedToWindow]时恢复[LayoutManager]的状态。
  *
  * @author xcc
  * @date 2022/8/11
@@ -39,17 +39,17 @@ internal class SaveInstanceStateOnDetachHelper : LayoutManagerCallback {
             if (!value) pendingSavedState = null
         }
 
-    override fun onAttachedToWindow(view: RecyclerView) {
+    override fun onPreAttachedToWindow(view: RecyclerView) {
         pendingSavedState?.let { view.layoutManager?.onRestoreInstanceState(it) }
         pendingSavedState = null
     }
 
-    override fun onDetachedFromWindow(view: RecyclerView, recycler: Recycler) {
+    override fun onPreDetachedFromWindow(view: RecyclerView, recycler: Recycler) {
         val lm = view.layoutManager
         pendingSavedState = if (isEnabled) lm?.onSaveInstanceState() else null
         // 这是一种取巧的做法，对LayoutManager实现类的mPendingSavedState赋值，
         // 确保Fragment销毁时能保存状态，Fragment重建时恢复RecyclerView的滚动位置。
         pendingSavedState?.let { lm?.onRestoreInstanceState(it) }
-        super.onDetachedFromWindow(view, recycler)
+        super.onPreDetachedFromWindow(view, recycler)
     }
 }

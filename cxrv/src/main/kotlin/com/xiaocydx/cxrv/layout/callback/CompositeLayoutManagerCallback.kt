@@ -42,28 +42,28 @@ internal class CompositeLayoutManagerCallback(initialCapacity: Int) : LayoutMana
         callback.onCleared()
     }
 
-    override fun onAttachedToWindow(view: RecyclerView) {
-        callbacks.accessEach { it.onAttachedToWindow(view) }
+    override fun onPreAttachedToWindow(view: RecyclerView) {
+        callbacks.accessEach { it.onPreAttachedToWindow(view) }
     }
 
-    override fun onDetachedFromWindow(view: RecyclerView, recycler: Recycler) {
-        callbacks.accessEach { it.onDetachedFromWindow(view, recycler) }
+    override fun onPreDetachedFromWindow(view: RecyclerView, recycler: Recycler) {
+        callbacks.accessEach { it.onPreDetachedFromWindow(view, recycler) }
     }
 
-    override fun onAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
-        callbacks.accessEach { it.onAdapterChanged(layout, oldAdapter, newAdapter) }
+    override fun onPreAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
+        callbacks.accessEach { it.onPreAdapterChanged(layout, oldAdapter, newAdapter) }
     }
 
-    override fun onLayoutChildren(recycler: Recycler, state: State) {
-        callbacks.accessEach { it.onLayoutChildren(recycler, state) }
+    override fun onPreLayoutChildren(recycler: Recycler, state: State) {
+        callbacks.accessEach { it.onPreLayoutChildren(recycler, state) }
     }
 
-    override fun requestSimpleAnimationsInNextLayout() {
-        callbacks.accessEach { it.requestSimpleAnimationsInNextLayout() }
+    override fun preRequestSimpleAnimationsInNextLayout() {
+        callbacks.accessEach { it.preRequestSimpleAnimationsInNextLayout() }
     }
 
-    override fun onLayoutCompleted(layout: LayoutManager, state: State) {
-        callbacks.accessEach { it.onLayoutCompleted(layout, state) }
+    override fun onPreLayoutCompleted(layout: LayoutManager, state: State) {
+        callbacks.accessEach { it.onPreLayoutCompleted(layout, state) }
     }
 
     override fun onCleared() {

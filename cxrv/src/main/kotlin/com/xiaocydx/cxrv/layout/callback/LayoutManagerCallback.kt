@@ -33,40 +33,44 @@ internal interface LayoutManagerCallback {
     /**
      * 对应[LayoutManager.onAttachedToWindow]
      *
-     * 该函数应当在`super.onAttachedToWindow(view)`之前被调用。
+     * 该函数在`super.onAttachedToWindow(view)`之前被调用。
      */
-    fun onAttachedToWindow(view: RecyclerView) = Unit
+    fun onPreAttachedToWindow(view: RecyclerView) = Unit
 
     /**
      * 对应[LayoutManager.onDetachedFromWindow]
      *
      * 该函数在`super.onDetachedFromWindow(view, recycler)`之前被调用。
      */
-    fun onDetachedFromWindow(view: RecyclerView, recycler: Recycler) = Unit
+    fun onPreDetachedFromWindow(view: RecyclerView, recycler: Recycler) = Unit
 
     /**
      * 对应[LayoutManager.onAdapterChanged]
+     *
+     * 该函数在`super.onAdapterChanged(layout, oldAdapter, newAdapter)`之前被调用。
      */
-    fun onAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) = Unit
+    fun onPreAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) = Unit
 
     /**
      * 对应[LayoutManager.onLayoutChildren]
      *
      * 该函数在`super.onLayoutChildren(recycler, state)`之前被调用。
      */
-    fun onLayoutChildren(recycler: Recycler, state: State) = Unit
+    fun onPreLayoutChildren(recycler: Recycler, state: State) = Unit
 
     /**
      * 对应[LayoutManager.requestSimpleAnimationsInNextLayout]
      *
      * 该函数在`super.requestSimpleAnimationsInNextLayout()`之前被调用。
      */
-    fun requestSimpleAnimationsInNextLayout() = Unit
+    fun preRequestSimpleAnimationsInNextLayout() = Unit
 
     /**
      * 对应[LayoutManager.onLayoutCompleted]
+     *
+     * 该函数在`super.onLayoutCompleted(layout, state)`之前被调用。
      */
-    fun onLayoutCompleted(layout: LayoutManager, state: State) = Unit
+    fun onPreLayoutCompleted(layout: LayoutManager, state: State) = Unit
 
     /**
      * 从[CompositeLayoutManagerCallback]移除时，该函数会被调用
