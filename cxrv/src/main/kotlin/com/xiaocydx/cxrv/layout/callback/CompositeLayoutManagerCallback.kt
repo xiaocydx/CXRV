@@ -16,6 +16,8 @@
 
 package com.xiaocydx.cxrv.layout.callback
 
+import android.graphics.Rect
+import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
@@ -60,6 +62,10 @@ internal class CompositeLayoutManagerCallback(initialCapacity: Int) : LayoutMana
 
     override fun preRequestSimpleAnimationsInNextLayout() {
         callbacks.accessEach { it.preRequestSimpleAnimationsInNextLayout() }
+    }
+
+    override fun postCalculateItemDecorationsForChild(child: View, outRect: Rect) {
+        callbacks.accessEach { it.postCalculateItemDecorationsForChild(child, outRect) }
     }
 
     override fun onPreLayoutCompleted(layout: LayoutManager, state: State) {

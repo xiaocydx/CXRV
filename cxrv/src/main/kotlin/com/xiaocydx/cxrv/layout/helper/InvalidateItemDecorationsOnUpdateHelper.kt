@@ -18,6 +18,8 @@
 
 package androidx.recyclerview.widget
 
+import android.graphics.Rect
+import android.view.View
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.layout.callback.LayoutManagerCallback
 
@@ -33,6 +35,7 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     private var invalidateOnNextLayout = false
     private var adapter: Adapter<*>? = null
     private var layout: LayoutManager? = null
+    private val staggeredCompat = StaggeredCompat()
     private val view: RecyclerView?
         get() = layout?.mRecyclerView
 
@@ -76,36 +79,19 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     }
 
     override fun preRequestSimpleAnimationsInNextLayout() {
-        if (!isEnabled || invalidateOnNextLayout || layout !is StaggeredGridLayoutManager) return
-        // 兼容调用StaggeredGridLayoutManager.onLayoutChildren(recycler, state, false)的场景
-        markItemDecorInsetsDirty()
-        super.preRequestSimpleAnimationsInNextLayout()
+        staggeredCompat.preRequestSimpleAnimationsInNextLayout()
     }
 
     override fun onPreLayoutChildren(recycler: Recycler, state: State) {
-        checkRunAnimations(state)
-        checkRecalculateAnchor(state)
+        staggeredCompat.onPreLayoutChildren(state)
         if (isEnabled && invalidateOnNextLayout && !state.isPreLayout) {
             // preLayout阶段不重新计算间距，确保preLayout的布局结果不影响realLayout
             markItemDecorInsetsDirty()
         }
-        super.onPreLayoutChildren(recycler, state)
     }
 
-    private fun checkRunAnimations(state: State) {
-        if (!invalidateOnNextLayout && layout is StaggeredGridLayoutManager) {
-            // 兼容StaggeredGridLayoutManager强制执行简单动画的场景，
-            // 例如滚动过程或者滚动状态更改为IDLE需要重新对齐的场景。
-            invalidateOnNextLayout = state.willRunSimpleAnimations()
-        }
-    }
-
-    private fun checkRecalculateAnchor(state: State) {
-        if (invalidateOnNextLayout) return
-        // 只兼容StaggeredGridLayoutManager滚动到指定位置的场景，其它重新计算锚点的场景需要靠反射兼容
-        val lm = layout as? StaggeredGridLayoutManager ?: return
-        val recalculateAnchor = state.itemCount > 0 && lm.mPendingScrollPosition != NO_POSITION
-        invalidateOnNextLayout = recalculateAnchor
+    override fun postCalculateItemDecorationsForChild(child: View, outRect: Rect) {
+        staggeredCompat.postCalculateItemDecorationsForChild(child)
     }
 
     private fun markItemDecorInsetsDirty() {
@@ -127,5 +113,38 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
         adapter?.unregisterAdapterDataObserver(this)
         adapter = null
         layout = null
+    }
+
+    private inner class StaggeredCompat {
+        private val isStaggered: Boolean
+            get() = layout is StaggeredGridLayoutManager
+
+        fun preRequestSimpleAnimationsInNextLayout() {
+            if (!isEnabled || !isStaggered || invalidateOnNextLayout) return
+            // 兼容调用StaggeredGridLayoutManager.onLayoutChildren(recycler, state, false)的场景
+            markItemDecorInsetsDirty()
+        }
+
+        fun onPreLayoutChildren(state: State) {
+            if (!isEnabled || !isStaggered || invalidateOnNextLayout) return
+            if (state.willRunSimpleAnimations()) {
+                // 兼容StaggeredGridLayoutManager强制执行简单动画的场景，
+                // 例如滚动过程或者滚动状态更改为IDLE需要重新对齐的场景。
+                requestInvalidateOnNextLayout()
+                return
+            }
+            // 只兼容StaggeredGridLayoutManager滚动到指定位置的场景，其它重新计算锚点的场景需要靠反射兼容
+            val lm = layout as? StaggeredGridLayoutManager ?: return
+            val recalculateAnchor = state.itemCount > 0 && lm.mPendingScrollPosition != NO_POSITION
+            if (recalculateAnchor) requestInvalidateOnNextLayout()
+        }
+
+        fun postCalculateItemDecorationsForChild(child: View) {
+            if (!isEnabled || !isStaggered || !invalidateOnNextLayout) return
+            if (view == null || view!!.isPreLayout) return
+            // 在onLayoutChildren()布局期间，计算完Insets就废弃，
+            // 确保layoutParams.mSpan参数正确后，再次计算Insets。
+            (child.layoutParams as? LayoutParams)?.mInsetsDirty = true
+        }
     }
 }

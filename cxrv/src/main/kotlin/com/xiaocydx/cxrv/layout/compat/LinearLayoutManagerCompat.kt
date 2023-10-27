@@ -19,6 +19,7 @@
 package androidx.recyclerview.widget
 
 import android.content.Context
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
@@ -139,6 +140,12 @@ open class LinearLayoutManagerCompat : LinearLayoutManager, LayoutManagerCompat 
     override fun requestSimpleAnimationsInNextLayout() {
         dispatcher.preRequestSimpleAnimationsInNextLayout()
         super.requestSimpleAnimationsInNextLayout()
+    }
+
+    @CallSuper
+    override fun calculateItemDecorationsForChild(child: View, outRect: Rect) {
+        super.calculateItemDecorationsForChild(child, outRect)
+        dispatcher.postCalculateItemDecorationsForChild(child, outRect)
     }
 
     @CallSuper

@@ -16,6 +16,8 @@
 
 package com.xiaocydx.cxrv.layout.callback
 
+import android.graphics.Rect
+import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
@@ -64,6 +66,13 @@ internal interface LayoutManagerCallback {
      * 该函数在`super.requestSimpleAnimationsInNextLayout()`之前被调用。
      */
     fun preRequestSimpleAnimationsInNextLayout() = Unit
+
+    /**
+     * 对应[LayoutManager.calculateItemDecorationsForChild]
+     *
+     * 该函数在`super.calculateItemDecorationsForChild(child, outRect)`之后被调用。
+     */
+    fun postCalculateItemDecorationsForChild(child: View, outRect: Rect) = Unit
 
     /**
      * 对应[LayoutManager.onLayoutCompleted]
