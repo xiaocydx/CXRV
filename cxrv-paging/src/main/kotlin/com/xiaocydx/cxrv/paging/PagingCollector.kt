@@ -32,6 +32,7 @@ import com.xiaocydx.cxrv.list.InlineList
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.UpdateOp
 import com.xiaocydx.cxrv.list.UpdateResult
+import com.xiaocydx.cxrv.list.accessEach
 import com.xiaocydx.cxrv.list.reverseAccessEach
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainCoroutineDispatcher
@@ -156,7 +157,7 @@ class PagingCollector<T : Any> internal constructor(
 
     init {
         assertMainThread()
-        addHandleEventListener(PostponeHandleEventForRefreshScroll())
+        setRefreshScrollEnabled(true)
         addHandleEventListener(PostponeHandleEventForDoFrameMessage())
         adapter.addListExecuteListener { op ->
             // 先得到期望的version，用于拦截同步发送的分页事件
@@ -194,6 +195,25 @@ class PagingCollector<T : Any> internal constructor(
     internal fun append() {
         assertMainThread()
         mediator?.append()
+    }
+
+    /**
+     * 当刷新加载开始时，是否启用非平滑滚动到首位，默认启用
+     */
+    @MainThread
+    fun setRefreshScrollEnabled(isEnabled: Boolean) {
+        assertMainThread()
+        val listener: PostponeHandleEventForRefreshScroll? = run {
+            handleEventListeners.accessEach {
+                if (it is PostponeHandleEventForRefreshScroll) return@run it
+            }
+            null
+        }
+        if (listener != null && !isEnabled) {
+            removeHandleEventListener(listener)
+        } else if (listener == null && isEnabled) {
+            addHandleEventListener(PostponeHandleEventForRefreshScroll())
+        }
     }
 
     /**
@@ -367,7 +387,7 @@ class PagingCollector<T : Any> internal constructor(
             if (rv.isLayoutRequested) {
                 rv.optimizeNextFrameScroll()
                 // 等待下一帧rv布局完成，确保滚动不受影响
-                rv.awaitNextLayout()
+                rv.takeIf { it.itemAnimator != null }?.awaitNextLayout()
             }
         }
     }
