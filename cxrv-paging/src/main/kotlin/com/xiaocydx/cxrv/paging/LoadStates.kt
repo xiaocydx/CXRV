@@ -48,6 +48,12 @@ data class LoadStates(
 }
 
 /**
+ * 是否刷新或者末尾加载未开始
+ */
+val LoadStates.isIncomplete: Boolean
+    get() = refresh.isIncomplete && append.isIncomplete
+
+/**
  * 是否刷新或者末尾加载中
  */
 val LoadStates.isLoading: Boolean
@@ -116,25 +122,59 @@ fun LoadStates.getState(
 /**
  * 当前状态集合和[states]对比，是否为刷新加载成功的流转过程
  */
-fun LoadStates.refreshToSuccess(states: LoadStates): Boolean = when {
-    !this.append.isIncomplete || !states.append.isIncomplete -> false
-    else -> !this.refresh.isSuccess && states.refresh.isSuccess
-}
+fun LoadStates.refreshToSuccess(states: LoadStates) = refreshTo(states, LoadState::isSuccess)
+
+/**
+ * 当前状态集合和[states]对比，是否为刷新加载失败的流转过程
+ */
+fun LoadStates.refreshToFailure(states: LoadStates) = refreshTo(states, LoadState::isFailure)
 
 /**
  * 当前状态集合和[states]对比，是否为刷新加载完成的流转过程
  *
  * **注意**：加载成功或加载失败即算加载完成。
  */
-fun LoadStates.refreshToComplete(states: LoadStates): Boolean = when {
-    !this.append.isIncomplete || !states.append.isIncomplete -> false
-    else -> !this.refresh.isComplete && states.refresh.isComplete
-}
+fun LoadStates.refreshToComplete(states: LoadStates) = refreshTo(states, LoadState::isComplete)
+
+/**
+ * 当前状态集合和[states]对比，是否为刷新加载完全的流转过程
+ */
+fun LoadStates.refreshToFully(states: LoadStates) = refreshTo(states, LoadState::isFully)
+
+/**
+ * 当前状态集合和[states]对比，是否为末尾加载成功的流转过程
+ */
+fun LoadStates.appendToSuccess(states: LoadStates) = appendTo(states, LoadState::isSuccess)
+
+/**
+ * 当前状态集合和[states]对比，是否为末尾加载失败的流转过程
+ */
+fun LoadStates.appendToFailure(states: LoadStates) = appendTo(states, LoadState::isFailure)
+
+/**
+ * 当前状态集合和[states]对比，是否为末尾加载完成的流转过程
+ *
+ * **注意**：加载成功或加载失败即算加载完成。
+ */
+fun LoadStates.appendToComplete(states: LoadStates) = appendTo(states, LoadState::isComplete)
 
 /**
  * 当前状态集合和[states]对比，是否为末尾加载完全的流转过程
  */
-fun LoadStates.appendToFully(states: LoadStates): Boolean = when {
+fun LoadStates.appendToFully(states: LoadStates) = appendTo(states, LoadState::isFully)
+
+private inline fun LoadStates.refreshTo(
+    states: LoadStates,
+    predicate: LoadState.() -> Boolean
+): Boolean = when {
+    !this.append.isIncomplete || !states.append.isIncomplete -> false
+    else -> !this.refresh.predicate() && states.refresh.predicate()
+}
+
+private inline fun LoadStates.appendTo(
+    states: LoadStates,
+    predicate: LoadState.() -> Boolean
+): Boolean = when {
     !this.refresh.isSuccess || !states.refresh.isSuccess -> false
-    else -> !this.append.isFully && states.append.isFully
+    else -> !this.append.predicate() && states.append.predicate()
 }
