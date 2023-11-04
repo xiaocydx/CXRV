@@ -30,7 +30,7 @@ import com.xiaocydx.cxrv.layout.callback.LayoutManagerCallback
  * @author xcc
  * @date 2022/8/11
  */
-internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), LayoutManagerCallback {
+internal class InvalidateItemDecorationsOnUpdateHelper : LayoutManagerCallback {
     private var previousItemCount = 0
     private var invalidateOnNextLayout = false
     private var adapter: Adapter<*>? = null
@@ -47,34 +47,29 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     }
 
     override fun onPreAdapterChanged(layout: LayoutManager, oldAdapter: Adapter<*>?, newAdapter: Adapter<*>?) {
-        if (adapter !== newAdapter) {
-            adapter?.unregisterAdapterDataObserver(this)
-            adapter = newAdapter
-            adapter?.registerAdapterDataObserver(this)
-        }
+        adapter = newAdapter
         this.layout = layout
         previousItemCount = layout.itemCount
     }
 
-    override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
-        requestInvalidateOnNextLayout()
-    }
-
-    override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
-        requestInvalidateOnNextLayout()
-    }
-
-    override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+    override fun onPreItemsAdded(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
         if (previousItemCount == 0) return
-        // 兼容插入item的场景，例如分页加载下一页的场景
         requestInvalidateOnNextLayout()
     }
 
-    override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+    override fun onPreItemsRemoved(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
         requestInvalidateOnNextLayout()
     }
 
-    override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
+    override fun onPreItemsUpdated(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
+        requestInvalidateOnNextLayout()
+    }
+
+    override fun onPreItemsUpdated(recyclerView: RecyclerView, positionStart: Int, itemCount: Int, payload: Any?) {
+        requestInvalidateOnNextLayout()
+    }
+
+    override fun onPreItemsMoved(recyclerView: RecyclerView, from: Int, to: Int, itemCount: Int) {
         requestInvalidateOnNextLayout()
     }
 
@@ -110,7 +105,6 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
     }
 
     override fun onCleared() {
-        adapter?.unregisterAdapterDataObserver(this)
         adapter = null
         layout = null
     }
@@ -121,8 +115,7 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
 
         fun preRequestSimpleAnimationsInNextLayout() {
             if (!isEnabled || !isStaggered || invalidateOnNextLayout) return
-            // 兼容调用StaggeredGridLayoutManager.onLayoutChildren(recycler, state, false)的场景
-            markItemDecorInsetsDirty()
+            requestInvalidateOnNextLayout()
         }
 
         fun onPreLayoutChildren(state: State) {
@@ -133,10 +126,13 @@ internal class InvalidateItemDecorationsOnUpdateHelper : AdapterDataObserver(), 
                 requestInvalidateOnNextLayout()
                 return
             }
-            // 只兼容StaggeredGridLayoutManager滚动到指定位置的场景，其它重新计算锚点的场景需要靠反射兼容
             val lm = layout as? StaggeredGridLayoutManager ?: return
-            val recalculateAnchor = state.itemCount > 0 && lm.mPendingScrollPosition != NO_POSITION
-            if (recalculateAnchor) requestInvalidateOnNextLayout()
+            if (state.itemCount > 0 && lm.mPendingScrollPosition != NO_POSITION) {
+                // 兼容StaggeredGridLayoutManager滚动到指定位置的场景，
+                // 调用invalidateSpanAssignments()修正item的布局位置。
+                lm.invalidateSpanAssignments()
+                requestInvalidateOnNextLayout()
+            }
         }
 
         fun postCalculateItemDecorationsForChild(child: View) {

@@ -68,6 +68,30 @@ internal class CompositeLayoutManagerCallback(initialCapacity: Int) : LayoutMana
         callbacks.accessEach { it.postCalculateItemDecorationsForChild(child, outRect) }
     }
 
+    override fun onPreItemsChanged(recyclerView: RecyclerView) {
+        callbacks.accessEach { it.onPreItemsChanged(recyclerView) }
+    }
+
+    override fun onPreItemsAdded(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
+        callbacks.accessEach { it.onPreItemsAdded(recyclerView, positionStart, itemCount) }
+    }
+
+    override fun onPreItemsRemoved(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
+        callbacks.accessEach { it.onPreItemsRemoved(recyclerView, positionStart, itemCount) }
+    }
+
+    override fun onPreItemsUpdated(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
+        callbacks.accessEach { it.onPreItemsUpdated(recyclerView, positionStart, itemCount) }
+    }
+
+    override fun onPreItemsUpdated(recyclerView: RecyclerView, positionStart: Int, itemCount: Int, payload: Any?) {
+        callbacks.accessEach { it.onPreItemsUpdated(recyclerView, positionStart, itemCount, payload) }
+    }
+
+    override fun onPreItemsMoved(recyclerView: RecyclerView, from: Int, to: Int, itemCount: Int) {
+        callbacks.accessEach { it.onPreItemsMoved(recyclerView, from, to, itemCount) }
+    }
+
     override fun onPreLayoutCompleted(layout: LayoutManager, state: State) {
         callbacks.accessEach { it.onPreLayoutCompleted(layout, state) }
     }

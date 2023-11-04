@@ -147,6 +147,42 @@ open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager, Layout
     }
 
     @CallSuper
+    override fun onItemsChanged(recyclerView: RecyclerView) {
+        dispatcher.onPreItemsChanged(recyclerView)
+        super.onItemsChanged(recyclerView)
+    }
+
+    @CallSuper
+    override fun onItemsAdded(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
+        dispatcher.onPreItemsAdded(recyclerView, positionStart, itemCount)
+        super.onItemsAdded(recyclerView, positionStart, itemCount)
+    }
+
+    @CallSuper
+    override fun onItemsRemoved(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
+        dispatcher.onPreItemsRemoved(recyclerView, positionStart, itemCount)
+        super.onItemsRemoved(recyclerView, positionStart, itemCount)
+    }
+
+    @CallSuper
+    override fun onItemsUpdated(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
+        dispatcher.onPreItemsUpdated(recyclerView, positionStart, itemCount)
+        super.onItemsUpdated(recyclerView, positionStart, itemCount)
+    }
+
+    @CallSuper
+    override fun onItemsUpdated(recyclerView: RecyclerView, positionStart: Int, itemCount: Int, payload: Any?) {
+        dispatcher.onPreItemsUpdated(recyclerView, positionStart, itemCount, payload)
+        super.onItemsUpdated(recyclerView, positionStart, itemCount, payload)
+    }
+
+    @CallSuper
+    override fun onItemsMoved(recyclerView: RecyclerView, from: Int, to: Int, itemCount: Int) {
+        dispatcher.onPreItemsMoved(recyclerView, from, to, itemCount)
+        super.onItemsMoved(recyclerView, from, to, itemCount)
+    }
+
+    @CallSuper
     override fun onLayoutCompleted(state: State) {
         dispatcher.onPreLayoutCompleted(layout = this, state)
         super.onLayoutCompleted(state)

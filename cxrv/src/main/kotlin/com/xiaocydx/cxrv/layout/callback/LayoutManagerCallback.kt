@@ -75,6 +75,48 @@ internal interface LayoutManagerCallback {
     fun postCalculateItemDecorationsForChild(child: View, outRect: Rect) = Unit
 
     /**
+     * 对应[LayoutManager.onItemsChanged]
+     *
+     * 该函数在`super.onItemsChanged(recyclerView)`之前被调用。
+     */
+    fun onPreItemsChanged(recyclerView: RecyclerView) = Unit
+
+    /**
+     * 对应[LayoutManager.onItemsAdded]
+     *
+     * 该函数在`super.onItemsAdded(recyclerView, positionStart, itemCount)`之前被调用。
+     */
+    fun onPreItemsAdded(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) = Unit
+
+    /**
+     * 对应[LayoutManager.onItemsRemoved]
+     *
+     * 该函数在`super.onItemsRemoved(recyclerView, positionStart, itemCount)`之前被调用。
+     */
+    fun onPreItemsRemoved(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) = Unit
+
+    /**
+     * 对应[LayoutManager.onItemsUpdated]
+     *
+     * 该函数在`super.onItemsUpdated(recyclerView, positionStart, itemCount)`之前被调用。
+     */
+    fun onPreItemsUpdated(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) = Unit
+
+    /**
+     * 对应[LayoutManager.onItemsUpdated]
+     *
+     * 该函数在`super.onItemsUpdated(recyclerView, positionStart, itemCount, payload)`之前被调用。
+     */
+    fun onPreItemsUpdated(recyclerView: RecyclerView, positionStart: Int, itemCount: Int, payload: Any?) = Unit
+
+    /**
+     * 对应[LayoutManager.onItemsMoved]
+     *
+     * 该函数在`super.onItemsMoved(recyclerView, from, to, itemCount)`之前被调用。
+     */
+    fun onPreItemsMoved(recyclerView: RecyclerView, from: Int, to: Int, itemCount: Int) = Unit
+
+    /**
      * 对应[LayoutManager.onLayoutCompleted]
      *
      * 该函数在`super.onLayoutCompleted(layout, state)`之前被调用。
