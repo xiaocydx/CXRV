@@ -26,6 +26,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.optimizeNextFrameScroll
+import com.xiaocydx.cxrv.itemvisible.findFirstCompletelyVisibleItemPosition
+import com.xiaocydx.cxrv.itemvisible.findLastCompletelyVisibleItemPosition
 import com.xiaocydx.sample.viewLifecycle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharedFlow
@@ -152,7 +154,13 @@ interface TransformSender {
                 }
             }
         }
-        scrollToPosition(offset + position)
+
+        val layoutPosition = offset + position
+        val firstPosition = findFirstCompletelyVisibleItemPosition()
+        val lastPosition = findLastCompletelyVisibleItemPosition()
+        if (layoutPosition in firstPosition..lastPosition) return
+
+        scrollToPosition(layoutPosition)
         // 非平滑滚动布局流程的优化方案，可用于替代增加缓存上限的方案
         optimizeNextFrameScroll()
     }
