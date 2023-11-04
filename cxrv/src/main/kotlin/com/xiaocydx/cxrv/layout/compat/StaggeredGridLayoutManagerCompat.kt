@@ -93,6 +93,18 @@ open class StaggeredGridLayoutManagerCompat : StaggeredGridLayoutManager, Layout
         }
 
     @CallSuper
+    override fun hasGapsToFix(): View? {
+        var hasGapsToFix = super.hasGapsToFix()
+        if (hasGapsToFix == null) {
+            // 修复局部更新后，首位item布局位置错误的问题
+            val child = findViewByPosition(0)
+            val lp = child?.layoutParams as? LayoutParams
+            if (lp != null && lp.spanIndex != 0) hasGapsToFix = child
+        }
+        return hasGapsToFix
+    }
+
+    @CallSuper
     override fun setRecyclerView(recyclerView: RecyclerView?) {
         super.setRecyclerView(recyclerView)
         if (recyclerView == null) dispatcher.onCleared()
