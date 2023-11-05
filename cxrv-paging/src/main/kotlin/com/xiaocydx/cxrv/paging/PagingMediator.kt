@@ -62,4 +62,13 @@ internal interface PagingMediator {
      * 重新加载，该函数会对加载状态做判断，避免冗余请求
      */
     fun retry()
+
+    /**
+     * 从当前[PagingMediator]获取[PagingListMediator]，仅由[PagingCollector]调用，
+     * 当前[PagingMediator]可能是转换操作符的委托类，例如[AppendPrefetchMediator]。
+     *
+     * **注意**：该函数仅被[PagingListMediator]重写，转换操作符的委托类不进行重写，
+     * [PagingListMediator]的构建流程确保[T]类型跟[PagingCollector]的[T]类型一致。
+     */
+    fun <T : Any> getListMediator(): PagingListMediator<T>? = null
 }

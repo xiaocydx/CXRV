@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.optimizeNextFrameScroll
 import androidx.viewpager2.widget.ViewPager2
 import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.awaitNextLayout
+import com.xiaocydx.cxrv.internal.log
 import com.xiaocydx.cxrv.internal.trace
 import com.xiaocydx.cxrv.itemvisible.isFirstItemCompletelyVisible
 import com.xiaocydx.cxrv.list.InlineList
@@ -161,9 +162,9 @@ class PagingCollector<T : Any> internal constructor(
         adapter.addListExecuteListener { op ->
             // 先得到期望的version，用于拦截同步发送的分页事件
             version++
-            mediator?.asListMediator<T>()?.updateList(op)
+            mediator?.getListMediator<T>()?.updateList(op)
             // 再得到实际的version，确保不会因为失败而增加version
-            version = mediator?.asListMediator<T>()?.version ?: 0
+            version = mediator?.getListMediator<T>()?.version ?: 0
         }
     }
 
@@ -273,7 +274,7 @@ class PagingCollector<T : Any> internal constructor(
                     is PagingEvent.LoadStateUpdate -> null
                 }
                 // 若mediator的类型是ListMediator，则version < newVersion才更新列表
-                val listMediator = mediator?.asListMediator<T>()
+                val listMediator = mediator?.getListMediator<T>()
                 val newVersion = event.getVersionOrZero()
                 var result: UpdateResult? = null
                 if (op != null && (listMediator == null || version < newVersion)) {
@@ -295,13 +296,24 @@ class PagingCollector<T : Any> internal constructor(
 
     @MainThread
     private fun setMediator(mediator: PagingMediator) {
-        val previousMediator = this.mediator?.asListMediator<T>()
-        val currentMediator = mediator.asListMediator<T>()
-        if (previousMediator == null || currentMediator == null
-                || !previousMediator.isSameList(currentMediator)) {
+        val previousVersion = version
+        val previousListMediator = this.mediator?.getListMediator<T>()
+        val currentListMediator = mediator.getListMediator<T>()
+        if (previousListMediator == null || currentListMediator == null
+                || !previousListMediator.isSameList(currentListMediator)) {
             version = 0
         }
         this.mediator = mediator
+        log {
+            """setMediator {
+                |   mediator = $mediator
+                |   previousListMediator = $previousListMediator
+                |   currentListMediator = $currentListMediator
+                |   previousVersion = $previousVersion
+                |   currentVersion = $version
+                |}
+            """.trimMargin()
+        }
     }
 
     @MainThread
@@ -326,10 +338,18 @@ class PagingCollector<T : Any> internal constructor(
             prefetchEnabled = mediator.appendPrefetch !is PagingPrefetch.None,
             prefetchItemCount = (mediator.appendPrefetch as? PagingPrefetch.ItemCount)?.value ?: 0
         )
-        if (appendTrigger == null || !appendTrigger!!.isSameConfig(config)) {
+        val previousTrigger = appendTrigger
+        if (previousTrigger == null || previousTrigger.config != config) {
             appendTrigger?.detach()
             appendTrigger = AppendTrigger(config, adapter, this)
             appendTrigger?.attach()
+        }
+        log {
+            """setAppendTrigger {
+                |   previousConfig = ${previousTrigger?.config}
+                |   currentConfig = ${appendTrigger?.config}
+                |}
+            """.trimMargin()
         }
     }
 

@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 internal open class PagingListMediator<T : Any>(
     data: PagingData<T>,
     private val listState: ListState<T>
-) : ListMediator<T>, PagingMediator by data.mediator {
+) : PagingMediator by data.mediator, ListMediator<T> {
     override val version: Int
         get() = listState.version
     override val currentList: List<T>
@@ -74,6 +74,9 @@ internal open class PagingListMediator<T : Any>(
         return listState === other.listState
     }
 
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> getListMediator() = this as PagingListMediator<T>
+
     @MainThread
     private fun PagingEvent.LoadDataSuccess<T>.toUpdateOp(): UpdateOp<T> {
         return when (loadType) {
@@ -81,11 +84,6 @@ internal open class PagingListMediator<T : Any>(
             LoadType.APPEND -> UpdateOp.AddItems(currentList.size, data)
         }
     }
-}
-
-@Suppress("UNCHECKED_CAST")
-internal fun <T : Any> PagingMediator.asListMediator(): PagingListMediator<T>? {
-    return this as? PagingListMediator<T>
 }
 
 @CheckResult

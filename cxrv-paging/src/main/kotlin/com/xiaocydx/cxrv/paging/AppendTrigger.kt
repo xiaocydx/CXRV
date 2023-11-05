@@ -64,7 +64,7 @@ import kotlin.math.min
  * @date 2021/9/19
  */
 internal class AppendTrigger(
-    private val config: Config,
+    val config: Config,
     private val adapter: ListAdapter<*, *>,
     private val collector: PagingCollector<*>,
 ) : AdapterAttachCallback {
@@ -111,8 +111,6 @@ internal class AppendTrigger(
         scrollListener = null
         preDrawListener = null
     }
-
-    fun isSameConfig(other: Config) = config == other
 
     private fun preAppend() {
         scrollListener?.isEnabled = true
