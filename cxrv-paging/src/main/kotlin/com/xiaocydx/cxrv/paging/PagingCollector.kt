@@ -157,7 +157,6 @@ class PagingCollector<T : Any> internal constructor(
 
     init {
         assertMainThread()
-        setRefreshScrollEnabled(true)
         addHandleEventListener(PostponeHandleEventForDoFrameMessage())
         adapter.addListExecuteListener { op ->
             // 先得到期望的version，用于拦截同步发送的分页事件
@@ -195,25 +194,6 @@ class PagingCollector<T : Any> internal constructor(
     internal fun append() {
         assertMainThread()
         mediator?.append()
-    }
-
-    /**
-     * 当刷新加载开始时，是否启用非平滑滚动到首位，默认启用
-     */
-    @MainThread
-    fun setRefreshScrollEnabled(isEnabled: Boolean) {
-        assertMainThread()
-        val listener: PostponeHandleEventForRefreshScroll? = run {
-            handleEventListeners.accessEach {
-                if (it is PostponeHandleEventForRefreshScroll) return@run it
-            }
-            null
-        }
-        if (listener != null && !isEnabled) {
-            removeHandleEventListener(listener)
-        } else if (listener == null && isEnabled) {
-            addHandleEventListener(PostponeHandleEventForRefreshScroll())
-        }
     }
 
     /**
@@ -268,6 +248,7 @@ class PagingCollector<T : Any> internal constructor(
     ) = withContext(mainDispatcher.immediate) {
         if (mediator !== value.mediator) {
             setMediator(value.mediator)
+            setRefreshScroll(value.mediator)
             setAppendTrigger(value.mediator)
         }
 
@@ -324,19 +305,32 @@ class PagingCollector<T : Any> internal constructor(
     }
 
     @MainThread
-    private fun setAppendTrigger(mediator: PagingMediator) {
-        val prefetch = mediator.appendPrefetch
-        val previousTrigger = appendTrigger
-        val prefetchEnabled = prefetch !is PagingPrefetch.None
-        val prefetchItemCount = (prefetch as? PagingPrefetch.ItemCount)?.value ?: 0
-        if (previousTrigger != null
-                && previousTrigger.prefetchEnabled == prefetchEnabled
-                && previousTrigger.prefetchItemCount == prefetchItemCount) {
-            return
+    private fun setRefreshScroll(mediator: PagingMediator) {
+        val listener: PostponeHandleEventForRefreshScroll? = run {
+            handleEventListeners.accessEach {
+                if (it is PostponeHandleEventForRefreshScroll) return@run it
+            }
+            null
         }
-        appendTrigger?.detach()
-        appendTrigger = AppendTrigger(prefetchEnabled, prefetchItemCount, adapter, this)
-        appendTrigger?.attach()
+        if (listener != null && !mediator.refreshStartScrollToFirst) {
+            removeHandleEventListener(listener)
+        } else if (listener == null && mediator.refreshStartScrollToFirst) {
+            addHandleEventListener(PostponeHandleEventForRefreshScroll())
+        }
+    }
+
+    @MainThread
+    private fun setAppendTrigger(mediator: PagingMediator) {
+        val config = AppendTrigger.Config(
+            failureAutToRetry = mediator.appendFailureAutToRetry,
+            prefetchEnabled = mediator.appendPrefetch !is PagingPrefetch.None,
+            prefetchItemCount = (mediator.appendPrefetch as? PagingPrefetch.ItemCount)?.value ?: 0
+        )
+        if (appendTrigger == null || !appendTrigger!!.isSameConfig(config)) {
+            appendTrigger?.detach()
+            appendTrigger = AppendTrigger(config, adapter, this)
+            appendTrigger?.attach()
+        }
     }
 
     @MainThread

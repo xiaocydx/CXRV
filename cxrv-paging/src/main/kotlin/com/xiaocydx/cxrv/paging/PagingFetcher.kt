@@ -61,24 +61,15 @@ internal class PagingFetcher<K : Any, T : Any>(
         }
 
         launch(start = UNDISPATCHED) {
-            appendEvent.flow.filter {
-                val loadStates = loadStates
-                if (loadStates.append.isFailure) {
-                    config.appendFailureAutToRetry
-                } else {
-                    loadStates.isAllowAppend
-                }
-            }.collect {
-                channel.doLoad(LoadType.APPEND)
-            }
+            appendEvent.flow
+                .filter { loadStates.isAllowAppend }
+                .collect { channel.doLoad(LoadType.APPEND) }
         }
 
         launch(start = UNDISPATCHED) {
-            retryEvent.flow.mapNotNull {
-                loadStates.failureLoadType
-            }.collect { loadType ->
-                channel.doLoad(loadType)
-            }
+            retryEvent.flow
+                .mapNotNull { loadStates.failureLoadType }
+                .collect { loadType -> channel.doLoad(loadType) }
         }
 
         channel.doLoad(LoadType.REFRESH)

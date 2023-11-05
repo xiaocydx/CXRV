@@ -140,6 +140,12 @@ class Pager<K : Any, T : Any>(
         override val loadStates: LoadStates
             get() = fetcher.loadStates
 
+        override val refreshStartScrollToFirst: Boolean
+            get() = config.refreshStartScrollToFirst
+
+        override val appendFailureAutToRetry: Boolean
+            get() = config.appendFailureAutToRetry
+
         override val appendPrefetch: PagingPrefetch
             get() = config.appendPrefetch
 

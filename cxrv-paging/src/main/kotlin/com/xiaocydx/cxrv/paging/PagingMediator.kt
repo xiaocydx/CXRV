@@ -16,6 +16,9 @@
 
 package com.xiaocydx.cxrv.paging
 
+import com.xiaocydx.cxrv.paging.LoadType.APPEND
+import com.xiaocydx.cxrv.paging.LoadType.REFRESH
+
 /**
  * 提供分页相关的访问属性、执行函数
  *
@@ -27,6 +30,18 @@ internal interface PagingMediator {
      * 加载状态集合
      */
     val loadStates: LoadStates
+
+    /**
+     * 当[REFRESH]加载开始时，若该属性为`true`，则列表滚动到首位。
+     */
+    val refreshStartScrollToFirst: Boolean
+
+    /**
+     * 当[APPEND]加载失败时，若该属性为`true`，则自动重试[APPEND]加载，
+     * 自动重试的含义是不需要点击重试，时机是再次满足[APPEND]加载的条件，
+     * 例如滚动列表，若最后一个item再次可视，则自动重试。
+     */
+    val appendFailureAutToRetry: Boolean
 
     /**
      * 末尾加载的预取策略

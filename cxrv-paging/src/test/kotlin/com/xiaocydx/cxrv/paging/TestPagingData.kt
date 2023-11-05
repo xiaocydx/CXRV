@@ -63,6 +63,8 @@ internal fun TestPagingDataFlow(
 
 internal class TestPagingMediator : PagingMediator {
     override val loadStates = LoadStates.Incomplete
+    override val refreshStartScrollToFirst = true
+    override val appendFailureAutToRetry = true
     override val appendPrefetch = PagingPrefetch.Default
     override fun refresh() = Unit
     override fun append() = Unit

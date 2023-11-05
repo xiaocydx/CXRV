@@ -17,6 +17,7 @@
 package com.xiaocydx.cxrv.paging
 
 import com.xiaocydx.cxrv.paging.LoadType.APPEND
+import com.xiaocydx.cxrv.paging.LoadType.REFRESH
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -81,18 +82,62 @@ inline fun <T : Any, R : Any> Flow<PagingEvent<T>>.dataMap(
 }
 
 /**
- * 将上游[APPEND]加载的预取策略转换为[prefetch]，最初的预取策略来自[PagingConfig.appendPrefetch]
+ * 将上游[REFRESH]加载的滚动首位转换为[scrollToFirst]，原始值为[PagingConfig.refreshStartScrollToFirst]
+ */
+fun <T : Any> Flow<PagingData<T>>.refreshStartScrollToFirst(
+    scrollToFirst: Boolean
+): Flow<PagingData<T>> = map { data ->
+    var mediator = data.mediator
+    mediator = when {
+        mediator.refreshStartScrollToFirst == scrollToFirst -> return@map data
+        mediator is RefreshStartScrollToFirstMediator -> mediator.copy(scrollToFirst = scrollToFirst)
+        else -> RefreshStartScrollToFirstMediator(scrollToFirst, mediator)
+    }
+    PagingData(data.flow, mediator)
+}
+
+/**
+ * 将上游[APPEND]加载的自动重试转换为[autoToRetry]，原始值为[PagingConfig.appendFailureAutToRetry]
+ */
+fun <T : Any> Flow<PagingData<T>>.appendFailureAutToRetry(
+    autoToRetry: Boolean
+): Flow<PagingData<T>> = map { data ->
+    var mediator = data.mediator
+    mediator = when {
+        mediator.appendFailureAutToRetry == autoToRetry -> return@map data
+        mediator is AppendFailureAutToRetryMediator -> mediator.copy(autoToRetry = autoToRetry)
+        else -> AppendFailureAutToRetryMediator(autoToRetry, mediator)
+    }
+    PagingData(data.flow, mediator)
+}
+
+/**
+ * 将上游[APPEND]加载的预取策略转换为[prefetch]，原始值为[PagingConfig.appendPrefetch]
  */
 fun <T : Any> Flow<PagingData<T>>.appendPrefetch(
     prefetch: PagingPrefetch
 ): Flow<PagingData<T>> = map { data ->
     var mediator = data.mediator
-    mediator = if (mediator is AppendPrefetchMediator) {
-        mediator.copy(prefetch = prefetch)
-    } else {
-        AppendPrefetchMediator(prefetch, mediator)
+    mediator = when {
+        mediator.appendPrefetch == prefetch -> return@map data
+        mediator is AppendPrefetchMediator -> mediator.copy(prefetch = prefetch)
+        else -> AppendPrefetchMediator(prefetch, mediator)
     }
     PagingData(data.flow, mediator)
+}
+
+private data class RefreshStartScrollToFirstMediator(
+    private val scrollToFirst: Boolean,
+    private val mediator: PagingMediator
+) : PagingMediator by mediator {
+    override val refreshStartScrollToFirst = scrollToFirst
+}
+
+private data class AppendFailureAutToRetryMediator(
+    private val autoToRetry: Boolean,
+    private val mediator: PagingMediator
+) : PagingMediator by mediator {
+    override val appendFailureAutToRetry = autoToRetry
 }
 
 private data class AppendPrefetchMediator(

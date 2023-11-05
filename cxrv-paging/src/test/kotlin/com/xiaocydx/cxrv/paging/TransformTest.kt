@@ -99,6 +99,28 @@ internal class TransformTest {
     }
 
     @Test
+    fun refreshStartScrollToFirst(): Unit = runBlocking {
+        val upstream = TestPagingDataFlow(awaitCancellation = false)
+        val upstreamScrollToFirst = upstream.map { it.mediator.refreshStartScrollToFirst }.first()
+
+        val transform = upstream.refreshStartScrollToFirst(false)
+        val transformScrollToFirst = transform.map { it.mediator.refreshStartScrollToFirst }.first()
+
+        assertThat(upstreamScrollToFirst).isNotEqualTo(transformScrollToFirst)
+    }
+
+    @Test
+    fun appendFailureAutToRetry(): Unit = runBlocking {
+        val upstream = TestPagingDataFlow(awaitCancellation = false)
+        val upstreamAutoRetry = upstream.map { it.mediator.appendFailureAutToRetry }.first()
+
+        val transform = upstream.appendFailureAutToRetry(false)
+        val transformAutoRetry = transform.map { it.mediator.appendFailureAutToRetry }.first()
+
+        assertThat(upstreamAutoRetry).isNotEqualTo(transformAutoRetry)
+    }
+
+    @Test
     fun appendPrefetch(): Unit = runBlocking {
         val upstream = TestPagingDataFlow(awaitCancellation = false)
         val upstreamPrefetch = upstream.map { it.mediator.appendPrefetch }.first()

@@ -64,8 +64,7 @@ import kotlin.math.min
  * @date 2021/9/19
  */
 internal class AppendTrigger(
-    val prefetchEnabled: Boolean,
-    val prefetchItemCount: Int,
+    private val config: Config,
     private val adapter: ListAdapter<*, *>,
     private val collector: PagingCollector<*>,
 ) : AdapterAttachCallback {
@@ -80,7 +79,7 @@ internal class AppendTrigger(
         get() = collector.loadStates
 
     fun attach() {
-        bindListener = if (prefetchEnabled) AppendBindListener() else null
+        bindListener = if (config.prefetchEnabled) AppendBindListener() else null
         stateListener = AppendStateListener()
         adapter.addAdapterAttachCallback(this)
     }
@@ -99,8 +98,8 @@ internal class AppendTrigger(
         retryListener = AppendRetryListener(recyclerView)
         scrollListener = AppendScrollListener(recyclerView)
         preDrawListener = AppendPreDrawListener(recyclerView)
-        retryListener?.isEnabled = true
-        scrollListener?.isEnabled = !prefetchEnabled
+        retryListener?.isEnabled = config.failureAutToRetry
+        scrollListener?.isEnabled = !config.prefetchEnabled
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
@@ -113,13 +112,15 @@ internal class AppendTrigger(
         preDrawListener = null
     }
 
+    fun isSameConfig(other: Config) = config == other
+
     private fun preAppend() {
         scrollListener?.isEnabled = true
         preDrawListener?.isEnabled = true
     }
 
     private fun removePreAppend() {
-        scrollListener?.isEnabled = !prefetchEnabled
+        scrollListener?.isEnabled = !config.prefetchEnabled
         preDrawListener?.isEnabled = false
     }
 
@@ -162,7 +163,7 @@ internal class AppendTrigger(
         }
 
         val endPosition = lm.itemCount - 1
-        val startPosition = (endPosition - prefetchItemCount).coerceAtLeast(0)
+        val startPosition = (endPosition - config.prefetchItemCount).coerceAtLeast(0)
         val layoutPosition = when {
             startPosition in minPosition..maxPosition -> startPosition
             endPosition in minPosition..maxPosition -> endPosition
@@ -222,7 +223,7 @@ internal class AppendTrigger(
             // 当append.isFailure = true时，由AppendRetryListener处理
             if (!loadStates.isAllowAppend || loadStates.append.isFailure) return
             val endPosition = adapter.itemCount - 1
-            val startPosition = (endPosition - prefetchItemCount).coerceAtLeast(0)
+            val startPosition = (endPosition - config.prefetchItemCount).coerceAtLeast(0)
             if (position !in startPosition..endPosition) return
 
             if (rv?.isPreLayout == true) {
@@ -348,4 +349,10 @@ internal class AppendTrigger(
             collector.removeHandleEventListener(this)
         }
     }
+
+    data class Config(
+        val failureAutToRetry: Boolean,
+        val prefetchEnabled: Boolean,
+        val prefetchItemCount: Int
+    )
 }

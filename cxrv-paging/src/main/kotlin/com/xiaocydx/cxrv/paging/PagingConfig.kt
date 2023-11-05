@@ -17,6 +17,7 @@
 package com.xiaocydx.cxrv.paging
 
 import com.xiaocydx.cxrv.paging.LoadType.APPEND
+import com.xiaocydx.cxrv.paging.LoadType.REFRESH
 
 /**
  * 分页配置，用于从[PagingSource]加载结果
@@ -43,9 +44,14 @@ data class PagingConfig(
     val loadResultEmptyFetchNext: Boolean = true,
 
     /**
-     * 当[APPEND]加载失败时，若该属性为`true`，则会自动重试，
+     * 当[REFRESH]加载开始时，若该属性为`true`，则列表滚动到首位
+     */
+    val refreshStartScrollToFirst: Boolean = true,
+
+    /**
+     * 当[APPEND]加载失败时，若该属性为`true`，则自动重试[APPEND]加载，
      * 自动重试的含义是不需要点击重试，时机是再次满足[APPEND]加载的条件，
-     * 例如滑动列表，若最后一个item再次可视，则自动重试。
+     * 例如滚动列表，若最后一个item再次可视，则自动重试。
      */
     val appendFailureAutToRetry: Boolean = true,
 
