@@ -42,5 +42,5 @@ sealed class PagingPrefetch {
      *
      * **注意**：对RecyclerView禁用预取机制（默认启用），该策略仍有效。
      */
-    class ItemCount(@IntRange(from = 1) val value: Int) : PagingPrefetch()
+    data class ItemCount(@IntRange(from = 1) val value: Int) : PagingPrefetch()
 }

@@ -90,8 +90,8 @@ fun <T : Any> Flow<PagingData<T>>.refreshStartScrollToFirst(
     var mediator = data.mediator
     mediator = when {
         mediator.refreshStartScrollToFirst == scrollToFirst -> return@map data
-        mediator is RefreshStartScrollToFirstMediator -> mediator.copy(scrollToFirst = scrollToFirst)
-        else -> RefreshStartScrollToFirstMediator(scrollToFirst, mediator)
+        mediator is PagingConfigMediator -> mediator.copy(scrollToFirst = scrollToFirst)
+        else -> PagingConfigMediator(mediator, scrollToFirst = scrollToFirst)
     }
     PagingData(data.flow, mediator)
 }
@@ -105,8 +105,8 @@ fun <T : Any> Flow<PagingData<T>>.appendFailureAutToRetry(
     var mediator = data.mediator
     mediator = when {
         mediator.appendFailureAutToRetry == autoToRetry -> return@map data
-        mediator is AppendFailureAutToRetryMediator -> mediator.copy(autoToRetry = autoToRetry)
-        else -> AppendFailureAutToRetryMediator(autoToRetry, mediator)
+        mediator is PagingConfigMediator -> mediator.copy(autoToRetry = autoToRetry)
+        else -> PagingConfigMediator(mediator, autoToRetry = autoToRetry)
     }
     PagingData(data.flow, mediator)
 }
@@ -120,29 +120,19 @@ fun <T : Any> Flow<PagingData<T>>.appendPrefetch(
     var mediator = data.mediator
     mediator = when {
         mediator.appendPrefetch == prefetch -> return@map data
-        mediator is AppendPrefetchMediator -> mediator.copy(prefetch = prefetch)
-        else -> AppendPrefetchMediator(prefetch, mediator)
+        mediator is PagingConfigMediator -> mediator.copy(prefetch = prefetch)
+        else -> PagingConfigMediator(mediator, prefetch = prefetch)
     }
     PagingData(data.flow, mediator)
 }
 
-private data class RefreshStartScrollToFirstMediator(
-    private val scrollToFirst: Boolean,
-    private val mediator: PagingMediator
+private data class PagingConfigMediator(
+    private val mediator: PagingMediator,
+    private val scrollToFirst: Boolean = mediator.refreshStartScrollToFirst,
+    private val autoToRetry: Boolean = mediator.appendFailureAutToRetry,
+    private val prefetch: PagingPrefetch = mediator.appendPrefetch
 ) : PagingMediator by mediator {
     override val refreshStartScrollToFirst = scrollToFirst
-}
-
-private data class AppendFailureAutToRetryMediator(
-    private val autoToRetry: Boolean,
-    private val mediator: PagingMediator
-) : PagingMediator by mediator {
     override val appendFailureAutToRetry = autoToRetry
-}
-
-private data class AppendPrefetchMediator(
-    private val prefetch: PagingPrefetch,
-    private val mediator: PagingMediator
-) : PagingMediator by mediator {
-    override val appendPrefetch: PagingPrefetch = prefetch
+    override val appendPrefetch = prefetch
 }
