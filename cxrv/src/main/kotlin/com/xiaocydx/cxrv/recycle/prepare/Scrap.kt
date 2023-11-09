@@ -35,6 +35,10 @@ class Scrap<T : Any> internal constructor(
     val count: Int
 ) {
 
+    init {
+        if (value is ViewHolder) value.mItemViewType = viewType
+    }
+
     @MainThread
     internal fun tryPutToRecycledViewPool(pool: RecycledViewPool) {
         assertMainThread()

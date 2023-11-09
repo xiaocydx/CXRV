@@ -15,21 +15,20 @@
  */
 
 @file:JvmName("PrepareScrapDeprecatedKt")
-@file:Suppress("PackageDirectoryMismatch", "INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+@file:Suppress("PackageDirectoryMismatch")
 
 package androidx.recyclerview.widget
 
-import android.os.Looper
 import android.util.SparseIntArray
 import androidx.annotation.IntRange
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.internal.*
+import com.xiaocydx.cxrv.recycle.prepare.PrepareScrapFlow
+import com.xiaocydx.cxrv.recycle.prepare.ScrapProvider
+import com.xiaocydx.cxrv.recycle.prepare.holder
+import com.xiaocydx.cxrv.recycle.prepare.prepareScrap
 import kotlinx.coroutines.*
-import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.CHANNEL_DEFAULT_CAPACITY
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.*
 
 /**
@@ -71,6 +70,7 @@ import kotlinx.coroutines.flow.*
  * @return [PrepareResult]提供数量查询函数，可用于数据统计或者单元测试。
  */
 @MainThread
+@Deprecated("")
 suspend fun RecyclerView.prepareScrap(
     prepareAdapter: Adapter<*>,
     prepareDeadline: PrepareDeadline = PrepareDeadline.FOREVER_NS,
@@ -84,52 +84,25 @@ suspend fun RecyclerView.prepareScrap(
     val result = PrepareResult(initialCapacity, recycledViewPool)
     if (initialCapacity <= 0) return result
 
-    // 通过Handler.post()发送的消息可能被doFrame消息按时间顺序插队，
-    // 这会导致处理完doFrame消息后，才往RecycledViewPool放入scrap，
-    // 调整为在doFrame消息的Animation回调下往RecycledViewPool放入scrap。
-    // MainHandlerContext()是一个可行的方案，但目前还不确定其产生的影响。
-    withContext(ChoreographerContext()) {
-        var prepareJob: Job? = null
-        var deadline = false
-        val deadlineJob = when (prepareDeadline) {
-            PrepareDeadline.FOREVER_NS -> null
-            PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
-                // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
-                prepareAdapter.awaitDeadlineNs()
-                prepareJob?.cancelAndJoin()
-                trace(TRACE_DEADLINE_TAG) { deadline = true }
-            }
+    val prepareScrap = rv.prepareScrap(prepareAdapter)
+        .deadline(prepareDeadline).dispatcher(prepareDispatcher)
+    var prepareFlow: PrepareScrapFlow<ViewHolder>? = null
+    val provider = ScrapProvider<ViewHolder> { prepareAdapter.createViewHolder(rv, it.viewType) }
+    pairs.forEach { (viewType, count) ->
+        prepareFlow = if (prepareFlow == null) {
+            prepareScrap.holder(viewType, count, provider)
+        } else {
+            prepareFlow!!.holder(viewType, count, provider)
         }
-
-        // LooperContext对prepareDispatcher调度的线程设置主线程Looper，
-        // 确保View的构造过程能获取到主线程Looper，例如GestureDetector。
-        val prepareContext = prepareDispatcher + LooperContext(Looper.myLooper()!!)
-        val channel = Channel<ViewHolder>(result.channelCapacity)
-        prepareJob = launch(prepareContext) {
-            coroutineContext.job.invokeOnCompletion { channel.close() }
-            pairs.forEach { (viewType, count) ->
-                var remainingCount = count
-                while (remainingCount > 0) {
-                    ensureActive()
-                    remainingCount--
-                    channel.send(prepareAdapter.createViewHolder(rv, viewType))
-                }
-            }
-        }
-
-        for (scrap in channel) {
-            if (deadline) break
-            trace(TRACE_PUT_SCRAP_TAG) { result.putScrapToRecycledViewPool(scrap) }
-        }
-        deadlineJob?.cancelAndJoin()
     }
+    prepareFlow?.collect(result::putScrapToRecycledViewPool)
     return result
 }
 
 /**
  * 调用[PrepareScope.add]，添加预创建的键值对
  */
-class PrepareScope private constructor() {
+class PrepareScope internal constructor() {
     private val pairs = mutableListOf<Pair>()
 
     fun add(viewType: Int, @IntRange(from = 1) count: Int) {
@@ -149,19 +122,11 @@ class PrepareScope private constructor() {
  * [RecyclerView.prepareScrap]的结果，提供数量查询函数
  */
 @MainThread
-class PrepareResult private constructor(
+class PrepareResult internal constructor(
     initialCapacity: Int,
     private val recycledViewPool: RecycledViewPool
 ) {
-    private val preparedScrapCount: SparseIntArray?
-    internal val channelCapacity: Int
-
-    init {
-        var capacity = CHANNEL_DEFAULT_CAPACITY
-        if (initialCapacity > capacity) capacity = UNLIMITED
-        channelCapacity = capacity
-        preparedScrapCount = if (initialCapacity > 0) SparseIntArray() else null
-    }
+    private val preparedScrapCount = if (initialCapacity > 0) SparseIntArray() else null
 
     /**
      * 获取[viewType]在[RecycledViewPool]的回收数量
@@ -182,25 +147,12 @@ class PrepareResult private constructor(
         return preparedScrapCount?.get(viewType) ?: 0
     }
 
-    internal fun putScrapToRecycledViewPool(scrap: ViewHolder) {
+    internal fun putScrapToRecycledViewPool(scrap: Scrap<ViewHolder>) {
         assertMainThread()
-        recycledViewPool.putScrap(scrap)
+        scrap.tryPutToRecycledViewPool(recycledViewPool)
         preparedScrapCount?.apply {
-            val count = get(scrap.itemViewType)
-            put(scrap.itemViewType, count + 1)
+            val count = get(scrap.viewType)
+            put(scrap.viewType, count + 1)
         }
-    }
-
-    private fun RecycledViewPool.putScrap(scrap: ViewHolder) {
-        val viewType = scrap.itemViewType
-        val scrapData = mScrap[viewType] ?: kotlin.run {
-            // 触发内部逻辑创建scrapData
-            getRecycledViewCount(viewType)
-            mScrap.get(viewType)!!
-        }
-        scrapData.mScrapHeap.add(scrap)
     }
 }
-
-private const val TRACE_DEADLINE_TAG = "PrepareScrap Deadline"
-private const val TRACE_PUT_SCRAP_TAG = "PrepareScrap PutScrap"

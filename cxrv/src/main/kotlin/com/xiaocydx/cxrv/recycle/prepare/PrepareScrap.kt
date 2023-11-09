@@ -35,7 +35,7 @@ fun <VH : ViewHolder> RecyclerView.prepareScrap(
     adapter: Adapter<VH>
 ) = PrepareScrap(this, adapter)
 
-class PrepareScrap<VH : ViewHolder> internal constructor(
+class PrepareScrap<out VH : ViewHolder> internal constructor(
     private val rv: RecyclerView,
     private val adapter: Adapter<VH>,
 ) {
