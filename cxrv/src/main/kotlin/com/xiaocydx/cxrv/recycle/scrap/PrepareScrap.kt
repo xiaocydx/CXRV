@@ -14,118 +14,93 @@
  * limitations under the License.
  */
 
-@file:JvmName("PrepareScrapInternalKt")
-@file:Suppress("PackageDirectoryMismatch")
+package com.xiaocydx.cxrv.recycle.scrap
 
-package androidx.recyclerview.widget
+import android.content.Context
+import android.view.LayoutInflater
+import android.view.View
+import androidx.annotation.CheckResult
+import androidx.annotation.LayoutRes
+import androidx.recyclerview.widget.PrepareDeadline
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.Scrap
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
-import android.os.Looper
-import androidx.annotation.MainThread
-import androidx.recyclerview.widget.RecyclerView.*
-import com.xiaocydx.cxrv.internal.*
-import com.xiaocydx.cxrv.recycle.scrap.awaitDeadlineNs
-import kotlinx.coroutines.*
-import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
+@CheckResult
+fun <VH : ViewHolder> RecyclerView.prepareScrap(
+    adapter: Adapter<VH>
+) = PrepareScrap(this, adapter)
 
-/**
- * 按[PrepareScope.scrap]的调用顺序，预创建ViewHolder并放入[RecycledViewPool]
- *
- * **注意**：该函数需要在视图初始化阶段调用，如果有自定义[RecycledViewPool]，
- * 那么在调用该函数之前，先对RecyclerView设置自定义[RecycledViewPool]，例如：
- * ```
- * lifecycleScope.launch {
- *     recyclerView.setRecycledViewPool(CustomRecycledViewPool())
- *     val result = recyclerView.prepareScrap(adapter) {
- *         deadline(PrepareDeadline.FOREVER_NS) // 默认为PrepareDeadline.FOREVER_NS
- *         dispatcher(Dispatchers.IO) // 默认为Dispatchers.IO
- *         scrap(viewType1, 20, provider)
- *         scrap(viewType2, 10, provider)
- *     }
- *     val recycledCount = result.getRecycledScrapCount(viewType1)
- *     val preparedCount = result.getPreparedScrapCount(viewType1)
- * }
- * ```
- *
- * @param adapter 对RecyclerView设置的Adapter可能是[ConcatAdapter]，
- * 因此需要主动传入跟列表数据关联的Adapter，用于观察数据变更和创建ViewHolder。
- * @param block   初始化预创建的属性，详细描述可以看[PrepareScope]的注释。
- * @return [PrepareResult]提供数量查询函数，可用于数据统计或者单元测试。
- */
-@MainThread
-suspend fun RecyclerView.prepareScrap(
-    adapter: Adapter<*>,
-    block: PrepareScope.() -> Unit
-): PrepareResult {
-    assertMainThread()
-    val rv = this
-    val (deadline, dispatcher, infoList, inflaterProvider) =
-            PrepareScope(rv, adapter).apply(block).createConfig()
-    val initialCapacity = infoList.sumOf { it.count }
-    val result = PrepareResult(initialCapacity, recycledViewPool)
-    if (initialCapacity <= 0) return result
+class PrepareScrap<VH : ViewHolder> internal constructor(
+    internal val rv: RecyclerView,
+    internal val adapter: Adapter<VH>,
+) {
+    internal var deadline: PrepareDeadline = PrepareDeadline.FOREVER_NS
+    internal var dispatcher: CoroutineDispatcher = Dispatchers.IO
+    internal var inflaterProvider: (Context) -> LayoutInflater = ::PrepareLayoutInflater
 
-    // 通过Handler.post()发送的消息可能被doFrame消息按时间顺序插队，
-    // 这会导致处理完doFrame消息后，才往RecycledViewPool放入scrap，
-    // 调整为在doFrame消息的Animation回调下往RecycledViewPool放入scrap。
-    // MainHandlerContext()是一个可行的方案，但目前还不确定其产生的影响。
-    withContext(ChoreographerContext()) {
-        var prepareJob: Job? = null
-        var isDeadline = false
-        val deadlineJob = when (deadline) {
-            PrepareDeadline.FOREVER_NS -> null
-            PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
-                // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
-                adapter.awaitDeadlineNs()
-                prepareJob?.cancelAndJoin()
-                trace(TRACE_DEADLINE_TAG) { isDeadline = true }
-            }
-        }
+    /**
+     * 预创建的的截止时间，默认为[PrepareDeadline.FOREVER_NS]，
+     * 预创建流程会按[deadline]进行停止，尽可能避免创建多余的ViewHolder。
+     */
+    @CheckResult
+    fun deadline(deadline: PrepareDeadline) = apply { this.deadline = deadline }
 
-        // LooperContext对dispatcher调度的线程设置主线程Looper，
-        // 构建View时能获取到主线程Looper，例如GestureDetector。
-        val context = dispatcher + LooperContext(Looper.myLooper()!!)
-        val channel = Channel<ViewHolder>(result.channelCapacity)
-        val inflater = Inflater(rv, inflaterProvider(rv.context))
-        prepareJob = launch(context) {
-            coroutineContext.job.invokeOnCompletion { channel.close() }
-            infoList.forEach { (viewType, count, provider) ->
-                var remainingCount = count
-                while (remainingCount > 0) {
-                    ensureActive()
-                    remainingCount--
-                    channel.send(provider.createViewHolder(inflater, viewType))
-                }
-            }
-        }
+    /**
+     * 用于预创建的协程调度器，默认在[Dispatchers.IO]调度的线程创建ViewHolder，
+     * 可以通过`Dispatchers.IO.limitedParallelism()`创建一个并行度受限的调度器，
+     * 供多处调用该函数的地方使用。
+     */
+    @CheckResult
+    fun dispatcher(dispatcher: CoroutineDispatcher) = apply { this.dispatcher = dispatcher }
 
-        for (scrap in channel) {
-            if (isDeadline) break
-            trace(TRACE_PUT_SCRAP_TAG) { result.putScrapToRecycledViewPool(scrap) }
-        }
-        deadlineJob?.cancelAndJoin()
-    }
-    return result
+    /**
+     * 提供用于预创建的[LayoutInflater]，默认提供[PrepareLayoutInflater]，
+     * 在不能确保支持多线程的情况下，[provider]不能返回`LayoutInflater.from(context)`，
+     * 该函数主要是支持设置[LayoutInflater.Factory]和[LayoutInflater.Factory2]的场景。
+     */
+    @CheckResult
+    fun inflater(provider: (Context) -> LayoutInflater) = apply { inflaterProvider = provider }
 }
 
-/**
- * 按[PrepareScope.add]的添加顺序，预创建ViewHolder并放入[RecycledViewPool]
- */
-@MainThread
-@Deprecated("部分函数参数已聚集到PrepareScope")
-suspend fun RecyclerView.prepareScrap(
-    prepareAdapter: Adapter<*>,
-    prepareDeadline: PrepareDeadline = PrepareDeadline.FOREVER_NS,
-    prepareDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    block: PrepareScope.() -> Unit
-): PrepareResult {
-    return prepareScrap(prepareAdapter) {
-        deadline(prepareDeadline)
-        dispatcher(prepareDispatcher)
-        block()
-    }
-}
+//region View
+@CheckResult
+fun PrepareScrap<*>.view(
+    viewType: Int, count: Int, @LayoutRes resId: Int
+) = view(viewType, count) { it.inflate(resId) }
 
-private const val TRACE_DEADLINE_TAG = "PrepareScrap Deadline"
-private const val TRACE_PUT_SCRAP_TAG = "PrepareScrap PutScrap"
+@CheckResult
+fun PrepareScrap<*>.view(
+    viewType: Int, count: Int, provider: ScrapProvider<View>
+) = PrepareScrapFlow<View>(rv, adapter, deadline, dispatcher, inflaterProvider)
+    .fusion(viewType, count, provider.tPrepareScrapProvider(count))
+
+fun PrepareScrapFlow<View>.view(
+    viewType: Int, count: Int, @LayoutRes resId: Int
+) = view(viewType, count) { it.inflate(resId) }
+
+fun PrepareScrapFlow<View>.view(
+    viewType: Int, count: Int, provider: ScrapProvider<View>
+) = fusion(viewType, count, provider)
+//endregion
+
+//region ViewHolder
+@CheckResult
+fun <VH : ViewHolder> PrepareScrap<VH>.viewHolder(
+    viewType: Int, count: Int, provider: ScrapProvider<VH>
+) = PrepareScrapFlow<VH>(rv, adapter, deadline, dispatcher, inflaterProvider)
+    .fusion(viewType, count, provider.tPrepareScrapProvider(count))
+
+fun <VH : ViewHolder> PrepareScrapFlow<VH>.viewHolder(
+    viewType: Int, count: Int, provider: ScrapProvider<VH>
+) = fusion(viewType, count, provider)
+//endregion
+
+private fun <T : Any> ScrapProvider<T>.tPrepareScrapProvider(count: Int): PrepareScrapProvider<T> =
+        { inflater, num -> Scrap(onCreateScrap(inflater), inflater.viewType, num, count, inflater.pool) }
+
+private fun <T : Any> PrepareScrapFlow<T>.fusion(viewType: Int, count: Int, provider: ScrapProvider<T>) =
+        fusion(viewType, count, provider.tPrepareScrapProvider(count))
