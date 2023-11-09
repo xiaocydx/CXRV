@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.recycle.scrap
+package com.xiaocydx.cxrv.recycle.prepare
 
 import android.content.Context
 import android.util.AttributeSet
@@ -33,10 +33,10 @@ import android.view.View
  * @author xcc
  * @date 2023/11/8
  */
-internal class PrepareLayoutInflater(context: Context) : LayoutInflater(context) {
+internal class ScrapLayoutInflater(context: Context) : LayoutInflater(context) {
 
     override fun cloneInContext(newContext: Context): LayoutInflater {
-        return PrepareLayoutInflater(newContext)
+        return ScrapLayoutInflater(newContext)
     }
 
     override fun onCreateView(name: String?, attrs: AttributeSet?): View {

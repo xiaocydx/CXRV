@@ -22,30 +22,48 @@ import androidx.annotation.AnyThread
 import androidx.annotation.CheckResult
 import androidx.annotation.WorkerThread
 import androidx.viewbinding.ViewBinding
-import com.xiaocydx.cxrv.recycle.scrap.PrepareScrap
-import com.xiaocydx.cxrv.recycle.scrap.PrepareScrapFlow
-import com.xiaocydx.cxrv.recycle.scrap.ScrapInflater
-import com.xiaocydx.cxrv.recycle.scrap.ScrapProvider
-import com.xiaocydx.cxrv.recycle.scrap.viewHolder
+import com.xiaocydx.cxrv.internal.InternalVisibleApi
+import com.xiaocydx.cxrv.recycle.prepare.PrepareScrap
+import com.xiaocydx.cxrv.recycle.prepare.PrepareScrapFlow
+import com.xiaocydx.cxrv.recycle.prepare.ScrapInflater
+import com.xiaocydx.cxrv.recycle.prepare.ScrapProvider
+import com.xiaocydx.cxrv.recycle.prepare.holder
 
-interface BindingScrapProvider<VB : ViewBinding> : ScrapProvider<BindingHolder<VB>> {
-    @get:AnyThread
-    val scrapType: Int
+@CheckResult
+@WorkerThread
+fun <VB : ViewBinding> ScrapInflater.binding(
+    inflate: Inflate<VB>
+) = inflate.invoke(real, parent, false)
 
-    @get:WorkerThread
-    val scrapInflate: Inflate<VB>
-
-    override fun onCreateScrap(inflater: ScrapInflater): BindingHolder<VB> {
-        return BindingHolder(scrapInflate.invoke(inflater.real, inflater.parent, false))
-    }
+@CheckResult
+@OptIn(InternalVisibleApi::class)
+inline fun <VB : ViewBinding> PrepareScrap<BindingHolder<VB>>.bindingHolder(
+    provider: BindingScrapProvider<VB>,
+    count: Int,
+    @WorkerThread crossinline onCreateView: VB.() -> Unit = {}
+) = holder(provider.scrapType, count) {
+    provider.onCreateScrap(it).apply { onCreateView(binding) }
 }
 
 @CheckResult
-fun <VB : ViewBinding> PrepareScrap<BindingHolder<VB>>.bindingHolder(
-    provider: BindingScrapProvider<VB>, count: Int
-) = viewHolder(provider.scrapType, count, provider)
+@OptIn(InternalVisibleApi::class)
+inline fun <VB : ViewBinding> PrepareScrapFlow<BindingHolder<VB>>.bindingHolder(
+    provider: BindingScrapProvider<VB>,
+    count: Int,
+    @WorkerThread crossinline onCreateView: VB.() -> Unit = {}
+) = holder(provider.scrapType, count) {
+    provider.onCreateScrap(it).apply { onCreateView(binding) }
+}
 
-@CheckResult
-fun <VB : ViewBinding> PrepareScrapFlow<BindingHolder<VB>>.bindingHolder(
-    provider: BindingScrapProvider<VB>, count: Int
-) = viewHolder(provider.scrapType, count, provider)
+interface BindingScrapProvider<VB : ViewBinding> : ScrapProvider<BindingHolder<VB>> {
+    @get:AnyThread
+    @property:InternalVisibleApi
+    val scrapType: Int
+
+    @get:WorkerThread
+    @property:InternalVisibleApi
+    val scrapInflate: Inflate<VB>
+
+    @OptIn(InternalVisibleApi::class)
+    override fun onCreateScrap(inflater: ScrapInflater) = BindingHolder(inflater.binding(scrapInflate))
+}

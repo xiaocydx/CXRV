@@ -32,25 +32,22 @@ class Scrap<T : Any> internal constructor(
     val value: T,
     val viewType: Int,
     val num: Int,
-    val count: Int,
-    private val pool: RecycledViewPool
+    val count: Int
 ) {
-    private var isPutToPool = false
 
     @MainThread
-    internal fun putToPoolIfNecessary() {
+    internal fun tryPutToRecycledViewPool(pool: RecycledViewPool) {
         assertMainThread()
-        require(!isPutToPool)
-        isPutToPool = true
-        if (value is ViewHolder) {
-            require(value.itemView.parent == null)
-            value.mItemViewType = viewType
-            val scrapData = pool.mScrap[viewType] ?: run {
-                // 触发内部逻辑创建scrapData
-                pool.getRecycledViewCount(viewType)
-                pool.mScrap.get(viewType)!!
-            }
-            scrapData.mScrapHeap.add(value)
+        if (value !is ViewHolder) return
+        require(value.itemView.parent == null) {
+            "创建ViewHolder.itemView时，不能添加到parent中"
         }
+        value.mItemViewType = viewType
+        val scrapData = pool.mScrap[viewType] ?: run {
+            // 触发内部逻辑创建scrapData
+            pool.getRecycledViewCount(viewType)
+            pool.mScrap.get(viewType)!!
+        }
+        scrapData.mScrapHeap.takeIf { !it.contains(value) }?.add(value)
     }
 }

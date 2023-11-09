@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.recycle.scrap
+package com.xiaocydx.cxrv.recycle.prepare
 
 import android.view.LayoutInflater
 import android.view.View
+import androidx.annotation.CheckResult
 import androidx.annotation.LayoutRes
 import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 
 /**
  * @author xcc
@@ -40,11 +40,11 @@ fun interface ScrapProvider<T : Any> {
 @WorkerThread
 class ScrapInflater internal constructor(
     internal val parent: RecyclerView,
-    internal val pool: RecycledViewPool,
     internal val real: LayoutInflater,
     val viewType: Int
 ) {
 
+    @CheckResult
     fun inflate(@LayoutRes resId: Int): View {
         return real.inflate(resId, parent, false)
     }

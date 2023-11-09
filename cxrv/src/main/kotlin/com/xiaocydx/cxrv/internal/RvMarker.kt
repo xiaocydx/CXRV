@@ -16,6 +16,8 @@
 
 package com.xiaocydx.cxrv.internal
 
+import kotlin.annotation.AnnotationTarget.*
+
 /**
  * 通用不可见版本标记
  */
@@ -27,12 +29,18 @@ internal const val RV_HIDE_MARKER = "999.9"
 @DslMarker
 internal annotation class RvDslMarker
 
-/**
- * 该注解用于表示功能处于实验性阶段
- */
+@RequiresOptIn(
+    message = "内部API，外部不该调用，不提供兼容性保证",
+    level = RequiresOptIn.Level.ERROR,
+)
+@Retention(value = AnnotationRetention.BINARY)
+@Target(CLASS, FUNCTION, TYPEALIAS, PROPERTY)
+annotation class InternalVisibleApi
+
 @RequiresOptIn(
     message = "功能处于实验性阶段，将来改动的可能性很大",
     level = RequiresOptIn.Level.WARNING
 )
 @Retention(AnnotationRetention.BINARY)
+@Target(CLASS, FUNCTION, TYPEALIAS, PROPERTY)
 annotation class ExperimentalFeature

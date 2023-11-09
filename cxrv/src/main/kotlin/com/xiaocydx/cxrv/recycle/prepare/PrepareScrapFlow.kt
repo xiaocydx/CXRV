@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.recycle.scrap
+package com.xiaocydx.cxrv.recycle.prepare
 
 import android.content.Context
 import android.os.Looper
@@ -32,6 +32,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
@@ -48,41 +49,42 @@ import kotlinx.coroutines.withContext
 private const val TRACE_DEADLINE_TAG = "PrepareScrap Deadline"
 private const val TRACE_RECEIVE_TAG = "PrepareScrap Receive"
 
-internal class PrepareScrapInfo<T : Any>(
-    val viewType: Int,
-    val count: Int,
-    val scrapProvider: PrepareScrapProvider<T>
-)
-
-internal typealias PrepareScrapProvider<T> = (inflater: ScrapInflater, num: Int) -> Scrap<T>
-
 class PrepareScrapFlow<T : Any> internal constructor(
     private val rv: RecyclerView,
     private val adapter: Adapter<*>,
     private val deadline: PrepareDeadline,
-    private val dispatcher: CoroutineDispatcher,
     private val inflaterProvider: (Context) -> LayoutInflater,
-    private val scrapInfoList: List<PrepareScrapInfo<T>> = emptyList()
+    private val prepareDispatcher: CoroutineDispatcher,
+    private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate,
+    private val scrapInfoList: List<PrepareScrapInfo<T>> = emptyList(),
+    private val putScrapToRecycledViewPool: Boolean = false
 ) : Flow<Scrap<T>> {
 
     @CheckResult
-    internal fun fusion(
-        viewType: Int,
-        count: Int,
-        scrapProvider: PrepareScrapProvider<T>
+    internal fun recreate(
+        rv: RecyclerView = this.rv,
+        adapter: Adapter<*> = this.adapter,
+        deadline: PrepareDeadline = this.deadline,
+        inflaterProvider: (Context) -> LayoutInflater = this.inflaterProvider,
+        prepareDispatcher: CoroutineDispatcher = this.prepareDispatcher,
+        mainDispatcher: MainCoroutineDispatcher = this.mainDispatcher,
+        scrapInfoList: List<PrepareScrapInfo<T>> = this.scrapInfoList,
+        putScrapToRecycledViewPool: Boolean = this.putScrapToRecycledViewPool
     ) = PrepareScrapFlow(
-        rv = rv,
-        adapter = adapter,
-        deadline = deadline,
-        dispatcher = dispatcher,
-        inflaterProvider = inflaterProvider,
-        scrapInfoList = scrapInfoList + PrepareScrapInfo(viewType, count, scrapProvider)
+        rv, adapter, deadline, inflaterProvider,
+        prepareDispatcher, mainDispatcher,
+        scrapInfoList, putScrapToRecycledViewPool
     )
+
+    @CheckResult
+    internal fun fusion(viewType: Int, count: Int, scrapProvider: PrepareScrapProvider<T>) =
+            recreate(scrapInfoList = scrapInfoList + PrepareScrapInfo(viewType, count, scrapProvider))
 
     override suspend fun collect(collector: FlowCollector<Scrap<T>>) = channelFlow {
         @Suppress("INVISIBLE_MEMBER")
-        val channelCapacity: Int = scrapInfoList.sumOf { it.count }
-            .coerceAtMost(Channel.CHANNEL_DEFAULT_CAPACITY)
+        val channelCapacity: Int = scrapInfoList.sumOf {
+            it.count.coerceAtLeast(0)
+        }.coerceAtMost(Channel.CHANNEL_DEFAULT_CAPACITY)
         if (channelCapacity <= 0) return@channelFlow
 
         // 通过Handler.post()发送的消息可能被doFrame消息按时间顺序插队，
@@ -104,15 +106,14 @@ class PrepareScrapFlow<T : Any> internal constructor(
 
             // LooperContext对dispatcher调度的线程设置主线程Looper，
             // 构建View时能获取到主线程Looper，例如GestureDetector。
-            val context = dispatcher + LooperContext(Looper.myLooper()!!)
-            val channel = Channel<Scrap<T>>(channelCapacity)
             val pool = rv.recycledViewPool
-            prepareJob = launch(context) {
+            val channel = Channel<Scrap<T>>(channelCapacity)
+            prepareJob = launch(context = prepareDispatcher + LooperContext(Looper.myLooper()!!)) {
                 coroutineContext.job.invokeOnCompletion { channel.close() }
                 scrapInfoList.forEach { info ->
                     var num = 0
                     var count = info.count
-                    val inflater = ScrapInflater(rv, pool, inflaterProvider(rv.context), info.viewType)
+                    val inflater = ScrapInflater(rv, inflaterProvider(rv.context), info.viewType)
                     while (count > 0) {
                         ensureActive()
                         num++
@@ -125,10 +126,18 @@ class PrepareScrapFlow<T : Any> internal constructor(
             for (scrap in channel) {
                 // isDeadline = true，丢弃channel的scrap
                 if (isDeadline) break
-                scrap.putToPoolIfNecessary()
+                scrap.takeIf { putScrapToRecycledViewPool }?.tryPutToRecycledViewPool(pool)
                 trace(TRACE_RECEIVE_TAG) { send(scrap) }
             }
             deadlineJob?.cancelAndJoin()
         }
-    }.buffer(RENDEZVOUS).flowOn(Dispatchers.Main.immediate).collect(collector)
+    }.buffer(RENDEZVOUS).flowOn(mainDispatcher).collect(collector)
 }
+
+internal class PrepareScrapInfo<T : Any>(
+    val viewType: Int,
+    val count: Int,
+    val scrapProvider: PrepareScrapProvider<T>
+)
+
+internal typealias PrepareScrapProvider<T> = (inflater: ScrapInflater, num: Int) -> Scrap<T>

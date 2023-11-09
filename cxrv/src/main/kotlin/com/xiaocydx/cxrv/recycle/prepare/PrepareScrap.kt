@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.recycle.scrap
+package com.xiaocydx.cxrv.recycle.prepare
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -28,6 +28,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.Scrap
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 
 @CheckResult
 fun <VH : ViewHolder> RecyclerView.prepareScrap(
@@ -35,12 +36,12 @@ fun <VH : ViewHolder> RecyclerView.prepareScrap(
 ) = PrepareScrap(this, adapter)
 
 class PrepareScrap<VH : ViewHolder> internal constructor(
-    internal val rv: RecyclerView,
-    internal val adapter: Adapter<VH>,
+    private val rv: RecyclerView,
+    private val adapter: Adapter<VH>,
 ) {
-    internal var deadline: PrepareDeadline = PrepareDeadline.FOREVER_NS
-    internal var dispatcher: CoroutineDispatcher = Dispatchers.IO
-    internal var inflaterProvider: (Context) -> LayoutInflater = ::PrepareLayoutInflater
+    private var deadline: PrepareDeadline = PrepareDeadline.FOREVER_NS
+    private var dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private var inflaterProvider: (Context) -> LayoutInflater = ::ScrapLayoutInflater
 
     /**
      * 预创建的的截止时间，默认为[PrepareDeadline.FOREVER_NS]，
@@ -58,12 +59,15 @@ class PrepareScrap<VH : ViewHolder> internal constructor(
     fun dispatcher(dispatcher: CoroutineDispatcher) = apply { this.dispatcher = dispatcher }
 
     /**
-     * 提供用于预创建的[LayoutInflater]，默认提供[PrepareLayoutInflater]，
+     * 提供用于预创建的[LayoutInflater]，默认提供[ScrapLayoutInflater]，
      * 在不能确保支持多线程的情况下，[provider]不能返回`LayoutInflater.from(context)`，
      * 该函数主要是支持设置[LayoutInflater.Factory]和[LayoutInflater.Factory2]的场景。
      */
     @CheckResult
     fun inflater(provider: (Context) -> LayoutInflater) = apply { inflaterProvider = provider }
+
+    @CheckResult
+    internal fun <T : Any> flow() = PrepareScrapFlow<T>(rv, adapter, deadline, inflaterProvider, dispatcher)
 }
 
 //region View
@@ -75,13 +79,14 @@ fun PrepareScrap<*>.view(
 @CheckResult
 fun PrepareScrap<*>.view(
     viewType: Int, count: Int, provider: ScrapProvider<View>
-) = PrepareScrapFlow<View>(rv, adapter, deadline, dispatcher, inflaterProvider)
-    .fusion(viewType, count, provider.tPrepareScrapProvider(count))
+) = flow<View>().fusion(viewType, count, provider.toPrepare(count))
 
+@CheckResult
 fun PrepareScrapFlow<View>.view(
     viewType: Int, count: Int, @LayoutRes resId: Int
 ) = view(viewType, count) { it.inflate(resId) }
 
+@CheckResult
 fun PrepareScrapFlow<View>.view(
     viewType: Int, count: Int, provider: ScrapProvider<View>
 ) = fusion(viewType, count, provider)
@@ -89,18 +94,25 @@ fun PrepareScrapFlow<View>.view(
 
 //region ViewHolder
 @CheckResult
-fun <VH : ViewHolder> PrepareScrap<VH>.viewHolder(
+fun <VH : ViewHolder> PrepareScrap<VH>.holder(
     viewType: Int, count: Int, provider: ScrapProvider<VH>
-) = PrepareScrapFlow<VH>(rv, adapter, deadline, dispatcher, inflaterProvider)
-    .fusion(viewType, count, provider.tPrepareScrapProvider(count))
+) = flow<VH>().fusion(viewType, count, provider.toPrepare(count))
 
-fun <VH : ViewHolder> PrepareScrapFlow<VH>.viewHolder(
+@CheckResult
+fun <VH : ViewHolder> PrepareScrapFlow<VH>.holder(
     viewType: Int, count: Int, provider: ScrapProvider<VH>
 ) = fusion(viewType, count, provider)
+
+@CheckResult
+fun <VH : ViewHolder> PrepareScrapFlow<VH>.putToRecycledViewPool(): Flow<Scrap<VH>> {
+    return recreate(putScrapToRecycledViewPool = true)
+}
 //endregion
 
-private fun <T : Any> ScrapProvider<T>.tPrepareScrapProvider(count: Int): PrepareScrapProvider<T> =
-        { inflater, num -> Scrap(onCreateScrap(inflater), inflater.viewType, num, count, inflater.pool) }
+@CheckResult
+private fun <T : Any> PrepareScrapFlow<T>.fusion(
+    viewType: Int, count: Int, provider: ScrapProvider<T>
+) = fusion(viewType, count, provider.toPrepare(count))
 
-private fun <T : Any> PrepareScrapFlow<T>.fusion(viewType: Int, count: Int, provider: ScrapProvider<T>) =
-        fusion(viewType, count, provider.tPrepareScrapProvider(count))
+private fun <T : Any> ScrapProvider<T>.toPrepare(count: Int): PrepareScrapProvider<T> =
+        { inflater, num -> Scrap(onCreateScrap(inflater), inflater.viewType, num, count) }

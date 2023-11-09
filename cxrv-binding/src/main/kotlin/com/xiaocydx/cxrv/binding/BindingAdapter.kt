@@ -23,8 +23,9 @@ import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewbinding.ViewBinding
+import com.xiaocydx.cxrv.internal.InternalVisibleApi
 import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.recycle.scrap.ScrapInflater
+import com.xiaocydx.cxrv.recycle.prepare.ScrapInflater
 
 /**
  * 使用[ViewBinding]完成视图绑定的[ListAdapter]模板类
@@ -47,10 +48,12 @@ abstract class BindingAdapter<ITEM : Any, VB : ViewBinding> :
         get() = BindingHolder.getHolder(this)
 
     @get:AnyThread
+    @property:InternalVisibleApi
     final override val scrapType: Int
         get() = getItemViewType(0)
 
     @get:WorkerThread
+    @property:InternalVisibleApi
     final override val scrapInflate: Inflate<VB>
         get() = ensureInflate()
 
