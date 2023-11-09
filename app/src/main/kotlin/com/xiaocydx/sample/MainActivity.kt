@@ -4,20 +4,14 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.binding.bindingAdapter
-import com.xiaocydx.cxrv.binding.bindingDelegate
-import com.xiaocydx.cxrv.binding.bindingHolder
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
-import com.xiaocydx.cxrv.recycle.prepare.prepareScrap
-import com.xiaocydx.cxrv.recycle.prepare.putToRecycledViewPool
-import com.xiaocydx.cxrv.recycle.prepare.view
 import com.xiaocydx.sample.concat.HeaderFooterActivity
 import com.xiaocydx.sample.databinding.ItemStartBinding
 import com.xiaocydx.sample.divider.DividerActivity
@@ -34,7 +28,6 @@ import com.xiaocydx.sample.transition.enter.EnterTransitionActivity
 import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity
 import com.xiaocydx.sample.viewpager2.nested.NestedScrollableActivity
 import com.xiaocydx.sample.viewpager2.shared.SharedPoolActivity
-import kotlinx.coroutines.flow.launchIn
 import kotlin.reflect.KClass
 
 /**
@@ -61,16 +54,6 @@ class MainActivity : AppCompatActivity() {
                 action = ::performStartAction
             )
             onBindView { btnStart.text = it.text }
-            val delegate = bindingDelegate(
-                uniqueId = StartAction::text,
-                inflate = ItemStartBinding::inflate
-            ) {
-
-            }
-            recyclerView!!.prepareScrap(this)
-                .bindingHolder(this, count = 10)
-                .putToRecycledViewPool()
-                .launchIn(lifecycleScope)
         })
 
     private fun startActionList() = listOf(
