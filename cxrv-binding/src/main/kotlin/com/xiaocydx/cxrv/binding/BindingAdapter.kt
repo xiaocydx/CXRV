@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
+@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+
 package com.xiaocydx.cxrv.binding
 
 import android.view.ViewGroup
+import androidx.annotation.AnyThread
+import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewbinding.ViewBinding
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.recycle.scrap.ScrapInflater
 
 /**
  * 使用[ViewBinding]完成视图绑定的[ListAdapter]模板类
@@ -28,7 +33,7 @@ import com.xiaocydx.cxrv.list.ListAdapter
  * @date 2021/12/5
  */
 abstract class BindingAdapter<ITEM : Any, VB : ViewBinding> :
-        ListAdapter<ITEM, BindingHolder<VB>>() {
+        ListAdapter<ITEM, BindingHolder<VB>>(), BindingScrapProvider<VB> {
     /**
      * Kotlin中类的函数引用，若不是直接作为内联函数的实参，则会编译为单例，
      * 但此处仍然用属性保存函数引用，不重复获取，即使编译规则改了也不受影响。
@@ -38,19 +43,21 @@ abstract class BindingAdapter<ITEM : Any, VB : ViewBinding> :
     /**
      * 通过[VB]获取[BindingHolder]
      */
-    @Suppress("UNCHECKED_CAST")
-    var VB.holder: BindingHolder<VB>
-        get() = requireNotNull(
-            value = root.getTag(R.id.tag_view_holder) as? BindingHolder<VB>,
-            lazyMessage = { "root还未关联ViewHolder" }
-        )
-        private set(value) {
-            root.setTag(R.id.tag_view_holder, value)
-        }
+    val VB.holder: BindingHolder<VB>
+        get() = BindingHolder.getHolder(this)
+
+    @get:AnyThread
+    final override val scrapType: Int
+        get() = getItemViewType(0)
+
+    @get:WorkerThread
+    final override val scrapInflate: Inflate<VB>
+        get() = ensureInflate()
 
     /**
      * 函数引用`VB::inflate`
      */
+    @AnyThread
     protected abstract fun inflate(): Inflate<VB>
 
     /**
@@ -90,15 +97,26 @@ abstract class BindingAdapter<ITEM : Any, VB : ViewBinding> :
      */
     protected open fun VB.onViewDetachedFromWindow() = Unit
 
+    @AnyThread
+    private fun ensureInflate(): Inflate<VB> {
+        // 调用多次inflate()，对inflate重复赋值没有影响
+        if (inflate == null) inflate = inflate()
+        return inflate!!
+    }
+
     final override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BindingHolder<VB> {
-        if (inflate == null) {
-            inflate = inflate()
-        }
-        val binding = inflate!!(parent.inflater, parent, false)
+        val binding = ensureInflate().invoke(parent.inflater, parent, false)
         val holder = BindingHolder(binding)
-        binding.holder = holder
         binding.onCreateView()
         return holder
+    }
+
+    final override fun onCreateScrap(inflater: ScrapInflater): BindingHolder<VB> {
+        return super.onCreateScrap(inflater)
+    }
+
+    final override fun getItemViewType(position: Int): Int {
+        return super.getItemViewType(position)
     }
 
     final override fun onBindViewHolder(holder: BindingHolder<VB>, item: ITEM, payloads: List<Any>) {

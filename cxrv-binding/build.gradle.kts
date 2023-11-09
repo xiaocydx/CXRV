@@ -53,4 +53,6 @@ android {
 dependencies {
     compileOnly(project(":cxrv"))
     compileOnly("androidx.recyclerview:recyclerview:1.2.0")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
 }

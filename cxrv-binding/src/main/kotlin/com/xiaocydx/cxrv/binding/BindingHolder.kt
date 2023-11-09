@@ -23,4 +23,20 @@ import androidx.viewbinding.ViewBinding
 
 typealias Inflate<VB> = (LayoutInflater, ViewGroup, Boolean) -> VB
 
-class BindingHolder<VB : ViewBinding>(val binding: VB) : ViewHolder(binding.root)
+class BindingHolder<VB : ViewBinding>(val binding: VB) : ViewHolder(binding.root) {
+    init {
+        setHolder(binding, this)
+    }
+
+    companion object {
+        @Suppress("UNCHECKED_CAST")
+        internal fun <VB : ViewBinding> getHolder(binding: VB) = requireNotNull(
+            value = binding.root.getTag(R.id.tag_view_holder) as? BindingHolder<VB>,
+            lazyMessage = { "root还未关联ViewHolder" }
+        )
+
+        private fun <VB : ViewBinding> setHolder(binding: VB, holder: BindingHolder<VB>) {
+            binding.root.setTag(R.id.tag_view_holder, holder)
+        }
+    }
+}
