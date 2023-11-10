@@ -102,12 +102,13 @@ class PrepareFlow<T : Any> internal constructor(
             // 构建View时能获取到主线程Looper，例如GestureDetector。
             val pool = rv.recycledViewPool
             val channel = Channel<Scrap<T>>(channelCapacity)
+            val realInflater = inflaterProvider(rv.context)
             prepareJob = launch(context = prepareDispatcher + LooperContext(Looper.myLooper()!!)) {
                 coroutineContext.job.invokeOnCompletion { channel.close() }
                 scrapInfoList.forEach { info ->
                     var num = 0
                     var count = info.count
-                    val inflater = ScrapInflater(rv, inflaterProvider(rv.context), info.viewType)
+                    val inflater = ScrapInflater(rv, realInflater, info.viewType)
                     while (count > 0) {
                         // 在调用info.provider()之前检查状态
                         ensureActive()
