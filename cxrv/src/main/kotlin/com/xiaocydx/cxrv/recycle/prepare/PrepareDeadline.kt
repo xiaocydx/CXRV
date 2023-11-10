@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-@file:JvmName("PrepareDeadlineInternalKt")
-@file:Suppress("PackageDirectoryMismatch")
-
-package androidx.recyclerview.widget
+package com.xiaocydx.cxrv.recycle.prepare
 
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
 import androidx.annotation.MainThread
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.runOnMainThread
@@ -30,33 +28,31 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 /**
- * 预创建的截止时间
+ * 预创建的截至时间
  *
  * @author xcc
- * @date 2023/11/9
+ * @date 2023/11/10
  */
-enum class PrepareDeadline {
-    /**
-     * 没有截止时间
-     */
-    FOREVER_NS,
+internal fun interface PrepareDeadline {
 
     /**
-     * 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
+     * 等待预创建的截至时间，单位ns
      */
-    FRAME_NS
+    @MainThread
+    suspend fun awaitDeadlineNs(): Long
 }
 
-@MainThread
-internal suspend fun Adapter<*>.awaitDeadlineNs(): Long {
+/**
+ * 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
+ */
+@Suppress("FunctionName")
+internal fun FrameTimeDeadline(adapter: Adapter<*>) = PrepareDeadline {
     assertMainThread()
-    return suspendCancellableCoroutine { cont ->
-        DeadlineNsObserver(this, cont).attach()
-    }
+    suspendCancellableCoroutine { cont -> FrameTimeObserver(adapter, cont).attach() }
 }
 
 @MainThread
-internal class DeadlineNsObserver(
+internal class FrameTimeObserver(
     private val adapter: Adapter<*>,
     private val cont: CancellableContinuation<Long>
 ) : RecyclerView.AdapterDataObserver() {

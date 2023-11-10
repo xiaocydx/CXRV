@@ -19,12 +19,8 @@ package com.xiaocydx.cxrv.recycle.prepare
 import android.content.Context
 import android.os.Looper
 import android.view.LayoutInflater
-import androidx.annotation.CheckResult
-import androidx.recyclerview.widget.PrepareDeadline
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.Scrap
-import androidx.recyclerview.widget.awaitDeadlineNs
 import com.xiaocydx.cxrv.internal.ChoreographerContext
 import com.xiaocydx.cxrv.internal.LooperContext
 import com.xiaocydx.cxrv.internal.trace
@@ -46,39 +42,39 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private const val TRACE_DEADLINE_TAG = "PrepareScrap Deadline"
-private const val TRACE_RECEIVE_TAG = "PrepareScrap Receive"
-
-class PrepareScrapFlow<T : Any> internal constructor(
+/**
+ * 当[PrepareFlow]被收集时，才开始预创建工作，直到取消收集或者[deadline]到达。
+ *
+ * @author xcc
+ * @date 2023/11/10
+ */
+class PrepareFlow<T : Any> internal constructor(
     private val rv: RecyclerView,
-    private val adapter: Adapter<*>,
-    private val deadline: PrepareDeadline,
+    private val deadline: PrepareDeadline?,
     private val inflaterProvider: (Context) -> LayoutInflater,
     private val prepareDispatcher: CoroutineDispatcher,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate,
-    private val scrapInfoList: List<PrepareScrapInfo<T>> = emptyList(),
+    private val scrapInfoList: List<ScrapInfo<T>> = emptyList(),
     private val putScrapToRecycledViewPool: Boolean = false
-) : Flow<Scrap<T>> {
+) : PrepareFusible<T>(), Flow<Scrap<T>> {
 
-    @CheckResult
     internal fun recreate(
         rv: RecyclerView = this.rv,
-        adapter: Adapter<*> = this.adapter,
-        deadline: PrepareDeadline = this.deadline,
+        deadline: PrepareDeadline? = this.deadline,
         inflaterProvider: (Context) -> LayoutInflater = this.inflaterProvider,
         prepareDispatcher: CoroutineDispatcher = this.prepareDispatcher,
         mainDispatcher: MainCoroutineDispatcher = this.mainDispatcher,
-        scrapInfoList: List<PrepareScrapInfo<T>> = this.scrapInfoList,
+        scrapInfoList: List<ScrapInfo<T>> = this.scrapInfoList,
         putScrapToRecycledViewPool: Boolean = this.putScrapToRecycledViewPool
-    ) = PrepareScrapFlow(
-        rv, adapter, deadline, inflaterProvider,
+    ) = PrepareFlow(
+        rv, deadline, inflaterProvider,
         prepareDispatcher, mainDispatcher,
         scrapInfoList, putScrapToRecycledViewPool
     )
 
-    @CheckResult
-    internal fun fusion(viewType: Int, count: Int, scrapProvider: PrepareScrapProvider<T>) =
-            recreate(scrapInfoList = scrapInfoList + PrepareScrapInfo(viewType, count, scrapProvider))
+    override fun fusion(scrapInfo: ScrapInfo<T>): PrepareFlow<T> {
+        return recreate(scrapInfoList = scrapInfoList + scrapInfo)
+    }
 
     override suspend fun collect(collector: FlowCollector<Scrap<T>>) = channelFlow {
         @Suppress("INVISIBLE_MEMBER")
@@ -94,11 +90,9 @@ class PrepareScrapFlow<T : Any> internal constructor(
         withContext(ChoreographerContext()) {
             var isDeadline = false
             var prepareJob: Job? = null
-            val deadlineJob = when (deadline) {
-                PrepareDeadline.FOREVER_NS -> null
-                PrepareDeadline.FRAME_NS -> launch(start = UNDISPATCHED) {
-                    // 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
-                    adapter.awaitDeadlineNs()
+            val deadlineJob = deadline?.let {
+                launch(start = UNDISPATCHED) {
+                    deadline.awaitDeadlineNs()
                     prepareJob?.cancelAndJoin()
                     trace(TRACE_DEADLINE_TAG) { isDeadline = true }
                 }
@@ -115,10 +109,12 @@ class PrepareScrapFlow<T : Any> internal constructor(
                     var count = info.count
                     val inflater = ScrapInflater(rv, inflaterProvider(rv.context), info.viewType)
                     while (count > 0) {
+                        // 在调用info.provider()之前检查状态
                         ensureActive()
                         num++
                         count--
-                        channel.send(info.scrapProvider(inflater, num))
+                        val scrap = info.provider(inflater, num)
+                        channel.send(scrap)
                     }
                 }
             }
@@ -132,12 +128,15 @@ class PrepareScrapFlow<T : Any> internal constructor(
             deadlineJob?.cancelAndJoin()
         }
     }.buffer(RENDEZVOUS).flowOn(mainDispatcher).collect(collector)
+
+    internal class ScrapInfo<T : Any>(
+        val viewType: Int,
+        val count: Int,
+        val provider: (inflater: ScrapInflater, num: Int) -> Scrap<T>
+    )
+
+    private companion object {
+        const val TRACE_DEADLINE_TAG = "PrepareFlow Deadline"
+        const val TRACE_RECEIVE_TAG = "PrepareFlow Receive"
+    }
 }
-
-internal class PrepareScrapInfo<T : Any>(
-    val viewType: Int,
-    val count: Int,
-    val scrapProvider: PrepareScrapProvider<T>
-)
-
-internal typealias PrepareScrapProvider<T> = (inflater: ScrapInflater, num: Int) -> Scrap<T>

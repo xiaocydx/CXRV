@@ -24,7 +24,7 @@ import android.view.LayoutInflater.Factory2
 import android.view.View
 
 /**
- * 实现逻辑参考自PhoneLayoutInflater
+ * 预创建的默认[LayoutInflater]，实现逻辑参考自PhoneLayoutInflater
  *
  * [LayoutInflater]不支持多线程，因此单独构建[LayoutInflater]用于预创建，
  * `LayoutInflater.from(context)`结果的[Factory]和[Factory2]无法沿用，
@@ -33,7 +33,7 @@ import android.view.View
  * @author xcc
  * @date 2023/11/8
  */
-internal class ScrapLayoutInflater(context: Context) : LayoutInflater(context) {
+open class ScrapLayoutInflater(context: Context) : LayoutInflater(context) {
 
     override fun cloneInContext(newContext: Context): LayoutInflater {
         return ScrapLayoutInflater(newContext)

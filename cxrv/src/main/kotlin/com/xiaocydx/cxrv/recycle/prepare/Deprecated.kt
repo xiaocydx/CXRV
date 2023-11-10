@@ -15,19 +15,22 @@
  */
 
 @file:JvmName("PrepareScrapDeprecatedKt")
-@file:Suppress("PackageDirectoryMismatch")
+@file:Suppress("PackageDirectoryMismatch", "DEPRECATION")
 
 package androidx.recyclerview.widget
 
+import android.annotation.SuppressLint
 import android.util.SparseIntArray
 import androidx.annotation.IntRange
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.internal.*
-import com.xiaocydx.cxrv.recycle.prepare.PrepareScrapFlow
+import com.xiaocydx.cxrv.recycle.prepare.PrepareFlow
 import com.xiaocydx.cxrv.recycle.prepare.ScrapProvider
+import com.xiaocydx.cxrv.recycle.prepare.dispatcher
+import com.xiaocydx.cxrv.recycle.prepare.frameTimeDeadline
 import com.xiaocydx.cxrv.recycle.prepare.holder
-import com.xiaocydx.cxrv.recycle.prepare.prepareScrap
+import com.xiaocydx.cxrv.recycle.prepare.prepareHolder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
@@ -69,8 +72,15 @@ import kotlinx.coroutines.flow.*
  *
  * @return [PrepareResult]提供数量查询函数，可用于数据统计或者单元测试。
  */
+@Deprecated(
+    message = "预创建流程不安全，配置属性有些冗余",
+    replaceWith = ReplaceWith(
+        expression = "PrepareScrap",
+        imports = ["com.xiaocydx.cxrv.recycle.prepare.PrepareScrap"]
+    )
+)
 @MainThread
-@Deprecated("")
+@SuppressLint("CheckResult")
 suspend fun RecyclerView.prepareScrap(
     prepareAdapter: Adapter<*>,
     prepareDeadline: PrepareDeadline = PrepareDeadline.FOREVER_NS,
@@ -84,9 +94,11 @@ suspend fun RecyclerView.prepareScrap(
     val result = PrepareResult(initialCapacity, recycledViewPool)
     if (initialCapacity <= 0) return result
 
-    val prepareScrap = rv.prepareScrap(prepareAdapter)
-        .deadline(prepareDeadline).dispatcher(prepareDispatcher)
-    var prepareFlow: PrepareScrapFlow<ViewHolder>? = null
+    val prepareScrap = rv.prepareHolder().dispatcher(prepareDispatcher)
+    if (prepareDeadline == PrepareDeadline.FRAME_NS) {
+        prepareScrap.frameTimeDeadline(prepareAdapter)
+    }
+    var prepareFlow: PrepareFlow<ViewHolder>? = null
     val provider = ScrapProvider<ViewHolder> { prepareAdapter.createViewHolder(rv, it.viewType) }
     pairs.forEach { (viewType, count) ->
         prepareFlow = if (prepareFlow == null) {
@@ -100,8 +112,37 @@ suspend fun RecyclerView.prepareScrap(
 }
 
 /**
+ * 预创建的截止时间
+ */
+@Deprecated(
+    message = "预创建流程不安全，配置属性有些冗余",
+    replaceWith = ReplaceWith(
+        expression = "PrepareScrap",
+        imports = ["com.xiaocydx.cxrv.recycle.prepare.PrepareScrap"]
+    )
+)
+enum class PrepareDeadline {
+    /**
+     * 没有截止时间
+     */
+    FOREVER_NS,
+
+    /**
+     * 将视图树首帧Vsync时间或者更新时下一帧Vsync时间，作为预创建的截止时间
+     */
+    FRAME_NS
+}
+
+/**
  * 调用[PrepareScope.add]，添加预创建的键值对
  */
+@Deprecated(
+    message = "预创建流程不安全，配置属性有些冗余",
+    replaceWith = ReplaceWith(
+        expression = "PrepareScrap",
+        imports = ["com.xiaocydx.cxrv.recycle.prepare.PrepareScrap"]
+    )
+)
 class PrepareScope internal constructor() {
     private val pairs = mutableListOf<Pair>()
 
@@ -121,6 +162,13 @@ class PrepareScope internal constructor() {
 /**
  * [RecyclerView.prepareScrap]的结果，提供数量查询函数
  */
+@Deprecated(
+    message = "预创建流程不安全，配置属性有些冗余",
+    replaceWith = ReplaceWith(
+        expression = "PrepareScrap",
+        imports = ["com.xiaocydx.cxrv.recycle.prepare.PrepareScrap"]
+    )
+)
 @MainThread
 class PrepareResult internal constructor(
     initialCapacity: Int,

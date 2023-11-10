@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(InternalVisibleApi::class)
+@file:OptIn(VisibleForInternal::class)
 
 package com.xiaocydx.cxrv.binding
 
@@ -23,7 +23,7 @@ import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewbinding.ViewBinding
-import com.xiaocydx.cxrv.internal.InternalVisibleApi
+import com.xiaocydx.cxrv.internal.VisibleForInternal
 import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 import com.xiaocydx.cxrv.recycle.prepare.ScrapInflater
 
@@ -48,12 +48,12 @@ abstract class BindingDelegate<ITEM : Any, VB : ViewBinding> :
         get() = BindingHolder.getHolder(this)
 
     @get:AnyThread
-    @property:InternalVisibleApi
+    @property:VisibleForInternal
     final override val scrapType: Int
         get() = viewType
 
     @get:WorkerThread
-    @property:InternalVisibleApi
+    @property:VisibleForInternal
     final override val scrapInflate: Inflate<VB>
         get() = ensureInflate()
 

@@ -35,7 +35,7 @@ internal annotation class RvDslMarker
 )
 @Retention(value = AnnotationRetention.BINARY)
 @Target(CLASS, FUNCTION, TYPEALIAS, PROPERTY)
-annotation class InternalVisibleApi
+annotation class VisibleForInternal
 
 @RequiresOptIn(
     message = "功能处于实验性阶段，将来改动的可能性很大",

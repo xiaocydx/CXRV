@@ -25,14 +25,19 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.internal.assertMainThread
 
 /**
+ * 预创建的结果
+ *
+ * [viewType]和[count]是初始化阶段配置的预创建数据，
+ * [num]表示[value]第几个创建，取值范围为`[1, count]`。
+ *
  * @author xcc
  * @date 2023/11/9
  */
 class Scrap<T : Any> internal constructor(
     val value: T,
     val viewType: Int,
-    val num: Int,
-    val count: Int
+    val count: Int,
+    val num: Int
 ) {
 
     init {
