@@ -21,6 +21,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import androidx.annotation.CheckResult
+import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
@@ -104,7 +105,16 @@ fun <T : Any> PrepareScrap<T>.inflater(
 @CheckResult
 fun <T : Any> PrepareScrap<T>.frameTimeDeadline(
     adapter: RecyclerView.Adapter<*>
-) = apply { deadline = FrameTimeDeadline(adapter) }
+) = deadline(FrameTimeDeadline(adapter))
+
+/**
+ * 当截止时间到达时，取消预创建流程，避免创建冗余对象
+ */
+@CheckResult
+@VisibleForTesting
+internal fun <T : Any> PrepareScrap<T>.deadline(
+    deadline: PrepareDeadline
+) = apply { this.deadline = deadline }
 
 /**
  * 预创建的入口，提供配置属性和[PrepareFlow]的构建函数
