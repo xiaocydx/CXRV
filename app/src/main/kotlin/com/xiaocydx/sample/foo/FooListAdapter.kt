@@ -32,12 +32,12 @@ class FooListAdapter : ListAdapter<Foo, FooListAdapter.ViewHolder>() {
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val itemView = when (viewType) {
+        val resId = when (viewType) {
             FooType.TYPE1.ordinal -> R.layout.item_foo_type1
             FooType.TYPE2.ordinal -> R.layout.item_foo_type2
             else -> throw IllegalArgumentException()
         }
-        return ViewHolder(parent.inflate(itemView))
+        return ViewHolder(parent.inflate(resId))
     }
 
     override fun onBindViewHolder(holder: ViewHolder, item: Foo) {

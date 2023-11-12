@@ -5,13 +5,13 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.sample.SimpleViewHolder
-import com.xiaocydx.sample.databinding.ItemSlideContentBinding
-import com.xiaocydx.sample.databinding.ItemSlideLoadingBinding
+import com.xiaocydx.sample.databinding.ItemTransitionContentBinding
+import com.xiaocydx.sample.databinding.ItemTransitionLoadingBinding
 
 class LoadingAdapter : ViewAdapter<RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val view = ItemSlideLoadingBinding.inflate(
+        val view = ItemTransitionLoadingBinding.inflate(
             LayoutInflater.from(parent.context), parent, false)
         return SimpleViewHolder(view.root)
     }
@@ -25,7 +25,7 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.Holder>() {
     private var itemCount = 0
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
-        val view = ItemSlideContentBinding.inflate(
+        val view = ItemTransitionContentBinding.inflate(
             LayoutInflater.from(parent.context), parent, false)
         return Holder(view)
     }
@@ -42,5 +42,5 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.Holder>() {
         notifyItemRangeInserted(0, itemCount)
     }
 
-    class Holder(val binding: ItemSlideContentBinding) : RecyclerView.ViewHolder(binding.root)
+    class Holder(val binding: ItemTransitionContentBinding) : RecyclerView.ViewHolder(binding.root)
 }

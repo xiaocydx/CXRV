@@ -3,16 +3,16 @@ package com.xiaocydx.sample.transition.enter
 import android.os.Bundle
 import android.view.View
 import androidx.lifecycle.flowWithLifecycle
-import androidx.recyclerview.widget.PrepareDeadline
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import androidx.recyclerview.widget.prepareScrap
+import com.xiaocydx.cxrv.recycle.prepare.prepareHolder
+import com.xiaocydx.cxrv.recycle.prepare.putToRecycledViewPool
+import com.xiaocydx.cxrv.recycle.prepare.reuse
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 
 /**
  * 尝试在加载列表数据期间，通过[prepareScrap]预创建[ViewHolder]以解决卡顿问题，但结果是失败的，
@@ -47,12 +47,10 @@ class PrepareFragment : TransitionFragment() {
 
     private fun prepareScrap() {
         // viewType = 0是默认值
-        viewLifecycleScope.launch {
-            recyclerView?.prepareScrap(
-                prepareAdapter = contentAdapter,
-                prepareDeadline = PrepareDeadline.FRAME_NS,
-                block = { add(viewType = 0, count = 50) }
-            )
-        }
+        val rv = recyclerView ?: return
+        rv.prepareHolder()
+            .reuse(viewType = 0, count = 50, contentAdapter)
+            .putToRecycledViewPool()
+            .launchIn(viewLifecycleScope)
     }
 }
