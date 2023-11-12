@@ -26,11 +26,11 @@ import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView.*
 import com.xiaocydx.cxrv.internal.*
 import com.xiaocydx.cxrv.recycle.prepare.PrepareFlow
-import com.xiaocydx.cxrv.recycle.prepare.ScrapProvider
 import com.xiaocydx.cxrv.recycle.prepare.dispatcher
 import com.xiaocydx.cxrv.recycle.prepare.frameTimeDeadline
-import com.xiaocydx.cxrv.recycle.prepare.holder
 import com.xiaocydx.cxrv.recycle.prepare.prepareHolder
+import com.xiaocydx.cxrv.recycle.prepare.putToRecycledViewPool
+import com.xiaocydx.cxrv.recycle.prepare.reuse
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
@@ -99,15 +99,14 @@ suspend fun RecyclerView.prepareScrap(
         prepareScrap.frameTimeDeadline(prepareAdapter)
     }
     var prepareFlow: PrepareFlow<ViewHolder>? = null
-    val provider = ScrapProvider<ViewHolder> { prepareAdapter.createViewHolder(rv, it.viewType) }
     pairs.forEach { (viewType, count) ->
         prepareFlow = if (prepareFlow == null) {
-            prepareScrap.holder(viewType, count, provider)
+            prepareScrap.reuse(viewType, count, prepareAdapter)
         } else {
-            prepareFlow!!.holder(viewType, count, provider)
+            prepareFlow!!.reuse(viewType, count, prepareAdapter)
         }
     }
-    prepareFlow?.collect(result::putScrapToRecycledViewPool)
+    prepareFlow?.putToRecycledViewPool()?.collect(result::putScrapToRecycledViewPool)
     return result
 }
 
@@ -197,7 +196,6 @@ class PrepareResult internal constructor(
 
     internal fun putScrapToRecycledViewPool(scrap: Scrap<ViewHolder>) {
         assertMainThread()
-        scrap.tryPutToRecycledViewPool(recycledViewPool)
         preparedScrapCount?.apply {
             val count = get(scrap.viewType)
             put(scrap.viewType, count + 1)

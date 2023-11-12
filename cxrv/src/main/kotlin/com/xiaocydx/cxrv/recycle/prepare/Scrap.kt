@@ -19,10 +19,13 @@
 
 package androidx.recyclerview.widget
 
+import android.view.View
+import androidx.annotation.AnyThread
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.internal.assertMainThread
+import java.lang.ref.WeakReference
 
 /**
  * 预创建的结果
@@ -34,29 +37,41 @@ import com.xiaocydx.cxrv.internal.assertMainThread
  * @date 2023/11/9
  */
 class Scrap<T : Any> internal constructor(
+    pool: RecycledViewPool,
     val value: T,
     val viewType: Int,
     val count: Int,
     val num: Int
 ) {
+    private val poolRef = WeakReference(pool)
 
     init {
-        if (value is ViewHolder) value.mItemViewType = viewType
+        ensureAvailable()
     }
 
     @MainThread
-    internal fun tryPutToRecycledViewPool(pool: RecycledViewPool) {
+    internal fun putToRecycledViewPool(): Boolean {
         assertMainThread()
-        if (value !is ViewHolder) return
-        require(value.itemView.parent == null) {
-            "创建ViewHolder.itemView时，不能添加到parent中"
-        }
-        value.mItemViewType = viewType
+        ensureAvailable()
+        val pool = poolRef.get() ?: return false
+        if (value !is ViewHolder) return false
         val scrapData = pool.mScrap[viewType] ?: run {
             // 触发内部逻辑创建scrapData
             pool.getRecycledViewCount(viewType)
             pool.mScrap.get(viewType)!!
         }
-        scrapData.mScrapHeap.takeIf { !it.contains(value) }?.add(value)
+        val scrapHeap = scrapData.mScrapHeap
+        return !scrapHeap.contains(value) && scrapHeap.add(value)
+    }
+
+    @AnyThread
+    private fun ensureAvailable() {
+        val hasParent = when (value) {
+            is View -> value.parent != null
+            is ViewHolder -> value.itemView.parent != null
+            else -> false
+        }
+        require(!hasParent) { "创建的itemView，不能添加到parent中" }
+        if (value is ViewHolder) value.mItemViewType = viewType
     }
 }

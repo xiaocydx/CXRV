@@ -28,12 +28,13 @@ internal inline fun log(message: () -> String) {
     if (DEBUG_LOG) Log.d(DEBUG_TAG, message())
 }
 
-internal inline fun trace(name: String, action: () -> Unit) {
-    trace(lazyName = { name }, action)
+internal inline fun <R> trace(name: String, action: () -> R): R {
+    return trace(lazyName = { name }, action)
 }
 
-internal inline fun trace(lazyName: () -> String, action: () -> Unit) {
+internal inline fun <R> trace(lazyName: () -> String, action: () -> R): R {
     if (DEBUG_TRACE) Trace.beginSection(lazyName())
-    action()
+    val result = action()
     if (DEBUG_TRACE) Trace.endSection()
+    return result
 }

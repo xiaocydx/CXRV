@@ -45,7 +45,7 @@ import com.xiaocydx.cxrv.recycle.prepare.holder
 @WorkerThread
 fun <VB : ViewBinding> ScrapInflater.binding(
     inflate: Inflate<VB>
-) = inflate.invoke(real, parent, false)
+) = inflate.invoke(inflater, parent, false)
 
 /**
  * 配置[BindingHolder]的预创建数据
@@ -82,7 +82,7 @@ fun <VB : ViewBinding> PrepareFusible<ViewHolder>.binding(
     @WorkerThread onCreateView: (VB.() -> Unit)? = null
 ) = run {
     val inflate = provider.ensureInflate()
-    holder(viewType = 0, count) {
+    holder(provider.getItemViewType(0), count) {
         val binding = it.binding(inflate)
         val holder = BindingHolder(binding)
         onCreateView?.invoke(binding)

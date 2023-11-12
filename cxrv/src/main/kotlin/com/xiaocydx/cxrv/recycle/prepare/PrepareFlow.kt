@@ -20,6 +20,7 @@ import android.content.Context
 import android.os.Looper
 import android.view.LayoutInflater
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.recyclerview.widget.Scrap
 import com.xiaocydx.cxrv.internal.ChoreographerContext
 import com.xiaocydx.cxrv.internal.LooperContext
@@ -38,12 +39,12 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.LazyThreadSafetyMode.NONE
 
 /**
- * 当[PrepareFlow]被收集时，才开始预创建工作，直到取消收集或者[deadline]到达。
+ * 当[PrepareFlow]被收集时，才开始预创建工作，直到取消收集或者[deadline]到达
  *
  * @author xcc
  * @date 2023/11/10
@@ -54,8 +55,7 @@ class PrepareFlow<T : Any> internal constructor(
     private val inflaterProvider: (Context) -> LayoutInflater,
     private val prepareDispatcher: CoroutineDispatcher,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate,
-    private val scrapInfoList: List<ScrapInfo<T>> = emptyList(),
-    private val putScrapToRecycledViewPool: Boolean = false
+    private val scrapInfoList: List<ScrapInfo<T>> = emptyList()
 ) : PrepareFusible<T>(), Flow<Scrap<T>> {
 
     internal fun recreate(
@@ -64,23 +64,28 @@ class PrepareFlow<T : Any> internal constructor(
         inflaterProvider: (Context) -> LayoutInflater = this.inflaterProvider,
         prepareDispatcher: CoroutineDispatcher = this.prepareDispatcher,
         mainDispatcher: MainCoroutineDispatcher = this.mainDispatcher,
-        scrapInfoList: List<ScrapInfo<T>> = this.scrapInfoList,
-        putScrapToRecycledViewPool: Boolean = this.putScrapToRecycledViewPool
+        scrapInfoList: List<ScrapInfo<T>> = this.scrapInfoList
     ) = PrepareFlow(
         rv, deadline, inflaterProvider,
-        prepareDispatcher, mainDispatcher,
-        scrapInfoList, putScrapToRecycledViewPool
+        prepareDispatcher, mainDispatcher, scrapInfoList
     )
 
     override fun fusion(scrapInfo: ScrapInfo<T>): PrepareFlow<T> {
         return recreate(scrapInfoList = scrapInfoList + scrapInfo)
     }
 
+    /**
+     * [channelFlow]为桥接作用，实现`Context preservation`约束，
+     * 调用[collector]开始收集，协程上下文的调度器元素变化过程为：
+     * `mainDispatcher -> ChoreographerContext -> prepareDispatcher`，
+     * [prepareDispatcher]回到[ChoreographerContext]，通过Choreographer调度一次，
+     * [ChoreographerContext]回到[mainDispatcher]，都是主线程Looper，不产生调度。
+     */
+    @Suppress("INVISIBLE_MEMBER")
     override suspend fun collect(collector: FlowCollector<Scrap<T>>) = channelFlow {
-        @Suppress("INVISIBLE_MEMBER")
-        val channelCapacity: Int = scrapInfoList.sumOf {
-            it.count.coerceAtLeast(0)
-        }.coerceAtMost(Channel.CHANNEL_DEFAULT_CAPACITY)
+        val scrapInfoList = scrapInfoList.filter { it.count > 0 }
+        val channelCapacity: Int = scrapInfoList.sumOf { it.count }
+            .coerceAtMost(Channel.CHANNEL_DEFAULT_CAPACITY)
         if (channelCapacity <= 0) return@channelFlow
 
         // 通过Handler.post()发送的消息可能被doFrame消息按时间顺序插队，
@@ -102,42 +107,47 @@ class PrepareFlow<T : Any> internal constructor(
             // 构建View时能获取到主线程Looper，例如GestureDetector。
             val pool = rv.recycledViewPool
             val channel = Channel<Scrap<T>>(channelCapacity)
-            val realInflater = inflaterProvider(rv.context)
             prepareJob = launch(context = prepareDispatcher + LooperContext(Looper.myLooper()!!)) {
-                coroutineContext.job.invokeOnCompletion { channel.close() }
-                scrapInfoList.forEach { info ->
-                    var num = 0
-                    var count = info.count
-                    val inflater = ScrapInflater(rv, realInflater, info.viewType)
-                    while (count > 0) {
-                        // 在调用info.provider()之前检查状态
-                        ensureActive()
-                        num++
-                        count--
-                        val scrap = info.provider(inflater, num)
-                        channel.send(scrap)
+                val scrapContext = ScrapContext(rv.context)
+                val scrapParent = lazy(NONE) { ScrapParent(rv, scrapContext) }
+                try {
+                    val inflater = inflaterProvider(scrapContext)
+                    scrapContext.setInflater(inflater)
+                    scrapInfoList.forEach { (viewType, count, scrapProvider) ->
+                        var num = 0
+                        val scrapInflater = ScrapInflater(rv, inflater, scrapContext, scrapParent, viewType)
+                        while (num < count) {
+                            // 在scrapProvider()之前检查状态
+                            ensureActive()
+                            num++
+                            val scrap = scrapProvider(num, scrapInflater, pool)
+                            trace(TRACE_PREPARE_TAG) { channel.send(scrap) }
+                        }
                     }
+                } finally {
+                    scrapContext.clearInflater()
+                    channel.close()
                 }
             }
 
             for (scrap in channel) {
                 // isDeadline = true，丢弃channel的scrap
                 if (isDeadline) break
-                scrap.takeIf { putScrapToRecycledViewPool }?.tryPutToRecycledViewPool(pool)
-                trace(TRACE_RECEIVE_TAG) { send(scrap) }
+                trace(TRACE_FORWARD_TAG) { send(scrap) }
             }
             deadlineJob?.cancelAndJoin()
         }
     }.buffer(RENDEZVOUS).flowOn(mainDispatcher).collect(collector)
 
-    internal class ScrapInfo<T : Any>(
+    internal data class ScrapInfo<T : Any>(
         val viewType: Int,
         val count: Int,
-        val provider: (inflater: ScrapInflater, num: Int) -> Scrap<T>
+        val scrapProvider: (Int, ScrapInflater, RecycledViewPool) -> Scrap<T>
     )
 
     private companion object {
         const val TRACE_DEADLINE_TAG = "PrepareFlow Deadline"
-        const val TRACE_RECEIVE_TAG = "PrepareFlow Receive"
+        const val TRACE_PREPARE_TAG = "PrepareFlow Prepare"
+        const val TRACE_FORWARD_TAG = "PrepareFlow Forward"
     }
 }

@@ -21,6 +21,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import androidx.annotation.CheckResult
+import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
@@ -72,6 +73,40 @@ fun RecyclerView.prepareView() = PrepareScrap<View>(this)
 fun RecyclerView.prepareHolder() = PrepareScrap<ViewHolder>(this)
 
 /**
+ * 用于预创建的协程调度器，默认在[Dispatchers.IO]调度的线程创建对象，
+ * 通过`Dispatchers.IO.limitedParallelism()`创建并行度受限的调度器，
+ * 可以供多处预创建使用。
+ */
+@CheckResult
+fun <T : Any> PrepareScrap<T>.dispatcher(
+    dispatcher: CoroutineDispatcher
+) = apply { this.dispatcher = dispatcher }
+
+/**
+ * 提供用于预创建的[LayoutInflater]，默认实现提供[ScrapLayoutInflater]，
+ * 在不能确保支持多线程的情况下，[provider]不该返回`LayoutInflater.from(context)`，
+ * 该函数主要是用于设置[LayoutInflater.Factory]和[LayoutInflater.Factory2]的场景。
+ *
+ * @param provider 在工作线程下调用函数，返回的[LayoutInflater]确保只在同一工作线程访问。
+ */
+@CheckResult
+fun <T : Any> PrepareScrap<T>.inflater(
+    @WorkerThread provider: (Context) -> LayoutInflater
+) = apply { inflaterProvider = provider }
+
+/**
+ * 将Vsync时间作为预创建的截止时间
+ *
+ * 当截止时间到达时，取消预创建流程，避免创建冗余对象：
+ * 1. `adapter.itemCount`初始大于0，将视图树首帧Vsync时间作为预创建的截止时间。
+ * 2. `adapter.itemCount`后续大于0，例如数据加载完插入item，将下一帧Vsync时间作为预创建的截止时间。
+ */
+@CheckResult
+fun <T : Any> PrepareScrap<T>.frameTimeDeadline(
+    adapter: RecyclerView.Adapter<*>
+) = apply { deadline = FrameTimeDeadline(adapter) }
+
+/**
  * 预创建的入口，提供配置属性和[PrepareFlow]的构建函数
  */
 class PrepareScrap<T : Any> internal constructor(
@@ -86,35 +121,3 @@ class PrepareScrap<T : Any> internal constructor(
         scrapInfoList = listOf(scrapInfo)
     )
 }
-
-/**
- * 用于预创建的协程调度器，默认在[Dispatchers.IO]调度的线程创建对象，
- * 通过`Dispatchers.IO.limitedParallelism()`创建并行度受限的调度器，
- * 可以供多处预创建使用。
- */
-@CheckResult
-fun <T : Any> PrepareScrap<T>.dispatcher(
-    dispatcher: CoroutineDispatcher
-) = apply { this.dispatcher = dispatcher }
-
-/**
- * 提供用于预创建的[LayoutInflater]，默认实现提供[ScrapLayoutInflater]，
- * 在不能确保支持多线程的情况下，[provider]不该返回`LayoutInflater.from(context)`，
- * 该函数主要是支持设置[LayoutInflater.Factory]和[LayoutInflater.Factory2]的场景。
- */
-@CheckResult
-fun <T : Any> PrepareScrap<T>.inflater(
-    provider: (Context) -> LayoutInflater
-) = apply { inflaterProvider = provider }
-
-/**
- * 将Vsync时间作为预创建的截止时间
- *
- * 当截止时间到达时，取消预创建流程，避免创建冗余对象：
- * 1. `adapter.itemCount`初始大于0，将视图树首帧Vsync时间作为预创建的截止时间。
- * 2. `adapter.itemCount`后续大于0，例如数据加载完插入item，将下一帧Vsync时间作为预创建的截止时间。
- */
-@CheckResult
-fun <T : Any> PrepareScrap<T>.frameTimeDeadline(
-    adapter: RecyclerView.Adapter<*>
-) = apply { deadline = FrameTimeDeadline(adapter) }
