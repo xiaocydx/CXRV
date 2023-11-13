@@ -10,7 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate
-import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
+import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
@@ -24,7 +24,7 @@ import com.xiaocydx.sample.databinding.ItemMessageTextBinding
 import com.xiaocydx.sample.layoutParams
 import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.overScrollNever
-import com.xiaocydx.sample.showToast
+import com.xiaocydx.sample.snackbar
 
 /**
  * 一对一类型关系示例代码
@@ -63,7 +63,11 @@ class OneToOneFragment : Fragment() {
             tvUsername.text = item.username
             tvContent.text = item.content
         }
-        doOnSimpleItemClick { showToast("文本类型消息 id = ${it.id}") }
+        doOnItemClick { holder, item ->
+            holder.itemView.snackbar()
+                .setText("文本类型消息 id = ${item.id}")
+                .show()
+        }
     }
 
     private fun OneToOneImageDelegate() = bindingDelegate(
@@ -75,7 +79,11 @@ class OneToOneFragment : Fragment() {
             tvUsername.text = item.username
             ivContent.setImageResource(item.image)
         }
-        doOnSimpleItemClick { showToast("图片类型消息 id = ${it.id}") }
+        doOnItemClick { holder, item ->
+            holder.itemView.snackbar()
+                .setText("图片类型消息 id = ${item.id}")
+                .show()
+        }
     }
 
     private fun messageList(): List<OneToOneMessage> {

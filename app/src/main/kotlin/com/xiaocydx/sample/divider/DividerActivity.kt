@@ -21,7 +21,7 @@ import com.xiaocydx.sample.divider.MenuAction.GIRD
 import com.xiaocydx.sample.divider.MenuAction.LINEAR
 import com.xiaocydx.sample.divider.MenuAction.STAGGERED
 import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.showToast
+import com.xiaocydx.sample.snackbar
 
 /**
  * Divider示例代码
@@ -70,7 +70,7 @@ class DividerActivity : AppCompatActivity() {
             else -> sharedViewModel.submitMenuAction(action)
         }
         binding.root.closeDrawer(binding.rvMenu)
-        showToast(action.text)
+        binding.root.snackbar().setText(action.text).show()
     }
 
     private inline fun <reified T : Fragment> replace() {

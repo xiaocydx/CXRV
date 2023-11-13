@@ -19,7 +19,7 @@ import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.sample.paging.local.MenuAction.GIRD
 import com.xiaocydx.sample.paging.local.MenuAction.LINEAR
 import com.xiaocydx.sample.paging.local.MenuAction.STAGGERED
-import com.xiaocydx.sample.showToast
+import com.xiaocydx.sample.snackbar
 
 /**
  * Paging示例代码（本地测试）
@@ -66,7 +66,7 @@ class PagingActivity : AppCompatActivity() {
             else -> sharedViewModel.submitMenuAction(action)
         }
         binding.root.closeDrawer(binding.rvMenu)
-        showToast(action.text)
+        binding.root.snackbar().setText(action.text).show()
     }
 
     private inline fun <reified T : Fragment> replace() {

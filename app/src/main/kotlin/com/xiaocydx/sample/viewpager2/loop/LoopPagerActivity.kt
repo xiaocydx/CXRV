@@ -24,7 +24,7 @@ import com.xiaocydx.sample.databinding.ActivityLoopPagerBinding
 import com.xiaocydx.sample.databinding.ItemButtonBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.launchRepeatOnLifecycle
-import com.xiaocydx.sample.showToast
+import com.xiaocydx.sample.snackbar
 import kotlinx.coroutines.Job
 
 /**
@@ -48,9 +48,11 @@ class LoopPagerActivity : AppCompatActivity() {
     private fun ActivityLoopPagerBinding.initView() = apply {
         adapter = ContentListAdapter()
         adapter.doOnItemClick { holder, item ->
-            showToast("item.text = ${item.text}\n" +
-                    "layoutPosition = ${holder.layoutPosition}\n" +
-                    "bindingAdapterPosition = ${holder.bindingAdapterPosition}")
+            holder.itemView.snackbar().setText(
+                "item.text = ${item.text}\n" +
+                        "layoutPosition = ${holder.layoutPosition}\n" +
+                        "bindingAdapterPosition = ${holder.bindingAdapterPosition}"
+            ).show()
         }
         adapter.doOnListChanged {
             // 列表已更改，在下一帧布局完成后，触发requestTransform()修正间距
@@ -93,34 +95,35 @@ class LoopPagerActivity : AppCompatActivity() {
     private fun performLoopPagerAction(action: LoopPagerAction) {
         val position = 0
         val timeMillis = 1000L
-        when (action) {
+        val text = when (action) {
             LoopPagerAction.REFRESH -> {
                 viewModel.refresh(timeMillis)
-                showToast("${timeMillis / 1000}s后刷新")
+                "${timeMillis / 1000}s后刷新"
             }
             LoopPagerAction.APPEND -> {
                 viewModel.append(timeMillis)
-                showToast("${timeMillis / 1000}s后添加")
+                "${timeMillis / 1000}s后添加"
             }
             LoopPagerAction.SCROLL -> {
                 controller.scrollToPosition(position)
-                showToast("非平滑滚动至bindingAdapterPosition = $position")
+                "非平滑滚动至\nbindingAdapterPosition = $position"
             }
             LoopPagerAction.SMOOTH_SCROLL -> {
                 controller.smoothScrollToPosition(position, LookupDirection.START)
-                showToast("平滑滚动至bindingAdapterPosition = $position")
+                "平滑滚动至\nbindingAdapterPosition = $position"
             }
             LoopPagerAction.LAUNCH_BANNER -> {
                 bannerJob?.cancel()
                 bannerJob = controller.launchBanner(adapter, lifecycle, durationMs = 500)
-                showToast("启动Banner轮播交互")
+                "启动Banner轮播交互"
             }
             LoopPagerAction.CANCEL_BANNER -> {
                 bannerJob?.cancel()
                 bannerJob = null
-                showToast("取消Banner轮播交互")
+                "取消Banner轮播交互"
             }
         }
+        window.decorView.snackbar().setText(text).show()
     }
 
     private enum class LoopPagerAction(val text: String) {

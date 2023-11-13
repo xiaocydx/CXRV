@@ -18,7 +18,7 @@ import com.xiaocydx.sample.databinding.ItemMenuBinding
 import com.xiaocydx.sample.dp
 import com.xiaocydx.sample.liststate.MenuAction.NORMAL
 import com.xiaocydx.sample.liststate.MenuAction.PAGING
-import com.xiaocydx.sample.showToast
+import com.xiaocydx.sample.snackbar
 
 /**
  * [ListState]示例代码
@@ -65,7 +65,7 @@ class ListStateActivity : AppCompatActivity() {
             else -> sharedViewModel.submitMenuAction(action)
         }
         binding.root.closeDrawer(binding.rvMenu)
-        showToast(action.text)
+        binding.root.snackbar().setText(action.text).show()
     }
 
     private inline fun <reified T : Fragment> replace() {

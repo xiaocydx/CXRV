@@ -6,10 +6,12 @@ import android.content.res.Resources
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.CheckResult
 import androidx.annotation.Px
 import androidx.core.view.doOnPreDraw
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -74,3 +76,21 @@ suspend fun View.awaitPreDraw() {
 
 @Suppress("FunctionName")
 fun SimpleViewHolder(itemView: View) = object : RecyclerView.ViewHolder(itemView) {}
+
+@CheckResult
+@Suppress("SpellCheckingInspection")
+fun View.snackbar() = Snackbar.make(
+    this, "", Snackbar.LENGTH_SHORT
+).setTextMaxLines(Int.MAX_VALUE).dismissAction()
+
+@CheckResult
+fun Snackbar.short() = setDuration(Snackbar.LENGTH_SHORT)
+
+@CheckResult
+fun Snackbar.long() = setDuration(Snackbar.LENGTH_LONG)
+
+@CheckResult
+fun Snackbar.indefinite() = setDuration(Snackbar.LENGTH_INDEFINITE)
+
+@CheckResult
+fun Snackbar.dismissAction(text: CharSequence = "dismiss") = setAction(text) { dismiss() }

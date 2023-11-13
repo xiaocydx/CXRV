@@ -53,8 +53,9 @@ class FooListAdapterFixed(
      */
     init {
         doOnItemClick { holder, item ->
-            val context = holder.itemView.context
-            context.showToast("doOnItemClick ${fragment.TAG}-${item.name}")
+            holder.itemView.snackbar()
+                .setText("doOnItemClick\n${fragment.TAG}-${item.name}")
+                .show()
         }
     }
 

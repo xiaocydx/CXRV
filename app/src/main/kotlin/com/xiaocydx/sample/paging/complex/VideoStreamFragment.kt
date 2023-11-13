@@ -33,7 +33,7 @@ import com.xiaocydx.sample.launchSafely
 import com.xiaocydx.sample.paging.config.loadStatesFlow
 import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
 import com.xiaocydx.sample.registerOnPageChangeCallback
-import com.xiaocydx.sample.showToast
+import com.xiaocydx.sample.snackbar
 import com.xiaocydx.sample.transition.transform.SystemBarsContainer
 import com.xiaocydx.sample.transition.transform.TransformReceiver
 import com.xiaocydx.sample.transition.transform.doOnEnd
@@ -100,9 +100,11 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
                 requestManager.load(it.coverUrl)
                     .centerCrop().into(ivCover)
             }
-            doOnLongItemClick { _, _ ->
+            doOnLongItemClick { holder, _ ->
                 binding.viewPager2.currentItem = 0
-                showToast("长按平滑滚动至首位")
+                holder.itemView.snackbar()
+                    .setText("长按平滑滚动至首位")
+                    .show()
                 false
             }
         }

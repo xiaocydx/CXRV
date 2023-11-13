@@ -41,24 +41,24 @@ class ViewTypeDelegateScenes : ItemClickScenes() {
 
     private fun Sub.setup(dNum: Int, delegate: BindingDelegate<TextItem, *>) {
         delegate.doOnItemClick { holder, item ->
-            toast(dNum, "点击", "itemView", holder, item)
+            show(dNum, "点击", "itemView", holder, item)
         }
         delegate.doOnLongItemClick { holder, item ->
-            toast(dNum, "长按", "itemView", holder, item)
+            show(dNum, "长按", "itemView", holder, item)
             true
         }
 
         delegate.doOnItemClick(target = { targetView }) { holder, item ->
-            toast(dNum, "点击", "targetView", holder, item)
+            show(dNum, "点击", "targetView", holder, item)
         }
         delegate.doOnLongItemClick(target = { targetView }) { holder, item ->
-            toast(dNum, "长按", "targetView", holder, item)
+            show(dNum, "长按", "targetView", holder, item)
             true
         }
     }
 
-    private fun Sub.toast(dNum: Int, action: String, view: String, holder: ViewHolder, item: TextItem) {
-        toast("$text\n" +
+    private fun Sub.show(dNum: Int, action: String, view: String, holder: ViewHolder, item: TextItem) {
+        show("$text\n" +
                 "$action $view\n" +
                 "item.text = ${item.text}\n" +
                 "viewTypeDelegate = Delegate$dNum\n" +

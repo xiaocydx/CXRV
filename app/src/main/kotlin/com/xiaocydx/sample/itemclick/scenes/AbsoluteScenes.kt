@@ -22,17 +22,17 @@ class AbsoluteScenes : ItemClickScenes() {
     @Suppress("UNUSED_ANONYMOUS_PARAMETER")
     override fun setup(rv: RecyclerView, sub1: Sub, sub2: Sub) {
         rv.doOnItemClick { holder, position ->
-            rv.toast("点击", position)
+            rv.show("点击", position)
         }.autoDispose()
 
         rv.doOnLongItemClick { holder, position ->
-            rv.toast("长按", position)
+            rv.show("长按", position)
             true
         }.autoDispose()
     }
 
-    private fun RecyclerView.toast(action: String, position: Int) {
-        toast("$text\n" +
+    private fun RecyclerView.show(action: String, position: Int) {
+        show("$text\n" +
                 "$action itemView\n" +
                 "absoluteAdapterPosition = $position")
     }

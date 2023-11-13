@@ -47,8 +47,9 @@ class FooListAdapterError(
         val holder = FooViewHolder(itemView)
         Log.e(fragment.TAG, "onCreateView：${System.currentTimeMillis()}")
         itemView.setOnClickListener {
-            val context = holder.itemView.context
-            context.showToast("setOnClickListener ${fragment.TAG}-${holder.item.name}")
+            holder.itemView.snackbar()
+                .setText("setOnClickListener\n${fragment.TAG}-${holder.item.name}")
+                .show()
         }
         return holder
     }

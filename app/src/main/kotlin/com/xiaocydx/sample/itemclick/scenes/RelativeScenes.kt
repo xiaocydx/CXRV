@@ -29,24 +29,24 @@ class RelativeScenes : ItemClickScenes() {
     @Suppress("UNUSED_ANONYMOUS_PARAMETER")
     private fun Sub.setup(rv: RecyclerView) {
         rv.doOnItemClick(listAdapter) { holder, position ->
-            toast("点击", "itemView", position, getItem(position))
+            show("点击", "itemView", position, getItem(position))
         }.autoDispose()
         rv.doOnLongItemClick(listAdapter) { holder, position ->
-            toast("长按", "itemView", position, getItem(position))
+            show("长按", "itemView", position, getItem(position))
             true
         }.autoDispose()
 
         rv.doOnItemClick(listAdapter, target = { targetView }) { holder, position ->
-            toast("点击", "targetView", position, getItem(position))
+            show("点击", "targetView", position, getItem(position))
         }.autoDispose()
         rv.doOnLongItemClick(listAdapter, target = { targetView }) { holder, position ->
-            toast("长按", "targetView", position, getItem(position))
+            show("长按", "targetView", position, getItem(position))
             true
         }.autoDispose()
     }
 
-    private fun Sub.toast(action: String, view: String, position: Int, item: TextItem) {
-        toast("$text\n" +
+    private fun Sub.show(action: String, view: String, position: Int, item: TextItem) {
+        show("$text\n" +
                 "$action $view\n" +
                 "item.text = ${item.text}\n" +
                 "bindingAdapter = ListAdapter${num}\n" +

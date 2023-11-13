@@ -34,24 +34,24 @@ class ListAdapterScenes : ItemClickScenes() {
 
     private fun Sub.setup() {
         listAdapter.doOnItemClick { holder, item ->
-            toast("点击", "itemView", holder, item)
+            show("点击", "itemView", holder, item)
         }
         listAdapter.doOnLongItemClick { holder, item ->
-            toast("长按", "itemView", holder, item)
+            show("长按", "itemView", holder, item)
             true
         }
 
         listAdapter.doOnItemClick(target = { targetView }) { holder, item ->
-            toast("点击", "targetView", holder, item)
+            show("点击", "targetView", holder, item)
         }
         listAdapter.doOnLongItemClick(target = { targetView }) { holder, item ->
-            toast("长按", "targetView", holder, item)
+            show("长按", "targetView", holder, item)
             true
         }
     }
 
-    private fun Sub.toast(action: String, view: String, holder: ViewHolder, item: TextItem) {
-        toast("$text\n" +
+    private fun Sub.show(action: String, view: String, holder: ViewHolder, item: TextItem) {
+        show("$text\n" +
                 "$action $view\n" +
                 "item.text = ${item.text}\n" +
                 "bindingAdapter = ListAdapter${num}\n" +

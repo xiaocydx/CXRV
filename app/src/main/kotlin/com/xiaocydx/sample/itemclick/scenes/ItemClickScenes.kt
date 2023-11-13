@@ -1,7 +1,6 @@
 package com.xiaocydx.sample.itemclick.scenes
 
 import android.view.View
-import android.widget.Toast
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
@@ -16,7 +15,8 @@ import com.xiaocydx.sample.extensions.TextItem
 import com.xiaocydx.sample.extensions.TextType1Delegate
 import com.xiaocydx.sample.extensions.TextType2Delegate
 import com.xiaocydx.sample.extensions.initMultiTypeTextItems
-import com.xiaocydx.sample.showToast
+import com.xiaocydx.sample.indefinite
+import com.xiaocydx.sample.snackbar
 
 /**
  * @author xcc
@@ -46,8 +46,8 @@ sealed class ItemClickScenes {
         disposable += this
     }
 
-    protected fun RecyclerView.toast(content: String) {
-        context.showToast(content, Toast.LENGTH_LONG)
+    protected fun RecyclerView.show(content: String) {
+        snackbar().setText(content).indefinite().show()
     }
 
     protected val ViewHolder.targetView: View?
@@ -69,8 +69,8 @@ sealed class ItemClickScenes {
             register(delegate2)
         }.initMultiTypeTextItems()
 
-        fun toast(content: String) {
-            listAdapter.recyclerView?.toast(content)
+        fun show(content: String) {
+            listAdapter.recyclerView?.show(content)
         }
     }
 }
