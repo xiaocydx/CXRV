@@ -2,16 +2,12 @@ package com.xiaocydx.sample.itemclick
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
-import com.xiaocydx.cxrv.binding.bindingAdapter
-import com.xiaocydx.cxrv.divider.Edge
-import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.*
-import com.xiaocydx.sample.databinding.ActivityItemClickBinding
-import com.xiaocydx.sample.databinding.ItemButtonBinding
-import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.databinding.ActionContentBinding
+import com.xiaocydx.sample.extensions.initActionList
 import com.xiaocydx.sample.itemclick.scenes.*
+import com.xiaocydx.sample.snackbar
 
 /**
  * ItemClick示例代码
@@ -26,27 +22,21 @@ class ItemClickActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
-    private fun contentView() = ActivityItemClickBinding
+    private fun contentView() = ActionContentBinding
         .inflate(layoutInflater).apply {
-            rvClick.linear()
+            rvContent.linear()
             val scenesList = ItemClickScenesList()
-            var disposable = scenesList.first().apply(rvClick)
-            rvScenes
-                .linear(HORIZONTAL)
-                .divider(10.dp, 10.dp) {
-                    edge(Edge.all())
+            var disposable = scenesList.first().apply(rvContent)
+            rvAction.initActionList<ItemClickScenes> {
+                submitList(scenesList)
+                doOnItemClick { holder, item ->
+                    disposable.dispose()
+                    disposable = item.apply(rvContent)
+                    holder.itemView.snackbar()
+                        .setText("切换为${item.text}")
+                        .show()
                 }
-                .adapter(bindingAdapter(
-                    uniqueId = ItemClickScenes::text,
-                    inflate = ItemButtonBinding::inflate
-                ) {
-                    submitList(scenesList)
-                    doOnItemClick { _, item ->
-                        disposable.dispose()
-                        disposable = item.apply(rvClick)
-                    }
-                    onBindView { root.text = it.text }
-                })
+            }
         }.root
 
     /**

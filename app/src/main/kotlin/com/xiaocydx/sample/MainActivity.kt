@@ -57,10 +57,10 @@ class MainActivity : AppCompatActivity() {
         })
 
     private fun startActionList() = listOf(
-        "item点击、长按示例" to ItemClickActivity::class,
-        "item拖动、侧滑示例" to ItemTouchActivity::class,
-        "item单选、多选示例" to ItemSelectActivity::class,
-        "item多类型示例" to MultiTypeActivity::class,
+        "Item点击、长按示例" to ItemClickActivity::class,
+        "Item拖动、侧滑示例" to ItemTouchActivity::class,
+        "Item单选、多选示例" to ItemSelectActivity::class,
+        "MultiType示例" to MultiTypeActivity::class,
         "Payload更新示例" to PayloadActivity::class,
         "HeaderFooter示例" to HeaderFooterActivity::class,
         "Divider示例" to DividerActivity::class,

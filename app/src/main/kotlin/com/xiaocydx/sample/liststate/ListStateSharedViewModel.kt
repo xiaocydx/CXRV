@@ -1,6 +1,7 @@
 package com.xiaocydx.sample.liststate
 
 import androidx.lifecycle.ViewModel
+import com.xiaocydx.sample.extensions.Menu
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -22,7 +23,7 @@ class ListStateSharedViewModel : ViewModel() {
     }
 }
 
-enum class MenuAction(val text: String) {
+enum class MenuAction(override val text: String): Menu {
     NORMAL("普通列表"),
     PAGING("分页列表"),
     REFRESH("刷新"),

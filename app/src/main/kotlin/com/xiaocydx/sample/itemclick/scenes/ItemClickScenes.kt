@@ -11,6 +11,7 @@ import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
 import com.xiaocydx.sample.databinding.ItemTextType1Binding
 import com.xiaocydx.sample.databinding.ItemTextType2Binding
+import com.xiaocydx.sample.extensions.Action
 import com.xiaocydx.sample.extensions.TextItem
 import com.xiaocydx.sample.extensions.TextType1Delegate
 import com.xiaocydx.sample.extensions.TextType2Delegate
@@ -22,7 +23,7 @@ import com.xiaocydx.sample.snackbar
  * @author xcc
  * @date 2023/3/25
  */
-sealed class ItemClickScenes {
+sealed class ItemClickScenes : Action {
     private var disposable = emptyDisposable()
     private val sub1 = Sub(num = 1)
     private val sub2 = Sub(num = 2)
@@ -31,7 +32,8 @@ sealed class ItemClickScenes {
             .setIsolateViewTypes(false).build(),
         sub1.listAdapter, sub2.listAdapter
     )
-    val text = javaClass.simpleName ?: ""
+    override val text: String
+        get() = javaClass.simpleName ?: ""
 
     fun apply(rv: RecyclerView): Disposable {
         disposable = emptyDisposable()

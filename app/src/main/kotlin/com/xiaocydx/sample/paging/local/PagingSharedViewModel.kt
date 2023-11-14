@@ -1,6 +1,7 @@
 package com.xiaocydx.sample.paging.local
 
 import androidx.lifecycle.ViewModel
+import com.xiaocydx.sample.extensions.Menu
 import com.xiaocydx.sample.foo.FooListViewModel
 import com.xiaocydx.sample.viewpager2.shared.RetainedViewModels
 import com.xiaocydx.sample.viewpager2.shared.getOrPut
@@ -30,7 +31,7 @@ class PagingSharedViewModel : ViewModel() {
     }
 }
 
-enum class MenuAction(val text: String) {
+enum class MenuAction(override val text: String): Menu {
     LINEAR("Linear"),
     GIRD("Grid"),
     STAGGERED("Staggered"),

@@ -2,23 +2,19 @@ package com.xiaocydx.sample.transition.enter
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.xiaocydx.cxrv.binding.bindingAdapter
-import com.xiaocydx.cxrv.divider.Edge
-import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
-import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
-import com.xiaocydx.sample.databinding.ActivityEnterTransitionBinding
-import com.xiaocydx.sample.databinding.ItemButtonBinding
-import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.databinding.ActionContainerBinding
+import com.xiaocydx.sample.extensions.Action
+import com.xiaocydx.sample.extensions.initActionList
 import com.xiaocydx.sample.transition.enter.EnterTransitionActivity.Companion.CUSTOM_ANIMATION
+import kotlin.reflect.KClass
 
 /**
  * 对页面导航场景而言，Fragment过渡动画卡顿的主要原因是动画运行期间，
@@ -53,43 +49,22 @@ class EnterTransitionActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
-    private fun contentView() = ActivityEnterTransitionBinding
-        .inflate(layoutInflater).apply {
-            rvAction
-                .linear(HORIZONTAL)
-                .divider(10.dp, 10.dp) {
-                    edge(Edge.all())
-                }
-                .adapter(bindingAdapter(
-                    uniqueId = TransitionAction::ordinal,
-                    inflate = ItemButtonBinding::inflate
-                ) {
-                    submitList(TransitionAction.values().toList())
-                    doOnSimpleItemClick(::performTransitionAction)
-                    onBindView { root.text = it.text }
-                })
+    private fun contentView() = ActionContainerBinding
+        .inflate(layoutInflater).initActionList {
+            submitList(TransitionAction.values().toList())
+            doOnSimpleItemClick(::performTransitionAction)
         }.root
 
     private fun performTransitionAction(action: TransitionAction) {
-        when (action) {
-            TransitionAction.JANK -> addFragment<JankFragment>()
-            TransitionAction.PREPARE -> addFragment<PrepareFragment>()
-            TransitionAction.WAIT_END -> addFragment<WaitEndFragment>()
-            TransitionAction.NOT_WAIT_END -> addFragment<NotWaitEndFragment>()
-        }
-    }
-
-    private inline fun <reified T : TransitionFragment> addFragment() {
-        val clazz = T::class.java
         val args = TransitionFragment.createArgs(CUSTOM_ANIMATION)
         supportFragmentManager.commit {
             setReorderingAllowed(true)
             addToBackStack(null)
             if (CUSTOM_ANIMATION) {
                 setCustomAnimations()
-                replace(R.id.container, clazz, args)
+                replace(R.id.container, action.clazz.java, args)
             } else {
-                add(R.id.container, clazz, args)
+                add(R.id.container, action.clazz.java, args)
             }
         }
     }
@@ -99,15 +74,18 @@ class EnterTransitionActivity : AppCompatActivity() {
             /* enter */ R.anim.slide_in,
             /* exit */ R.anim.fade_out,
             /* popEnter */ R.anim.fade_in,
-            /* popExit */  R.anim.slide_out
+            /* popExit */ R.anim.slide_out
         )
     }
 
-    private enum class TransitionAction(val text: String) {
-        JANK("Jank"),
-        PREPARE("Prepare"),
-        WAIT_END("WaitEnd"),
-        NOT_WAIT_END(" NotWaitEnd")
+    private enum class TransitionAction(
+        override val text: String,
+        val clazz: KClass<out Fragment>
+    ) : Action {
+        JANK("Jank", JankFragment::class),
+        PREPARE("Prepare", PrepareFragment::class),
+        WAIT_END("WaitEnd", WaitEndFragment::class),
+        NOT_WAIT_END(" NotWaitEnd", NotWaitEndFragment::class)
     }
 
     private companion object {

@@ -4,16 +4,10 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
-import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.viewpager2.widget.MarginPageTransformer
-import com.xiaocydx.cxrv.binding.bindingAdapter
-import com.xiaocydx.cxrv.divider.Edge
-import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
-import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.doOnListChanged
-import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.listCollector
 import com.xiaocydx.cxrv.list.onEach
 import com.xiaocydx.cxrv.list.submitList
@@ -21,8 +15,9 @@ import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.cxrv.viewpager2.loop.setPageTransformer
 import com.xiaocydx.sample.databinding.ActivityLoopPagerBinding
-import com.xiaocydx.sample.databinding.ItemButtonBinding
 import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.extensions.Action
+import com.xiaocydx.sample.extensions.initActionList
 import com.xiaocydx.sample.launchRepeatOnLifecycle
 import com.xiaocydx.sample.snackbar
 import kotlinx.coroutines.Job
@@ -67,19 +62,10 @@ class LoopPagerActivity : AppCompatActivity() {
             setPageTransformer(ScaleInTransformer(), MarginPageTransformer(10.dp))
         }
 
-        rvAction
-            .linear(HORIZONTAL)
-            .divider(10.dp, 10.dp) {
-                edge(Edge.all())
-            }
-            .adapter(bindingAdapter(
-                uniqueId = LoopPagerAction::ordinal,
-                inflate = ItemButtonBinding::inflate
-            ) {
-                submitList(LoopPagerAction.values().toList())
-                doOnSimpleItemClick(::performLoopPagerAction)
-                onBindView { root.text = it.text }
-            })
+        rvAction.initActionList {
+            submitList(LoopPagerAction.values().toList())
+            doOnSimpleItemClick(::performLoopPagerAction)
+        }
     }
 
     private fun ActivityLoopPagerBinding.initCollect() = apply {
@@ -126,7 +112,7 @@ class LoopPagerActivity : AppCompatActivity() {
         window.decorView.snackbar().setText(text).show()
     }
 
-    private enum class LoopPagerAction(val text: String) {
+    private enum class LoopPagerAction(override val text: String) : Action {
         REFRESH("Refresh"),
         APPEND("Append"),
         SCROLL("Scroll"),

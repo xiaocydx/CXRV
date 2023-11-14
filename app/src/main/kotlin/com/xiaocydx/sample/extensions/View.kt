@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import androidx.annotation.CheckResult
 import androidx.annotation.Px
 import androidx.core.view.doOnPreDraw
+import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.snackbar.Snackbar
@@ -44,7 +45,15 @@ fun <V : View> V.layoutParams(
     height: Int,
     block: ViewGroup.MarginLayoutParams.() -> Unit = {}
 ): V = apply {
-    layoutParams = ViewGroup.MarginLayoutParams(width, height).apply(block)
+    if (layoutParams != null) {
+        updateLayoutParams {
+            this.width = width
+            this.height = height
+            (this as? ViewGroup.MarginLayoutParams)?.block()
+        }
+    } else {
+        layoutParams = ViewGroup.MarginLayoutParams(width, height).apply(block)
+    }
 }
 
 inline fun View.onClick(crossinline block: () -> Unit) {

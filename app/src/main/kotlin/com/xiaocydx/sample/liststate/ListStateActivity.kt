@@ -5,20 +5,18 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
-import com.xiaocydx.cxrv.binding.bindingAdapter
-import com.xiaocydx.cxrv.divider.divider
+import androidx.lifecycle.lifecycleScope
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.fixedSize
-import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
-import com.xiaocydx.sample.databinding.ActivityMenuBinding
-import com.xiaocydx.sample.databinding.ItemMenuBinding
-import com.xiaocydx.sample.dp
+import com.xiaocydx.sample.R
+import com.xiaocydx.sample.databinding.MenuContainerBinding
+import com.xiaocydx.sample.extensions.initMenuList
 import com.xiaocydx.sample.liststate.MenuAction.NORMAL
 import com.xiaocydx.sample.liststate.MenuAction.PAGING
 import com.xiaocydx.sample.snackbar
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 /**
  * [ListState]示例代码
@@ -32,43 +30,34 @@ import com.xiaocydx.sample.snackbar
  */
 class ListStateActivity : AppCompatActivity() {
     private val sharedViewModel: ListStateSharedViewModel by viewModels()
-    private lateinit var binding: ActivityMenuBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMenuBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        initMenuDrawer()
+        setContentView(contentView())
         if (savedInstanceState == null) replace<NormalListStateFragment>()
     }
 
-    private fun initMenuDrawer() {
-        binding.rvMenu
-            .linear().fixedSize()
-            .divider(height = 0.5f.dp) {
-                color(0xFFD5D5D5.toInt())
-            }
-            .adapter(bindingAdapter(
-                uniqueId = MenuAction::text,
-                inflate = ItemMenuBinding::inflate
-            ) {
-                submitList(MenuAction.values().toList())
-                doOnSimpleItemClick(::performMenuAction)
-                onBindView { root.text = it.text }
-            })
-    }
+    private fun contentView() = MenuContainerBinding
+        .inflate(layoutInflater).initMenuList {
+            submitList(MenuAction.values().toList())
+            doOnSimpleItemClick(::performMenuAction)
+        }.apply {
+            sharedViewModel.menuAction.onEach {
+                root.closeDrawer(rvMenu)
+                root.snackbar().setText(it.text).show()
+            }.launchIn(lifecycleScope)
+        }.root
 
     private fun performMenuAction(action: MenuAction) {
         when (action) {
             NORMAL -> replace<NormalListStateFragment>()
             PAGING -> replace<PagingListStateFragment>()
-            else -> sharedViewModel.submitMenuAction(action)
+            else -> {}
         }
-        binding.root.closeDrawer(binding.rvMenu)
-        binding.root.snackbar().setText(action.text).show()
+        sharedViewModel.submitMenuAction(action)
     }
 
     private inline fun <reified T : Fragment> replace() {
-        supportFragmentManager.commit { replace(binding.container.id, T::class.java, null) }
+        supportFragmentManager.commit { replace(R.id.container, T::class.java, null) }
     }
 }
