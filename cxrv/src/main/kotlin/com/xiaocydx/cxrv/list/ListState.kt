@@ -78,7 +78,8 @@ import kotlinx.coroutines.flow.callbackFlow
  * @date 2022/2/17
  */
 class ListState<T : Any> : ListOwner<T> {
-    private var listeners = InlineList<(UpdateOp<T>) -> Unit>()
+    private var succeedListeners = InlineList<(UpdateOp<T>) -> Unit>()
+    private var updatedListeners = InlineList<(UpdateOp<T>) -> Unit>()
     private val sourceList: ArrayList<T> = arrayListOf()
     override val currentList: List<T> = sourceList.toUnmodifiableList()
     internal var version: Int = 0
@@ -103,21 +104,34 @@ class ListState<T : Any> : ListOwner<T> {
         }
         if (succeed) {
             version++
-            if (dispatch) listeners.reverseAccessEach { it(op) }
+            succeedListeners.reverseAccessEach { it(op) }
+            if (dispatch) updatedListeners.reverseAccessEach { it(op) }
         }
         return if (succeed) SuccessResult else FailureResult
     }
 
     @MainThread
+    internal fun addSucceedListeners(listener: (UpdateOp<T>) -> Unit) {
+        assertMainThread()
+        succeedListeners += listener
+    }
+
+    @MainThread
+    internal fun removeSucceedListeners(listener: (UpdateOp<T>) -> Unit) {
+        assertMainThread()
+        succeedListeners -= listener
+    }
+
+    @MainThread
     internal fun addUpdatedListener(listener: (UpdateOp<T>) -> Unit) {
         assertMainThread()
-        listeners += listener
+        updatedListeners += listener
     }
 
     @MainThread
     internal fun removeUpdatedListener(listener: (UpdateOp<T>) -> Unit) {
         assertMainThread()
-        listeners -= listener
+        updatedListeners -= listener
     }
 
     @MainThread
