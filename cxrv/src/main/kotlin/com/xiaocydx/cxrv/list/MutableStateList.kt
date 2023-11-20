@@ -16,73 +16,62 @@
 
 package com.xiaocydx.cxrv.list
 
-import androidx.annotation.VisibleForTesting
+import androidx.annotation.MainThread
 
 /**
  * @author xcc
  * @date 2023/11/20
  */
-class MutableStateList<T : Any>
-@VisibleForTesting
-internal constructor(
-    @PublishedApi
-    internal val state: ListState<T>
-) : MutableList<T> {
-    internal var modification = 0
+@MainThread
+class MutableStateList<T : Any> constructor() : MutableList<T> {
+    @JvmField internal var modification = 0
+    @PublishedApi internal val state: ListState<T> = ListState()
 
     override val size: Int
         get() = state.size
 
-    constructor(elements: Collection<T> = emptyList()) : this(ListState()) {
-        if (elements.isNotEmpty()) submitList(elements.toList())
+    constructor(elements: Collection<T> = emptyList()) : this() {
+        if (elements.isNotEmpty()) addAll(0, elements)
     }
 
     init {
         state.addSucceedListeners { modification++ }
     }
 
-    fun asFlow() = state.asFlow()
-
-    fun submitList(newList: List<T>): Boolean {
-        return state.submitList(newList).getOrThrow()
-    }
-
-    inline fun submitChange(change: MutableList<T>.() -> Unit): Boolean {
-        return state.submitChange(change).getOrThrow()
-    }
-
-    inline fun submitTransform(transform: MutableList<T>.() -> List<T>): Boolean {
-        return state.submitTransform(transform).getOrThrow()
-    }
-
-    fun moveAt(fromIndex: Int, toIndex: Int): Boolean {
-        return state.moveItem(fromIndex, toIndex).getOrThrow()
-    }
-
     override fun isEmpty() = size == 0
 
     override fun get(index: Int): T {
+        validateRange(index, size)
         return state.getItem(index)
     }
 
     override fun add(element: T): Boolean {
-        return state.addItem(size, element).getOrThrow()
+        add(size, element)
+        return true
     }
 
     override fun add(index: Int, element: T) {
+        validateRange(index, size, closed = true)
         state.addItem(index, element)
     }
 
     override fun addAll(elements: Collection<T>) = addAll(size, elements)
 
     override fun addAll(index: Int, elements: Collection<T>): Boolean {
+        validateRange(index, size, closed = true)
         return state.addItems(index, elements.toList()).getOrThrow()
     }
 
     override fun set(index: Int, element: T): T {
+        validateRange(index, size)
         val previous = get(index)
         state.setItem(index, element)
         return previous
+    }
+
+    fun setAll(index: Int, elements: Collection<T>): Boolean {
+        validateRange(index, size)
+        return state.setItems(index, elements.toList()).getOrThrow()
     }
 
     override fun remove(element: T): Boolean {
@@ -95,24 +84,33 @@ internal constructor(
         return removed
     }
 
+    inline fun removeIf(predicate: (T) -> Boolean): Boolean {
+        return indexOfFirst(predicate).takeIf { it != -1 }?.also(::removeAt) != null
+    }
+
     fun removeAll(index: Int, count: Int): Boolean {
+        validateRange(index, size)
         return state.removeItems(index, count).getOrThrow()
     }
 
-    override fun removeAll(elements: Collection<T>) = submitChange { removeAll(elements) }
-
-    override fun retainAll(elements: Collection<T>) = submitChange { retainAll(elements) }
-
-    internal fun removeAllInRange(elements: Collection<T>, start: Int, end: Int): Int {
-        val previousSize = size
-        state.submitChange { subList(start, end).removeAll(elements) }
-        return previousSize - size
+    override fun removeAll(elements: Collection<T>): Boolean {
+        var removed = false
+        for (element in elements) {
+            removed = remove(element) || removed
+        }
+        return removed
     }
 
-    internal fun retainAllInRange(elements: Collection<T>, start: Int, end: Int): Int {
-        val previousSize = size
-        state.submitChange { subList(start, end).retainAll(elements) }
-        return previousSize - size
+    override fun retainAll(elements: Collection<T>): Boolean {
+        var removed = false
+        for (index in indices.reversed()) {
+            val element = get(index)
+            if (!elements.contains(element)) {
+                removeAt(index)
+                removed = true
+            }
+        }
+        return removed
     }
 
     override fun clear() {
@@ -127,12 +125,12 @@ internal constructor(
         return state.currentList.indexOf(element)
     }
 
-    override fun containsAll(elements: Collection<T>): Boolean {
-        return state.currentList.containsAll(elements)
-    }
-
     override fun contains(element: T): Boolean {
         return state.currentList.contains(element)
+    }
+
+    override fun containsAll(elements: Collection<T>): Boolean {
+        return state.currentList.containsAll(elements)
     }
 
     override fun iterator(): MutableIterator<T> = listIterator()
@@ -154,6 +152,28 @@ internal constructor(
     internal fun UpdateResult.getOrThrow() = requireNotNull(get())
 }
 
+fun <T : Any> MutableStateList<T>.asStateFlow() = state.asFlow()
+
+fun <T : Any> MutableStateList<T>.toReadOnlyList() = state.currentList
+
+fun <T : Any> MutableStateList<T>.submitList(newList: List<T>): Boolean {
+    return state.submitList(newList).getOrThrow()
+}
+
+inline fun <T : Any> MutableStateList<T>.submitChange(
+    change: MutableList<T>.() -> Unit
+): Boolean = state.submitChange(change).getOrThrow()
+
+inline fun <T : Any> MutableStateList<T>.submitTransform(
+    transform: MutableList<T>.() -> List<T>
+): Boolean = state.submitTransform(transform).getOrThrow()
+
+fun MutableStateList<*>.moveAt(fromIndex: Int, toIndex: Int): Boolean {
+    validateRange(fromIndex, size)
+    validateRange(toIndex, size)
+    return state.moveItem(fromIndex, toIndex).getOrThrow()
+}
+
 private class MutableStateListIterator<T : Any>(
     private val list: MutableStateList<T>,
     offset: Int
@@ -166,6 +186,7 @@ private class MutableStateListIterator<T : Any>(
     override fun next(): T {
         validateModification()
         val newIndex = index + 1
+        validateRange(newIndex, list.size)
         return list[newIndex].also { index = newIndex }
     }
 
@@ -175,6 +196,7 @@ private class MutableStateListIterator<T : Any>(
 
     override fun previous(): T {
         validateModification()
+        validateRange(index, list.size)
         return list[index].also { index-- }
     }
 
@@ -201,9 +223,8 @@ private class MutableStateListIterator<T : Any>(
     }
 
     private fun validateModification() {
-        if (list.modification != modification) {
-            throw ConcurrentModificationException()
-        }
+        if (list.modification == modification) return
+        throw ConcurrentModificationException()
     }
 }
 
@@ -221,6 +242,7 @@ private class MutableStateSubList<T : Any>(
 
     override fun get(index: Int): T {
         validateModification()
+        validateRange(index, size)
         return parentList[offset + index]
     }
 
@@ -231,6 +253,7 @@ private class MutableStateSubList<T : Any>(
 
     override fun add(index: Int, element: T) {
         validateModification()
+        validateRange(index, size, closed = true)
         parentList.add(offset + index, element)
         size++
         modification = parentList.modification
@@ -240,6 +263,7 @@ private class MutableStateSubList<T : Any>(
 
     override fun addAll(index: Int, elements: Collection<T>): Boolean {
         validateModification()
+        validateRange(index, size, closed = true)
         val result = parentList.addAll(index + offset, elements)
         if (result) size += elements.size
         modification = parentList.modification
@@ -248,6 +272,7 @@ private class MutableStateSubList<T : Any>(
 
     override fun set(index: Int, element: T): T {
         validateModification()
+        validateRange(index, size)
         val result = parentList.set(index + offset, element)
         modification = parentList.modification
         return result
@@ -263,6 +288,7 @@ private class MutableStateSubList<T : Any>(
 
     override fun removeAt(index: Int): T {
         validateModification()
+        validateRange(index, size)
         val removed = parentList.removeAt(offset + index)
         size--
         modification = parentList.modification
@@ -271,18 +297,24 @@ private class MutableStateSubList<T : Any>(
 
     override fun removeAll(elements: Collection<T>): Boolean {
         validateModification()
-        val removed = parentList.removeAllInRange(elements, offset, offset + size)
-        size -= removed
-        modification = parentList.modification
-        return removed > 0
+        var removed = false
+        for (element in elements) {
+            removed = remove(element) || removed
+        }
+        return removed
     }
 
     override fun retainAll(elements: Collection<T>): Boolean {
         validateModification()
-        val removed = parentList.retainAllInRange(elements, offset, offset + size)
-        size -= removed
-        modification = parentList.modification
-        return removed > 0
+        var removed = false
+        for (index in indices.reversed()) {
+            val element = get(index)
+            if (!elements.contains(element)) {
+                removeAt(index)
+                removed = true
+            }
+        }
+        return removed
     }
 
     override fun clear() {
@@ -327,6 +359,7 @@ private class MutableStateSubList<T : Any>(
             override fun nextIndex() = current + 1
             override fun previous(): T {
                 val oldCurrent = current
+                validateRange(oldCurrent, size)
                 current = oldCurrent - 1
                 return this@MutableStateSubList[oldCurrent]
             }
@@ -336,6 +369,7 @@ private class MutableStateSubList<T : Any>(
             override fun hasNext() = current < size - 1
             override fun next(): T {
                 val newCurrent = current + 1
+                validateRange(newCurrent, size)
                 current = newCurrent
                 return this@MutableStateSubList[newCurrent]
             }
@@ -346,18 +380,27 @@ private class MutableStateSubList<T : Any>(
     }
 
     override fun subList(fromIndex: Int, toIndex: Int): MutableList<T> {
-        require(fromIndex in 0..toIndex && toIndex <= size)
         validateModification()
+        require(fromIndex in 0..toIndex && toIndex <= size)
         return MutableStateSubList(parentList, fromIndex + offset, toIndex + offset)
     }
 
     private fun validateModification() {
-        if (parentList.modification != modification) {
-            throw ConcurrentModificationException()
-        }
+        if (parentList.modification == modification) return
+        throw ConcurrentModificationException()
     }
 
     private fun modificationError(): Nothing {
         throw UnsupportedOperationException()
+    }
+}
+
+private fun validateRange(index: Int, size: Int, closed: Boolean = false) {
+    if (!closed) {
+        if (index in 0 until size) return
+        throw IndexOutOfBoundsException("index ($index) is out of bound of [0, $size)")
+    } else {
+        if (index in 0..size) return
+        throw IndexOutOfBoundsException("index ($index) is out of bound of [0, $size]")
     }
 }
