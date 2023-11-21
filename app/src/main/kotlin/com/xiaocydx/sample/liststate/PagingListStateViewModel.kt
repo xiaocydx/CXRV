@@ -3,11 +3,7 @@ package com.xiaocydx.sample.liststate
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.clear
-import com.xiaocydx.cxrv.list.insertItem
-import com.xiaocydx.cxrv.list.removeItemAt
-import com.xiaocydx.cxrv.list.size
-import com.xiaocydx.cxrv.list.submitTransform
+import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.paging.PagingConfig
 import com.xiaocydx.cxrv.paging.storeIn
 import com.xiaocydx.sample.foo.Foo
@@ -24,31 +20,34 @@ class PagingListStateViewModel(
         FooSource(maxKey = 5, resultType = ResultType.Normal)
     )
 ) : ViewModel() {
-    private val state = ListState<Foo>()
+    /**
+     * [ListState]降级为内部实现，[MutableStateList]替代[ListState]
+     */
+    private val list = MutableStateList<Foo>()
     private val pager = repository.getFooPager(initKey = 1, PagingConfig(pageSize = 10))
-    val flow = pager.flow.storeIn(state, viewModelScope)
+    val flow = pager.flow.storeIn(list, viewModelScope)
 
     fun refresh() {
         pager.refresh()
     }
 
     fun insertItem() {
-        state.insertItem(repository.createFoo(state.size, javaClass.simpleName))
+        list.add(0, repository.createFoo(list.size, javaClass.simpleName))
     }
 
     fun removeItem() {
-        state.removeItemAt(0)
+        list.removeFirstOrNull()
     }
 
     fun clearOdd() {
-        state.submitTransform { filter { it.num % 2 == 0 } }
+        list.filter { it.num % 2 == 0 }.let(list::submit)
     }
 
     fun clearEven() {
-        state.submitTransform { filter { it.num % 2 != 0 } }
+        list.filter { it.num % 2 != 0 }.let(list::submit)
     }
 
     fun clearAll() {
-        state.clear()
+        list.clear()
     }
 }

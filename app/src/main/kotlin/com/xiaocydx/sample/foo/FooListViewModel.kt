@@ -4,11 +4,7 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xiaocydx.cxrv.list.ListOwner
-import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.clear
-import com.xiaocydx.cxrv.list.insertItem
-import com.xiaocydx.cxrv.list.removeItemAt
-import com.xiaocydx.cxrv.list.size
+import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.paging.LoadType
 import com.xiaocydx.cxrv.paging.Pager
 import com.xiaocydx.cxrv.paging.PagingConfig
@@ -49,7 +45,7 @@ class FooListViewModel(
      *
      * 保存列表数据，跟视图控制器建立基于[ListOwner]的双向通信。
      */
-    private val state = ListState<Foo>()
+    private val list = MutableStateList<Foo>()
 
     /**
      * 保存视图id，视图控制器重建后恢复滚动位置
@@ -66,7 +62,7 @@ class FooListViewModel(
      * 分页数据流
      *
      * 1. [flowMap]的转换逻辑可以抽取到业务层中。
-     * 2. [storeIn]将转换后的`Flow<PagingData<Foo>>`和[state]结合。
+     * 2. [storeIn]将转换后的`Flow<PagingData<Foo>>`和[list]结合。
      * 3. [storeIn]传入[viewModelScope]，表示要将分页数据流转换为热流，
      * 在视图控制器处于非活跃/重建期间，上游冷流仍然可以发射数据，
      * 在视图控制器恢复活跃/重建后，重新收集转换后的热流，完成更新/恢复视图。
@@ -82,22 +78,22 @@ class FooListViewModel(
                 item.copy(name = "${item.name} $suffix")
             }
         }
-        .storeIn(state, viewModelScope)
+        .storeIn(list, viewModelScope)
 
     fun refresh() {
         pager.refresh()
     }
 
     fun insertItem() {
-        state.insertItem(createFoo(state.size + 1))
+        list.add(0, createFoo(list.size + 1))
     }
 
     fun removeItem() {
-        state.removeItemAt(0)
+        list.removeFirstOrNull()
     }
 
     fun clearAll() {
-        state.clear()
+        list.clear()
     }
 
     fun createFoo(num: Int): Foo {

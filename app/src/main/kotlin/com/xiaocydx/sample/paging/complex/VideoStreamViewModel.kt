@@ -3,9 +3,7 @@ package com.xiaocydx.sample.paging.complex
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.getItemOrNull
-import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.paging.PagingData
 import com.xiaocydx.cxrv.paging.PagingPrefetch.ItemCount
 import com.xiaocydx.cxrv.paging.appendPrefetch
@@ -23,16 +21,16 @@ class VideoStreamViewModel(
     initialState: VideoStreamInitialState?,
     videoFlow: Flow<PagingData<VideoStreamItem>>
 ) : ViewModel() {
-    private val state = ListState<VideoStreamItem>()
+    private val list = MutableStateList<VideoStreamItem>()
     private val _selectPosition = MutableStateFlow(0)
     val selectPosition = _selectPosition.asStateFlow()
-    val selectTitle = selectPosition.map { state.getItemOrNull(it)?.title ?: "" }
+    val selectTitle = selectPosition.map { list.getOrNull(it)?.title ?: "" }
     val selectId: String
-        get() = state.getItemOrNull(selectPosition.value)?.id ?: ""
+        get() = list.getOrNull(selectPosition.value)?.id ?: ""
 
     init {
         // 先同步初始状态，后收集videoFlow，收集时发射的分页事件会完成状态的同步
-        initialState?.videoList?.let(state::submitList)
+        initialState?.videoList?.let(list::submit)
         initialState?.position?.let(::selectVideo)
     }
 
@@ -41,7 +39,7 @@ class VideoStreamViewModel(
      */
     val videoFlow = videoFlow
         .appendPrefetch(ItemCount(3))
-        .storeIn(state, viewModelScope)
+        .storeIn(list, viewModelScope)
 
     fun selectVideo(position: Int) {
         _selectPosition.value = position

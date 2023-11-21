@@ -2,13 +2,8 @@ package com.xiaocydx.sample.liststate
 
 import androidx.lifecycle.ViewModel
 import com.xiaocydx.cxrv.list.ListState
-import com.xiaocydx.cxrv.list.asFlow
-import com.xiaocydx.cxrv.list.clear
-import com.xiaocydx.cxrv.list.insertItem
-import com.xiaocydx.cxrv.list.removeItemAt
-import com.xiaocydx.cxrv.list.size
-import com.xiaocydx.cxrv.list.submitList
-import com.xiaocydx.cxrv.list.submitTransform
+import com.xiaocydx.cxrv.list.MutableStateList
+import com.xiaocydx.cxrv.list.asStateFlow
 import com.xiaocydx.sample.foo.Foo
 import com.xiaocydx.sample.foo.FooType
 
@@ -17,36 +12,39 @@ import com.xiaocydx.sample.foo.FooType
  * @date 2023/8/17
  */
 class NormalListStateViewModel : ViewModel() {
-    private val state = ListState<Foo>()
+    /**
+     * [ListState]降级为内部实现，[MutableStateList]替代[ListState]
+     */
+    private val list = MutableStateList<Foo>()
 
     init {
         refresh()
     }
 
-    val flow = state.asFlow()
+    val flow = list.asStateFlow()
 
     fun refresh() {
-        state.submitList((1..100).map(::createFoo))
+        list.submit((1..1000).map(::createFoo))
     }
 
     fun insertItem() {
-        state.insertItem(createFoo(state.size + 1))
+        list.add(0, createFoo(list.size + 1))
     }
 
     fun removeItem(position: Int = 0) {
-        state.removeItemAt(position)
+        list.firstOrNull { it.num == 1 }?.let(list::remove)
     }
 
     fun clearOdd() {
-        state.submitTransform { filter { it.num % 2 == 0 } }
+        list.filter { it.num % 2 == 0 }.let(list::submit)
     }
 
     fun clearEven() {
-        state.submitTransform { filter { it.num % 2 != 0 } }
+        list.filter { it.num % 2 != 0 }.let(list::submit)
     }
 
     fun clearAll() {
-        state.clear()
+        list.clear()
     }
 
     private fun createFoo(num: Int): Foo {

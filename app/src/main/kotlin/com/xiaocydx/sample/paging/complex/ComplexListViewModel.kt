@@ -4,7 +4,8 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.xiaocydx.cxrv.list.ListState
+import com.xiaocydx.cxrv.list.MutableStateList
+import com.xiaocydx.cxrv.list.toReadOnlyList
 import com.xiaocydx.cxrv.paging.PagingData
 import com.xiaocydx.cxrv.paging.storeIn
 import com.xiaocydx.sample.transition.transform.TransformSenderKey
@@ -19,12 +20,11 @@ class ComplexListViewModel(
     complexId: TransformSenderKey<String>,
     complexFlow: Flow<PagingData<ComplexItem>>
 ) : ViewModel() {
-    private val state = ListState<ComplexItem>()
+    private val list = MutableStateList<ComplexItem>()
     val rvId = ViewCompat.generateViewId()
-    val complexFlow = complexFlow.storeIn(state, viewModelScope)
-    val complexPosition = complexId.asPosition(state::currentList, ComplexItem::id)
-    val complexList: List<ComplexItem>
-        get() = state.currentList
+    val complexFlow = complexFlow.storeIn(list, viewModelScope)
+    val complexPosition = complexId.asPosition({ list }, ComplexItem::id)
+    val complexList = list.toReadOnlyList()
 
     class Factory(private val sharedViewModel: ComplexSharedViewModel) : ViewModelProvider.Factory {
 
