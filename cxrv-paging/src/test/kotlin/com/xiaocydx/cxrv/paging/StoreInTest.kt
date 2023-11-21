@@ -15,11 +15,13 @@
  */
 
 @file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER", "CANNOT_OVERRIDE_INVISIBLE_MEMBER")
+@file:OptIn(InternalizationApi::class)
 
 package com.xiaocydx.cxrv.paging
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
+import com.xiaocydx.cxrv.internal.InternalizationApi
 import com.xiaocydx.cxrv.list.ListState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope

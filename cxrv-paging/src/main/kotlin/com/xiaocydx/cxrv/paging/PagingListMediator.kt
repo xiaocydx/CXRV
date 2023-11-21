@@ -15,11 +15,13 @@
  */
 
 @file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER", "CANNOT_OVERRIDE_INVISIBLE_MEMBER")
+@file:OptIn(InternalizationApi::class)
 
 package com.xiaocydx.cxrv.paging
 
 import androidx.annotation.CheckResult
 import androidx.annotation.MainThread
+import com.xiaocydx.cxrv.internal.InternalizationApi
 import com.xiaocydx.cxrv.internal.flowOnMain
 import com.xiaocydx.cxrv.list.ListMediator
 import com.xiaocydx.cxrv.list.ListState

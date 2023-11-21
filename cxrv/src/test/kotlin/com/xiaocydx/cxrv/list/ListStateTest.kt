@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalizationApi::class)
+
 package com.xiaocydx.cxrv.list
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
+import com.xiaocydx.cxrv.internal.InternalizationApi
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
