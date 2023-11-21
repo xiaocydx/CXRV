@@ -2,39 +2,29 @@ package com.xiaocydx.sample.transition.enter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.sample.SimpleViewHolder
-import com.xiaocydx.sample.databinding.ItemTransitionContentBinding
-import com.xiaocydx.sample.databinding.ItemTransitionLoadingBinding
+import com.xiaocydx.sample.databinding.ItemContentBinding
+import com.xiaocydx.sample.databinding.ItemLoadingBinding
 
-class LoadingAdapter : ViewAdapter<RecyclerView.ViewHolder>() {
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val view = ItemTransitionLoadingBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false)
-        return SimpleViewHolder(view.root)
-    }
+class LoadingAdapter : ViewAdapter<ViewHolder>() {
 
     fun show() = updateItem(show = true, NeedAnim.NOT_ALL)
 
     fun hide() = updateItem(show = false, NeedAnim.NOT_ALL)
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        val binding = ItemLoadingBinding.inflate(inflater, parent, false)
+        return SimpleViewHolder(binding.root)
+    }
 }
 
-class ContentAdapter : RecyclerView.Adapter<ContentAdapter.Holder>() {
+class ContentAdapter : RecyclerView.Adapter<ViewHolder>() {
     private var itemCount = 0
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
-        val view = ItemTransitionContentBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false)
-        return Holder(view)
-    }
-
-    override fun onBindViewHolder(holder: Holder, position: Int) {
-        holder.binding.root.text = position.toString()
-    }
-
-    override fun getItemCount(): Int = itemCount
 
     fun show() {
         if (itemCount > 0) return
@@ -42,5 +32,15 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.Holder>() {
         notifyItemRangeInserted(0, itemCount)
     }
 
-    class Holder(val binding: ItemTransitionContentBinding) : RecyclerView.ViewHolder(binding.root)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        val binding = ItemContentBinding.inflate(inflater, parent, false)
+        return SimpleViewHolder(binding.root)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        (holder.itemView as? TextView)?.text = position.toString()
+    }
+
+    override fun getItemCount(): Int = itemCount
 }

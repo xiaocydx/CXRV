@@ -58,11 +58,13 @@ class ViewTypeDelegateScenes : ItemClickScenes() {
     }
 
     private fun Sub.show(dNum: Int, action: String, view: String, holder: ViewHolder, item: TextItem) {
-        show("$text\n" +
-                "$action $view\n" +
-                "item.text = ${item.text}\n" +
-                "viewTypeDelegate = Delegate$dNum\n" +
-                "bindingAdapter = ListAdapter${num}\n" +
-                "bindingAdapterPosition = ${holder.bindingAdapterPosition}")
+        show("""
+            |   $text
+            |   $action $view
+            |   item.text = ${item.text}
+            |   viewTypeDelegate = Delegate$dNum
+            |   bindingAdapter = ListAdapter${num}
+            |   bindingAdapterPosition = ${holder.bindingAdapterPosition}
+        """.trimMargin())
     }
 }

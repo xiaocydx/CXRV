@@ -46,10 +46,12 @@ class RelativeScenes : ItemClickScenes() {
     }
 
     private fun Sub.show(action: String, view: String, position: Int, item: TextItem) {
-        show("$text\n" +
-                "$action $view\n" +
-                "item.text = ${item.text}\n" +
-                "bindingAdapter = ListAdapter${num}\n" +
-                "bindingAdapterPosition = $position")
+        show("""
+            |   $text
+            |   $action $view
+            |   item.text = ${item.text}
+            |   bindingAdapter = ListAdapter${num}
+            |   bindingAdapterPosition = $position
+        """.trimMargin())
     }
 }

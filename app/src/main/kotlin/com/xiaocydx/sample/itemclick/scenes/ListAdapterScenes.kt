@@ -51,10 +51,12 @@ class ListAdapterScenes : ItemClickScenes() {
     }
 
     private fun Sub.show(action: String, view: String, holder: ViewHolder, item: TextItem) {
-        show("$text\n" +
-                "$action $view\n" +
-                "item.text = ${item.text}\n" +
-                "bindingAdapter = ListAdapter${num}\n" +
-                "bindingAdapterPosition = ${holder.bindingAdapterPosition}")
+        show("""
+            |   $text
+            |   $action $view
+            |   item.text = ${item.text}
+            |   bindingAdapter = ListAdapter${num}
+            |   bindingAdapterPosition = ${holder.bindingAdapterPosition}
+        """.trimMargin())
     }
 }

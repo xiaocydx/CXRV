@@ -43,11 +43,11 @@ class LoopPagerActivity : AppCompatActivity() {
     private fun ActivityLoopPagerBinding.initView() = apply {
         adapter = ContentListAdapter()
         adapter.doOnItemClick { holder, item ->
-            holder.itemView.snackbar().setText(
-                "item.text = ${item.text}\n" +
-                        "layoutPosition = ${holder.layoutPosition}\n" +
-                        "bindingAdapterPosition = ${holder.bindingAdapterPosition}"
-            ).show()
+            holder.itemView.snackbar().setText("""
+                |   item.text = ${item.text}
+                |   layoutPosition = ${holder.layoutPosition}
+                |   bindingAdapterPosition = ${holder.bindingAdapterPosition}
+            """.trimMargin()).show()
         }
         adapter.doOnListChanged {
             // 列表已更改，在下一帧布局完成后，触发requestTransform()修正间距

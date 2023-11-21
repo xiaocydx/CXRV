@@ -32,8 +32,10 @@ class AbsoluteScenes : ItemClickScenes() {
     }
 
     private fun RecyclerView.show(action: String, position: Int) {
-        show("$text\n" +
-                "$action itemView\n" +
-                "absoluteAdapterPosition = $position")
+        show("""
+            |   $text
+            |   $action itemView
+            |   absoluteAdapterPosition = $position
+        """.trimMargin())
     }
 }
