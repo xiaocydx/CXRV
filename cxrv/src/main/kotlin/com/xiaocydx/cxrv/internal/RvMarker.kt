@@ -35,7 +35,15 @@ internal annotation class RvDslMarker
 )
 @Retention(value = AnnotationRetention.BINARY)
 @Target(CLASS, FUNCTION, TYPEALIAS, PROPERTY)
-annotation class VisibleForInternal
+annotation class InternalApi
+
+@RequiresOptIn(
+    message = "降级为内部API，外部不该调用，不提供兼容性保证",
+    level = RequiresOptIn.Level.WARNING
+)
+@Retention(AnnotationRetention.BINARY)
+@Target(CLASS, FUNCTION, TYPEALIAS, PROPERTY)
+annotation class InternalizationApi
 
 @RequiresOptIn(
     message = "功能处于实验性阶段，将来改动的可能性很大",
@@ -43,4 +51,4 @@ annotation class VisibleForInternal
 )
 @Retention(AnnotationRetention.BINARY)
 @Target(CLASS, FUNCTION, TYPEALIAS, PROPERTY)
-annotation class ExperimentalFeature
+annotation class ExperimentalApi

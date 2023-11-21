@@ -17,6 +17,7 @@
 package com.xiaocydx.cxrv.list
 
 import androidx.annotation.MainThread
+import com.xiaocydx.cxrv.internal.InternalizationApi
 
 /**
  * 列表所有者
@@ -110,8 +111,7 @@ fun ListOwner<*>.isLastItem(position: Int): Boolean {
  * 当知道列表的具体更新操作时，尽量使用[setItem]、[addItem]、[removeItemAt]、[moveItem]等函数更新列表，
  * 因为[submitList]在必要时会进行差异计算，应当在合适的场景使用它，例如列表下拉刷新和页面恢复活跃状态。
  *
- * @param newList 需要是新的列表对象，若传入旧的列表对象，则不会更改。
- * 若[newList]的类型是[SafeMutableList]，则表示可作为内部的可变列表，
+ * @param newList 新的列表对象，若传入旧的列表对象，则不会更改，
  * 当[ListOwner]的实现类是[ListAdapter]时，该函数会进行差异计算。
  * @return 返回的[UpdateResult]，可用于等待更新完成，判断结果是成功还是失败。
  */
@@ -263,7 +263,7 @@ fun ListOwner<*>.clear() = submitList(emptyList())
 @MainThread
 inline fun <T : Any> ListOwner<T>.submitChange(
     change: MutableList<T>.() -> Unit
-): UpdateResult = currentList.toSafeMutableList().apply(change).let(::submitList)
+): UpdateResult = currentList.toMutableList().apply(change).let(::submitList)
 
 /**
  * 提交转换的列表，该函数必须在主线程调用
@@ -280,7 +280,7 @@ inline fun <T : Any> ListOwner<T>.submitChange(
 @MainThread
 inline fun <T : Any> ListOwner<T>.submitTransform(
     transform: MutableList<T>.() -> List<T>
-): UpdateResult = currentList.toSafeMutableList().transform().let(::submitList)
+): UpdateResult = currentList.toMutableList().transform().let(::submitList)
 
 /**
  * 遍历[ListOwner.currentList]，设置[block]返回的第一个不空的item，该函数必须在主线程调用
@@ -314,6 +314,7 @@ inline fun <T : Any> ListOwner<T>.setLastNotNull(block: (item: T) -> T?) {
  * 这是和调用者之间的约定，返回的列表对[ListOwner.submitList]提交后，
  * 不会再被其它地方修改，用于[ListOwner]的实现类减少列表copy次数。
  */
+@InternalizationApi
 fun <T> Collection<T>.toSafeMutableList() = SafeMutableList(this)
 
 /**
@@ -322,6 +323,7 @@ fun <T> Collection<T>.toSafeMutableList() = SafeMutableList(this)
  * 这是和调用者之间的约定，该列表对[ListOwner.submitList]提交后，
  * 不会再被其它地方修改，用于[ListOwner]的实现类减少列表copy次数。
  */
+@InternalizationApi
 open class SafeMutableList<T> : ArrayList<T> {
     constructor() : super()
     constructor(initialCapacity: Int) : super(initialCapacity)

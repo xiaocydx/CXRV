@@ -27,7 +27,7 @@ import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.Scrap
 import com.xiaocydx.cxrv.concat.Concat
-import com.xiaocydx.cxrv.internal.ExperimentalFeature
+import com.xiaocydx.cxrv.internal.ExperimentalApi
 import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 import com.xiaocydx.cxrv.recycle.prepare.PrepareFlow.ScrapInfo
 import kotlinx.coroutines.Dispatchers
@@ -186,7 +186,7 @@ fun PrepareFusible<ViewHolder>.holder(
  * @param provider ViewHolder的提供者，[Adapter.onCreateViewHolder]在工作线程下调用
  */
 @CheckResult
-@ExperimentalFeature
+@ExperimentalApi
 fun PrepareFusible<ViewHolder>.reuse(
     viewType: Int, count: Int, provider: Adapter<*>
 ) = holder(viewType, count) {
@@ -244,7 +244,7 @@ fun PrepareFusible<ViewHolder>.reuse(
  * @param provider ViewHolder的提供者，[ViewTypeDelegate.onCreateViewHolder]在工作线程下调用
  */
 @CheckResult
-@ExperimentalFeature
+@ExperimentalApi
 fun PrepareFusible<ViewHolder>.reuse(
     count: Int, provider: ViewTypeDelegate<*, *>
 ) = holder(provider.viewType, count) {

@@ -236,15 +236,22 @@ internal class ListMediatorImpl<T : Any>(
     override val currentList: List<T>
         get() = listState.currentList
 
+    @InternalizationApi
     val flow: Flow<ListEvent<T>> = callbackFlow {
         check(!isCollected) { "更新事件流Flow<ListEvent<T>>只能被收集一次" }
         isCollected = true
         // 先发射最新的列表数据和版本号，让下游判断是否需要更新
-        send(ListEvent(UpdateOp.SubmitList(currentList), version))
+        send(ListEvent(UpdateOp.SubmitList(safeCurrentList()), version))
         val listener: (UpdateOp<T>) -> Unit = { trySend(ListEvent(it, version)) }
         listState.addUpdatedListener(listener)
         awaitClose { listState.removeUpdatedListener(listener) }
     }.buffer(UNLIMITED).flowOnMain()
+
+    @InternalizationApi
+    private fun safeCurrentList() = when {
+        currentList.isEmpty() -> emptyList()
+        else -> currentList.toSafeMutableList()
+    }
 
     override fun isSameList(other: ListMediator<T>?): Boolean {
         if (other !is ListMediatorImpl) return false
