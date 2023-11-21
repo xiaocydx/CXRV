@@ -63,8 +63,8 @@ internal open class PagingListMediator<T : Any>(
         val listener: (UpdateOp<T>) -> Unit = {
             trySend(PagingEvent.ListStateUpdate(it, loadStates).fusion(version))
         }
-        listState.addUpdatedListener(listener)
-        awaitClose { listState.removeUpdatedListener(listener) }
+        listState.addDispatchListener(listener)
+        awaitClose { listState.removeDispatchListener(listener) }
     }.buffer(UNLIMITED).flowOnMain()
 
     override fun updateList(op: UpdateOp<T>) {

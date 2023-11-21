@@ -81,8 +81,8 @@ import kotlinx.coroutines.flow.callbackFlow
  */
 @InternalizationApi
 class ListState<T : Any> : ListOwner<T> {
-    private var succeedListeners = InlineList<(UpdateOp<T>) -> Unit>()
     private var updatedListeners = InlineList<(UpdateOp<T>) -> Unit>()
+    private var dispatchListeners = InlineList<(UpdateOp<T>) -> Unit>()
     private val sourceList: ArrayList<T> = arrayListOf()
     override val currentList: List<T> = sourceList.toUnmodifiableList()
     internal var version: Int = 0
@@ -107,22 +107,10 @@ class ListState<T : Any> : ListOwner<T> {
         }
         if (succeed) {
             version++
-            succeedListeners.reverseAccessEach { it(op) }
-            if (dispatch) updatedListeners.reverseAccessEach { it(op) }
+            updatedListeners.reverseAccessEach { it(op) }
+            if (dispatch) dispatchListeners.reverseAccessEach { it(op) }
         }
         return if (succeed) SuccessResult else FailureResult
-    }
-
-    @MainThread
-    internal fun addSucceedListeners(listener: (UpdateOp<T>) -> Unit) {
-        assertMainThread()
-        succeedListeners += listener
-    }
-
-    @MainThread
-    internal fun removeSucceedListeners(listener: (UpdateOp<T>) -> Unit) {
-        assertMainThread()
-        succeedListeners -= listener
     }
 
     @MainThread
@@ -135,6 +123,18 @@ class ListState<T : Any> : ListOwner<T> {
     internal fun removeUpdatedListener(listener: (UpdateOp<T>) -> Unit) {
         assertMainThread()
         updatedListeners -= listener
+    }
+
+    @MainThread
+    internal fun addDispatchListener(listener: (UpdateOp<T>) -> Unit) {
+        assertMainThread()
+        dispatchListeners += listener
+    }
+
+    @MainThread
+    internal fun removeDispatchListener(listener: (UpdateOp<T>) -> Unit) {
+        assertMainThread()
+        dispatchListeners -= listener
     }
 
     @MainThread
@@ -246,8 +246,8 @@ internal class ListMediatorImpl<T : Any>(
         // 先发射最新的列表数据和版本号，让下游判断是否需要更新
         send(ListEvent(UpdateOp.SubmitList(safeCurrentList()), version))
         val listener: (UpdateOp<T>) -> Unit = { trySend(ListEvent(it, version)) }
-        listState.addUpdatedListener(listener)
-        awaitClose { listState.removeUpdatedListener(listener) }
+        listState.addDispatchListener(listener)
+        awaitClose { listState.removeDispatchListener(listener) }
     }.buffer(UNLIMITED).flowOnMain()
 
     private fun safeCurrentList() = when {

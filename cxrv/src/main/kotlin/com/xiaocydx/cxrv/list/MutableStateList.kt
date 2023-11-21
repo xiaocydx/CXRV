@@ -88,7 +88,7 @@ class MutableStateList<T : Any> constructor() : MutableList<T> {
     }
 
     init {
-        state.addSucceedListeners { modification++ }
+        state.addUpdatedListener { modification++ }
     }
 
     override fun isEmpty() = size == 0
