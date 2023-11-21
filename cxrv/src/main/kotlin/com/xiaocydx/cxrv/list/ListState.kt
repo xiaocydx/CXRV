@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalizationApi::class)
+
 package com.xiaocydx.cxrv.list
 
 import androidx.annotation.MainThread
@@ -77,6 +79,7 @@ import kotlinx.coroutines.flow.callbackFlow
  * @author xcc
  * @date 2022/2/17
  */
+@InternalizationApi
 class ListState<T : Any> : ListOwner<T> {
     private var succeedListeners = InlineList<(UpdateOp<T>) -> Unit>()
     private var updatedListeners = InlineList<(UpdateOp<T>) -> Unit>()
@@ -219,8 +222,9 @@ class ListState<T : Any> : ListOwner<T> {
 }
 
 /**
- * 将[ListState]转换为列表数据流
+ * 将[ListState]转换为列表状态数据流
  */
+@InternalizationApi
 fun <T : Any> ListState<T>.asFlow(): Flow<ListData<T>> = unsafeFlow {
     val mediator = ListMediatorImpl(this@asFlow)
     emit(ListData(mediator.flow, mediator))
@@ -236,7 +240,6 @@ internal class ListMediatorImpl<T : Any>(
     override val currentList: List<T>
         get() = listState.currentList
 
-    @InternalizationApi
     val flow: Flow<ListEvent<T>> = callbackFlow {
         check(!isCollected) { "更新事件流Flow<ListEvent<T>>只能被收集一次" }
         isCollected = true
@@ -247,7 +250,6 @@ internal class ListMediatorImpl<T : Any>(
         awaitClose { listState.removeUpdatedListener(listener) }
     }.buffer(UNLIMITED).flowOnMain()
 
-    @InternalizationApi
     private fun safeCurrentList() = when {
         currentList.isEmpty() -> emptyList()
         else -> currentList.toSafeMutableList()

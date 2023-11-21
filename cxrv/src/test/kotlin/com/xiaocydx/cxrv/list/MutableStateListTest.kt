@@ -2,6 +2,12 @@ package com.xiaocydx.cxrv.list
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -31,12 +37,18 @@ internal class MutableStateListTest {
     }
 
     @Test
-    fun submitList() {
+    fun init() {
+        val list = MutableStateList(listOf("A"))
+        assertThat(list.modification).isEqualTo(1)
+    }
+
+    @Test
+    fun submit() {
         val list = MutableStateList<String>()
         list.addAll(listOf("A", "B", "C"))
         val modification = list.modification
 
-        list.submitList(listOf("D", "F", "G"))
+        list.submit(listOf("D", "F", "G"))
         assertThat(list).isEqualTo(listOf("D", "F", "G"))
         assertThat(list.modification).isGreaterThan(modification)
     }
@@ -516,5 +528,37 @@ internal class MutableStateListTest {
         val subList2 = subList.subList(0, 1)
         assertThat(subList2).hasSize(1)
         assertThat(subList2.first()).isEqualTo("B")
+    }
+
+    @Test
+    fun interoperability() {
+        val list = MutableStateList<String>()
+        val modification = list.modification
+        list.state.updateList(UpdateOp.SubmitList(listOf("A", "B", "C")), false)
+        assertThat(list).isEqualTo(listOf("A", "B", "C"))
+        assertThat(list.modification).isGreaterThan(modification)
+    }
+
+    @Test
+    fun stateFlow(): Unit = runBlocking {
+        val list = MutableStateList<String>()
+        val flow = list.asStateFlow()
+
+        val events = mutableListOf<ListEvent<String>>()
+        val collectJob = launch(start = UNDISPATCHED) {
+            flow.collect { data -> data.flow.toList(events) }
+        }
+        list.add("A")
+        list.remove("A")
+        delay(200)
+        collectJob.cancelAndJoin()
+
+        events.removeFirst() // 移除首次事件
+        val first = events.first()
+        val last = events.last()
+        assertThat(first.version).isEqualTo(1)
+        assertThat(first.op).isEqualTo(UpdateOp.AddItem(0, "A"))
+        assertThat(last.version).isEqualTo(2)
+        assertThat(last.op).isEqualTo(UpdateOp.RemoveItems<String>(0, 1))
     }
 }

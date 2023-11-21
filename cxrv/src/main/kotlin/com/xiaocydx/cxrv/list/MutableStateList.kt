@@ -14,11 +14,65 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalizationApi::class)
+
 package com.xiaocydx.cxrv.list
 
 import androidx.annotation.MainThread
+import com.xiaocydx.cxrv.internal.InternalizationApi
 
 /**
+ * [MutableStateList]是[ListState]的包装类，通过复用[MutableList]的扩展函数简化代码，
+ * [MutableStateList]的函数表现跟[mutableListOf]基本一致，因此传入`index`参数的函数，
+ * 会检查边界，超出边界抛出[IndexOutOfBoundsException]，这一点处理跟[ListState]不同。
+ *
+ * 1.在ViewModel下创建[MutableStateList]，对外提供`flow`
+ * ```
+ * class FooViewModel : ViewModel() {
+ *     private val list = MutableStateList<Foo>()
+ *     val flow = list.asStateFlow()
+ * }
+ * ```
+ *
+ * 2.在视图控制器下收集`viewModel.flow`
+ * ```
+ * class FooActivity : AppCompatActivity() {
+ *     private val viewModel: FooViewModel by viewModels()
+ *     private val adapter: ListAdapter<Foo, *> = ...
+ *
+ *     override fun onCreate(savedInstanceState: Bundle?) {
+ *          super.onCreate(savedInstanceState)
+ *          viewModel.flow
+ *                 .onEach(adapter.listCollector)
+ *                 .launchIn(lifecycleScope)
+ *     }
+ * }
+ * ```
+ *
+ * 3.仅在视图控制器活跃期间收集`viewModel.flow`
+ * ```
+ * class FooActivity : AppCompatActivity() {
+ *     private val viewModel: FooViewModel by viewModels()
+ *     private val adapter: ListAdapter<Foo, *> = ...
+ *
+ *     override fun onCreate(savedInstanceState: Bundle?) {
+ *          super.onCreate(savedInstanceState)
+ *          // 注意：flowWithLifecycle()在onEach(adapter.listCollector)之后调用
+ *          viewModel.flow
+ *               .onEach(adapter.listCollector)
+ *               .flowWithLifecycle(lifecycle)
+ *               .launchIn(lifecycleScope)
+ *
+ *          // 或者直接通过repeatOnLifecycle()进行收集，选中其中一种写法即可
+ *          lifecycleScope.launch {
+ *              repeatOnLifecycle(Lifecycle.State.STARTED) {
+ *                  viewModel.flow.onEach(adapter.listCollector).collect()
+ *              }
+ *          }
+ *     }
+ * }
+ * ```
+ *
  * @author xcc
  * @date 2023/11/20
  */
@@ -26,7 +80,6 @@ import androidx.annotation.MainThread
 class MutableStateList<T : Any> constructor() : MutableList<T> {
     @JvmField internal var modification = 0
     @PublishedApi internal val state: ListState<T> = ListState()
-
     override val size: Int
         get() = state.size
 
@@ -43,6 +96,16 @@ class MutableStateList<T : Any> constructor() : MutableList<T> {
     override fun get(index: Int): T {
         validateRange(index, size)
         return state.getItem(index)
+    }
+
+    fun submit(newList: List<T>): Boolean {
+        return state.submitList(newList).getOrThrow()
+    }
+
+    fun moveAt(fromIndex: Int, toIndex: Int): Boolean {
+        validateRange(fromIndex, size)
+        validateRange(toIndex, size)
+        return state.moveItem(fromIndex, toIndex).getOrThrow()
     }
 
     override fun add(element: T): Boolean {
@@ -152,27 +215,15 @@ class MutableStateList<T : Any> constructor() : MutableList<T> {
     internal fun UpdateResult.getOrThrow() = requireNotNull(get())
 }
 
+/**
+ * 将[MutableStateList]转换为列表状态数据流
+ */
 fun <T : Any> MutableStateList<T>.asStateFlow() = state.asFlow()
 
+/**
+ * 将[MutableStateList]转换为只读列表
+ */
 fun <T : Any> MutableStateList<T>.toReadOnlyList() = state.currentList
-
-fun <T : Any> MutableStateList<T>.submitList(newList: List<T>): Boolean {
-    return state.submitList(newList).getOrThrow()
-}
-
-inline fun <T : Any> MutableStateList<T>.submitChange(
-    change: MutableList<T>.() -> Unit
-): Boolean = state.submitChange(change).getOrThrow()
-
-inline fun <T : Any> MutableStateList<T>.submitTransform(
-    transform: MutableList<T>.() -> List<T>
-): Boolean = state.submitTransform(transform).getOrThrow()
-
-fun MutableStateList<*>.moveAt(fromIndex: Int, toIndex: Int): Boolean {
-    validateRange(fromIndex, size)
-    validateRange(toIndex, size)
-    return state.moveItem(fromIndex, toIndex).getOrThrow()
-}
 
 private class MutableStateListIterator<T : Any>(
     private val list: MutableStateList<T>,
