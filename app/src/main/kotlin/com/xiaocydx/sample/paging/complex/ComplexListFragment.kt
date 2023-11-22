@@ -73,12 +73,7 @@ import com.xiaocydx.sample.viewLifecycle
 class ComplexListFragment : Fragment(), TransformSender {
     private lateinit var rvComplex: RecyclerView
     private lateinit var complexAdapter: ListAdapter<ComplexItem, *>
-    private val sharedViewModel: ComplexSharedViewModel by viewModels(
-        ownerProducer = { parentFragment ?: requireActivity() }
-    )
-    private val complexViewModel: ComplexListViewModel by viewModels(
-        factoryProducer = { ComplexListViewModel.Factory(sharedViewModel) }
-    )
+    private val complexViewModel: ComplexListViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -104,10 +99,10 @@ class ComplexListFragment : Fragment(), TransformSender {
             }
 
             doOnItemClick { holder, item ->
-                sharedViewModel.setReceiverState(item.id, complexViewModel.complexList)
+                val args = complexViewModel.setReceiverState(item)
                 when (item.type) {
-                    TYPE_VIDEO -> forwardTransform(holder.itemView, VideoStreamFragment::class)
-                    TYPE_AD -> forwardTransform(holder.itemView, AdFragment::class)
+                    TYPE_VIDEO -> forwardTransform(holder.itemView, VideoStreamFragment::class, args)
+                    TYPE_AD -> forwardTransform(holder.itemView, AdFragment::class, args)
                 }
             }
         }

@@ -26,24 +26,24 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 
 /**
- * [TransformSender]的同步Key
+ * [TransformSender]的同步Id
  *
- * [TransformSenderKey.asPosition]可以转换为[TransformSenderPosition]。
+ * [TransformSenderId.asPosition]可以转换为[TransformSenderPosition]。
  */
-interface TransformSenderKey<K : Any> {
+interface TransformSenderId {
 
     /**
-     * 当[TransformReceiver]改变位置时，发射[TransformSender]的同步Key
+     * 当[TransformReceiver]改变位置时，发射[TransformSender]的同步Id
      */
-    val syncEvent: Flow<K>
+    val syncEvent: Flow<String>
 
     /**
-     * 当[TransformReceiver]退出时，[TransformSender]需要消费同步Key，
-     * [TransformSender]可以收集[TransformSender.transformReturn]消费同步Key。
+     * 当[TransformReceiver]退出时，[TransformSender]需要消费同步Id，
+     * [TransformSender]可以收集[TransformSender.transformReturn]消费同步Id。
      *
-     * @return 返回`null`，表示没有同步Key或者已消费同步Key。
+     * @return 返回`null`，表示没有同步Id或者已消费同步Id。
      */
-    fun consume(): K?
+    fun consume(): String?
 }
 
 /**
@@ -71,10 +71,10 @@ interface TransformSenderPosition {
 }
 
 /**
- * 将[TransformSenderKey]转换为[TransformSenderPosition]
+ * 将[TransformSenderId]转换为[TransformSenderPosition]
  */
-inline fun <K : Any> TransformSenderKey<K>.asPosition(
-    crossinline position: (key: K) -> Int
+inline fun TransformSenderId.asPosition(
+    crossinline position: (key: String) -> Int
 ): TransformSenderPosition = object : TransformSenderPosition {
     override val syncEvent: Flow<Int> = this@asPosition.syncEvent
         .map { position(it) }.filter { it != -1 }
@@ -83,23 +83,23 @@ inline fun <K : Any> TransformSenderKey<K>.asPosition(
 }
 
 /**
- * 将[TransformSenderKey]转换为[TransformSenderPosition]
+ * 将[TransformSenderId]转换为[TransformSenderPosition]
  */
-inline fun <T : Any, K : Any> TransformSenderKey<K>.asPosition(
+inline fun <T : Any> TransformSenderId.asPosition(
     crossinline list: () -> List<T>,
-    crossinline key: (item: T) -> K
+    crossinline key: (item: T) -> String
 ) = asPosition { list().indexOfFirst { item -> key(item) == it } }
 
 /**
- * [TransformSender]的同步Key，需要在[ViewModel]中创建并保留
+ * [TransformSender]的同步Id，需要在[ViewModel]中创建并保留
  *
  * 实际场景决定是否通过[SavedStateHandle]记录[TransformSender]和[TransformReceiver]的Key，
  * 对于分页列表场景，如果没有持久化列表数据，那么通过[SavedStateHandle]记录Key的意义并不大，
  * 因为缺少Key对应位置的列表数据，无法正确恢复位置。
  */
-class SenderKey<K : Any> {
-    private var syncKey: K? = null
-    private val _syncEvent = MutableSharedFlow<K>(
+class SenderId {
+    private var syncKey: String? = null
+    private val _syncEvent = MutableSharedFlow<String>(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
@@ -107,28 +107,28 @@ class SenderKey<K : Any> {
     private fun consume() = syncKey.also { syncKey = null }
 
     /**
-     * 发射[TransformSender]的同步[key]
+     * 发射[TransformSender]的同步[id]
      */
-    fun sync(key: K) {
-        if (syncKey == key) return
-        syncKey = key
-        _syncEvent.tryEmit(key)
+    fun sync(id: String) {
+        if (syncKey == id) return
+        syncKey = id
+        _syncEvent.tryEmit(id)
     }
 
     /**
-     * 记录[TransformSender]的同步[key]
+     * 记录[TransformSender]的同步[id]
      */
-    fun record(key: K) {
-        syncKey = key
+    fun record(id: String) {
+        syncKey = id
     }
 
     /**
-     * 将[SenderKey]转换为[TransformSender]可处理的[TransformSenderKey]
+     * 将[SenderId]转换为[TransformSender]可处理的[TransformSenderId]
      */
-    fun asTransform(): TransformSenderKey<K> {
-        return object : TransformSenderKey<K> {
-            override val syncEvent = this@SenderKey.syncEvent
-            override fun consume() = this@SenderKey.consume()
+    fun asTransform(): TransformSenderId {
+        return object : TransformSenderId {
+            override val syncEvent = this@SenderId.syncEvent
+            override fun consume() = this@SenderId.consume()
         }
     }
 }

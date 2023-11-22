@@ -67,8 +67,7 @@ import kotlinx.coroutines.flow.onEach
  *
  * 视频流的数据通过其他业务数据过滤、转换而来，因此存在一页数据过滤完后，没有视频流数据的问题，
  * `AppendTrigger`的实现已解决这个问题，当视频流页面收集到一页空数据时，会自动触发下一页加载，
- * [ComplexRepository.getComplexPager]形参`adKeyRange`的默认值修改为`true`，可以验证此效果，
- * `adKeyRange = true`，表示连续几页不包含视频流数据。
+ * 将[ComplexSource.adKeyRange]的默认值修改为`true`，连续几页不包含视频流数据，可以验证效果。
  *
  * @author xcc
  * @date 2023/7/30
@@ -77,12 +76,12 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
     private lateinit var requestManager: RequestManager
     private lateinit var binding: FragmetVideoStreamBinding
     private lateinit var videoAdapter: ListAdapter<VideoStreamItem, *>
-    private val sharedViewModel: ComplexSharedViewModel by viewModels(
-        ownerProducer = { parentFragment ?: requireActivity() }
-    )
-    private val videoViewModel: VideoStreamViewModel by viewModels(
-        factoryProducer = { VideoStreamViewModel.Factory(sharedViewModel) }
-    )
+    private val videoViewModel: VideoStreamViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        VideoStream.popWhenInactive(this, videoViewModel.sharedActive)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -147,7 +146,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
                     // 不依靠onSelected()同步选中位置，因为该函数被调用时仍在进行平滑滚动，
                     // 状态更改为IDLE时才同步选中位置，避免平滑滚动期间同步申请布局造成卡顿。
                     if (state != ViewPager2.SCROLL_STATE_IDLE) return@changed
-                    sharedViewModel.syncSenderId(videoViewModel.selectId)
+                    videoViewModel.syncSenderId()
                 }
             )
         }
