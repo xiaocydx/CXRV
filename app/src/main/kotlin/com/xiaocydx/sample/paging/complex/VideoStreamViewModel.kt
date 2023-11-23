@@ -19,10 +19,10 @@ import kotlinx.coroutines.flow.map
  */
 class VideoStreamViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
     private val shared: VideoStreamShared<*>
-    private val list = MutableStateList<VideoStreamItem>()
-    private val _selectPosition = MutableStateFlow(0)
-    val selectPosition = _selectPosition.asStateFlow()
-    val selectTitle = selectPosition.map { list.getOrNull(it)?.title ?: "" }
+    private val videoList = MutableStateList<VideoStreamItem>()
+    private val _selectedPosition = MutableStateFlow(0)
+    val selectedPosition = _selectedPosition.asStateFlow()
+    val selectedTitle = selectedPosition.map { videoList.getOrNull(it)?.title ?: "" }
     val sharedActive: StateFlow<Boolean>
         get() = shared.isActive
 
@@ -30,24 +30,24 @@ class VideoStreamViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
         val token = savedStateHandle.get<String>(KEY_SHARED_TOKEN) ?: ""
         shared = VideoStream.sharedFrom(token, viewModelScope)
         val initialState = shared.consumeReceiverState()
-        // 先同步初始状态，后收集videoFlow，收集时发射的分页事件会完成状态的同步
-        initialState?.videoList?.let(list::submit)
+        // 先同步初始状态，后收集videoPagingFlow，发射的分页事件会完成状态的同步
+        initialState?.list?.let(videoList::submit)
         initialState?.position?.let(::selectVideo)
     }
 
     /**
      * 视频流页面的item铺满全屏，转换末尾加载的预取策略，提前指定item个数预取分页数据
      */
-    val videoFlow = shared.receiverFlow
+    val videoPagingFlow = shared.receiverFlow
         .appendPrefetch(ItemCount(3))
-        .storeIn(list, viewModelScope)
+        .storeIn(videoList, viewModelScope)
 
     fun selectVideo(position: Int) {
-        _selectPosition.value = position
+        _selectedPosition.value = position
     }
 
     fun syncSenderId() {
-        val item = list.getOrNull(selectPosition.value)
+        val item = videoList.getOrNull(selectedPosition.value)
         item?.id?.let(shared::syncSenderId)
     }
 }

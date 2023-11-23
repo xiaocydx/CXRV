@@ -36,5 +36,5 @@ class ComplexSource(
         return LoadResult.Success(data, nextKey)
     }
 
-    override fun toVideoStreamList(data: List<ComplexItem>) = data.toViewStreamList()
+    override fun toVideoStreamList(list: List<ComplexItem>) = list.toViewStreamList()
 }

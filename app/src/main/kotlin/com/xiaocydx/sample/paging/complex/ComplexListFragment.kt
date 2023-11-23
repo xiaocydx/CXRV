@@ -90,7 +90,7 @@ class ComplexListFragment : Fragment(), TransformSender {
         ) {
             onBindView {
                 requestManager.load(it.coverUrl)
-                    .centerCrop().sizeMultiplier(0.25f)
+                    .centerCrop().sizeMultiplier(0.5f)
                     .placeholder(R.color.placeholder_color)
                     .into(ivCover)
                 tvTitle.text = it.title
@@ -124,7 +124,7 @@ class ComplexListFragment : Fragment(), TransformSender {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupDebugLog()
-        complexViewModel.complexFlow
+        complexViewModel.complexPagingFlow
             .onEach(complexAdapter.pagingCollector)
             .launchRepeatOnLifecycle(viewLifecycle)
 

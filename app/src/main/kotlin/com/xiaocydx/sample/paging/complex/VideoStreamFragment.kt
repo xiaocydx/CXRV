@@ -139,7 +139,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
         viewLifecycleScope.launchSafely {
             // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重新创建同样适用
             videoAdapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
-            viewPager2.setCurrentItem(videoViewModel.selectPosition.value, false)
+            viewPager2.setCurrentItem(videoViewModel.selectedPosition.value, false)
             viewPager2.registerOnPageChangeCallback(
                 onSelected = videoViewModel::selectVideo,
                 onScrollStateChanged = changed@{ state ->
@@ -156,13 +156,13 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             v.updatePadding(top = initialState.paddings.top + statusBars.top)
         }
 
-        videoViewModel.selectTitle
+        videoViewModel.selectedTitle
             .flowWithLifecycle(viewLifecycle)
             .distinctUntilChanged()
             .onEach(binding.tvTitle::setText)
             .launchIn(viewLifecycleScope)
 
-        videoViewModel.videoFlow
+        videoViewModel.videoPagingFlow
             .onEach(videoAdapter.pagingCollector)
             .launchRepeatOnLifecycle(viewLifecycle)
     }
