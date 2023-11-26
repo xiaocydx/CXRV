@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.takeWhile
  * 1. 当[TransformReceiver]滚动时，[syncEvent]发射Id进行同步。
  * 2. 当[TransformReceiver]退出时，需要调用[consume]消费Id进行同步。
  * 3. [TransformSenderId.asPosition]可以将Id转换为Position进行同步，
- * [TransformSender.launchTransformSync]演示了如何消费Position。
+ * [TransformSender.launchSenderSync]演示了如何消费Position。
  */
 @MainThread
 interface TransformSenderId : TransformKey<String?> {

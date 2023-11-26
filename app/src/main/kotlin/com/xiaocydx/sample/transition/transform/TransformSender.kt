@@ -20,6 +20,8 @@ import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.findTransformRoot
+import androidx.fragment.app.requireTransformRoot
 import androidx.lifecycle.coroutineScope
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -47,36 +49,36 @@ interface TransformSender {
 
     /**
      * 当退出实现[TransformReceiver]的Fragment时，构建变换过渡动画的过程会发射退出事件，
-     * 收集事件，在下一帧布局完成之前，都可以调用[setTransformView]设置`transformView`。
+     * 收集事件，在下一帧布局完成之前，都可以调用[setSenderView]设置`transformView`。
      */
-    val <S> S.transformReturn: SharedFlow<Unit> where S : Fragment, S : TransformSender
-        get() = requireTransformSceneRoot().transformReturn
+    val <S> S.receiverReturn: SharedFlow<Unit> where S : Fragment, S : TransformSender
+        get() = requireTransformRoot().receiverReturn
 
     /**
      * 设置参与变换过渡动画的[View]，内部弱引用持有[View]
      *
      * **注意**：若未设置参与变换过渡动画的[View]，则不会运行动画。
      */
-    fun <S> S.setTransformView(view: View?) where S : Fragment, S : TransformSender {
-        findTransformSceneRoot()?.setTransformView(view)
+    fun <S> S.setSenderView(view: View?) where S : Fragment, S : TransformSender {
+        findTransformRoot()?.setSenderView(view)
     }
 
     /**
      * 跳转至实现[TransformReceiver]的Fragment，运行变换过渡动画
      *
-     * @param transformView 参与变换过渡动画的[View]，内部弱引用持有[View]
-     * @param fragmentClass 实现[TransformReceiver]的Fragment的[Class]
+     * @param senderView    参与变换过渡动画的[View]，内部弱引用持有[View]
+     * @param receiverClass 实现[TransformReceiver]的Fragment的[Class]
      * @return 若当前已跳转至实现[TransformReceiver]的Fragment，则返回`false`，表示跳转失败。
      */
-    fun <S, R> S.forwardTransform(
-        transformView: View,
-        fragmentClass: KClass<R>,
+    fun <S, R> S.forwardReceiver(
+        senderView: View,
+        receiverClass: KClass<R>,
         args: Bundle? = null
     ): Boolean where S : Fragment, S : TransformSender,
                      R : Fragment, R : TransformReceiver {
-        val root = findTransformSceneRoot() ?: return false
-        root.setTransformView(transformView)
-        return root.forwardTransform(fragmentClass, args)
+        val root = findTransformRoot() ?: return false
+        root.setSenderView(senderView)
+        return root.forwardReceiver(receiverClass, args)
     }
 
     /**
@@ -84,13 +86,13 @@ interface TransformSender {
      *
      * @param recyclerView   滚动到同步位置的[RecyclerView]
      * @param contentAdapter 内容区域的[Adapter]，用于查找[ViewHolder]
-     * @param transformView  参与变换过渡动画的[View]，内部弱引用持有[View]
+     * @param senderView     参与变换过渡动画的[View]，内部弱引用持有[View]
      */
-    fun <S, VH> S.launchTransformSync(
+    fun <S, VH> S.launchSenderSync(
         recyclerView: RecyclerView,
         contentAdapter: Adapter<VH>,
         position: TransformSenderPosition,
-        transformView: (holder: VH) -> View?
+        senderView: (holder: VH) -> View?
     ): Job where S : Fragment, S : TransformSender, VH : ViewHolder {
         return viewLifecycle.coroutineScope.launch {
             position.syncEvent.onEach {
@@ -98,10 +100,10 @@ interface TransformSender {
             }.launchIn(this)
 
             // 消费同步位置，Fragment重新创建不需要恢复同步位置
-            transformReturn
+            receiverReturn
                 .map { position.consume() }
                 .map { recyclerView.findViewHolder(contentAdapter, it) }
-                .collect { setTransformView(it?.let(transformView)) }
+                .collect { setSenderView(it?.let(senderView)) }
         }
     }
 

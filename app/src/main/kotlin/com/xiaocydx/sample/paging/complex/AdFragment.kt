@@ -47,7 +47,7 @@ class AdFragment : TransitionFragment(), TransformReceiver {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupDebugLog()
-        setTransformEnterTransition().duration = 200
+        setReceiverEnterTransition().duration = 200
         recyclerView?.enableGestureNavBarEdgeToEdge()
 
         // 沿用EnterTransitionController解决过渡动画卡顿的问题

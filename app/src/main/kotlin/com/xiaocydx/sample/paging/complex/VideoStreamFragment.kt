@@ -122,7 +122,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupDebugLog()
-        val enterTransition = setTransformEnterTransition()
+        val enterTransition = setReceiverEnterTransition()
         enterTransition.duration = 200
         val viewPager2 = binding.viewPager2
         if (savedInstanceState == null) {

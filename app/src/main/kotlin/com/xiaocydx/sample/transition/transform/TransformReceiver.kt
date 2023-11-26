@@ -19,6 +19,7 @@ package com.xiaocydx.sample.transition.transform
 import android.transition.Transition
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.requireTransformRoot
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.xiaocydx.sample.transition.compat.setEnterTransitionCompat
 
@@ -36,14 +37,14 @@ interface TransformReceiver {
      * @param block 可以调用[MaterialContainerTransform]声明的函数完成初始化配置
      * @return 返回设置为`enterTransition`的[Transition]，可以对其修改属性和添加监听。
      */
-    fun <R> R.setTransformEnterTransition(
+    fun <R> R.setReceiverEnterTransition(
         block: (MaterialContainerTransform.() -> Unit)? = null
     ): Transition where R : Fragment, R : TransformReceiver {
-        val root = requireTransformSceneRoot()
+        val root = requireTransformRoot()
         val transform = MaterialContainerTransform()
         transform.interpolator = AccelerateDecelerateInterpolator()
         block?.invoke(transform)
-        return root.createTransformTransition(this, transform)
+        return root.createReceiverTransition(this, transform)
             .also(::setEnterTransitionCompat)
     }
 }

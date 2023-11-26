@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.TransformRoot
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.recyclerview.widget.RecyclerView
@@ -37,9 +38,7 @@ import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.transition.enter.EnterTransitionActivity
 import com.xiaocydx.sample.transition.enter.EnterTransitionController
 import com.xiaocydx.sample.transition.transform.SystemBarsContainer
-import com.xiaocydx.sample.transition.transform.TransformContainer
 import com.xiaocydx.sample.transition.transform.TransformReceiver
-import com.xiaocydx.sample.transition.transform.TransformSceneRoot
 import com.xiaocydx.sample.transition.transform.TransformSender
 import com.xiaocydx.sample.transition.transform.setLightStatusBarOnResume
 import com.xiaocydx.sample.transition.transform.setWindowSystemBarsColor
@@ -49,7 +48,7 @@ import com.xiaocydx.sample.viewLifecycle
  * 复合列表页面
  *
  * 跳转至实现了[TransformReceiver]的Fragment，例如[VideoStreamFragment]和[AdFragment]，
- * 当前Fragment的生命周期状态会回退至[STARTED]，避免不必要的绘制（循环动画、文本更新等），
+ * 当前Fragment的生命周期状态会回退至[STARTED]，可以停止不必要的绘制（例如停止循环动画），
  * 不销毁当前Fragment，原因是这类交互可能还需要对跳转后的Fragment视图进行手势拖动缩放，
  * 此时底部显示当前Fragment的内容，若销毁当前Fragment，则这个需求需要通过其他方式实现，
  * 实际上，Fragment的重建代码也不一定容易编写，例如有些视图的状态恢复起来就比较困难。
@@ -60,8 +59,8 @@ import com.xiaocydx.sample.viewLifecycle
  * 同步申请重新布局是为了提前将当前Fragment的内容准备好，例如重新布局后加载新url的图片，
  * 让退出[VideoStreamFragment]的过程能看到准备好的内容，而不是一大堆占位图。
  *
- * 如果上述问题已有解决方案，那么可以修改[TransformSceneRoot]的实现逻辑，销毁当前Fragment，
- * [TransformContainer]、[TransformSender]、[TransformReceiver]提供的函数和组成的结构，
+ * 如果上述问题已有解决方案，那么可以修改[TransformRoot]的实现逻辑，销毁当前Fragment，
+ * [TransformRoot]、[TransformSender]、[TransformReceiver]提供的函数和组成的结构，
  * 只是为这类交互提供一种轻量的过渡动画方案。
  *
  * [AdFragment]沿用了[EnterTransitionController]解决过渡动画卡顿的问题，
@@ -101,8 +100,8 @@ class ComplexListFragment : Fragment(), TransformSender {
             doOnItemClick { holder, item ->
                 val args = complexViewModel.setReceiverState(item)
                 when (item.type) {
-                    TYPE_VIDEO -> forwardTransform(holder.itemView, VideoStreamFragment::class, args)
-                    TYPE_AD -> forwardTransform(holder.itemView, AdFragment::class, args)
+                    TYPE_VIDEO -> forwardReceiver(holder.itemView, VideoStreamFragment::class, args)
+                    TYPE_AD -> forwardReceiver(holder.itemView, AdFragment::class, args)
                 }
             }
         }
@@ -129,11 +128,11 @@ class ComplexListFragment : Fragment(), TransformSender {
             .launchRepeatOnLifecycle(viewLifecycle)
 
         // 同步选中位置的简化函数
-        launchTransformSync(
+        launchSenderSync(
             recyclerView = rvComplex,
             contentAdapter = complexAdapter,
             position = complexViewModel.complexPosition,
-            transformView = ViewHolder::itemView
+            senderView = ViewHolder::itemView
         )
     }
 
