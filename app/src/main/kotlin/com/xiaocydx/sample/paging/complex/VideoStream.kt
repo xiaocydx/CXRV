@@ -15,10 +15,11 @@ import com.xiaocydx.cxrv.paging.PagingSource
 import com.xiaocydx.cxrv.paging.broadcastIn
 import com.xiaocydx.cxrv.paging.dataMap
 import com.xiaocydx.cxrv.paging.flowMap
-import com.xiaocydx.sample.transition.transform.SenderId
+import com.xiaocydx.sample.transition.transform.SyncTransformSenderId
 import com.xiaocydx.sample.transition.transform.TransformReceiver
 import com.xiaocydx.sample.transition.transform.TransformSender
 import com.xiaocydx.sample.transition.transform.TransformSenderId
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,8 +30,8 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -130,6 +131,9 @@ object VideoStream {
 /**
  * [TransformSender]和[TransformReceiver]的共享资源，
  * 属性和函数用`Sender`和`Receiver`前缀演示数据的走向。
+ *
+ * 当[isActive]发射`false`时，[senderFlow]、[senderFlow]、[receiverFlow]会被取消，停止发射值，
+ * 收集它们的协程也会正常结束挂起，正常结束指的是[Flow.collect]不会抛出[CancellationException]。
  */
 @MainThread
 interface VideoStreamShared<T : Any> {
@@ -178,12 +182,12 @@ private class VideoStreamSharedImpl<T : Any>(
     private val pager = Pager(source.initKey, source.config, source as PagingSource<Any, T>)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val _isActive = MutableStateFlow(true)
-    private val _senderId = SenderId()
+    private val _senderId = SyncTransformSenderId()
     private var receiverState: VideoStreamInitial? = null
 
     override val token = UUID.randomUUID().toString()
     override val isActive = _isActive.asStateFlow()
-    override val senderId = _senderId.asTransform()
+    override val senderId = _senderId.asSenderId()
     override val senderFlow = pager.flow.broadcastIn(scope)
     override val receiverFlow = senderFlow.flowMap { flow ->
         flow.dataMap { _, data -> source.toVideoStreamList(data) }
@@ -196,6 +200,7 @@ private class VideoStreamSharedImpl<T : Any>(
             awaitCancellation()
         }.invokeOnCompletion {
             _isActive.value = false
+            _senderId.close()
         }
     }
 
@@ -225,9 +230,10 @@ private class VideoStreamSharedImpl<T : Any>(
     override fun consumeReceiverState() = receiverState?.also { receiverState = null }
 }
 
-private object EmptyShared : VideoStreamShared<Any> {
+@Suppress("UNCHECKED_CAST")
+private object EmptyShared : VideoStreamShared<Any>, Flow<Any> {
     override val token = "EmptyShared"
-    override val isActive = inactive()
+    override val isActive = emptyStateFlow()
     override val senderId = emptySenderId()
     override val senderFlow = emptyFlow<PagingData<Any>>()
     override val receiverFlow = emptyFlow<PagingData<VideoStreamItem>>()
@@ -240,14 +246,9 @@ private object EmptyShared : VideoStreamShared<Any> {
     override fun setReceiverState(id: String, list: List<Any>?) = Unit
     override fun consumeReceiverState() = null
 
-    private fun <T> emptyFlow() = flow<T> { }
+    private fun <T> emptyFlow() = this as Flow<T>
 
-    private fun emptySenderId() = object : TransformSenderId {
-        override val syncEvent = flow<String> {}
-        override fun consume() = null
-    }
-
-    private fun inactive() = object : StateFlow<Boolean> {
+    private fun emptyStateFlow() = object : StateFlow<Boolean> {
         override val replayCache = emptyList<Boolean>()
         override val value = false
         override suspend fun collect(collector: FlowCollector<Boolean>): Nothing {
@@ -255,4 +256,11 @@ private object EmptyShared : VideoStreamShared<Any> {
             awaitCancellation()
         }
     }
+
+    private fun emptySenderId() = object : TransformSenderId {
+        override val syncEvent = EmptyShared as Flow<String>
+        override fun consume() = null
+    }
+
+    override suspend fun collect(collector: FlowCollector<Any>) = Unit
 }

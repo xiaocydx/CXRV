@@ -38,7 +38,7 @@ class FooListAdapterError(
     /**
      * 2. 对`itemView`设置的[OnClickListener]会捕获外部[FooListFragment]（访问了TAG），
      * 当RecyclerView从Window上分离时，`itemView`会被回收进`sharedRecycledViewPool`,
-     * 这会间接导致已销毁的[FooListFragment]法被GC，即出现内存泄漏问题。
+     * 这会间接导致已销毁的[FooListFragment]无法被GC，即出现内存泄漏问题。
      *
      * 滚动[ViewPager2]，让[FooListFragment]被销毁，等待一段时间后，就能看到[LeakCanary]的内存泄漏提示。
      */

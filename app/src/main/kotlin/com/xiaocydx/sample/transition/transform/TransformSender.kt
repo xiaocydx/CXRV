@@ -101,8 +101,7 @@ interface TransformSender {
             transformReturn
                 .map { position.consume() }
                 .map { recyclerView.findViewHolder(contentAdapter, it) }
-                .onEach { setTransformView(it?.let(transformView)) }
-                .launchIn(this)
+                .collect { setTransformView(it?.let(transformView)) }
         }
     }
 
