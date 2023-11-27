@@ -32,7 +32,7 @@ import com.xiaocydx.cxrv.itemvisible.findFirstCompletelyVisibleItemPosition
 import com.xiaocydx.cxrv.itemvisible.findLastCompletelyVisibleItemPosition
 import com.xiaocydx.sample.viewLifecycle
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -40,7 +40,7 @@ import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
 /**
- * 变换过渡动画的Sender，[FragmentActivity]或[Fragment]实现该接口完成页面跳转
+ * 变换过渡动画的Sender，[Fragment]实现该接口完成页面跳转
  *
  * @author xcc
  * @date 2023/8/7
@@ -51,8 +51,9 @@ interface TransformSender {
      * 当退出实现[TransformReceiver]的Fragment时，构建变换过渡动画的过程会发射退出事件，
      * 收集事件，在下一帧布局完成之前，都可以调用[setSenderView]设置`transformView`。
      */
-    val <S> S.receiverReturn: SharedFlow<Unit> where S : Fragment, S : TransformSender
-        get() = requireTransformRoot().receiverReturn
+    fun <S> S.receiverReturn(): Flow<Unit> where S : Fragment, S : TransformSender {
+        return requireTransformRoot().receiverReturn(this)
+    }
 
     /**
      * 设置参与变换过渡动画的[View]，内部弱引用持有[View]
@@ -60,7 +61,7 @@ interface TransformSender {
      * **注意**：若未设置参与变换过渡动画的[View]，则不会运行动画。
      */
     fun <S> S.setSenderView(view: View?) where S : Fragment, S : TransformSender {
-        findTransformRoot()?.setSenderView(view)
+        findTransformRoot()?.setSenderView(this, view)
     }
 
     /**
@@ -77,8 +78,8 @@ interface TransformSender {
     ): Boolean where S : Fragment, S : TransformSender,
                      R : Fragment, R : TransformReceiver {
         val root = findTransformRoot() ?: return false
-        root.setSenderView(senderView)
-        return root.forwardReceiver(receiverClass, args)
+        root.setSenderView(this, senderView)
+        return root.forwardReceiver(this, receiverClass, args)
     }
 
     /**
@@ -100,7 +101,7 @@ interface TransformSender {
             }.launchIn(this)
 
             // 消费同步位置，Fragment重新创建不需要恢复同步位置
-            receiverReturn
+            receiverReturn()
                 .map { position.consume() }
                 .map { recyclerView.findViewHolder(contentAdapter, it) }
                 .collect { setSenderView(it?.let(senderView)) }

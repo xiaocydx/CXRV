@@ -132,7 +132,7 @@ object VideoStream {
  * [TransformSender]和[TransformReceiver]的共享资源，
  * 属性和函数用`Sender`和`Receiver`前缀演示数据的走向。
  *
- * 当[isActive]发射`false`时，[senderFlow]、[senderFlow]、[receiverFlow]会被取消，停止发射值，
+ * 当[isActive]发射`false`时，[senderId]、[senderFlow]、[receiverFlow]会被取消，停止发射值，
  * 收集它们的协程也会正常结束挂起，正常结束指的是[Flow.collect]不会抛出[CancellationException]。
  */
 @MainThread

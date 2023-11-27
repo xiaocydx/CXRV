@@ -1,4 +1,4 @@
-@file:JvmName("TransformSceneRootInternalKt")
+@file:JvmName("TransformRootInternalKt")
 @file:Suppress("PackageDirectoryMismatch")
 
 package androidx.fragment.app
@@ -16,11 +16,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.xiaocydx.sample.R
-import com.xiaocydx.sample.transition.transform.TransformReceiver
 import com.xiaocydx.sample.transition.transform.TransformTransition
-import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.mapNotNull
 import java.lang.ref.WeakReference
 import kotlin.reflect.KClass
 
@@ -32,161 +31,188 @@ import kotlin.reflect.KClass
  */
 internal class TransformRoot private constructor(
     private val lifecycle: Lifecycle,
-    private val saveState: SaveState,
+    private val stateHolder: StateHolder,
     private val fragmentManager: FragmentManager
 ) {
     private val containerId = android.R.id.content
-    private var incompleteReceiver: String? = null
-    private var senderViewRef: WeakReference<View>? = null
+    private var transactionWho: String? = null
+    private val senderViewRefs = mutableMapOf<String, WeakReference<View>>()
     private val fragmentMaxLifecycleEnforcer = FragmentMaxLifecycleEnforcer()
-    private val _receiverReturn = MutableSharedFlow<Unit>(
-        extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-
-    // TODO: 实现Sender-Receiver的对应关系
-    val receiverReturn = _receiverReturn.asSharedFlow()
+    private val receiverReturn = MutableSharedFlow<String>(extraBufferCapacity = Int.MAX_VALUE)
 
     constructor(activity: FragmentActivity) : this(
         lifecycle = activity.lifecycle,
-        saveState = ViewModelProvider(activity)[SaveState::class.java],
+        stateHolder = ViewModelProvider(activity)[StateHolder::class.java],
         fragmentManager = activity.supportFragmentManager
     )
 
-    fun <R> forwardReceiver(
-        receiverClass: KClass<out R>,
+    fun setSenderView(sender: Fragment, view: View?) {
+        clearInvalidSenderViewRefs()
+        val senderView = senderViewRefs[sender.mWho]?.get()
+        if (senderView === view) return
+        senderViewRefs[sender.mWho] = WeakReference(view)
+    }
+
+    fun receiverReturn(sender: Fragment): Flow<Unit> {
+        val senderWho = sender.mWho
+        return receiverReturn.mapNotNull { if (it == senderWho) Unit else null }
+    }
+
+    fun forwardReceiver(
+        sender: Fragment,
+        receiverClass: KClass<out Fragment>,
         args: Bundle? = null
-    ): Boolean where R : Fragment, R : TransformReceiver {
-        if (incompleteReceiver != null) return false
-        val receiverFragment = createReceiverFragment(receiverClass, args)
-        val resumedFragments = findCurrentResumedFragments()
-        recordResumedFragments(receiverFragment.mWho, resumedFragments)
-        // transformFragment的生命周期状态，在过渡动画结束后才转换为RESUMED，
-        // 此时将contentFragment的生命周期状态回退至STARTED，是为了确保过渡动画流畅。
-        fragmentMaxLifecycleEnforcer.updateFragmentMaxLifecycle(receiverFragment.mWho, STARTED)
+    ): Boolean {
+        if (transactionWho != null) return false
+        val receiver = createFragment(receiverClass, args)
+        val receiverTag = stateHolder.createTagBySenderWho(sender)
+        transactionWho = receiver.mWho
+        val fragments = stateHolder.findResumedFragments(fragmentManager)
+        stateHolder.recordResumedFragments(receiver, fragments)
+        fragmentMaxLifecycleEnforcer.updateFragmentToStarted(receiver, fragments)
         fragmentManager
             .beginTransaction()
             .setReorderingAllowed(true)
             .addToBackStack(null)
-            .add(containerId, receiverFragment)
+            .add(containerId, receiver, receiverTag)
             .commit()
         return true
     }
 
-    fun setSenderView(view: View?) {
-        // TODO: 实现Sender-Receiver的对应关系
-        if (senderViewRef?.get() === view) return
-        senderViewRef = WeakReference(view)
-    }
-
-    fun createReceiverTransition(
-        receiverFragment: Fragment,
-        transform: MaterialContainerTransform
-    ): Transition {
-        val receiverFragmentRef = WeakReference(receiverFragment)
+    fun createReceiverTransition(receiver: Fragment, transform: MaterialContainerTransform): Transition {
+        val receiverRef = WeakReference(receiver)
         return TransformTransition(containerId, transform) { start ->
-            val f = receiverFragmentRef.get()
+            val receiverF = receiverRef.get()
+            val senderWho = stateHolder.parseSenderWhoFromTag(receiverF?.tag ?: "")
+            clearInvalidSenderViewRefs()
             val targetView = when {
-                f == null -> null
-                f.isAdded -> if (start) senderViewRef?.get() else f.view
-                else -> if (start) f.view else senderViewRef?.get()
+                receiverF == null -> null
+                receiverF.isAdded -> if (start) senderViewRefs[senderWho]?.get() else receiverF.view
+                else -> if (start) receiverF.view else senderViewRefs[senderWho]?.get()
             }
-            if (start && targetView === f?.view) {
-                // TODO: 实现Sender-Receiver的对应关系
-                _receiverReturn.tryEmit(Unit)
+            if (start && targetView === receiverF?.view) {
+                senderWho.takeIf { it.isNotEmpty() }?.let(receiverReturn::tryEmit)
             }
             targetView
         }
     }
 
     @SuppressLint("RestrictedApi")
-    private fun createReceiverFragment(
-        receiverClass: KClass<out Fragment>,
-        args: Bundle? = null
-    ): Fragment {
+    private fun createFragment(clazz: KClass<out Fragment>, args: Bundle?): Fragment {
         val fragmentFactory = fragmentManager.fragmentFactory
         val classLoader = fragmentManager.host.context.classLoader
-        val fragment = fragmentFactory.instantiate(classLoader, receiverClass.java.name)
+        val fragment = fragmentFactory.instantiate(classLoader, clazz.java.name)
         if (args != null) fragment.arguments = args
         return fragment
     }
 
-    private fun findCurrentResumedFragments(): List<Fragment> {
-        return fragmentManager.fragments.filter { it.lifecycle.currentState == RESUMED }
-    }
-
-    private fun findResumedFragments(receiver: String): List<Fragment> {
-        val fragments = saveState.getFragments(receiver)
-        if (fragments.isEmpty()) return emptyList()
-        return fragmentManager.fragments.filter { fragments.contains(it.mWho) }
-    }
-
-    private fun recordResumedFragments(receiver: String, resumedFragments: List<Fragment>) {
-        saveState.putFragments(receiver, resumedFragments.map { it.mWho })
-    }
-
-    private fun clearResumedFragments(receiver: String) {
-        saveState.removeFragments(receiver)
+    private fun clearInvalidSenderViewRefs() {
+        var toRemove: ArrayList<String>? = null
+        senderViewRefs.entries.forEach action@{
+            if (it.value.get() != null) return@action
+            if (toRemove == null) toRemove = arrayListOf()
+            toRemove!!.add(it.key)
+        }
+        val keys = toRemove ?: return
+        for (i in keys.indices) senderViewRefs.remove(keys[i])
     }
 
     private inner class FragmentMaxLifecycleEnforcer {
-        private var pendingReceiver: String? = null
-        private var pendingState: Lifecycle.State? = null
+        private val pendingUpdateOps = ArrayList<UpdateOp>()
 
         init {
             lifecycle.addObserver(LifecycleEventObserver { _, _ ->
                 // 当动画结束时，可能错过了saveState，不允许提交事务，
                 // 因此观察Lifecycle的状态更改，尝试提交事务修正状态。
-                if (pendingReceiver != null && pendingState != null) {
-                    updateFragmentMaxLifecycle(pendingReceiver!!, pendingState!!)
+                val ops = pendingUpdateOps
+                if (ops.isNotEmpty() && fragmentManager.isStateSaved) {
+                    for (i in ops.indices) updateFragmentMaxLifecycle(ops[i])
+                    pendingUpdateOps.clear()
                 }
             })
             fragmentManager.registerFragmentLifecycleCallbacks(
                 object : FragmentManager.FragmentLifecycleCallbacks() {
                     override fun onFragmentResumed(fm: FragmentManager, f: Fragment) {
-                        if (f.mWho == incompleteReceiver) incompleteReceiver = null
+                        if (f.mWho == transactionWho) transactionWho = null
                     }
 
                     override fun onFragmentDestroyed(fm: FragmentManager, f: Fragment) {
-                        val maybeReceiver = f.mWho
-                        updateFragmentMaxLifecycle(maybeReceiver, RESUMED)
+                        if (!stateHolder.hasRecordedFragments(f)) return
+                        updateFragmentToResumed(f)
                     }
                 },
                 false
             )
         }
 
-        fun updateFragmentMaxLifecycle(receiver: String, state: Lifecycle.State) {
-            // TODO: 处理不同的receiver
-            pendingReceiver = null
-            pendingState = null
+        fun updateFragmentToStarted(receiver: Fragment, fragments: List<Fragment>) {
+            updateFragmentMaxLifecycle(UpdateOp(receiver.mWho, STARTED), fragments)
+        }
+
+        fun updateFragmentToResumed(receiver: Fragment) {
+            updateFragmentMaxLifecycle(UpdateOp(receiver.mWho, RESUMED))
+        }
+
+        private fun updateFragmentMaxLifecycle(op: UpdateOp, fragments: List<Fragment>? = null) {
             if (fragmentManager.isStateSaved) {
-                pendingReceiver = receiver
-                pendingState = state
+                pendingUpdateOps.takeIf { !it.contains(op) }?.add(op)
                 return
             }
-            val fragments = findResumedFragments(receiver)
-            if (fragments.isEmpty()) return
-            if (state == RESUMED) clearResumedFragments(receiver)
+            val (who, state) = op
+            val toUpdate = fragments ?: stateHolder.findRecordedFragments(who, fragmentManager)
+            if (state == RESUMED) stateHolder.clearRecordedFragments(who)
+            if (toUpdate.isEmpty()) return
             val transaction = fragmentManager.beginTransaction()
-            fragments.forEach { transaction.setMaxLifecycle(it, state) }
+            toUpdate.forEach { transaction.setMaxLifecycle(it, state) }
             transaction.commit()
         }
     }
 
+    private data class UpdateOp(val who: String, val state: Lifecycle.State)
+
     // TODO: 检查执行效率和上限异常
-    internal class SaveState(private val savaStateHandle: SavedStateHandle) : ViewModel() {
+    // TODO: 验证进程重启的表现
+    // TODO: 验证嵌套结构的表现
+    internal class StateHolder(private val savaStateHandle: SavedStateHandle) : ViewModel() {
 
-        fun getFragments(key: String): List<String> {
-            return savaStateHandle.get<ArrayList<String>>(key) ?: emptyList()
+        fun createTagBySenderWho(sender: Fragment): String {
+            return "$TAG_RECEIVER_PREFIX${sender.mWho}"
         }
 
-        fun putFragments(key: String, fragments: List<String>) {
-            savaStateHandle[key] = ArrayList(fragments)
+        fun parseSenderWhoFromTag(tag: String): String {
+            if (!tag.startsWith(TAG_RECEIVER_PREFIX)) return ""
+            return tag.substring(TAG_RECEIVER_PREFIX.length)
         }
 
-        fun removeFragments(key: String) {
-            savaStateHandle.remove<ArrayList<String>>(key)
+        fun findResumedFragments(fm: FragmentManager): List<Fragment> {
+            return fm.fragments.filter { it.lifecycle.currentState.isAtLeast(RESUMED) }
         }
+
+        fun recordResumedFragments(receiver: Fragment, fragments: List<Fragment>) {
+            savaStateHandle[receiver.mWho] = ArrayList(fragments.map { it.mWho })
+        }
+
+        fun hasRecordedFragments(receiver: Fragment): Boolean {
+            return !savaStateHandle.get<ArrayList<String>>(receiver.mWho).isNullOrEmpty()
+        }
+
+        fun findRecordedFragments(receiver: Fragment, fm: FragmentManager): List<Fragment> {
+            return findRecordedFragments(receiver.mWho, fm)
+        }
+
+        fun findRecordedFragments(who: String, fm: FragmentManager): List<Fragment> {
+            val fragments = savaStateHandle.get<ArrayList<String>>(who)
+            if (fragments.isNullOrEmpty()) return emptyList()
+            return fm.fragments.filter { fragments.contains(it.mWho) }
+        }
+
+        fun clearRecordedFragments(who: String) {
+            savaStateHandle.remove<ArrayList<String>>(who)
+        }
+    }
+
+    private companion object {
+        const val TAG_RECEIVER_PREFIX = "From-Sender#"
     }
 }
 
@@ -194,7 +220,7 @@ internal fun Fragment.requireTransformRoot() = requireNotNull(findTransformRoot(
 
 internal fun Fragment.findTransformRoot(): TransformRoot? {
     val activity = activity ?: return null
-    val tag = R.id.transform_scene_root
+    val tag = R.id.tag_decor_transform_root
     var root = activity.window.decorView.getTag(tag) as? TransformRoot?
     if (root == null) {
         root = TransformRoot(activity)
