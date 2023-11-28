@@ -123,10 +123,6 @@ class ComplexListFragment : Fragment(), TransformSender {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupDebugLog()
-        complexViewModel.complexPagingFlow
-            .onEach(complexAdapter.pagingCollector)
-            .launchRepeatOnLifecycle(viewLifecycle)
-
         // 同步选中位置的简化函数
         launchSenderSync(
             recyclerView = rvComplex,
@@ -134,6 +130,10 @@ class ComplexListFragment : Fragment(), TransformSender {
             position = complexViewModel.complexPosition,
             senderView = ViewHolder::itemView
         )
+
+        complexViewModel.complexPagingFlow
+            .onEach(complexAdapter.pagingCollector)
+            .launchRepeatOnLifecycle(viewLifecycle)
     }
 
     private fun setupDebugLog() {

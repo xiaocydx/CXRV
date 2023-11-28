@@ -5,23 +5,21 @@ import com.xiaocydx.cxrv.paging.LoadResult
 import com.xiaocydx.cxrv.paging.PagingConfig
 import com.xiaocydx.sample.foo.urls
 import kotlinx.coroutines.delay
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * @author xcc
  * @date 2023/7/30
  */
 class ComplexSource(
-    config: PagingConfig,
-    initKey: Int = 1,
     private val adKeyRange: Boolean = false,
     private val maxKey: Int = Int.MAX_VALUE,
-    private val duration: Duration = 400L.milliseconds
-) : SharedSource<Int, ComplexItem>(initKey, config) {
+    private val timeMillis: Long = 400L,
+    override val initKey: Int = 1,
+    override val config: PagingConfig = PagingConfig(pageSize = 16)
+) : VideoStream.Source<Int, ComplexItem> {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ComplexItem> {
-        delay(duration)
+        delay(timeMillis)
         val data = (1..params.pageSize).map { num ->
             val id = "${params.key}-$num"
             val url = urls[num % urls.size]

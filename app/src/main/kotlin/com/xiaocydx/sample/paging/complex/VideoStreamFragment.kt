@@ -43,8 +43,6 @@ import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 
 /**
  * 视频流页面
@@ -77,11 +75,6 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
     private lateinit var binding: FragmetVideoStreamBinding
     private lateinit var videoAdapter: ListAdapter<VideoStreamItem, *>
     private val videoViewModel: VideoStreamViewModel by viewModels()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        VideoStream.popWhenInactive(this, videoViewModel.sharedActive)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -122,9 +115,9 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupDebugLog()
+        val viewPager2 = binding.viewPager2
         val enterTransition = setReceiverEnterTransition()
         enterTransition.duration = 200
-        val viewPager2 = binding.viewPager2
         if (savedInstanceState == null) {
             // Fragment首次创建，推迟过渡动画，直到选中位置的图片加载结束，
             // 过渡动画结束时，才将viewPager2.offscreenPageLimit修改为1，
@@ -136,8 +129,17 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             viewPager2.offscreenPageLimit = 1
         }
 
+        binding.tvTitle.doOnApplyWindowInsets { v, insets, initialState ->
+            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            v.updatePadding(top = initialState.paddings.top + statusBars.top)
+        }
+
+        videoViewModel.videoPagingFlow
+            .onEach(videoAdapter.pagingCollector)
+            .launchRepeatOnLifecycle(viewLifecycle)
+
         viewLifecycleScope.launchSafely {
-            // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重新创建同样适用
+            // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重建流程同样适用
             videoAdapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
             viewPager2.setCurrentItem(videoViewModel.selectedPosition.value, false)
             viewPager2.registerOnPageChangeCallback(
@@ -149,22 +151,11 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
                     videoViewModel.syncSenderId()
                 }
             )
+            videoViewModel.selectedTitle
+                .flowWithLifecycle(viewLifecycle)
+                .distinctUntilChanged()
+                .collect(binding.tvTitle::setText)
         }
-
-        binding.tvTitle.doOnApplyWindowInsets { v, insets, initialState ->
-            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            v.updatePadding(top = initialState.paddings.top + statusBars.top)
-        }
-
-        videoViewModel.selectedTitle
-            .flowWithLifecycle(viewLifecycle)
-            .distinctUntilChanged()
-            .onEach(binding.tvTitle::setText)
-            .launchIn(viewLifecycleScope)
-
-        videoViewModel.videoPagingFlow
-            .onEach(videoAdapter.pagingCollector)
-            .launchRepeatOnLifecycle(viewLifecycle)
     }
 
     private fun setupDebugLog() {
