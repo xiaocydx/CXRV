@@ -116,20 +116,24 @@ object VideoStream {
         val name = handle.get<String>(KEY_NAME)
         require(!id.isNullOrEmpty())
         require(!name.isNullOrEmpty())
-        return shared(id, Class.forName(name), handle, scope)
+        val clazz = Class.forName(
+            name, false,
+            VideoStream::class.java.classLoader
+        ).asSubclass(Source::class.java)
+        return shared(id, clazz, handle, scope)
     }
 
     @CheckResult
     private fun shared(
         id: String,
-        clazz: Class<*>,
+        clazz: Class<out Source<*, *>>,
         handle: SavedStateHandle,
         scope: CoroutineScope
     ): VideoStreamShared<*, *> {
         var holder = store[id]
         if (holder == null) {
             @Suppress("UNCHECKED_CAST")
-            val source = requireNotNull(clazz.newInstance() as? Source<Any, *>)
+            val source = clazz.newInstance() as Source<Any, *>
             if (source is StatefulSource<Any, *>) source.init(handle)
             holder = SharedHolder(VideoStreamShared(id, source))
             store[holder.id] = holder
