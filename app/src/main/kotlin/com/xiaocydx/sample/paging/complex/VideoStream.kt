@@ -195,7 +195,7 @@ object VideoStream {
         fun setReceiverState(id: String, list: List<T>?)
 
         /**
-         * 将内部状态转换为[Bundle]，作为[Receiver]的Fragment传参
+         * 将内部状态转换为[Bundle]，作为[Receiver]的页面传参
          */
         fun toBundle(): Bundle
     }
@@ -298,18 +298,13 @@ object VideoStream {
             handle.keys().forEach { regular[it] = handle[it] }
         }
 
-        protected fun <T> get(key: String): T? {
+        protected fun <V> get(key: String): V? {
             assertMainThread()
-            return try {
-                @Suppress("UNCHECKED_CAST")
-                regular[key] as T?
-            } catch (e: ClassCastException) {
-                regular.remove(key)
-                null
-            }
+            @Suppress("UNCHECKED_CAST")
+            return regular[key] as V?
         }
 
-        protected fun <T> set(handle: SavedStateHandle, key: String, value: T?) {
+        protected fun <V> set(handle: SavedStateHandle, key: String, value: V?) {
             assertMainThread()
             handle[key] = value
             regular[key] = value
