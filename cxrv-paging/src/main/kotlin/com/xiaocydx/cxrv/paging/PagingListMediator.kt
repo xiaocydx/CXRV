@@ -22,6 +22,7 @@ package com.xiaocydx.cxrv.paging
 import androidx.annotation.CheckResult
 import androidx.annotation.MainThread
 import com.xiaocydx.cxrv.internal.InternalizationApi
+import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.flowOnMain
 import com.xiaocydx.cxrv.list.ListMediator
 import com.xiaocydx.cxrv.list.ListState
@@ -50,6 +51,7 @@ internal open class PagingListMediator<T : Any>(
         get() = listState.currentList
 
     open val flow: Flow<PagingEvent<T>> = channelFlow {
+        assertMainThread()
         launch(start = UNDISPATCHED) {
             data.flow.collect { event ->
                 if (event is PagingEvent.LoadDataSuccess) {

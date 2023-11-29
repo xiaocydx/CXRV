@@ -20,6 +20,7 @@ package com.xiaocydx.cxrv.paging
 
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
+import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.flowOnMain
 import com.xiaocydx.cxrv.internal.log
 import kotlinx.coroutines.CancellationException
@@ -32,6 +33,9 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
+import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 /**
  * 分页提取器，从[PagingSource]中加载结果
@@ -52,6 +56,7 @@ internal class PagingFetcher<K : Any, T : Any>(
     @Volatile var loadStates: LoadStates = LoadStates.Incomplete; private set
 
     val flow: Flow<PagingEvent<T>> = safeChannelFlow { channel ->
+        assertMainThread()
         check(!isCollected) { "分页事件流Flow<PagingEvent<T>>只能被收集1次" }
         isCollected = true
         completableJob.invokeOnCompletion {
@@ -89,28 +94,33 @@ internal class PagingFetcher<K : Any, T : Any>(
 
         var loadResult: LoadResult<K, T>? = null
         while (loadResult == null) {
-            loadResult = try {
-                source.load(loadParams(loadType))
+            try {
+                val isSuspended: Boolean
+                loadResult = suspendCoroutineUninterceptedOrReturn { uCont ->
+                    @Suppress("UNCHECKED_CAST")
+                    uCont as Continuation<LoadResult<*, *>>
+                    val outcome = load(source, loadParams(loadType), uCont)
+                    isSuspended = outcome === COROUTINE_SUSPENDED
+                    outcome
+                }
+                // 当source.load()没有产生挂起时，调用yield()解决两个问题：
+                // 1. config.loadResultEmptyFetchNext为true，避免在一个消息中出现死循环加载。
+                // 2. 兼容共享分页数据流的场景，在初始化阶段之后发送PagingEvent，避免丢失数据。
+                if (!isSuspended) yield()
             } catch (e: Throwable) {
                 if (e is CancellationException) throw e
-                LoadResult.Failure(e)
+                loadResult = LoadResult.Failure(e)
             }
 
-            if (loadResult !is LoadResult.Success
-                    || loadResult.data.isNotEmpty()
-                    || loadResult.nextKey == null) {
-                continue
-            }
-
-            loadResult = if (config.loadResultEmptyFetchNext) {
-                nextKey = loadResult.nextKey
-                // 防止在一个消息中出现死循环
-                yield()
-                null
-            } else {
-                LoadResult.Failure(IllegalArgumentException(
-                    "不合理的加载结果，data为空但nextKey不为空"
-                ))
+            if (loadResult is LoadResult.Success
+                    && loadResult.data.isEmpty()
+                    && loadResult.nextKey != null) {
+                loadResult = if (config.loadResultEmptyFetchNext) {
+                    nextKey = loadResult.nextKey
+                    null
+                } else {
+                    LoadResult.Failure(IllegalArgumentException("data为空但nextKey不为空"))
+                }
             }
         }
 
@@ -150,3 +160,7 @@ internal class PagingFetcher<K : Any, T : Any>(
 
     fun close() = completableJob.cancel()
 }
+
+@Suppress("UNCHECKED_CAST")
+private val load = PagingSource<Any, Any>::load
+        as Function3<PagingSource<*, *>, LoadParams<*>, Continuation<LoadResult<*, *>>, *>

@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+
 package com.xiaocydx.cxrv.internal
 
+import kotlinx.coroutines.DEBUG
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
@@ -24,7 +27,9 @@ import kotlinx.coroutines.flow.flowOn
 /**
  * 将Flow的执行上下文的调度器更改为主线程调度器
  */
-internal fun <T> Flow<T>.flowOnMain(): Flow<T> = flowOn(Dispatchers.Main.immediate)
+internal fun <T> Flow<T>.flowOnMain(): Flow<T> {
+    return if (DEBUG) this else flowOn(Dispatchers.Main.immediate)
+}
 
 /**
  * 不检测执行上下文、异常透明性的Flow

@@ -18,6 +18,7 @@
 
 package com.xiaocydx.cxrv.paging
 
+import com.xiaocydx.cxrv.internal.assertMainThread
 import com.xiaocydx.cxrv.internal.flowOnMain
 import com.xiaocydx.cxrv.internal.unsafeFlow
 import kotlinx.coroutines.flow.Flow
@@ -106,6 +107,7 @@ class Pager<K : Any, T : Any>(
         get() = fetcher?.loadStates ?: LoadStates.Incomplete
 
     val flow: Flow<PagingData<T>> = unsafeFlow {
+        assertMainThread()
         check(!isCollected) { "分页数据流Flow<PagingData<T>>只能被1个收集器收集" }
         isCollected = true
         refreshEvent.flow.onStart {

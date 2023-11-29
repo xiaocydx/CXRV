@@ -19,6 +19,7 @@ package com.xiaocydx.cxrv.list
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
@@ -561,7 +562,7 @@ internal class MutableStateListTest {
         val flow = list.asStateFlow()
 
         val events = mutableListOf<ListEvent<String>>()
-        val collectJob = launch(start = UNDISPATCHED) {
+        val collectJob = launch(Dispatchers.Unconfined, UNDISPATCHED) {
             flow.collect { data -> data.flow.toList(events) }
         }
         list.add("A")

@@ -241,6 +241,7 @@ internal class ListMediatorImpl<T : Any>(
         get() = listState.currentList
 
     val flow: Flow<ListEvent<T>> = callbackFlow {
+        assertMainThread()
         check(!isCollected) { "更新事件流Flow<ListEvent<T>>只能被收集一次" }
         isCollected = true
         // 先发射最新的列表数据和版本号，让下游判断是否需要更新
