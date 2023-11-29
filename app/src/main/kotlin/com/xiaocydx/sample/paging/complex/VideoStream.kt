@@ -22,6 +22,7 @@ import com.xiaocydx.sample.paging.complex.VideoStream.Receiver
 import com.xiaocydx.sample.paging.complex.VideoStream.Sender
 import com.xiaocydx.sample.paging.complex.VideoStream.Shared
 import com.xiaocydx.sample.paging.complex.VideoStream.Source
+import com.xiaocydx.sample.paging.complex.VideoStream.StatefulSource
 import com.xiaocydx.sample.transition.transform.SyncTransformSenderId
 import com.xiaocydx.sample.transition.transform.TransformSenderId
 import kotlinx.coroutines.CoroutineScope
@@ -129,7 +130,7 @@ object VideoStream {
         if (holder == null) {
             @Suppress("UNCHECKED_CAST")
             val source = requireNotNull(clazz.newInstance() as? Source<Any, *>)
-            if (source is SaveStateSource<Any, *>) source.init(handle)
+            if (source is StatefulSource<Any, *>) source.init(handle)
             holder = SharedHolder(VideoStreamShared(id, source))
             store[holder.id] = holder
         }
@@ -229,8 +230,8 @@ object VideoStream {
      * [Sender]和[Receiver]共享的分页数据源
      *
      * **注意**：实现类不应当有状态，因为页面重建后，新创建的[Source]会缺失状态，
-     * 如果实现类确实要有状态，那么实现[SaveStateSource]，并在[Sender]修改状态，
-     * 详细的描述可以看[SaveStateSource]的注释。
+     * 如果实现类确实要有状态，那么实现[StatefulSource]，并在[Sender]修改状态，
+     * 详细的描述可以看[StatefulSource]的注释。
      */
     @MainThread
     interface Source<K : Any, T : Any> : PagingSource<K, T> {
@@ -259,12 +260,42 @@ object VideoStream {
         fun toVideoStreamList(list: List<T>): List<VideoStreamItem>
     }
 
+    /**
+     * [Sender]和[Receiver]共享的分页数据源，支持保存轻量的状态
+     *
+     * ```
+     * class SenderViewModel(private val handle: SavedStateHandle) : ViewModel() {
+     *     private val shared = VideoStream.sender(SearchSource::class, handle, viewModelScope)
+     *
+     *     fun setKeyword(keyword: String) {
+     *         shared.source.setKeyword(handle, keyword)
+     *         // 修改了source的keyword，刷新重新加载
+     *         shared.refresh()
+     *     }
+     * }
+     *
+     * class SearchSource : VideoStream.StatefulSource<Int, ComplexItem>() {
+     *     // keyword用于加载过程，即使进程被杀掉，重建后也会恢复keyword
+     *     private val keyword: String
+     *         get() = get<String>(KEY_KEYWORD) ?: ""
+     *
+     *     fun setKeyword(handle: SavedStateHandle, keyword: String) {
+     *         set(handle, KEY_KEYWORD, keyword)
+     *     }
+     *
+     *     private companion object {
+     *         const val KEY_KEYWORD = "KEY_KEYWORD"
+     *     }
+     * }
+     * ```
+     */
     @MainThread
-    abstract class SaveStateSource<K : Any, T : Any> : Source<K, T> {
+    abstract class StatefulSource<K : Any, T : Any> : Source<K, T> {
         private val regular = mutableMapOf<String, Any?>()
 
         internal fun init(handle: SavedStateHandle) {
-            // TODO: 实现regular的初始化注入
+            assertMainThread()
+            handle.keys().forEach { regular[it] = handle[it] }
         }
 
         protected fun <T> get(key: String): T? {
@@ -278,10 +309,15 @@ object VideoStream {
             }
         }
 
-        fun <T> set(handle: SavedStateHandle, key: String, value: T?) {
+        protected fun <T> set(handle: SavedStateHandle, key: String, value: T?) {
             assertMainThread()
             handle[key] = value
             regular[key] = value
+        }
+
+        internal fun toBundle(): Bundle {
+            assertMainThread()
+            return bundleOf(*regular.map { it.key to it.value }.toTypedArray())
         }
     }
 
@@ -360,11 +396,13 @@ private class VideoStreamShared<T, S>(
     override fun retry() = pager.retry()
 
     override fun syncSenderId(id: String) {
+        assertMainThread()
         if (!_isActive.value) return
         _senderId.sync(id)
     }
 
     override fun setReceiverState(id: String, list: List<T>?) {
+        assertMainThread()
         if (!_isActive.value) return
         _senderId.record(id)
         receiverState = null
@@ -374,11 +412,19 @@ private class VideoStreamShared<T, S>(
         receiverState = Receiver.Initial(position, videoList)
     }
 
-    override fun consumeReceiverState() = receiverState?.also { receiverState = null }
+    override fun consumeReceiverState(): Receiver.Initial? {
+        assertMainThread()
+        return receiverState?.also { receiverState = null }
+    }
 
     override fun toBundle(): Bundle {
+        assertMainThread()
         if (!_isActive.value) return Bundle()
-        // TODO: 补充saveState的处理
-        return bundleOf(KEY_ID to id, KEY_NAME to source.javaClass.name)
+        val bundle = source.let {
+            it as? StatefulSource<*, *>
+        }?.toBundle() ?: Bundle(2)
+        bundle.putString(KEY_ID, id)
+        bundle.putString(KEY_NAME, source.javaClass.name)
+        return bundle
     }
 }

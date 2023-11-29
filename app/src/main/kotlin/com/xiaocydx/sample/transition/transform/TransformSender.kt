@@ -19,7 +19,6 @@ package com.xiaocydx.sample.transition.transform
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.findTransformRoot
 import androidx.fragment.app.requireTransformRoot
 import androidx.lifecycle.coroutineScope

@@ -125,7 +125,7 @@ internal class TransformRoot private constructor(
                 // 当动画结束时，可能错过了saveState，不允许提交事务，
                 // 因此观察Lifecycle的状态更改，尝试提交事务修正状态。
                 val ops = pendingUpdateOps
-                if (ops.isNotEmpty() && fragmentManager.isStateSaved) {
+                if (ops.isNotEmpty() && !fragmentManager.isStateSaved) {
                     for (i in ops.indices) updateFragmentMaxLifecycle(ops[i])
                     pendingUpdateOps.clear()
                 }
@@ -170,9 +170,6 @@ internal class TransformRoot private constructor(
 
     private data class UpdateOp(val who: String, val state: Lifecycle.State)
 
-    // TODO: 检查执行效率和上限异常
-    // TODO: 验证进程重启的表现
-    // TODO: 验证嵌套结构的表现
     internal class StateHolder(private val savaStateHandle: SavedStateHandle) : ViewModel() {
 
         fun createTagBySenderWho(sender: Fragment): String {
