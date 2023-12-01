@@ -65,18 +65,21 @@ abstract class CustomLayout @JvmOverloads constructor(
     override fun shouldDelayChildPressedState(): Boolean = false
 
     protected inline fun addView(child: View, width: Int, height: Int, block: LayoutParams.() -> Unit) {
-        addView(child, generateDefaultLayoutParams(width, height).also(block))
+        addView(child, LayoutParams(width, height).also(block))
     }
 
-    protected fun generateDefaultLayoutParams(width: Int, height: Int): LayoutParams {
-        return LayoutParams(width, height)
-    }
+    override fun generateLayoutParams(attrs: AttributeSet) = LayoutParams(context, attrs)
 
-    override fun generateDefaultLayoutParams(): LayoutParams {
-        return generateDefaultLayoutParams(wrapContent, wrapContent)
-    }
+    override fun generateDefaultLayoutParams() = LayoutParams(wrapContent, wrapContent)
 
-    class LayoutParams(width: Int, height: Int) : MarginLayoutParams(width, height)
+    override fun generateLayoutParams(p: ViewGroup.LayoutParams) = LayoutParams(p)
+
+    class LayoutParams : MarginLayoutParams {
+        constructor(c: Context, attrs: AttributeSet) : super(c, attrs)
+        constructor(width: Int, height: Int) : super(width, height)
+        constructor(source: MarginLayoutParams) : super(source)
+        constructor(source: ViewGroup.LayoutParams) : super(source)
+    }
 
     @get:Px
     @setparam:Px
