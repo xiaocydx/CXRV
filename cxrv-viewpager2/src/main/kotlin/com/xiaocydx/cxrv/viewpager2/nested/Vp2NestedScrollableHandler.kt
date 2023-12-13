@@ -149,12 +149,11 @@ class Vp2NestedScrollableHandler(
         notHostParent?.requestDisallowInterceptTouchEvent(disallowIntercept)
         if (!disallowIntercept) {
             var parent: View? = notHostParent as? View
-            while (parent != null && parent.requestDisallowIntercept == null) {
+            while (parent != null && parent.requestDisallowIntercept != true) {
                 parent = parent.parent as? View
             }
-            val previousDisallowIntercept = parent?.requestDisallowIntercept
-            if (previousDisallowIntercept == true) {
-                parent?.requestDisallowInterceptTouchEvent(previousDisallowIntercept)
+            if (parent?.requestDisallowIntercept == true) {
+                parent.requestDisallowInterceptTouchEvent(true)
             }
         }
     }
