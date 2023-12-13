@@ -43,8 +43,7 @@ import kotlinx.coroutines.flow.onEach
  * [ListState.asFlow]可以同时被多个收集器收集，共享列表状态。
  *
  * **注意**：虽然支持[ListState]和[ListAdapter]之间的双向通信，
- * 但是建议以单向数据流的方式更新列表，即仅通过[ListState]更新列表，
- * 这会提高代码的可读性和可维护性。
+ * 但是建议仅通过[ListState]更新列表，这能提高代码的可读性和可维护性。
  *
  * ### 为什么不用[LiveData]或者[StateFlow]？
  * [LiveData]和[StateFlow]只能替换列表，让视图控制器执行一次差异计算，不支持细粒度的更新操作。

@@ -27,8 +27,7 @@ import com.xiaocydx.cxrv.internal.InternalizationApi
  * 通常[ListState]位于ViewModel，[ListAdapter]位于视图控制器。
  *
  * **注意**：虽然支持[ListState]和[ListAdapter]之间的双向通信，
- * 但是建议以单向数据流的方式更新列表，即仅通过[ListState]更新列表，
- * 这会提高代码的可读性和可维护性。
+ * 但是建议仅通过[ListState]更新列表，这能提高代码的可读性和可维护性。
  *
  * @author xcc
  * @date 2021/9/11
@@ -38,7 +37,7 @@ interface ListOwner<T : Any> {
     /**
      * 当前列表
      *
-     * 通过[getItem]、[getItemOrNull]等扩展函数可以访问列表。
+     * 实现类可以替换该属性的对象，通过[getItem]、[getItemOrNull]等扩展函数可以访问列表。
      *
      * **注意**：需要确保item对象不可变，item对象不可变才能确保视图控制器恢复活跃状态时，
      * 支持[UpdateOp.SubmitList]进行差异计算的实现类（例如[ListAdapter]）能正确更新列表。
