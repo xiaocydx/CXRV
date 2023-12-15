@@ -16,12 +16,11 @@
 
 package com.xiaocydx.sample.transition.transform
 
-import android.transition.Transition
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.requireTransformRoot
-import com.google.android.material.transition.platform.MaterialContainerTransform
-import com.xiaocydx.sample.transition.compat.setEnterTransitionCompat
+import androidx.transition.Transition
+import com.google.android.material.transition.MaterialContainerTransform
 
 /**
  * 变换过渡动画的Receiver，[Fragment]实现该接口完成完成初始化配置
@@ -44,7 +43,6 @@ interface TransformReceiver {
         val transform = MaterialContainerTransform()
         transform.interpolator = AccelerateDecelerateInterpolator()
         block?.invoke(transform)
-        return root.createReceiverTransition(this, transform)
-            .also(::setEnterTransitionCompat)
+        return root.createReceiverTransition(this, transform).also(::setEnterTransition)
     }
 }

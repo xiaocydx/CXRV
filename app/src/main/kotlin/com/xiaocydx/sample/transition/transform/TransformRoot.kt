@@ -5,7 +5,6 @@ package androidx.fragment.app
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.transition.Transition
 import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State.RESUMED
@@ -14,7 +13,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.google.android.material.transition.platform.MaterialContainerTransform
+import androidx.transition.Transition
+import com.google.android.material.transition.MaterialContainerTransform
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.transition.transform.TransformTransition
 import kotlinx.coroutines.flow.Flow

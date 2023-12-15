@@ -16,26 +16,17 @@
 
 package com.xiaocydx.sample.transition.transform
 
-import android.transition.Transition
-import android.transition.TransitionSet
-import android.transition.TransitionValues
 import android.view.View
-import com.google.android.material.transition.platform.MaterialContainerTransform
+import androidx.transition.Transition
+import androidx.transition.TransitionSet
+import androidx.transition.TransitionValues
+import com.google.android.material.transition.MaterialContainerTransform
 
 /**
  * [MaterialContainerTransform]不能被继承，利用[TransitionSet]包装一层，
  * 重写[TransitionSet]相关函数，以实现对捕获时机的监听，当真正开始捕获时，
  * 才获取`target`进行捕获，[TransitionSet]会触发`childTransition`的回调，
  * 这也让[MaterialContainerTransform]在动画开始和结束时，能正常完成工作。
- *
- * **注意**：Fragment的过渡动画不能使用AndroidX的Transition，因为Fragment进入和退出的事务处理过程，
- * 会调用`FragmentTransitionImpl.setListenerForTransitionEnd()`，等待过渡动画结束才推进生命周期状态，
- * `FragmentTransitionCompat21.setListenerForTransitionEnd()`对Android SDK的Transition实现了该逻辑，
- * 但是`FragmentTransitionSupport`却没有重写该函数，对AndroidX的Transition实现等待逻辑，这也就导致，
- * 对Fragment使用AndroidX的Transition，其生命周期状态会在过渡动画结束前先被推进，以图片加载框架为例，
- * 当Fragment退出时，会出现过渡动画还未结束，图片加载框架就先清除了图片的问题。
- *
- * 目前最新版本的`androidx.fragment 1.6.1`仍存在上述问题。
  *
  * @author xcc
  * @date 2023/8/5
@@ -60,7 +51,6 @@ internal class TransformTransition(
         captureValues(transitionValues, start = false)
     }
 
-    @Suppress("SENSELESS_COMPARISON")
     private fun captureValues(transitionValues: TransitionValues, start: Boolean) {
         // 捕获流程调用自Transition.captureValues()，或者Transition.captureHierarchy()，
         // 对于这两种情况，将sceneRoot的起始和结束捕获委托给transform，确保能创建属性动画。

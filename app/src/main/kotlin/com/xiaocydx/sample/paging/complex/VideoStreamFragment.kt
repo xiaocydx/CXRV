@@ -36,13 +36,17 @@ import com.xiaocydx.sample.registerOnPageChangeCallback
 import com.xiaocydx.sample.snackbar
 import com.xiaocydx.sample.transition.transform.SystemBarsContainer
 import com.xiaocydx.sample.transition.transform.TransformReceiver
-import com.xiaocydx.sample.transition.transform.doOnEnd
+import com.xiaocydx.sample.transition.transform.TransitionEvent
 import com.xiaocydx.sample.transition.transform.setDarkStatusBarOnResume
 import com.xiaocydx.sample.transition.transform.setWindowNavigationBarColor
+import com.xiaocydx.sample.transition.transform.takeFirst
+import com.xiaocydx.sample.transition.transform.transitionEvent
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 /**
  * 视频流页面
@@ -123,7 +127,10 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             // 过渡动画结束时，才将viewPager2.offscreenPageLimit修改为1，
             // 确保startPostponedEnterTransition()不受两侧加载图片影响。
             EnterTransitionListener(this, requestManager).postpone()
-            enterTransition.doOnEnd(once = true) { viewPager2.offscreenPageLimit = 1 }
+            enterTransition.transitionEvent()
+                .takeFirst<TransitionEvent.End>()
+                .onEach { viewPager2.offscreenPageLimit = 1 }
+                .launchIn(viewLifecycleScope)
         } else {
             // Fragment重新创建，直接将viewPager2.offscreenPageLimit修改为1
             viewPager2.offscreenPageLimit = 1
