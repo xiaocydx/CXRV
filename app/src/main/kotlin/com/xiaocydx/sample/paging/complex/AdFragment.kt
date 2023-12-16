@@ -2,9 +2,8 @@ package com.xiaocydx.sample.paging.complex
 
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
+import androidx.fragment.app.SystemBarsController
 import androidx.lifecycle.flowWithLifecycle
 import com.xiaocydx.sample.doOnStateChanged
 import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
@@ -12,10 +11,7 @@ import com.xiaocydx.sample.transition.enter.EnterTransitionController
 import com.xiaocydx.sample.transition.enter.LOADING_DURATION
 import com.xiaocydx.sample.transition.enter.TransitionFragment
 import com.xiaocydx.sample.transition.enter.TransitionState
-import com.xiaocydx.sample.transition.transform.SystemBarsContainer
 import com.xiaocydx.sample.transition.transform.TransformReceiver
-import com.xiaocydx.sample.transition.transform.setLightStatusBarOnResume
-import com.xiaocydx.sample.transition.transform.setWindowNavigationBarColor
 import com.xiaocydx.sample.viewLifecycle
 import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -33,17 +29,14 @@ import kotlinx.coroutines.flow.onEach
  * @date 2023/8/4
  */
 class AdFragment : TransitionFragment(), TransformReceiver {
+    private val systemBarsController = SystemBarsController(this)
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View = SystemBarsContainer(requireContext())
-        .setLightStatusBarOnResume(this)
-        .setStatusBarColor(0xFF79AA91.toInt())
-        .setWindowNavigationBarColor(this)
-        .setGestureNavBarEdgeToEdge(true)
-        .attach(super.onCreateView(inflater, container, savedInstanceState))
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        systemBarsController
+            .setGestureNavBarEdgeToEdge(true)
+            .setStatusBarColor(0xFF79AA91.toInt())
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupDebugLog()

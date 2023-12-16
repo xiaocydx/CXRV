@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.SystemBarsController
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
 import androidx.viewpager2.widget.ViewPager2
@@ -34,11 +35,8 @@ import com.xiaocydx.sample.paging.config.loadStatesFlow
 import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
 import com.xiaocydx.sample.registerOnPageChangeCallback
 import com.xiaocydx.sample.snackbar
-import com.xiaocydx.sample.transition.transform.SystemBarsContainer
 import com.xiaocydx.sample.transition.transform.TransformReceiver
 import com.xiaocydx.sample.transition.transform.TransitionEvent
-import com.xiaocydx.sample.transition.transform.setDarkStatusBarOnResume
-import com.xiaocydx.sample.transition.transform.setWindowNavigationBarColor
 import com.xiaocydx.sample.transition.transform.takeFirst
 import com.xiaocydx.sample.transition.transform.transitionEvent
 import com.xiaocydx.sample.viewLifecycle
@@ -79,6 +77,15 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
     private lateinit var binding: FragmetVideoStreamBinding
     private lateinit var videoAdapter: ListAdapter<VideoStreamItem, *>
     private val videoViewModel: VideoStreamViewModel by viewModels()
+    private val systemBarsController = SystemBarsController(this)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        systemBarsController
+            .setDarkStatusBar(true)
+            .setStatusBarEdgeToEdge(true)
+            .setGestureNavBarEdgeToEdge(true)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -109,12 +116,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
             orientation = ORIENTATION_VERTICAL
             replaceWithSwipeRefresh(videoAdapter)
         }
-        return SystemBarsContainer(requireContext())
-            .setDarkStatusBarOnResume(this)
-            .setStatusBarEdgeToEdge(true)
-            .setGestureNavBarEdgeToEdge(true)
-            .setWindowNavigationBarColor(this)
-            .attach(binding.root)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

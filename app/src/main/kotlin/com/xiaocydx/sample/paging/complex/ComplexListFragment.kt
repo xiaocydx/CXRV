@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.SystemBarsController
 import androidx.fragment.app.TransformRoot
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.STARTED
@@ -37,11 +38,8 @@ import com.xiaocydx.sample.paging.config.withPaging
 import com.xiaocydx.sample.paging.config.withSwipeRefresh
 import com.xiaocydx.sample.transition.enter.EnterTransitionActivity
 import com.xiaocydx.sample.transition.enter.EnterTransitionController
-import com.xiaocydx.sample.transition.transform.SystemBarsContainer
 import com.xiaocydx.sample.transition.transform.TransformReceiver
 import com.xiaocydx.sample.transition.transform.TransformSender
-import com.xiaocydx.sample.transition.transform.setLightStatusBarOnResume
-import com.xiaocydx.sample.transition.transform.setWindowSystemBarsColor
 import com.xiaocydx.sample.viewLifecycle
 
 /**
@@ -73,6 +71,12 @@ class ComplexListFragment : Fragment(), TransformSender {
     private lateinit var rvComplex: RecyclerView
     private lateinit var complexAdapter: ListAdapter<ComplexItem, *>
     private val complexViewModel: ComplexListViewModel by viewModels()
+    private val systemBarsController = SystemBarsController(this)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        systemBarsController.setGestureNavBarEdgeToEdge(true)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -113,12 +117,7 @@ class ComplexListFragment : Fragment(), TransformSender {
             .overScrollNever().grid(spanCount = 2).fixedSize()
             .divider(width = 5.dp, height = 5.dp) { edge(Edge.all()) }
             .adapter(complexAdapter.withPaging())
-
-        return SystemBarsContainer(requireContext())
-            .setLightStatusBarOnResume(this)
-            .setWindowSystemBarsColor(this)
-            .setGestureNavBarEdgeToEdge(true)
-            .attach(rvComplex.withSwipeRefresh(complexAdapter))
+        return rvComplex.withSwipeRefresh(complexAdapter)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
