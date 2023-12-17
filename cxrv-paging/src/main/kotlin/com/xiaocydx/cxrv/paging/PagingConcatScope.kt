@@ -18,7 +18,7 @@
 
 package com.xiaocydx.cxrv.paging
 
-import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.ConcatAdapter
 import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.cxrv.internal.RvDslMarker
@@ -147,13 +147,13 @@ open class PagingConcatScope {
     /**
      * 完成适配器的连接工作，返回连接后的结果，该函数只能被调用一次
      */
-    protected fun completeConcat(adapter: ListAdapter<*, *>): Adapter<*> {
+    protected fun completeConcat(adapter: ListAdapter<*, *>): ConcatAdapter {
         checkCompleted()
         isCompleted = true
         val outcome = Concat.content(adapter)
             .headerOrNull(getLoadHeader(adapter))
             .footerOrNull(getLoadFooter(adapter))
-            .concatIfNecessary()
+            .concat()
         clear()
         return outcome
     }

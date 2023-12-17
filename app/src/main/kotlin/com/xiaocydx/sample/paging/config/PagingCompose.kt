@@ -5,7 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.CheckResult
 import androidx.annotation.LayoutRes
-import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.ConcatAdapter
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.doOnAttach
 import com.xiaocydx.cxrv.paging.LoadFooterConfig
@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.callbackFlow
  * ```
  */
 @CheckResult
-inline fun ListAdapter<*, *>.withPaging(block: DefaultPagingConcatScope.() -> Unit = {}): Adapter<*> {
+inline fun ListAdapter<*, *>.withPaging(block: DefaultPagingConcatScope.() -> Unit = {}): ConcatAdapter {
     return DefaultPagingConcatScope().apply(block).complete(this)
 }
 
@@ -70,7 +70,7 @@ class DefaultPagingConcatScope
         }
 
     @PublishedApi
-    internal fun complete(listAdapter: ListAdapter<*, *>): Adapter<*> {
+    internal fun complete(listAdapter: ListAdapter<*, *>): ConcatAdapter {
         if (!enabledItemAnimator) {
             listAdapter.doOnAttach { it.itemAnimator = null }
         }
