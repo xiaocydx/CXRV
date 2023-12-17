@@ -83,7 +83,7 @@ interface TransformKey<T> {
  */
 @MainThread
 class SyncTransformSenderId : TransformSenderId {
-    private var isCancelled = false
+    private var isClosed = false
     private var recordId: String? = null
     private val _syncEvent = MutableSharedFlow<Any>(
         extraBufferCapacity = 1,
@@ -92,8 +92,8 @@ class SyncTransformSenderId : TransformSenderId {
 
     @Suppress("UNCHECKED_CAST")
     override val syncEvent = _syncEvent
-        .onStart { if (isCancelled) emit(CancelValue) else recordId?.let { emit(it) } }
-        .takeWhile { it != CancelValue }.flowOn(Dispatchers.Main.immediate) as Flow<String>
+        .onStart { if (isClosed) emit(Closed) else recordId?.let { emit(it) } }
+        .takeWhile { it !== Closed }.flowOn(Dispatchers.Main.immediate) as Flow<String>
 
     override fun consume(): String? {
         assertMainThread()
@@ -105,7 +105,7 @@ class SyncTransformSenderId : TransformSenderId {
      */
     fun sync(id: String) {
         assertMainThread()
-        if (isCancelled || recordId == id) return
+        if (isClosed || recordId == id) return
         recordId = id
         _syncEvent.tryEmit(id)
     }
@@ -115,7 +115,7 @@ class SyncTransformSenderId : TransformSenderId {
      */
     fun record(id: String) {
         assertMainThread()
-        if (isCancelled) return
+        if (isClosed) return
         recordId = id
     }
 
@@ -124,9 +124,9 @@ class SyncTransformSenderId : TransformSenderId {
      */
     fun close() {
         assertMainThread()
-        isCancelled = true
+        isClosed = true
         recordId = null
-        _syncEvent.tryEmit(CancelValue)
+        _syncEvent.tryEmit(Closed)
     }
 
     fun asSenderId(): TransformSenderId {
@@ -140,5 +140,5 @@ class SyncTransformSenderId : TransformSenderId {
         assert(Thread.currentThread() === Looper.getMainLooper().thread)
     }
 
-    private companion object CancelValue
+    private companion object Closed
 }
