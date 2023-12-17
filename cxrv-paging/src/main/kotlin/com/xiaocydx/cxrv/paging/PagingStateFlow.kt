@@ -16,6 +16,9 @@
 
 package com.xiaocydx.cxrv.paging
 
+import com.xiaocydx.cxrv.paging.WhenCollectorEmpty.CLOSE
+import com.xiaocydx.cxrv.paging.WhenCollectorEmpty.NONE
+import com.xiaocydx.cxrv.paging.WhenCollectorEmpty.REPEAT
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
@@ -27,27 +30,23 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 用于分页加载的可取消[StateFlow]
+ * 用于分页加载的可关闭[StateFlow]，当被首次收集时，才开始收集[upstream]
  *
- * 当被首次收集时，才开始收集[upstream]，以下[withoutCollectorNeedCancel]的作用：
- * 1. 若为`false`，则直到主动调用[cancel]或者`scope`被取消，才取消收集[upstream]。
- * 2. 若为`true`，则直到主动调用[cancel]或者`scope`被取消，才取消收集[upstream]，
- * 或者当收集器数量为`0`时取消收集[upstream]，大于`0`时重新收集[upstream]。
+ * [whenCollectorEmpty]的作用：
+ * 1. [NONE]表示当`collector`数量为`0`时，不做任何处理。
+ * 3. [CLOSE]表示当`collector`数量为`0`时，取消收集[upstream]，关闭[StateFlow]。
+ * 2. [REPEAT]表示当`collector`数量为`0`时，取消收集[upstream]，大于`0`时重新收集[upstream]。
  *
- * 当[withoutCollectorNeedCancel]为`true`时，[canRepeatCollectAfterCancel]的作用：
- * 1. 若为`false`，则收集器数量为`0`取消收集[upstream]后，不再重复收集[upstream]。
- * 2. 若为`true`，则收集器数量为`0`取消收集[upstream]后，能再重复收集[upstream]。
- *
- * **注意**：当[upstream]发射完成时，[PagingStateFlow]会对其结束收集，
- * 并且转换至取消状态，取消所有收集器对[cancellableStateFlow]的收集。
+ * **注意**：[closeStateFlow]不是让`collector`立即取消收集[closableStateFlow]，
+ * 而是让`collector`在收集到[Closed]时，能够结束对[closableStateFlow]的收集。
  *
  * @author xcc
  * @date 2023/8/6
@@ -55,32 +54,31 @@ import kotlinx.coroutines.withContext
 internal open class PagingStateFlow<T : Any>(
     scope: CoroutineScope,
     private val upstream: Flow<T>,
-    private val withoutCollectorNeedCancel: Boolean,
-    private val canRepeatCollectAfterCancel: Boolean,
+    private val whenCollectorEmpty: WhenCollectorEmpty = NONE
 ) : Flow<T> {
     private val collectJob: Job
     private val stateFlow = MutableStateFlow<Any?>(null)
-    private val cancellableStateFlow = stateFlow.mapNotNull { it }.takeWhile { it != CancelValue }
+    private val closableStateFlow = stateFlow.filterNotNull().takeWhile { it !== Closed }
     private val collectorCount = stateFlow.subscriptionCount
 
     init {
         val coroutineName = CoroutineName(javaClass.simpleName)
         collectJob = scope.launch(coroutineName, start = UNDISPATCHED) {
             try {
-                if (withoutCollectorNeedCancel) {
+                if (whenCollectorEmpty !== NONE) {
                     var childJob: Job? = null
                     val parentJob = coroutineContext.job
                     collectorCount.collect { count ->
                         if (count > 0 && childJob == null) {
                             childJob = launch(start = UNDISPATCHED) {
                                 upstream.collect(stateFlow::emit)
-                                // upstream发射完成，对其结束收集，转换至取消状态
+                                // upstream发射完成，结束收集
                                 parentJob.cancel()
                             }
                         } else if (count == 0 && childJob != null) {
                             childJob!!.cancelAndJoin()
                             childJob = null
-                            if (!canRepeatCollectAfterCancel) parentJob.cancel()
+                            if (whenCollectorEmpty === CLOSE) parentJob.cancel()
                         }
                     }
                 } else {
@@ -88,8 +86,8 @@ internal open class PagingStateFlow<T : Any>(
                     upstream.collect(stateFlow::emit)
                 }
             } finally {
-                // 当前协程可能被取消，用NonCancellable确保发射CancelValue
-                withContext(NonCancellable) { cancelStateFlow() }
+                // 当前协程可能被取消，用NonCancellable确保发射Closed
+                withContext(NonCancellable) { closeStateFlow() }
             }
         }
     }
@@ -99,22 +97,20 @@ internal open class PagingStateFlow<T : Any>(
         if (!collectJob.isActive) return
         coroutineScope {
             launch {
-                // 处理边界情况，在collectJob调用cancelStateFlow()之后进行收集，
+                // 处理边界情况，在collectJob调用closeStateFlow()之后进行收集，
                 // 此时需要基于当前协程上下文，挂起等待collectJob.join()执行完成，
-                // 再次调用cancelStateFlow()，当前协程没有用UNDISPATCHED启动，
+                // 再次调用closeStateFlow()，当前协程没有用UNDISPATCHED启动，
                 // 结合EventLoop的调度处理，当前协程一定比收集stateFlow后执行。
                 collectJob.join()
-                cancelStateFlow()
+                closeStateFlow()
             }
 
             @Suppress("UNCHECKED_CAST")
-            (cancellableStateFlow as Flow<T>).collect(collector)
+            (closableStateFlow as Flow<T>).collect(collector)
         }
     }
 
-    private suspend fun cancelStateFlow() = stateFlow.emit(CancelValue)
+    private suspend fun closeStateFlow() = stateFlow.emit(Closed)
 
-    suspend fun cancel() = collectJob.cancelAndJoin()
-
-    private companion object CancelValue
+    suspend fun close() = collectJob.cancelAndJoin()
 }

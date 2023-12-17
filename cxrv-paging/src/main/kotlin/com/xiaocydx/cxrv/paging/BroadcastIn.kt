@@ -16,6 +16,7 @@
 
 package com.xiaocydx.cxrv.paging
 
+import com.xiaocydx.cxrv.paging.WhenCollectorEmpty.REPEAT
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -23,8 +24,8 @@ import kotlinx.coroutines.flow.map
 /**
  * ### 函数作用
  * 1. 将`Flow<PagingData<T>>`转换为热流，以广播的形式发射[PagingData]。
- * 2. 转换的热流可以被多个收集器收集，当热流被首次收集时，才开始收集上游，
- * 直到[scope]被取消，或者当收集器数量为`0`时取消收集上游，大于`0`时重新收集上游。
+ * 2. 转换的热流可以被多个`collector`收集，当热流被首次收集时，才开始收集上游，
+ * 直到[scope]被取消，或者当`collector`数量为`0`时取消收集上游，大于`0`时重新收集上游。
  *
  * ### 调用顺序
  * 不允许在[storeIn]之后，调用[broadcastIn]转换`Flow<PagingData<T>>`，
@@ -61,7 +62,7 @@ fun <T : Any> Flow<PagingData<T>>.broadcastIn(scope: CoroutineScope): Flow<Pagin
     var previous: BroadcastInPagingEventShareFlow<T>? = null
     val upstream: Flow<PagingData<T>> = map { data ->
         data.ensureBeforeStoreInOperator { "Flow<PagingData<T>>.broadcastIn()" }
-        previous?.cancel()
+        previous?.close()
         previous = BroadcastInPagingEventShareFlow(scope, data.flow)
         PagingData(previous!!, data.mediator)
     }
@@ -71,19 +72,9 @@ fun <T : Any> Flow<PagingData<T>>.broadcastIn(scope: CoroutineScope): Flow<Pagin
 private class BroadcastInPagingDataStateFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingData<T>>
-) : PagingStateFlow<PagingData<T>>(
-    scope = scope,
-    upstream = upstream,
-    withoutCollectorNeedCancel = true,
-    canRepeatCollectAfterCancel = true,
-)
+) : PagingStateFlow<PagingData<T>>(scope, upstream, REPEAT)
 
 private class BroadcastInPagingEventShareFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingEvent<T>>
-) : PagingSharedFlow<PagingEvent<T>>(
-    scope = scope,
-    upstream = upstream,
-    withoutCollectorNeedCancel = true,
-    canRepeatCollectAfterCancel = false
-)
+) : PagingSharedFlow<PagingEvent<T>>(scope, upstream, REPEAT)

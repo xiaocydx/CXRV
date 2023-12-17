@@ -33,14 +33,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * ### 函数作用
  * 1. 将`Flow<PagingData<T>>`发射的事件的列表数据保存到[list]。
  * 2. [list]和视图控制器建立基于[ListOwner]的双向通信。
- * 3. 将`Flow<PagingData<T>>`转换为热流，热流可以被多个收集器收集，
+ * 3. 将`Flow<PagingData<T>>`转换为热流，热流可以被多个`collector`收集，
  * 当热流被首次收集时，才开始收集上游，直到[scope]被取消。
  *
  * ### 调用顺序
@@ -110,7 +109,7 @@ internal inline fun <T : Any> Flow<PagingData<T>>.storeInInternal(
     var previous: StoreInPagingEventSharedFlow<T>? = null
     val upstream: Flow<PagingData<T>> = map { data ->
         data.ensureSingleStoreInOperator()
-        previous?.cancel()
+        previous?.close()
         val mediator = transform(data, state)
         val flow = StoreInPagingEventSharedFlow(scope, mediator.flow, mediator)
         previous = flow
@@ -123,12 +122,7 @@ internal inline fun <T : Any> Flow<PagingData<T>>.storeInInternal(
 internal class StoreInPagingDataStateFlow<T : Any>(
     scope: CoroutineScope,
     upstream: Flow<PagingData<T>>
-) : PagingStateFlow<PagingData<T>>(
-    scope = scope,
-    upstream = upstream,
-    withoutCollectorNeedCancel = false,
-    canRepeatCollectAfterCancel = false
-)
+) : PagingStateFlow<PagingData<T>>(scope, upstream)
 
 @VisibleForTesting
 internal class StoreInPagingEventSharedFlow<T : Any>(
@@ -136,12 +130,7 @@ internal class StoreInPagingEventSharedFlow<T : Any>(
     upstream: Flow<PagingEvent<T>>,
     private val mediator: PagingListMediator<T>,
     private val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main.immediate
-) : PagingSharedFlow<PagingEvent<T>>(
-    scope = scope,
-    upstream = upstream,
-    withoutCollectorNeedCancel = false,
-    canRepeatCollectAfterCancel = false
-) {
+) : PagingSharedFlow<PagingEvent<T>>(scope, upstream) {
 
     override fun CoroutineScope.beforeCollect(collectorId: Int) {
         launch {
@@ -165,13 +154,10 @@ internal class StoreInPagingEventSharedFlow<T : Any>(
         else -> mediator.currentList.toSafeMutableList()
     }
 
-    private suspend inline fun <R> withMainDispatcher(
-        context: CoroutineContext = EmptyCoroutineContext,
-        crossinline block: suspend () -> R
-    ): R {
+    private suspend inline fun <R> withMainDispatcher(crossinline block: suspend () -> R): R {
         val dispatcher = mainDispatcher
         return if (dispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
-            withContext(dispatcher + context) { block() }
+            withContext(dispatcher) { block() }
         } else {
             block()
         }

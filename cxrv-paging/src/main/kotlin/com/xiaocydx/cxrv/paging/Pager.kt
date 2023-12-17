@@ -108,7 +108,7 @@ class Pager<K : Any, T : Any>(
 
     val flow: Flow<PagingData<T>> = unsafeFlow {
         assertMainThread()
-        check(!isCollected) { "分页数据流Flow<PagingData<T>>只能被1个收集器收集" }
+        check(!isCollected) { "分页数据流Flow<PagingData<T>>只能被1个collector收集" }
         isCollected = true
         refreshEvent.flow.onStart {
             // 触发初始化加载

@@ -16,6 +16,9 @@
 
 package com.xiaocydx.cxrv.paging
 
+import com.xiaocydx.cxrv.paging.WhenCollectorEmpty.CLOSE
+import com.xiaocydx.cxrv.paging.WhenCollectorEmpty.NONE
+import com.xiaocydx.cxrv.paging.WhenCollectorEmpty.REPEAT
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
@@ -35,19 +38,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 用于分页加载的可取消[SharedFlow]
+ * 用于分页加载的可关闭[SharedFlow]，当被首次收集时，才开始收集[upstream]
  *
- * 当被首次收集时，才开始收集[upstream]，此时[withoutCollectorNeedCancel]的作用：
- * 1. 若为`false`，则直到主动调用[cancel]或者`scope`被取消，才取消收集[upstream]。
- * 2. 若为`true`，则直到主动调用[cancel]或者`scope`被取消，才取消收集[upstream]，
- * 或者当收集器数量为`0`时取消收集[upstream]，大于`0`时重新收集[upstream]。
+ * [whenCollectorEmpty]的作用：
+ * 1. [NONE]表示当`collector`数量为`0`时，不做任何处理。
+ * 3. [CLOSE]表示当`collector`数量为`0`时，取消收集[upstream]，关闭[SharedFlow]。
+ * 2. [REPEAT]表示当`collector`数量为`0`时，取消收集[upstream]，大于`0`时重新收集[upstream]。
  *
- * 当[withoutCollectorNeedCancel]为`true`时，[canRepeatCollectAfterCancel]的作用：
- * 1. 若为`false`，则收集器数量为`0`取消收集[upstream]后，不再重复收集[upstream]。
- * 2. 若为`true`，则收集器数量为`0`取消收集[upstream]后，能再重复收集[upstream]。
- *
- * **注意**：当[upstream]发射完成时，[PagingSharedFlow]会对其结束收集，
- * 并且转换至取消状态，取消所有收集器对[cancellableSharedFlow]的收集。
+ * **注意**：[closeSharedFlow]不是让`collector`立即取消收集[closableSharedFlow]，
+ * 而是让`collector`在收集到[Closed]时，能够结束对[closableSharedFlow]的收集。
  *
  * @author xcc
  * @date 2023/8/3
@@ -55,12 +54,11 @@ import kotlinx.coroutines.withContext
 internal open class PagingSharedFlow<T : Any>(
     scope: CoroutineScope,
     private val upstream: Flow<T>,
-    private val withoutCollectorNeedCancel: Boolean,
-    private val canRepeatCollectAfterCancel: Boolean
+    private val whenCollectorEmpty: WhenCollectorEmpty = NONE
 ) : Flow<T> {
     private val collectJob: Job
     private val sharedFlow = MutableSharedFlow<Any>()
-    private val cancellableSharedFlow = sharedFlow.takeWhile { it != CancelValue }
+    private val closableSharedFlow = sharedFlow.takeWhile { it !== Closed }
     private val collectorCount = sharedFlow.subscriptionCount
 
     init {
@@ -70,20 +68,20 @@ internal open class PagingSharedFlow<T : Any>(
         val coroutineName = CoroutineName(javaClass.simpleName)
         collectJob = scope.launch(coroutineName, start = UNDISPATCHED) {
             try {
-                if (withoutCollectorNeedCancel) {
+                if (whenCollectorEmpty !== NONE) {
                     var childJob: Job? = null
                     val parentJob = coroutineContext.job
                     collectorCount.collect { count ->
                         if (count > 0 && childJob == null) {
                             childJob = launch(start = UNDISPATCHED) {
                                 upstream.collect(sharedFlow::emit)
-                                // upstream发射完成，对其结束收集，转换至取消状态
+                                // upstream发射完成，结束收集
                                 parentJob.cancel()
                             }
                         } else if (count == 0 && childJob != null) {
                             childJob!!.cancelAndJoin()
                             childJob = null
-                            if (!canRepeatCollectAfterCancel) parentJob.cancel()
+                            if (whenCollectorEmpty === CLOSE) parentJob.cancel()
                         }
                     }
                 } else {
@@ -91,8 +89,8 @@ internal open class PagingSharedFlow<T : Any>(
                     upstream.collect(sharedFlow::emit)
                 }
             } finally {
-                // 当前协程可能被取消，用NonCancellable确保发射CancelValue
-                withContext(NonCancellable) { cancelSharedFlow() }
+                // 当前协程可能被取消，用NonCancellable确保发射Closed
+                withContext(NonCancellable) { closeSharedFlow() }
             }
         }
     }
@@ -102,12 +100,12 @@ internal open class PagingSharedFlow<T : Any>(
         if (!collectJob.isActive) return
         coroutineScope {
             launch {
-                // 处理边界情况，在collectJob调用cancelSharedFlow()之后进行收集，
+                // 处理边界情况，在collectJob调用closeSharedFlow()之后进行收集，
                 // 此时需要基于当前协程上下文，挂起等待collectJob.join()执行完成，
-                // 再次调用cancelSharedFlow()，当前协程没有用UNDISPATCHED启动，
+                // 再次调用closeSharedFlow()，当前协程没有用UNDISPATCHED启动，
                 // 结合EventLoop的调度处理，当前协程一定比收集sharedFlow后执行。
                 collectJob.join()
-                cancelSharedFlow()
+                closeSharedFlow()
             }
 
             val collectorId = System.identityHashCode(collector)
@@ -115,23 +113,23 @@ internal open class PagingSharedFlow<T : Any>(
             // 如果收集处协程都是UNDISPATCHED启动，并且是立即收集sharedFlow，
             // 那么对于EventLoop，collectorCount = 1的恢复会进入调度事件队列，
             // 这也就表示collectJob收集collectorCount，当collectorCount = 1时，
-            // 全部收集器已完成对sharedFlow的收集，upstream发射的事件都能收到。
+            // 全部collector已完成对sharedFlow的收集，upstream发射的事件都能收到。
             @Suppress("UNCHECKED_CAST")
-            cancellableSharedFlow.mapNotNull {
+            closableSharedFlow.mapNotNull {
                 val value = it as? CollectorValue<T>
                 if (value != null) value.get(collectorId) else it as T
             }.collect(collector)
         }
     }
 
-    private suspend fun cancelSharedFlow() = sharedFlow.emit(CancelValue)
+    private suspend fun closeSharedFlow() = sharedFlow.emit(Closed)
 
     protected suspend fun emitSharedFlow(collectorId: Int, value: T) {
         sharedFlow.emit(CollectorValue(collectorId, value))
     }
 
     /**
-     * 每个收集器收集[cancellableSharedFlow]之前，都会调用该函数，
+     * 每个`collector`收集[closableSharedFlow]之前，都会调用该函数，
      * 若启动的子协程需要在收集之后运行，则不能使用[UNDISPATCHED]，
      * 并且不能替换当前上下文的调度器。
      */
@@ -141,7 +139,5 @@ internal open class PagingSharedFlow<T : Any>(
         fun get(collectorId: Int) = if (id == collectorId) value else null
     }
 
-    suspend fun cancel() = collectJob.cancelAndJoin()
-
-    private companion object CancelValue
+    suspend fun close() = collectJob.cancelAndJoin()
 }
