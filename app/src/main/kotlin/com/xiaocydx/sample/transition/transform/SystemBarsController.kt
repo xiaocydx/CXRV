@@ -52,7 +52,7 @@ import com.xiaocydx.sample.matchParent
  * @date 2023/8/4
  */
 class SystemBarsController(private val fragment: Fragment) {
-    private var pendingDarkStatusBar = false
+    private var pendingAppearanceLightStatusBar = false
     private var pendingStatusBarEdgeToEdge = false
     private var pendingGestureNavBarEdgeToEdge = false
     private var pendingStatusBarColor: Int? = null
@@ -80,7 +80,7 @@ class SystemBarsController(private val fragment: Fragment) {
                 setViewTreeViewModelStoreOwner(owner as? ViewModelStoreOwner)
                 setViewTreeSavedStateRegistryOwner(owner as? SavedStateRegistryOwner)
             }
-            setDarkStatusBar(pendingDarkStatusBar)
+            setAppearanceLightStatusBar(pendingAppearanceLightStatusBar)
             setStatusBarEdgeToEdge(pendingStatusBarEdgeToEdge)
             setGestureNavBarEdgeToEdge(pendingGestureNavBarEdgeToEdge)
             setStatusBarColorInternal(pendingStatusBarColor)
@@ -88,11 +88,11 @@ class SystemBarsController(private val fragment: Fragment) {
         }
     }
 
-    fun setDarkStatusBar(isDarkStatusBar: Boolean) = apply {
-        pendingDarkStatusBar = isDarkStatusBar
+    fun setAppearanceLightStatusBar(isLight: Boolean) = apply {
+        pendingAppearanceLightStatusBar = isLight
         val window = window ?: return@apply
         val owner = container?.findViewTreeLifecycleOwner() ?: return@apply
-        container?.setDarkStatusBar(window, owner.lifecycle, isDarkStatusBar)
+        container?.setAppearanceLightStatusBar(window, owner.lifecycle, isLight)
     }
 
     fun setStatusBarEdgeToEdge(edgeToEdge: Boolean) = apply {
@@ -155,8 +155,8 @@ class SystemBarsContainer(context: Context) : FrameLayout(context) {
     private var observer: AppearanceLightStatusBarObserver? = null
     private var contentView: View? = null
 
-    fun setDarkStatusBar(window: Window, lifecycle: Lifecycle, isDarkStatusBar: Boolean) {
-        AppearanceLightStatusBarObserver(lifecycle, isDarkStatusBar = isDarkStatusBar).attach(window)
+    fun setAppearanceLightStatusBar(window: Window, lifecycle: Lifecycle, isLight: Boolean) {
+        AppearanceLightStatusBarObserver(lifecycle, isLight).attach(window)
     }
 
     fun setStatusBarEdgeToEdge(edgeToEdge: Boolean) = apply {
@@ -231,7 +231,7 @@ class SystemBarsContainer(context: Context) : FrameLayout(context) {
 
     private inner class AppearanceLightStatusBarObserver(
         private val lifecycle: Lifecycle,
-        private val isDarkStatusBar: Boolean
+        private val isLight: Boolean
     ) : LifecycleEventObserver {
         private var controller: WindowInsetsControllerCompat? = null
 
@@ -240,8 +240,8 @@ class SystemBarsContainer(context: Context) : FrameLayout(context) {
             val controller = controller
             val currentState = source.lifecycle.currentState
             if (controller == null || currentState != Lifecycle.State.RESUMED) return
-            if (controller.isAppearanceLightStatusBars != isDarkStatusBar) {
-                controller.isAppearanceLightStatusBars = isDarkStatusBar
+            if (controller.isAppearanceLightStatusBars != isLight) {
+                controller.isAppearanceLightStatusBars = isLight
             }
         }
 

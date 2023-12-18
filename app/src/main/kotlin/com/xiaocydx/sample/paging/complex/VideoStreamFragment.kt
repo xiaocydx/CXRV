@@ -82,7 +82,7 @@ class VideoStreamFragment : Fragment(), TransformReceiver {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         systemBarsController
-            .setDarkStatusBar(true)
+            .setAppearanceLightStatusBar(true)
             .setStatusBarEdgeToEdge(true)
             .setGestureNavBarEdgeToEdge(true)
     }
