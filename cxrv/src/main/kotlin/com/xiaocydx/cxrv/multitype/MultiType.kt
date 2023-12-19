@@ -68,25 +68,13 @@ fun <T : Any> MultiType<T>.getItemViewType(item: T): Int {
 }
 
 /**
- * 获取[holder.itemViewType]对应的[ViewTypeDelegate]
- *
- * 若获取失败，则抛出[IllegalArgumentException]异常。
- */
-@Suppress("KDocUnresolvedReference")
-fun <T : Any> MultiType<T>.getViewTypeDelegate(
-    holder: ViewHolder
-): ViewTypeDelegate<Any, ViewHolder> = getViewTypeDelegate(holder.itemViewType)
-
-/**
  * 获取[viewType]对应的[ViewTypeDelegate]
  *
  * 若获取失败，则抛出[IllegalArgumentException]异常。
  */
 @Suppress("UNCHECKED_CAST")
-fun <T : Any> MultiType<T>.getViewTypeDelegate(
-    viewType: Int
-): ViewTypeDelegate<Any, ViewHolder> = requireNotNull(
-    value = keyAt(viewType)?.delegate as? ViewTypeDelegate<Any, ViewHolder>,
+fun <T : Any> MultiType<T>.getViewTypeDelegate(viewType: Int) = requireNotNull(
+    value = keyAt(viewType)?.delegate as? ViewTypeDelegate<T, ViewHolder>,
     lazyMessage = {
         "获取ViewTypeDelegate失败，请确认是否未注册ViewType = ${viewType}的Type，" +
                 "若使用了ConcatAdapter连接Adapter，请将Config的isolateViewTypes设为false，" +
@@ -95,3 +83,11 @@ fun <T : Any> MultiType<T>.getViewTypeDelegate(
                 "若全局ViewType跟记录的本地ViewType不一致，则会查找失败。"
     }
 )
+
+/**
+ * 获取[holder.itemViewType]对应的[ViewTypeDelegate]
+ *
+ * 若获取失败，则抛出[IllegalArgumentException]异常。
+ */
+@Suppress("KDocUnresolvedReference")
+fun <T : Any> MultiType<T>.getViewTypeDelegate(holder: ViewHolder) = getViewTypeDelegate(holder.itemViewType)

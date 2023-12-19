@@ -171,29 +171,25 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      * 当[onViewRecycled]被调用时，[maxScrap]就会被消费掉，该函数必须在主线程调用。
      */
     @MainThread
-    fun setMaxScrap(@IntRange(from = 1) maxScrap: Int): ViewTypeDelegate<ITEM, VH> {
+    fun setMaxScrap(@IntRange(from = 1) maxScrap: Int) = apply {
         assertMainThread()
         require(maxScrap > 0) { "maxScrap = ${maxScrap}，需要大于0" }
         this.maxScrap = maxScrap
-        return this
     }
 
     /**
      * 设置类型链接器，用于一对多映射类型场景，该函数必须在主线程调用
      */
     @MainThread
-    fun typeLinker(linker: (item: ITEM) -> Boolean): ViewTypeDelegate<ITEM, VH> {
+    fun typeLinker(linker: (item: ITEM) -> Boolean) = apply {
         assertMainThread()
         typeLinker = linker
-        return this
     }
 
     /**
      * 消费并返回[maxScrap]，该函数用于避免多次设置回收上限
      */
-    internal fun consumeMaxScrap(): Int {
-        return maxScrap.also { maxScrap = 0 }
-    }
+    internal fun consumeMaxScrap() = maxScrap.also { maxScrap = 0 }
 
     /**
      * 对应[DiffUtil.ItemCallback.areItemsTheSame]

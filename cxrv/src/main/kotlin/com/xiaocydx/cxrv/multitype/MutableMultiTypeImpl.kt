@@ -17,6 +17,7 @@
 package com.xiaocydx.cxrv.multitype
 
 import android.util.SparseArray
+import com.xiaocydx.cxrv.internal.InternalApi
 import com.xiaocydx.cxrv.internal.accessEach
 
 /**
@@ -26,14 +27,15 @@ import com.xiaocydx.cxrv.internal.accessEach
  * @date 2021/10/8
  */
 @PublishedApi
-internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T>() {
+internal class MutableMultiTypeImpl<T : Any> : MutableMultiType<T> {
     private var isCompleted = false
     private val types = SparseArray<Type<out T>>()
     private val typeGroups = mutableMapOf<Class<*>, Any>()
     override val size: Int
         get() = types.size()
 
-    override fun register(type: Type<out T>) {
+    @OptIn(InternalApi::class)
+    override fun put(type: Type<out T>) {
         check(!isCompleted) { "已完成多类型注册" }
         checkType(type)
         val viewType = type.delegate.viewType

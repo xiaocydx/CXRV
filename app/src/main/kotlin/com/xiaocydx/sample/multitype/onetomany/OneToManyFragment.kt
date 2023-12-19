@@ -53,10 +53,10 @@ class OneToManyFragment : Fragment() {
         .layoutParams(matchParent, matchParent)
         .overScrollNever().linear().fixedSize()
         .adapter(listAdapter<OneToManyMessage> {
-            listAdapter.submitList(messageList())
             register(OneToManyTextDelegate()) { it.type == TYPE_TEXT }
             register(OneToManyImageDelegate()) { it.type == TYPE_IMAGE }
             register(OneToManyNotSupportDelegate()) { true }
+            submitList(messageList())
         })
 
     private fun OneToManyTextDelegate() = bindingDelegate(

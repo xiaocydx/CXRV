@@ -16,6 +16,8 @@
 
 package com.xiaocydx.cxrv.multitype
 
+import com.xiaocydx.cxrv.internal.InternalApi
+
 /**
  * 未完成多类型注册的标识
  */
@@ -24,7 +26,7 @@ internal fun <T : Any> unregistered(): MutableMultiType<T> {
     return Unregistered as MutableMultiType<T>
 }
 
-private object Unregistered : MutableMultiType<Any>() {
+private object Unregistered : MutableMultiType<Any> {
     override val size: Int
         get() = error()
 
@@ -34,7 +36,8 @@ private object Unregistered : MutableMultiType<Any>() {
 
     override fun itemAt(item: Any) = error()
 
-    override fun register(type: Type<out Any>) = error()
+    @OptIn(InternalApi::class)
+    override fun put(type: Type<out Any>) = error()
 
     private fun error(): Nothing {
         throw IllegalStateException("未完成多类型注册")

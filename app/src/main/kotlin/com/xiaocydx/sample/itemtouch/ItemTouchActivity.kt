@@ -70,8 +70,8 @@ class ItemTouchActivity : AppCompatActivity() {
     private fun createListAdapter() = listAdapter<TextItem> {
         register(TextType1Delegate())
         register(TextType2Delegate())
-        listAdapter.initMultiTypeTextItems()
-        listAdapter.itemTouch {
+        initMultiTypeTextItems()
+        itemTouch {
             // 拖动时移动item，结合ListAdapter自身特性的简化函数
             onDragMoveItem()
             // 侧滑时移除item，结合ListAdapter自身特性的简化函数

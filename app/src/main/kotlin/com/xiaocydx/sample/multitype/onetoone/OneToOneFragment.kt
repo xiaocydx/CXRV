@@ -49,9 +49,9 @@ class OneToOneFragment : Fragment() {
         .layoutParams(matchParent, matchParent)
         .overScrollNever().linear().fixedSize()
         .adapter(listAdapter<OneToOneMessage> {
-            listAdapter.submitList(messageList())
             register(OneToOneTextDelegate())
             register(OneToOneImageDelegate())
+            submitList(messageList())
         })
 
     private fun OneToOneTextDelegate() = bindingDelegate(

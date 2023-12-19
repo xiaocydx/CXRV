@@ -30,8 +30,8 @@ import com.xiaocydx.cxrv.list.getItem
  * @author xcc
  * @date 2021/10/8
  */
-@PublishedApi
-internal class MultiTypeAdapter<T : Any>(
+open class MultiTypeAdapter<T : Any>
+@PublishedApi internal constructor(
     private var multiType: MultiType<T> = unregistered()
 ) : ListAdapter<T, ViewHolder>() {
 
@@ -67,7 +67,10 @@ internal class MultiTypeAdapter<T : Any>(
         val delegate = multiType.getViewTypeDelegate(holder)
         val maxScrap = delegate.consumeMaxScrap()
         if (maxScrap > 0) {
-            recyclerView?.recycledViewPool?.setMaxRecycledViews(delegate.viewType, maxScrap)
+            // getViewTypeDelegate()的查找过程未抛出异常，
+            // delegate.viewType等于holder.itemViewType。
+            val pool = recyclerView?.recycledViewPool
+            pool?.setMaxRecycledViews(delegate.viewType, maxScrap)
         }
         delegate.onViewRecycled(holder)
     }

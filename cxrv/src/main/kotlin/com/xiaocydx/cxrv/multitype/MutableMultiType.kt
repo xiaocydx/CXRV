@@ -16,13 +16,15 @@
 
 package com.xiaocydx.cxrv.multitype
 
+import com.xiaocydx.cxrv.internal.InternalApi
+
 /**
  * 可变的多类型容器
  *
  * @author xcc
  * @date 2021/10/9
  */
-abstract class MutableMultiType<T : Any> : MultiType<T> {
+interface MutableMultiType<T : Any> : MultiType<T> {
 
     /**
      * 注册[T]的[type]
@@ -30,8 +32,8 @@ abstract class MutableMultiType<T : Any> : MultiType<T> {
      * 若对[T]注册多个[type]，则[T]属于一对多关系，
      * [ViewTypeDelegate.typeLinker]不能为空，否则抛出[IllegalStateException]异常。
      */
-    @PublishedApi
-    internal abstract fun register(type: Type<out T>)
+    @InternalApi
+    fun put(type: Type<out T>)
 }
 
 /**
@@ -69,9 +71,10 @@ abstract class MutableMultiType<T : Any> : MultiType<T> {
  * ```
  * @param delegate [T1]的[ViewTypeDelegate]
  */
+@OptIn(InternalApi::class)
 inline fun <T : Any, reified T1 : T> MutableMultiType<T>.register(
     delegate: ViewTypeDelegate<T1, *>
-) = register(Type(T1::class.java, delegate))
+) = put(Type(T1::class.java, delegate))
 
 /**
  * 注册[T1]的[ViewTypeDelegate]，添加一对多判断条件的便捷方式
@@ -93,7 +96,8 @@ inline fun <T : Any, reified T1 : T> MutableMultiType<T>.register(
  * @param delegate [T1]的[ViewTypeDelegate]
  * @param linker   [ViewTypeDelegate]的类型链接器
  */
+@OptIn(InternalApi::class)
 inline fun <T : Any, reified T1 : T> MutableMultiType<T>.register(
     delegate: ViewTypeDelegate<T1, *>,
     noinline linker: (item: T1) -> Boolean
-) = register(Type(T1::class.java, delegate.typeLinker(linker)))
+) = put(Type(T1::class.java, delegate.typeLinker(linker)))
