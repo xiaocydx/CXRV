@@ -48,6 +48,15 @@ interface MultiType<T : Any> {
 }
 
 /**
+ * ViewType的映射类型
+ */
+class Type<T : Any>
+@PublishedApi internal constructor(
+    val clazz: Class<T>,
+    val delegate: ViewTypeDelegate<T, *>
+)
+
+/**
  * 访问每个类型并执行指定操作
  */
 inline fun <T : Any> MultiType<T>.forEach(action: (Type<out T>) -> Unit) {
