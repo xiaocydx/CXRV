@@ -3,7 +3,7 @@ package com.xiaocydx.sample.paging.complex
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import androidx.fragment.app.SystemBarsController
+import androidx.fragment.app.SystemBarController
 import androidx.lifecycle.flowWithLifecycle
 import com.xiaocydx.sample.doOnStateChanged
 import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
@@ -29,13 +29,14 @@ import kotlinx.coroutines.flow.onEach
  * @date 2023/8/4
  */
 class AdFragment : TransitionFragment(), TransformReceiver {
-    private val systemBarsController = SystemBarsController(this)
+    private val systemBarController = SystemBarController(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        systemBarsController
+        systemBarController
             .setGestureNavBarEdgeToEdge(true)
             .setStatusBarColor(0xFF79AA91.toInt())
+            .setNavigationBarColor(0xFF79AA91.toInt())
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.SystemBarsController
+import androidx.fragment.app.SystemBarController
 import androidx.fragment.app.TransformRoot
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.STARTED
@@ -71,11 +71,11 @@ class ComplexListFragment : Fragment(), TransformSender {
     private lateinit var rvComplex: RecyclerView
     private lateinit var complexAdapter: ListAdapter<ComplexItem, *>
     private val complexViewModel: ComplexListViewModel by viewModels()
-    private val systemBarsController = SystemBarsController(this)
+    private val systemBarController = SystemBarController(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        systemBarsController.setGestureNavBarEdgeToEdge(true)
+        systemBarController.setGestureNavBarEdgeToEdge(true)
     }
 
     override fun onCreateView(
