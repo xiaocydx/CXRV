@@ -1,6 +1,5 @@
 package com.xiaocydx.sample.viewpager2.loop
 
-import android.os.Looper
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State.STARTED
@@ -14,20 +13,24 @@ import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.xiaocydx.cxrv.viewpager2.loop.LinearSmoothScrollerProvider
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.cxrv.viewpager2.loop.scrollState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.yield
-import kotlin.coroutines.resume
 
 /**
  * Banner轮播交互的协程示例代码
  *
  * 以下是轮播开始的必要条件：
- * 1. `Adapter.itemCount`支持循环。
- * 2. [Lifecycle.State]至少为[state]。
- * 3. 未通过触摸开始滚动，上一次平滑滚动结束。
+ * 1. [Lifecycle.State]至少为[state]。
+ * 2. `Adapter.itemCount`支持循环。
+ * 3. 没有触摸滚动，上一次平滑滚动结束。
  *
  * @param intervalMs 轮播间隔时长
  * @param durationMs 平滑滚动时长
@@ -39,75 +42,67 @@ fun LoopPagerController.launchBanner(
     intervalMs: Long = 1500,
     durationMs: Long = -1
 ): Job = lifecycle.coroutineScope.launch {
+    val stateFlow = stateIn(scope = this, adapter)
     val provider = durationMs.takeIf { it > 0 }?.let {
         LinearSmoothScrollerProvider(it, AccelerateDecelerateInterpolator())
     }
     lifecycle.repeatOnLifecycle(state) {
-        while (true) {
-            awaitSupportLoop(adapter)
-            delay(intervalMs.coerceAtLeast(100))
-            awaitScrollIdle()
-            if (currentPosition == NO_POSITION) continue
-            val position = (currentPosition + 1) % adapter.itemCount
-            smoothScrollToPosition(position, provider = provider)
+        var scrollJob: Job? = null
+        stateFlow.collect {
+            if (it.canLoopScroll && scrollJob == null) {
+                scrollJob = this@repeatOnLifecycle.launch scroll@{
+                    delay(intervalMs.coerceAtLeast(100))
+                    // 当smoothScrollToPosition()分发新的scrollState时，
+                    // scrollJob还未转换到完成状态，提前置空避免无效取消。
+                    scrollJob = null
+                    if (currentPosition == NO_POSITION) return@scroll
+                    val position = (currentPosition + 1) % adapter.itemCount
+                    smoothScrollToPosition(position, provider = provider)
+                }
+            } else if (!it.canLoopScroll && scrollJob != null) {
+                scrollJob?.cancel()
+                scrollJob = null
+            }
         }
     }
 }
 
-/**
- * [repeatOnLifecycle]确保在主线程取消[awaitSupportLoop]和[awaitScrollIdle]挂起的协程，反注册不会有并发问题。
- */
-private fun assertMainThread() {
-    assert(Thread.currentThread() === Looper.getMainLooper().thread)
-}
-
-/**
- * 等待`Adapter.itemCount`支持循环
- */
-private suspend fun LoopPagerController.awaitSupportLoop(adapter: Adapter<*>) {
-    if (adapter.itemCount >= supportLoopCount) return
-    suspendCancellableCoroutine { cont ->
+private fun LoopPagerController.stateIn(scope: CoroutineScope, adapter: Adapter<*>): StateFlow<BannerState> {
+    val stateFlow = MutableStateFlow(BannerState(scrollState, supportLoop(adapter)))
+    scope.launch(context = Dispatchers.Main.immediate, start = UNDISPATCHED) {
+        val callback = object : OnPageChangeCallback() {
+            override fun onPageScrollStateChanged(state: Int) {
+                if (stateFlow.value.scrollState == state) return
+                stateFlow.update { it.copy(scrollState = state) }
+            }
+        }
         val observer = object : AdapterDataObserver() {
             override fun onChanged() {
-                if (!cont.isActive || adapter.itemCount < supportLoopCount) return
-                adapter.unregisterAdapterDataObserver(this)
-                cont.resume(Unit)
+                val supportLoop = supportLoop(adapter)
+                if (stateFlow.value.supportLoop == supportLoop) return
+                stateFlow.update { it.copy(supportLoop = supportLoop) }
             }
 
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = onChanged()
+            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) = onChanged()
         }
-        adapter.registerAdapterDataObserver(observer)
-        cont.invokeOnCancellation {
-            assertMainThread()
+
+        try {
+            registerOnPageChangeCallback(callback)
+            adapter.registerAdapterDataObserver(observer)
+            awaitCancellation()
+        } finally {
+            unregisterOnPageChangeCallback(callback)
             adapter.unregisterAdapterDataObserver(observer)
         }
     }
+    return stateFlow
 }
 
-/**
- * 等待`scrollState`为[SCROLL_STATE_IDLE]
- *
- * 该函数处理两种情况：
- * 1. 若已通过触摸开始滚动，则等待手指抬起，才开始这一次平滑滚动。
- * 2. 若上一次平滑滚动还未结束，则等待其结束，才开始这一次平滑滚动。
- */
-private suspend fun LoopPagerController.awaitScrollIdle() {
-    if (scrollState == SCROLL_STATE_IDLE) return
-    var callback: OnPageChangeCallback? = null
-    suspendCancellableCoroutine { cont ->
-        callback = object : OnPageChangeCallback() {
-            override fun onPageScrollStateChanged(state: Int) {
-                if (!cont.isActive || state != SCROLL_STATE_IDLE) return
-                cont.resume(Unit)
-            }
-        }
-        registerOnPageChangeCallback(callback!!)
-        cont.invokeOnCancellation {
-            assertMainThread()
-            unregisterOnPageChangeCallback(callback!!)
-        }
-    }
-    // 分发过程不支持remove，因此用yield()跟分发过程错开
-    yield()
-    unregisterOnPageChangeCallback(callback!!)
+private fun LoopPagerController.supportLoop(adapter: Adapter<*>): Boolean {
+    return adapter.itemCount >= supportLoopCount
+}
+
+private data class BannerState(val scrollState: Int, val supportLoop: Boolean) {
+    val canLoopScroll = scrollState == SCROLL_STATE_IDLE && supportLoop
 }
