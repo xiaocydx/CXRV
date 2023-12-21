@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.SystemBarController
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
 import androidx.viewpager2.widget.ViewPager2
@@ -36,6 +35,8 @@ import com.xiaocydx.sample.paging.config.loadStatesFlow
 import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
 import com.xiaocydx.sample.registerOnPageChangeCallback
 import com.xiaocydx.sample.snackbar
+import com.xiaocydx.sample.systembar.AppearanceLight
+import com.xiaocydx.sample.systembar.SystemBar
 import com.xiaocydx.sample.transition.transform.TransformReceiver
 import com.xiaocydx.sample.transition.transform.TransitionEvent
 import com.xiaocydx.sample.transition.transform.takeFirst
@@ -73,21 +74,17 @@ import kotlinx.coroutines.flow.onEach
  * @author xcc
  * @date 2023/7/30
  */
+@SystemBar(
+    statusBarEdgeToEdge = true,
+    gestureNavBarEdgeToEdge = true,
+    navigationBarColor = Color.BLACK,
+    appearanceLightStatusBar = AppearanceLight.TRUE
+)
 class VideoStreamFragment : Fragment(), TransformReceiver {
     private lateinit var requestManager: RequestManager
     private lateinit var binding: FragmetVideoStreamBinding
     private lateinit var videoAdapter: ListAdapter<VideoStreamItem, *>
     private val videoViewModel: VideoStreamViewModel by viewModels()
-    private val systemBarController = SystemBarController(this)
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        systemBarController
-            .setStatusBarEdgeToEdge(true)
-            .setGestureNavBarEdgeToEdge(true)
-            .setAppearanceLightStatusBar(true)
-            .setNavigationBarColor(Color.BLACK)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

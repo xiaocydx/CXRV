@@ -18,22 +18,13 @@
 
 package androidx.fragment.app
 
-import android.content.Context
-import android.graphics.Canvas
-import android.graphics.drawable.ColorDrawable
 import android.view.View
 import android.view.Window
 import android.view.WindowInsets
-import android.view.WindowManager
-import android.widget.FrameLayout
 import androidx.annotation.ColorInt
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat.Type.navigationBars
 import androidx.core.view.WindowInsetsCompat.Type.statusBars
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.doOnAttach
-import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State.DESTROYED
 import androidx.lifecycle.Lifecycle.State.RESUMED
@@ -45,45 +36,23 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.xiaocydx.sample.R
-import com.xiaocydx.sample.consume
-import com.xiaocydx.sample.isGestureNavigationBar
-import com.xiaocydx.sample.matchParent
-
-/**
- * 去除`window.decorView`实现的SystemBar间距和背景色，自行处理[WindowInsets]
- */
-fun SystemBarController.Companion.init(window: Window) {
-    // 设置decorFitsSystemWindows = false的详细解释：
-    // https://www.yuque.com/u12192380/khwdgb/kqx6tak191xz1zpv
-    WindowCompat.setDecorFitsSystemWindows(window, false)
-
-    // 设置softInputMode = SOFT_INPUT_ADJUST_RESIZE的详细解释：
-    // https://www.yuque.com/u12192380/khwdgb/ifiu0ptqnm080gzl
-    @Suppress("DEPRECATION")
-    window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-
-    // Android 9.0以下decorView.onApplyWindowInsets()会返回新创建的WindowInsets，
-    // 不会引用ViewRootImpl的成员属性mDispatchContentInsets和mDispatchStableInsets,
-    // 若不返回decorView新创建的WindowInsets，则需要兼容WindowInsets可变引起的问题，
-    // 详细解释：https://www.yuque.com/u12192380/khwdgb/yvtolsepi5kmz38i
-    ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets ->
-        val decorInsets = insets.consume(statusBars() or navigationBars())
-        ViewCompat.onApplyWindowInsets(window.decorView, decorInsets)
-        insets
-    }
-}
+import com.xiaocydx.sample.systembar.InitialColor
+import com.xiaocydx.sample.systembar.SystemBarContainer
 
 /**
  * 简易的SystemBar控制方案
  *
  * 此类是单Activity处理[WindowInsets]的示例代码，实景场景需要更容易配置和管理的方案。
+ *
+ * @author xcc
+ * @date 2023/12/21
  */
 class SystemBarController(private val fragment: Fragment) {
-    private var pendingTypeMask = 0
+    private var pendingConsumeTypeMask = 0
     private var pendingStatusBarEdgeToEdge = false
     private var pendingGestureNavBarEdgeToEdge = false
-    private var pendingStatusBarColor: Int? = null
-    private var pendingNavigationBarColor: Int? = null
+    private var pendingStatusBarColor: Int = InitialColor
+    private var pendingNavigationBarColor: Int = InitialColor
     private var pendingAppearanceLightStatusBar: Boolean? = null
     private var pendingAppearanceLightNavigationBar: Boolean? = null
     private var observer: AppearanceLightSystemsBarObserver? = null
@@ -117,19 +86,25 @@ class SystemBarController(private val fragment: Fragment) {
                 setViewTreeSavedStateRegistryOwner(owner as? SavedStateRegistryOwner)
             }
             window.recordSystemBarColorIfNecessary()
-            consumeTypeMask(pendingTypeMask)
+            setConsumeTypeMask(pendingConsumeTypeMask)
             setStatusBarEdgeToEdge(pendingStatusBarEdgeToEdge)
             setGestureNavBarEdgeToEdge(pendingGestureNavBarEdgeToEdge)
-            setStatusBarColorInternal(pendingStatusBarColor)
-            setNavigationBarColorInternal(pendingNavigationBarColor)
+            setStatusBarColor(pendingStatusBarColor)
+            setNavigationBarColor(pendingNavigationBarColor)
             setAppearanceLightStatusBarInternal(pendingAppearanceLightStatusBar)
             setAppearanceLightNavigationBarInternal(pendingAppearanceLightNavigationBar)
         }
     }
 
-    fun consumeStatusBar() = consumeTypeMask(statusBars())
+    fun setConsumeStatusBar(consume: Boolean) = setConsumeTypeMask(run {
+        val typeMask = pendingConsumeTypeMask
+        if (consume) typeMask or statusBars() else typeMask and statusBars().inv()
+    })
 
-    fun consumeNavigationBar() = consumeTypeMask(navigationBars())
+    fun setConsumeNavigationBar(consume: Boolean) = setConsumeTypeMask(run {
+        val typeMask = pendingConsumeTypeMask
+        if (consume) typeMask or navigationBars() else typeMask and navigationBars().inv()
+    })
 
     fun setStatusBarEdgeToEdge(edgeToEdge: Boolean) = apply {
         pendingStatusBarEdgeToEdge = edgeToEdge
@@ -141,29 +116,31 @@ class SystemBarController(private val fragment: Fragment) {
         container?.gestureNavBarEdgeToEdge = edgeToEdge
     }
 
-    fun setStatusBarColor(@ColorInt color: Int) = setStatusBarColorInternal(color)
+    fun setStatusBarColor(@ColorInt color: Int) = apply {
+        pendingStatusBarColor = color
+        if (color != InitialColor) {
+            container?.statusBarColor = color
+        } else if (window != null) {
+            container?.statusBarColor = window!!.initialStatusBarColor
+        }
+    }
 
-    fun setNavigationBarColor(@ColorInt color: Int) = setNavigationBarColorInternal(color)
+    fun setNavigationBarColor(@ColorInt color: Int) = apply {
+        pendingNavigationBarColor = color
+        if (color != InitialColor) {
+            container?.navigationBarColor = color
+        } else if (window != null) {
+            container?.navigationBarColor = window!!.initialNavigationBarColor
+        }
+    }
 
     fun setAppearanceLightStatusBar(isLight: Boolean) = setAppearanceLightStatusBarInternal(isLight)
 
     fun setAppearanceLightNavigationBar(isLight: Boolean) = setAppearanceLightNavigationBarInternal(isLight)
 
-    private fun consumeTypeMask(typeMask: Int) = apply {
-        pendingTypeMask = pendingTypeMask or typeMask
-        container?.consumeTypeMask = pendingTypeMask
-    }
-
-    private fun setStatusBarColorInternal(color: Int?) = apply {
-        pendingStatusBarColor = color
-        val finalColor = color ?: window?.initialStatusBarColor
-        if (finalColor != null) container?.statusBarColor = finalColor
-    }
-
-    private fun setNavigationBarColorInternal(color: Int?) = apply {
-        pendingNavigationBarColor = color
-        val finalColor = color ?: window?.initialNavigationBarColor
-        if (finalColor != null) container?.navigationBarColor = finalColor
+    private fun setConsumeTypeMask(typeMask: Int) = apply {
+        pendingConsumeTypeMask = typeMask
+        container?.consumeTypeMask = pendingConsumeTypeMask
     }
 
     private fun setAppearanceLightStatusBarInternal(isLight: Boolean?) = apply {
@@ -207,94 +184,6 @@ private val Window.initialNavigationBarColor: Int
         }
         return color
     }
-
-private class SystemBarContainer(context: Context) : FrameLayout(context) {
-    private val statusBarDrawable = ColorDrawable()
-    private val navigationBarDrawable = ColorDrawable()
-    private var contentView: View? = null
-
-    var consumeTypeMask: Int = 0
-        set(value) {
-            if (field == value) return
-            field = value
-            ViewCompat.requestApplyInsets(this)
-        }
-
-    var statusBarEdgeToEdge: Boolean = false
-        set(value) {
-            if (field == value) return
-            field = value
-            ViewCompat.requestApplyInsets(this)
-        }
-
-    var gestureNavBarEdgeToEdge: Boolean = false
-        set(value) {
-            if (field == value) return
-            field = value
-            ViewCompat.requestApplyInsets(this)
-        }
-
-    var statusBarColor: Int
-        get() = statusBarDrawable.color
-        set(value) {
-            if (statusBarDrawable.color == value) return
-            statusBarDrawable.color = value
-            invalidate()
-        }
-
-    var navigationBarColor: Int
-        get() = navigationBarDrawable.color
-        set(value) {
-            if (navigationBarDrawable.color == value) return
-            navigationBarDrawable.color = value
-            invalidate()
-        }
-
-    fun attach(view: View) = apply {
-        setWillNotDraw(false)
-        removeAllViews()
-        contentView = view
-        addView(contentView, matchParent, matchParent)
-        ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
-            val applyInsets = insets.consume(consumeTypeMask)
-            val statusBars = applyInsets.getInsets(statusBars())
-            val navigationBars = applyInsets.getInsets(navigationBars())
-            updatePadding(
-                top = if (statusBarEdgeToEdge) 0 else statusBars.top,
-                bottom = when {
-                    !gestureNavBarEdgeToEdge -> navigationBars.bottom
-                    else -> if (applyInsets.isGestureNavigationBar(resources)) 0 else navigationBars.bottom
-                }
-            )
-            applyInsets
-        }
-        doOnAttach(ViewCompat::requestApplyInsets)
-    }
-
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        checkContentView()
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-    }
-
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        checkContentView()
-        super.onLayout(changed, left, top, right, bottom)
-    }
-
-    override fun draw(canvas: Canvas) {
-        checkContentView()
-        super.draw(canvas)
-        statusBarDrawable.setBounds(0, 0, width, paddingTop)
-        navigationBarDrawable.setBounds(0, height - paddingBottom, width, height)
-        statusBarDrawable.takeIf { it.bounds.height() > 0 }?.draw(canvas)
-        navigationBarDrawable.takeIf { it.bounds.height() > 0 }?.draw(canvas)
-    }
-
-    private fun checkContentView() {
-        check(childCount <= 1)
-        if (childCount == 1) check(getChildAt(0) === contentView)
-    }
-}
 
 private class AppearanceLightSystemsBarObserver(
     private val window: Window,
