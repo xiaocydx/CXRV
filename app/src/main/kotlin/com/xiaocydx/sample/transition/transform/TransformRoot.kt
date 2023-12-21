@@ -7,6 +7,7 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Lifecycle.State.DESTROYED
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.lifecycle.LifecycleEventObserver
@@ -63,6 +64,7 @@ internal class TransformRoot private constructor(
         receiverClass: KClass<out Fragment>,
         args: Bundle? = null
     ): Boolean {
+        if (lifecycle.currentState == DESTROYED) return false
         if (transactionWho != null) return false
         val receiver = createFragment(receiverClass, args)
         val receiverTag = stateHolder.createTagBySenderWho(sender)

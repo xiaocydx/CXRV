@@ -342,7 +342,7 @@ private class AppearanceLightSystemsBarObserver(
     }
 
     private fun updateAppearanceLightSystemsBar() {
-        if (!currentState.isAtLeast(state)) return
+        if (!container.isAttachedToWindow || !currentState.isAtLeast(state)) return
         if (controller.isAppearanceLightStatusBars != isAppearanceLightStatusBar) {
             controller.isAppearanceLightStatusBars = isAppearanceLightStatusBar
         }
