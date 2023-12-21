@@ -32,6 +32,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat.Type.navigationBars
 import androidx.core.view.WindowInsetsCompat.Type.statusBars
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.doOnAttach
 import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State.DESTROYED
@@ -267,6 +268,7 @@ private class SystemBarContainer(context: Context) : FrameLayout(context) {
             )
             applyInsets
         }
+        doOnAttach(ViewCompat::requestApplyInsets)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
