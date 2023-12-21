@@ -35,7 +35,6 @@ import com.xiaocydx.sample.paging.config.loadStatesFlow
 import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
 import com.xiaocydx.sample.registerOnPageChangeCallback
 import com.xiaocydx.sample.snackbar
-import com.xiaocydx.sample.systembar.AppearanceLight
 import com.xiaocydx.sample.systembar.SystemBar
 import com.xiaocydx.sample.transition.transform.TransformReceiver
 import com.xiaocydx.sample.transition.transform.TransitionEvent
@@ -78,7 +77,7 @@ import kotlinx.coroutines.flow.onEach
     statusBarEdgeToEdge = true,
     gestureNavBarEdgeToEdge = true,
     navigationBarColor = Color.BLACK,
-    appearanceLightStatusBar = AppearanceLight.TRUE
+    appearanceLightStatusBar = true
 )
 class VideoStreamFragment : Fragment(), TransformReceiver {
     private lateinit var requestManager: RequestManager

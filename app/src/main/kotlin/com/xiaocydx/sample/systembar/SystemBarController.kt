@@ -36,8 +36,11 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.xiaocydx.sample.R
-import com.xiaocydx.sample.systembar.InitialColor
+import com.xiaocydx.sample.systembar.AppearanceLightState
+import com.xiaocydx.sample.systembar.SystemBar.Companion.InitialColor
 import com.xiaocydx.sample.systembar.SystemBarContainer
+import com.xiaocydx.sample.systembar.SystemBarStateHolder
+import com.xiaocydx.sample.viewLifecycle
 
 /**
  * 简易的SystemBar控制方案
@@ -51,11 +54,11 @@ class SystemBarController(private val fragment: Fragment) {
     private var pendingConsumeTypeMask = 0
     private var pendingStatusBarEdgeToEdge = false
     private var pendingGestureNavBarEdgeToEdge = false
-    private var pendingStatusBarColor: Int = InitialColor
-    private var pendingNavigationBarColor: Int = InitialColor
-    private var pendingAppearanceLightStatusBar: Boolean? = null
-    private var pendingAppearanceLightNavigationBar: Boolean? = null
-    private var observer: AppearanceLightSystemsBarObserver? = null
+    private var pendingStatusBarColor = InitialColor
+    private var pendingNavigationBarColor = InitialColor
+    private var pendingAppearanceLightStatusBar = false
+    private var pendingAppearanceLightNavigationBar = false
+    private var observer: AppearanceLightObserver? = null
     private var container: SystemBarContainer? = null
     private val window: Window?
         get() = fragment.activity?.window
@@ -79,7 +82,7 @@ class SystemBarController(private val fragment: Fragment) {
             require(view.parent == null) { "Fragment.view已有parent，不支持替换parent" }
             require(view !is SystemBarContainer) { "Fragment只能关联一个SystemBarController" }
             container = SystemBarContainer(fragment.requireContext())
-            observer = AppearanceLightSystemsBarObserver(window, owner.lifecycle, container!!)
+            observer = AppearanceLightObserver(fragment, container!!)
             fragment.mView = container!!.attach(view).apply {
                 setViewTreeLifecycleOwner(owner)
                 setViewTreeViewModelStoreOwner(owner as? ViewModelStoreOwner)
@@ -91,8 +94,8 @@ class SystemBarController(private val fragment: Fragment) {
             setGestureNavBarEdgeToEdge(pendingGestureNavBarEdgeToEdge)
             setStatusBarColor(pendingStatusBarColor)
             setNavigationBarColor(pendingNavigationBarColor)
-            setAppearanceLightStatusBarInternal(pendingAppearanceLightStatusBar)
-            setAppearanceLightNavigationBarInternal(pendingAppearanceLightNavigationBar)
+            setAppearanceLightStatusBar(pendingAppearanceLightStatusBar)
+            setAppearanceLightNavigationBar(pendingAppearanceLightNavigationBar)
         }
     }
 
@@ -128,29 +131,25 @@ class SystemBarController(private val fragment: Fragment) {
     fun setNavigationBarColor(@ColorInt color: Int) = apply {
         pendingNavigationBarColor = color
         if (color != InitialColor) {
-            container?.navigationBarColor = color
+            observer?.setNavigationBarColor(color)
         } else if (window != null) {
-            container?.navigationBarColor = window!!.initialNavigationBarColor
+            observer?.setNavigationBarColor(window!!.initialNavigationBarColor)
         }
     }
 
-    fun setAppearanceLightStatusBar(isLight: Boolean) = setAppearanceLightStatusBarInternal(isLight)
+    fun setAppearanceLightStatusBar(light: Boolean) = apply {
+        pendingAppearanceLightStatusBar = light
+        observer?.setAppearanceLightStatusBar(light)
+    }
 
-    fun setAppearanceLightNavigationBar(isLight: Boolean) = setAppearanceLightNavigationBarInternal(isLight)
+    fun setAppearanceLightNavigationBar(light: Boolean) = apply {
+        pendingAppearanceLightNavigationBar = light
+        observer?.setAppearanceLightNavigationBar(light)
+    }
 
     private fun setConsumeTypeMask(typeMask: Int) = apply {
         pendingConsumeTypeMask = typeMask
         container?.consumeTypeMask = pendingConsumeTypeMask
-    }
-
-    private fun setAppearanceLightStatusBarInternal(isLight: Boolean?) = apply {
-        pendingAppearanceLightStatusBar = isLight
-        if (isLight != null) observer?.isAppearanceLightStatusBar = isLight
-    }
-
-    private fun setAppearanceLightNavigationBarInternal(isLight: Boolean?) = apply {
-        pendingAppearanceLightNavigationBar = isLight
-        if (isLight != null) observer?.isAppearanceLightNavigationBar = isLight
     }
 
     companion object
@@ -185,35 +184,20 @@ private val Window.initialNavigationBarColor: Int
         return color
     }
 
-private class AppearanceLightSystemsBarObserver(
-    private val window: Window,
-    private val lifecycle: Lifecycle,
+private class AppearanceLightObserver(
+    private val fragment: Fragment,
     private val container: SystemBarContainer,
-    private val state: Lifecycle.State = RESUMED
 ) : LifecycleEventObserver, View.OnAttachStateChangeListener {
-    private var currentState = lifecycle.currentState
+    private val who = fragment.mWho
+    private val window = fragment.requireActivity().window
+    private val lifecycle = fragment.viewLifecycle
     private val controller = WindowInsetsControllerCompat(window, window.decorView)
-
-    var isAppearanceLightStatusBar = controller.isAppearanceLightStatusBars
-        set(value) {
-            field = value
-            updateAppearanceLightSystemsBar()
-        }
-
-    var isAppearanceLightNavigationBar = controller.isAppearanceLightNavigationBars
-        set(value) {
-            field = value
-            updateAppearanceLightSystemsBar()
-        }
+    private val stateHolder by fragment.activityViewModels<SystemBarStateHolder>()
 
     init {
+        stateHolder.createState(who)
         container.addOnAttachStateChangeListener(this)
         if (container.isAttachedToWindow) onViewAttachedToWindow(container)
-    }
-
-    fun remove() {
-        container.removeOnAttachStateChangeListener(this)
-        onViewDetachedFromWindow(container)
     }
 
     override fun onViewAttachedToWindow(v: View) {
@@ -225,23 +209,56 @@ private class AppearanceLightSystemsBarObserver(
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        currentState = lifecycle.currentState
-        if (currentState == DESTROYED) remove()
-        updateAppearanceLightSystemsBar()
+        // TODO: 过滤冗余处理
+        when (lifecycle.currentState) {
+            RESUMED -> updateAppearanceLight()
+            DESTROYED -> remove()
+            else -> return
+        }
     }
 
-    private fun updateAppearanceLightSystemsBar() {
-        if (!container.isAttachedToWindow || !currentState.isAtLeast(state)) return
-        if (controller.isAppearanceLightStatusBars != isAppearanceLightStatusBar) {
-            controller.isAppearanceLightStatusBars = isAppearanceLightStatusBar
+    fun remove() {
+        container.removeOnAttachStateChangeListener(this)
+        onViewDetachedFromWindow(container)
+        if (lifecycle.currentState === DESTROYED && !fragment.isAdded) {
+            stateHolder.destroyState(who)?.let(::applyAppearanceLightState)
         }
-        if (controller.isAppearanceLightNavigationBars != isAppearanceLightNavigationBar) {
-            controller.isAppearanceLightNavigationBars = isAppearanceLightNavigationBar
+    }
+
+    fun setAppearanceLightStatusBar(light: Boolean) {
+        stateHolder.peekState(who)?.appearanceLightStatusBar = light
+        updateAppearanceLight()
+    }
+
+    fun setAppearanceLightNavigationBar(light: Boolean) {
+        stateHolder.peekState(who)?.appearanceLightNavigationBar = light
+        updateAppearanceLight()
+    }
+
+    fun setNavigationBarColor(color: Int) {
+        container.navigationBarColor = color
+        stateHolder.peekState(who)?.navigationBarColor = color
+        updateAppearanceLight()
+    }
+
+    private fun updateAppearanceLight() {
+        if (container.isAttachedToWindow && lifecycle.currentState.isAtLeast(RESUMED)) {
+            stateHolder.resumeState(who)?.let(::applyAppearanceLightState)
         }
-        if (window.navigationBarColor != container.navigationBarColor) {
-            // 设置navigationBarColor，AppearanceLightNavigationBar才会自适应，
-            // 同时也能支持Android 6.0及以上设置AppearanceLightNavigationBar。
-            window.navigationBarColor = container.navigationBarColor
+    }
+
+    private fun applyAppearanceLightState(state: AppearanceLightState) = with(state) {
+        if (controller.isAppearanceLightStatusBars != appearanceLightStatusBar) {
+            controller.isAppearanceLightStatusBars = appearanceLightStatusBar
+        }
+        if (controller.isAppearanceLightNavigationBars != appearanceLightNavigationBar) {
+            controller.isAppearanceLightNavigationBars = appearanceLightNavigationBar
+        }
+        if (!appearanceLightNavigationBar && window.navigationBarColor != navigationBarColor) {
+            // 部分机型设置navigationBarColor，appearanceLightNavigationBar = false才会生效，
+            // 当state.navigationBarColor是InitialColor时，InitialColor可能会被系统特殊处理，
+            // 因此navigationBarColor不能设置Color.TRANSPARENT。
+            window.navigationBarColor = navigationBarColor
         }
     }
 }

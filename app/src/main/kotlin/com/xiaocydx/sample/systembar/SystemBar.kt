@@ -68,33 +68,12 @@ annotation class SystemBar(
     val gestureNavBarEdgeToEdge: Boolean = false,
     @ColorInt val statusBarColor: Int = InitialColor,
     @ColorInt val navigationBarColor: Int = InitialColor,
-    val appearanceLightStatusBar: AppearanceLight = AppearanceLight.FALSE,
-    val appearanceLightNavigationBar: AppearanceLight = AppearanceLight.AUTO,
+    val appearanceLightStatusBar: Boolean = false,
+    val appearanceLightNavigationBar: Boolean = false,
 ) {
-    companion object
-}
-
-/**
- * `window.statusBarColor`和`window.navigationBarColor`初始颜色
- */
-const val InitialColor = 0x00FFFFFF
-
-enum class AppearanceLight {
-    /**
-     * 对应`WindowInsetsControllerCompat.setAppearanceLightXXX(true)`
-     */
-    TRUE,
-
-    /**
-     * 对应`WindowInsetsControllerCompat.setAppearanceLightXXX(false)`
-     */
-    FALSE,
-
-    /**
-     * 初始化[SystemBar]时不做任何处理，由系统根据背景色自适应`AppearanceLight`，
-     * **注意**：[AUTO]仅支持导航栏，系统逻辑就是如此，跟[SystemBar]的实现无关。
-     */
-    AUTO
+    companion object {
+        const val InitialColor = 0x00FFFFFF
+    }
 }
 
 private object SystemBarControllerInstaller : FragmentLifecycleCallbacks() {
@@ -106,23 +85,15 @@ private object SystemBarControllerInstaller : FragmentLifecycleCallbacks() {
 
     override fun onFragmentCreated(fm: FragmentManager, f: Fragment, savedInstanceState: Bundle?) {
         f.javaClass.getAnnotation(SystemBar::class.java)?.apply {
-            val controller = SystemBarController(f)
+            SystemBarController(f)
                 .setConsumeStatusBar(consumeStatusBar)
                 .setConsumeNavigationBar(consumeNavigationBar)
                 .setStatusBarEdgeToEdge(statusBarEdgeToEdge)
                 .setGestureNavBarEdgeToEdge(gestureNavBarEdgeToEdge)
                 .setStatusBarColor(statusBarColor)
                 .setNavigationBarColor(navigationBarColor)
-            when (appearanceLightStatusBar) {
-                AppearanceLight.AUTO -> {}
-                AppearanceLight.TRUE -> controller.setAppearanceLightStatusBar(true)
-                AppearanceLight.FALSE -> controller.setAppearanceLightStatusBar(false)
-            }
-            when (appearanceLightNavigationBar) {
-                AppearanceLight.AUTO -> {}
-                AppearanceLight.TRUE -> controller.setAppearanceLightNavigationBar(true)
-                AppearanceLight.FALSE -> controller.setAppearanceLightNavigationBar(false)
-            }
+                .setAppearanceLightStatusBar(appearanceLightStatusBar)
+                .setAppearanceLightNavigationBar(appearanceLightNavigationBar)
         }
     }
 }
