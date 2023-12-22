@@ -67,11 +67,14 @@ import com.xiaocydx.sample.viewLifecycle
  * @author xcc
  * @date 2023/8/5
  */
-@SystemBar(gestureNavBarEdgeToEdge = true)
-class ComplexListFragment : Fragment(), TransformSender {
+class ComplexListFragment : Fragment(), SystemBar, TransformSender {
     private lateinit var rvComplex: RecyclerView
     private lateinit var complexAdapter: ListAdapter<ComplexItem, *>
     private val complexViewModel: ComplexListViewModel by viewModels()
+
+    init {
+        systemBarController { gestureNavBarEdgeToEdge = true }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

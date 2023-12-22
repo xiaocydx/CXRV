@@ -73,17 +73,20 @@ import kotlinx.coroutines.flow.onEach
  * @author xcc
  * @date 2023/7/30
  */
-@SystemBar(
-    statusBarEdgeToEdge = true,
-    gestureNavBarEdgeToEdge = true,
-    navigationBarColor = Color.BLACK,
-    appearanceLightStatusBar = true
-)
-class VideoStreamFragment : Fragment(), TransformReceiver {
+class VideoStreamFragment : Fragment(), SystemBar, TransformReceiver {
     private lateinit var requestManager: RequestManager
     private lateinit var binding: FragmetVideoStreamBinding
     private lateinit var videoAdapter: ListAdapter<VideoStreamItem, *>
     private val videoViewModel: VideoStreamViewModel by viewModels()
+
+    init {
+        systemBarController {
+            statusBarEdgeToEdge = true
+            gestureNavBarEdgeToEdge = true
+            navigationBarColor = Color.BLACK
+            isAppearanceLightStatusBar = true
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

@@ -28,12 +28,15 @@ import kotlinx.coroutines.flow.onEach
  * @author xcc
  * @date 2023/8/4
  */
-@SystemBar(
-    gestureNavBarEdgeToEdge = true,
-    statusBarColor = 0xFF79AA91.toInt(),
-    navigationBarColor = 0xFF79AA91.toInt()
-)
-class AdFragment : TransitionFragment(), TransformReceiver {
+class AdFragment : TransitionFragment(), SystemBar, TransformReceiver {
+
+    init {
+        systemBarController {
+            gestureNavBarEdgeToEdge = true
+            statusBarColor = 0xFF79AA91.toInt()
+            navigationBarColor = 0xFF79AA91.toInt()
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupDebugLog()
