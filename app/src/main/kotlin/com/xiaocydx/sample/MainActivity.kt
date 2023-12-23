@@ -6,6 +6,9 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
@@ -24,7 +27,7 @@ import com.xiaocydx.sample.paging.article.ArticleListActivity
 import com.xiaocydx.sample.paging.complex.ComplexContainerActivity
 import com.xiaocydx.sample.paging.local.PagingActivity
 import com.xiaocydx.sample.payload.PayloadActivity
-import com.xiaocydx.sample.transition.enter.EnterTransitionActivity
+import com.xiaocydx.sample.transition.EnterTransitionActivity
 import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity
 import com.xiaocydx.sample.viewpager2.nested.NestedScrollableActivity
 import com.xiaocydx.sample.viewpager2.shared.SharedPoolActivity

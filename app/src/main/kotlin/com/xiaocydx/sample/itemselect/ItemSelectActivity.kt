@@ -4,19 +4,19 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.snackbar
+import com.xiaocydx.accompanist.view.wrapContent
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.doOnAttach
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
+import com.xiaocydx.sample.common.Action
+import com.xiaocydx.sample.common.initActionList
 import com.xiaocydx.sample.databinding.ActionContainerBinding
-import com.xiaocydx.sample.extensions.Action
-import com.xiaocydx.sample.extensions.initActionList
 import com.xiaocydx.sample.itemselect.ItemSelectActivity.ItemSelectAction.SINGLE
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.snackbar
-import com.xiaocydx.sample.wrapContent
 import kotlin.reflect.KClass
 
 /**

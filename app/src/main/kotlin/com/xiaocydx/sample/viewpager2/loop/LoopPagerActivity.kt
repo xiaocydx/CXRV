@@ -5,6 +5,10 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
 import androidx.viewpager2.widget.MarginPageTransformer
+import com.xiaocydx.accompanist.lifecycle.launchRepeatOnLifecycle
+import com.xiaocydx.accompanist.view.dp
+import com.xiaocydx.accompanist.view.snackbar
+import com.xiaocydx.accompanist.viewpager2.launchBanner
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.doOnListChanged
@@ -14,12 +18,9 @@ import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.cxrv.viewpager2.loop.setPageTransformer
+import com.xiaocydx.sample.common.Action
+import com.xiaocydx.sample.common.initActionList
 import com.xiaocydx.sample.databinding.ActivityLoopPagerBinding
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.extensions.Action
-import com.xiaocydx.sample.extensions.initActionList
-import com.xiaocydx.sample.launchRepeatOnLifecycle
-import com.xiaocydx.sample.snackbar
 import kotlinx.coroutines.Job
 
 /**

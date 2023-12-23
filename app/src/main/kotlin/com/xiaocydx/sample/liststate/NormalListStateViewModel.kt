@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.list.asStateFlow
-import com.xiaocydx.sample.foo.Foo
-import com.xiaocydx.sample.foo.FooType
+import com.xiaocydx.sample.common.Foo
+import com.xiaocydx.sample.common.FooType
 
 /**
  * @author xcc

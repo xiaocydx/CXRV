@@ -4,10 +4,10 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.tabs.TabLayoutMediator
+import com.xiaocydx.accompanist.lifecycle.launchRepeatOnLifecycle
+import com.xiaocydx.accompanist.view.onClick
+import com.xiaocydx.accompanist.viewpager2.registerOnPageChangeCallback
 import com.xiaocydx.sample.databinding.ActivitySharedPoolBinding
-import com.xiaocydx.sample.launchRepeatOnLifecycle
-import com.xiaocydx.sample.onClick
-import com.xiaocydx.sample.registerOnPageChangeCallback
 import kotlinx.coroutines.flow.onEach
 
 /**

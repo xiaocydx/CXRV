@@ -7,6 +7,10 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.accompanist.view.dp
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.cxrv.binding.BindingHolder
 import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.concat.toAdapter
@@ -20,16 +24,12 @@ import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
+import com.xiaocydx.sample.common.TextItem
+import com.xiaocydx.sample.common.TextType1Delegate
+import com.xiaocydx.sample.common.TextType2Delegate
+import com.xiaocydx.sample.common.initMultiTypeTextItems
 import com.xiaocydx.sample.databinding.ItemTextType1Binding
 import com.xiaocydx.sample.databinding.ItemTextType2Binding
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.extensions.TextItem
-import com.xiaocydx.sample.extensions.TextType1Delegate
-import com.xiaocydx.sample.extensions.TextType2Delegate
-import com.xiaocydx.sample.extensions.initMultiTypeTextItems
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.overScrollNever
 
 /**
  * ItemTouch示例代码

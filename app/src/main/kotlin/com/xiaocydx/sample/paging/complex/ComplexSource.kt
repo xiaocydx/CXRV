@@ -3,7 +3,7 @@ package com.xiaocydx.sample.paging.complex
 import com.xiaocydx.cxrv.paging.LoadParams
 import com.xiaocydx.cxrv.paging.LoadResult
 import com.xiaocydx.cxrv.paging.PagingConfig
-import com.xiaocydx.sample.foo.urls
+import com.xiaocydx.sample.common.urls
 import kotlinx.coroutines.delay
 
 /**

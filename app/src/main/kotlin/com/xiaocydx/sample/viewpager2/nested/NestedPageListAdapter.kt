@@ -6,6 +6,7 @@ import android.os.Parcelable
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.setRecycleAllViewsOnDetach
+import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
@@ -19,7 +20,6 @@ import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
 import com.xiaocydx.sample.databinding.ItemNestedInnerBinding
 import com.xiaocydx.sample.databinding.ItemNestedOuterBinding
-import com.xiaocydx.sample.dp
 
 fun NestedPageOuterListAdapter(size: Int) = bindingAdapter(
     uniqueId = OuterItem::id,

@@ -16,20 +16,20 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
+import com.xiaocydx.accompanist.view.dp
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.cxrv.list.fixedSize
+import com.xiaocydx.sample.common.Foo
+import com.xiaocydx.sample.common.FooType
 import com.xiaocydx.sample.divider.MenuAction.DECREASE_SPAN_COUNT
 import com.xiaocydx.sample.divider.MenuAction.INCREASE_SPAN_COUNT
 import com.xiaocydx.sample.divider.MenuAction.INSERT_ITEM
 import com.xiaocydx.sample.divider.MenuAction.REMOVE_ITEM
 import com.xiaocydx.sample.divider.MenuAction.REVERSE_LAYOUT
 import com.xiaocydx.sample.divider.MenuAction.REVERSE_ORIENTATION
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.foo.Foo
-import com.xiaocydx.sample.foo.FooType
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.overScrollNever
-import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 

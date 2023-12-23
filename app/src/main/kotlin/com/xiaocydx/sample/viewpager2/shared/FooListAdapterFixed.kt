@@ -7,11 +7,12 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestBuilder
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.request.target.Target
+import com.xiaocydx.accompanist.glide.intoIsolate
+import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.sample.*
-import com.xiaocydx.sample.foo.Foo
-import com.xiaocydx.sample.viewpager2.shared.intoIsolate
+import com.xiaocydx.sample.common.Foo
 
 /**
  * 修复[FooListAdapterError]列举的问题

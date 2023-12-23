@@ -12,18 +12,18 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
-import com.xiaocydx.sample.foo.FooListAdapter
-import com.xiaocydx.sample.foo.FooListViewModel
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.overScrollNever
+import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.overScrollNever
+import com.xiaocydx.accompanist.windowinsets.enableGestureNavBarEdgeToEdge
+import com.xiaocydx.sample.common.FooListAdapter
+import com.xiaocydx.sample.common.FooListViewModel
 import com.xiaocydx.sample.paging.local.MenuAction.CLEAR_ALL
 import com.xiaocydx.sample.paging.local.MenuAction.INSERT_ITEM
 import com.xiaocydx.sample.paging.local.MenuAction.REFRESH
 import com.xiaocydx.sample.paging.local.MenuAction.REMOVE_ITEM
 import com.xiaocydx.sample.paging.local.MenuAction.REVERSE
-import com.xiaocydx.sample.viewLifecycleScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 

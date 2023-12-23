@@ -3,9 +3,6 @@ package com.xiaocydx.sample.paging.article
 import com.xiaocydx.cxrv.paging.LoadResult
 import com.xiaocydx.cxrv.paging.Pager
 import com.xiaocydx.cxrv.paging.PagingConfig
-import com.xiaocydx.sample.retrofit.ArticleInfo
-import com.xiaocydx.sample.retrofit.RetrofitInstance
-import com.xiaocydx.sample.retrofit.WanAndroidApi
 
 /**
  * @author xcc

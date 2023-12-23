@@ -2,12 +2,12 @@ package com.xiaocydx.sample.itemclick
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.sample.common.initActionList
 import com.xiaocydx.sample.databinding.ActionContentBinding
-import com.xiaocydx.sample.extensions.initActionList
 import com.xiaocydx.sample.itemclick.scenes.*
-import com.xiaocydx.sample.snackbar
 
 /**
  * ItemClick示例代码

@@ -6,15 +6,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
+import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
+import com.xiaocydx.sample.common.initMenuList
 import com.xiaocydx.sample.databinding.MenuContainerBinding
-import com.xiaocydx.sample.extensions.initMenuList
 import com.xiaocydx.sample.liststate.MenuAction.NORMAL
 import com.xiaocydx.sample.liststate.MenuAction.PAGING
-import com.xiaocydx.sample.snackbar
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 

@@ -1,7 +1,9 @@
 package com.xiaocydx.sample.viewpager2.shared
 
 import androidx.lifecycle.ViewModel
-import com.xiaocydx.sample.foo.FooListViewModel
+import com.xiaocydx.accompanist.viewmodel.RetainedViewModels
+import com.xiaocydx.accompanist.viewmodel.getOrPut
+import com.xiaocydx.sample.common.FooListViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 

@@ -1,6 +1,7 @@
 package com.xiaocydx.sample.divider
 
 import android.graphics.drawable.Drawable
+import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.cxrv.concat.addFooter
 import com.xiaocydx.cxrv.concat.addHeader
 import com.xiaocydx.cxrv.divider.Edge
@@ -10,7 +11,6 @@ import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.removeItem
 import com.xiaocydx.cxrv.list.staggered
-import com.xiaocydx.sample.dp
 
 /**
  * @author xcc

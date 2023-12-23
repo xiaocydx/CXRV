@@ -6,16 +6,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
+import com.xiaocydx.accompanist.view.snackbar
+import com.xiaocydx.accompanist.windowinsets.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
+import com.xiaocydx.sample.common.initMenuList
 import com.xiaocydx.sample.databinding.MenuContainerBinding
-import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
-import com.xiaocydx.sample.extensions.initMenuList
 import com.xiaocydx.sample.paging.local.MenuAction.GIRD
 import com.xiaocydx.sample.paging.local.MenuAction.LINEAR
 import com.xiaocydx.sample.paging.local.MenuAction.STAGGERED
-import com.xiaocydx.sample.snackbar
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 

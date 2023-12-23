@@ -5,7 +5,7 @@ import com.xiaocydx.cxrv.list.insertItem
 import com.xiaocydx.cxrv.list.removeItemAt
 import com.xiaocydx.cxrv.list.size
 import com.xiaocydx.cxrv.list.submitList
-import com.xiaocydx.sample.foo.FooListAdapter
+import com.xiaocydx.sample.common.FooListAdapter
 
 /**
  * @author xcc

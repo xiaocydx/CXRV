@@ -8,6 +8,10 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.accompanist.view.dp
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
@@ -20,10 +24,6 @@ import com.xiaocydx.cxrv.list.getItem
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.databinding.ItemSelectionBinding
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.overScrollNever
 
 /**
  * [multiSelection]示例代码

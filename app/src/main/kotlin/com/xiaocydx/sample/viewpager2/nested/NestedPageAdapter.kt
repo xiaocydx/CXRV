@@ -3,6 +3,10 @@ package com.xiaocydx.sample.viewpager2.nested
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.xiaocydx.accompanist.view.SimpleViewHolder
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.concat.toAdapter
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -10,10 +14,6 @@ import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
-import com.xiaocydx.sample.SimpleViewHolder
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.overScrollNever
 
 /**
  * 不是所有场景都需要使用[ListAdapter]，应当结合需求选择合适的适配器

@@ -6,6 +6,8 @@ import androidx.annotation.CheckResult
 import androidx.annotation.MainThread
 import androidx.core.os.bundleOf
 import androidx.lifecycle.SavedStateHandle
+import com.xiaocydx.accompanist.transition.transform.SyncTransformSenderId
+import com.xiaocydx.accompanist.transition.transform.TransformSenderId
 import com.xiaocydx.cxrv.paging.LoadParams
 import com.xiaocydx.cxrv.paging.LoadResult
 import com.xiaocydx.cxrv.paging.LoadStates
@@ -23,8 +25,6 @@ import com.xiaocydx.sample.paging.complex.VideoStream.Sender
 import com.xiaocydx.sample.paging.complex.VideoStream.Shared
 import com.xiaocydx.sample.paging.complex.VideoStream.Source
 import com.xiaocydx.sample.paging.complex.VideoStream.StatefulSource
-import com.xiaocydx.sample.transition.transform.SyncTransformSenderId
-import com.xiaocydx.sample.transition.transform.TransformSenderId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

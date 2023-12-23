@@ -7,14 +7,13 @@ import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.paging.PagingConfig
 import com.xiaocydx.cxrv.paging.PagingPrefetch
 import com.xiaocydx.cxrv.paging.storeIn
-import com.xiaocydx.sample.retrofit.ArticleInfo
 
 /**
  * @author xcc
  * @date 2022/3/17
  */
 class ArticleListViewModel(repository: ArticleListRepository = ArticleListRepository) : ViewModel() {
-    private val list = MutableStateList<ArticleInfo>()
+    private val articleList = MutableStateList<ArticleInfo>()
     private val pager = repository.getArticlePager(
         initKey = 0,
         config = PagingConfig(
@@ -23,13 +22,14 @@ class ArticleListViewModel(repository: ArticleListRepository = ArticleListReposi
         )
     )
     val rvId = ViewCompat.generateViewId()
-    val flow = pager.flow.storeIn(list, viewModelScope)
+    val pagingFlow = pager.flow
+        .storeIn(articleList, viewModelScope)
 
     fun refresh() {
         pager.refresh()
     }
 
     fun deleteArticle(position: Int) {
-        list.removeAt(position)
+        articleList.removeAt(position)
     }
 }

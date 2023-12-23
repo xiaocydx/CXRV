@@ -1,5 +1,6 @@
 package com.xiaocydx.sample.divider
 
+import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.concat.toAdapter
 import com.xiaocydx.cxrv.divider.Edge
@@ -13,8 +14,7 @@ import com.xiaocydx.cxrv.list.removeItem
 import com.xiaocydx.cxrv.list.removeItemAt
 import com.xiaocydx.cxrv.list.size
 import com.xiaocydx.cxrv.list.submitList
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.foo.FooListAdapter
+import com.xiaocydx.sample.common.FooListAdapter
 
 /**
  * @author xcc

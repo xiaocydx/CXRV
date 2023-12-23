@@ -8,6 +8,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.overScrollNever
+import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
@@ -22,13 +26,9 @@ import com.xiaocydx.sample.R
 import com.xiaocydx.sample.databinding.ItemMessageImageBinding
 import com.xiaocydx.sample.databinding.ItemMessageNotSupportBinding
 import com.xiaocydx.sample.databinding.ItemMessageTextBinding
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
 import com.xiaocydx.sample.multitype.onetomany.OneToManyMessage.Companion.TYPE_IMAGE
 import com.xiaocydx.sample.multitype.onetomany.OneToManyMessage.Companion.TYPE_TEXT
 import com.xiaocydx.sample.multitype.onetomany.OneToManyMessage.Companion.TYPE_UNKNOWN
-import com.xiaocydx.sample.overScrollNever
-import com.xiaocydx.sample.snackbar
 
 /**
  * 一对多类型关系示例代码

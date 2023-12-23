@@ -1,7 +1,7 @@
 package com.xiaocydx.sample.divider
 
 import androidx.lifecycle.ViewModel
-import com.xiaocydx.sample.extensions.Menu
+import com.xiaocydx.sample.common.Menu
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow

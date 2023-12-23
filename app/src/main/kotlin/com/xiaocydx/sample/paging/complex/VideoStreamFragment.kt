@@ -15,6 +15,20 @@ import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.ORIENTATION_VERTICAL
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
+import com.xiaocydx.accompanist.launchSafely
+import com.xiaocydx.accompanist.lifecycle.doOnStateChanged
+import com.xiaocydx.accompanist.lifecycle.launchRepeatOnLifecycle
+import com.xiaocydx.accompanist.lifecycle.viewLifecycle
+import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
+import com.xiaocydx.accompanist.systembar.EdgeToEdge
+import com.xiaocydx.accompanist.systembar.SystemBar
+import com.xiaocydx.accompanist.transition.transform.TransformReceiver
+import com.xiaocydx.accompanist.transition.transform.TransitionEvent
+import com.xiaocydx.accompanist.transition.transform.takeFirst
+import com.xiaocydx.accompanist.transition.transform.transitionEvent
+import com.xiaocydx.accompanist.view.snackbar
+import com.xiaocydx.accompanist.viewpager2.registerOnPageChangeCallback
+import com.xiaocydx.accompanist.windowinsets.doOnApplyWindowInsets
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -27,21 +41,8 @@ import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.cxrv.paging.storeIn
 import com.xiaocydx.sample.databinding.FragmetVideoStreamBinding
 import com.xiaocydx.sample.databinding.ItemVideoStreamBinding
-import com.xiaocydx.sample.doOnApplyWindowInsets
-import com.xiaocydx.sample.doOnStateChanged
-import com.xiaocydx.sample.launchRepeatOnLifecycle
-import com.xiaocydx.sample.launchSafely
-import com.xiaocydx.sample.paging.config.loadStatesFlow
-import com.xiaocydx.sample.paging.config.replaceWithSwipeRefresh
-import com.xiaocydx.sample.registerOnPageChangeCallback
-import com.xiaocydx.sample.snackbar
-import com.xiaocydx.sample.systembar.SystemBar
-import com.xiaocydx.sample.transition.transform.TransformReceiver
-import com.xiaocydx.sample.transition.transform.TransitionEvent
-import com.xiaocydx.sample.transition.transform.takeFirst
-import com.xiaocydx.sample.transition.transform.transitionEvent
-import com.xiaocydx.sample.viewLifecycle
-import com.xiaocydx.sample.viewLifecycleScope
+import com.xiaocydx.accompanist.paging.loadStatesFlow
+import com.xiaocydx.accompanist.paging.replaceWithSwipeRefresh
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -81,9 +82,9 @@ class VideoStreamFragment : Fragment(), SystemBar, TransformReceiver {
 
     init {
         systemBarController {
-            statusBarEdgeToEdge = true
-            gestureNavBarEdgeToEdge = true
             navigationBarColor = Color.BLACK
+            statusBarEdgeToEdge = EdgeToEdge.Enabled
+            navigationBarEdgeToEdge = EdgeToEdge.Gesture
             isAppearanceLightStatusBar = true
         }
     }

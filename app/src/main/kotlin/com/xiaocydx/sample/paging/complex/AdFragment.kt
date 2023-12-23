@@ -4,16 +4,17 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.lifecycle.flowWithLifecycle
-import com.xiaocydx.sample.doOnStateChanged
-import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
-import com.xiaocydx.sample.systembar.SystemBar
-import com.xiaocydx.sample.transition.enter.EnterTransitionController
-import com.xiaocydx.sample.transition.enter.LOADING_DURATION
-import com.xiaocydx.sample.transition.enter.TransitionFragment
-import com.xiaocydx.sample.transition.enter.TransitionState
-import com.xiaocydx.sample.transition.transform.TransformReceiver
-import com.xiaocydx.sample.viewLifecycle
-import com.xiaocydx.sample.viewLifecycleScope
+import com.xiaocydx.accompanist.lifecycle.doOnStateChanged
+import com.xiaocydx.accompanist.lifecycle.viewLifecycle
+import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
+import com.xiaocydx.accompanist.systembar.EdgeToEdge
+import com.xiaocydx.accompanist.systembar.SystemBar
+import com.xiaocydx.accompanist.transition.EnterTransitionController
+import com.xiaocydx.accompanist.transition.transform.TransformReceiver
+import com.xiaocydx.accompanist.windowinsets.enableGestureNavBarEdgeToEdge
+import com.xiaocydx.sample.transition.LOADING_DURATION
+import com.xiaocydx.sample.transition.TransitionFragment
+import com.xiaocydx.sample.transition.TransitionState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -32,9 +33,9 @@ class AdFragment : TransitionFragment(), SystemBar, TransformReceiver {
 
     init {
         systemBarController {
-            gestureNavBarEdgeToEdge = true
             statusBarColor = 0xFF79AA91.toInt()
             navigationBarColor = 0xFF79AA91.toInt()
+            navigationBarEdgeToEdge = EdgeToEdge.Gesture
         }
     }
 

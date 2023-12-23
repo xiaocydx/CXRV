@@ -5,6 +5,9 @@ package com.xiaocydx.sample.viewpager2.nested
 import android.content.Context
 import androidx.viewpager2.widget.MarginPageTransformer
 import androidx.viewpager2.widget.ViewPager2
+import com.xiaocydx.accompanist.view.dp
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
@@ -12,9 +15,6 @@ import com.xiaocydx.cxrv.viewpager2.loop.isVp2NestedScrollable
 import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
 import com.xiaocydx.sample.databinding.ItemNestedHeaderBinding
 import com.xiaocydx.sample.databinding.ItemNestedInnerBinding
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
 
 fun NestedPageHeader(context: Context) = ViewPager2(context).apply {
     // 水平方向ViewPager2（Parent）和水平方向ViewPager2（Child）

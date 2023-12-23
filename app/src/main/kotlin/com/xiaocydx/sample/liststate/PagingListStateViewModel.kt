@@ -6,10 +6,10 @@ import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.paging.PagingConfig
 import com.xiaocydx.cxrv.paging.storeIn
-import com.xiaocydx.sample.foo.Foo
-import com.xiaocydx.sample.foo.FooRepository
-import com.xiaocydx.sample.foo.FooSource
-import com.xiaocydx.sample.foo.ResultType
+import com.xiaocydx.sample.common.Foo
+import com.xiaocydx.sample.common.FooRepository
+import com.xiaocydx.sample.common.FooSource
+import com.xiaocydx.sample.common.ResultType
 
 /**
  * @author xcc

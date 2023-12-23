@@ -6,12 +6,24 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.TransformRoot
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.bumptech.glide.Glide
+import com.xiaocydx.accompanist.lifecycle.doOnStateChanged
+import com.xiaocydx.accompanist.lifecycle.launchRepeatOnLifecycle
+import com.xiaocydx.accompanist.lifecycle.viewLifecycle
+import com.xiaocydx.accompanist.systembar.EdgeToEdge
+import com.xiaocydx.accompanist.systembar.SystemBar
+import com.xiaocydx.accompanist.transition.EnterTransitionController
+import com.xiaocydx.accompanist.transition.transform.TransformReceiver
+import com.xiaocydx.accompanist.transition.transform.TransformSender
+import com.xiaocydx.accompanist.view.dp
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.overScrollNever
+import com.xiaocydx.accompanist.windowinsets.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
@@ -24,23 +36,11 @@ import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.databinding.ItemComplexBinding
-import com.xiaocydx.sample.doOnStateChanged
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.enableGestureNavBarEdgeToEdge
-import com.xiaocydx.sample.launchRepeatOnLifecycle
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.overScrollNever
 import com.xiaocydx.sample.paging.complex.ComplexItem.Companion.TYPE_AD
 import com.xiaocydx.sample.paging.complex.ComplexItem.Companion.TYPE_VIDEO
-import com.xiaocydx.sample.paging.config.withPaging
-import com.xiaocydx.sample.paging.config.withSwipeRefresh
-import com.xiaocydx.sample.systembar.SystemBar
-import com.xiaocydx.sample.transition.enter.EnterTransitionActivity
-import com.xiaocydx.sample.transition.enter.EnterTransitionController
-import com.xiaocydx.sample.transition.transform.TransformReceiver
-import com.xiaocydx.sample.transition.transform.TransformSender
-import com.xiaocydx.sample.viewLifecycle
+import com.xiaocydx.accompanist.paging.withPaging
+import com.xiaocydx.accompanist.paging.withSwipeRefresh
+import com.xiaocydx.sample.transition.EnterTransitionActivity
 
 /**
  * 复合列表页面
@@ -57,8 +57,8 @@ import com.xiaocydx.sample.viewLifecycle
  * 同步申请重新布局是为了提前将当前Fragment的内容准备好，例如重新布局后加载新url的图片，
  * 让退出[VideoStreamFragment]的过程能看到准备好的内容，而不是一大堆占位图。
  *
- * 如果上述问题已有解决方案，那么可以修改[TransformRoot]的实现逻辑，销毁当前Fragment，
- * [TransformRoot]、[TransformSender]、[TransformReceiver]提供的函数和组成的结构，
+ * 如果上述问题已有解决方案，那么可以修改`TransformRoot`的实现逻辑，销毁当前Fragment，
+ * `TransformRoot`、[TransformSender]、[TransformReceiver]提供的函数和组成的结构，
  * 只是为这类交互提供一种轻量的过渡动画方案。
  *
  * [AdFragment]沿用了[EnterTransitionController]解决过渡动画卡顿的问题，
@@ -73,7 +73,7 @@ class ComplexListFragment : Fragment(), SystemBar, TransformSender {
     private val complexViewModel: ComplexListViewModel by viewModels()
 
     init {
-        systemBarController { gestureNavBarEdgeToEdge = true }
+        systemBarController { navigationBarEdgeToEdge = EdgeToEdge.Gesture }
     }
 
     override fun onCreateView(

@@ -15,6 +15,14 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.setRecycleAllViewsOnDetach
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
+import com.xiaocydx.accompanist.lifecycle.doOnTargetState
+import com.xiaocydx.accompanist.lifecycle.launchRepeatOnLifecycle
+import com.xiaocydx.accompanist.lifecycle.viewLifecycle
+import com.xiaocydx.accompanist.view.dp
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.overScrollNever
+import com.xiaocydx.accompanist.viewpager2.setVp2SharedRecycledViewPoolOnAttach
 import com.xiaocydx.cxrv.animatable.controlledByParentViewPager2
 import com.xiaocydx.cxrv.animatable.controlledByScroll
 import com.xiaocydx.cxrv.animatable.registerImageView
@@ -28,17 +36,10 @@ import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
-import com.xiaocydx.sample.doOnTargetState
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.foo.Foo
-import com.xiaocydx.sample.foo.FooListViewModel
-import com.xiaocydx.sample.launchRepeatOnLifecycle
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.overScrollNever
-import com.xiaocydx.sample.paging.config.withPaging
-import com.xiaocydx.sample.paging.config.withSwipeRefresh
-import com.xiaocydx.sample.viewLifecycle
+import com.xiaocydx.sample.common.Foo
+import com.xiaocydx.sample.common.FooListViewModel
+import com.xiaocydx.accompanist.paging.withPaging
+import com.xiaocydx.accompanist.paging.withSwipeRefresh
 
 /**
  * @author xcc

@@ -4,20 +4,20 @@ import android.view.View
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.xiaocydx.accompanist.view.indefinite
+import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.binding.BindingHolder
 import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.list.emptyDisposable
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
+import com.xiaocydx.sample.common.Action
+import com.xiaocydx.sample.common.TextItem
+import com.xiaocydx.sample.common.TextType1Delegate
+import com.xiaocydx.sample.common.TextType2Delegate
+import com.xiaocydx.sample.common.initMultiTypeTextItems
 import com.xiaocydx.sample.databinding.ItemTextType1Binding
 import com.xiaocydx.sample.databinding.ItemTextType2Binding
-import com.xiaocydx.sample.extensions.Action
-import com.xiaocydx.sample.extensions.TextItem
-import com.xiaocydx.sample.extensions.TextType1Delegate
-import com.xiaocydx.sample.extensions.TextType2Delegate
-import com.xiaocydx.sample.extensions.initMultiTypeTextItems
-import com.xiaocydx.sample.indefinite
-import com.xiaocydx.sample.snackbar
 
 /**
  * @author xcc

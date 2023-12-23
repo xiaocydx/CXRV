@@ -7,10 +7,10 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.xiaocydx.accompanist.view.SimpleViewHolder
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.sample.SimpleViewHolder
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
 
 /**
  * @author xcc

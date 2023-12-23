@@ -5,9 +5,9 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.xiaocydx.accompanist.transition.transform.asPosition
 import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.paging.storeIn
-import com.xiaocydx.sample.transition.transform.asPosition
 
 /**
  * @author xcc

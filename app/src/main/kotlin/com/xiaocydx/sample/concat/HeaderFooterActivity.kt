@@ -8,6 +8,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.HeaderFooterRemovedChecker
 import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.accompanist.view.dp
+import com.xiaocydx.accompanist.view.layoutParams
+import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.wrapContent
 import com.xiaocydx.cxrv.concat.ViewAdapter
 import com.xiaocydx.cxrv.concat.addFooter
 import com.xiaocydx.cxrv.concat.addHeader
@@ -20,15 +24,11 @@ import com.xiaocydx.cxrv.list.doOnAttach
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.sample.common.Action
+import com.xiaocydx.sample.common.Foo
+import com.xiaocydx.sample.common.FooListAdapter
+import com.xiaocydx.sample.common.initActionList
 import com.xiaocydx.sample.databinding.ActionContentBinding
-import com.xiaocydx.sample.dp
-import com.xiaocydx.sample.extensions.Action
-import com.xiaocydx.sample.extensions.initActionList
-import com.xiaocydx.sample.foo.Foo
-import com.xiaocydx.sample.foo.FooListAdapter
-import com.xiaocydx.sample.layoutParams
-import com.xiaocydx.sample.matchParent
-import com.xiaocydx.sample.wrapContent
 
 /**
  * HeaderFooter示例代码
