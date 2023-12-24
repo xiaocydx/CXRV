@@ -11,7 +11,7 @@ import com.xiaocydx.accompanist.systembar.SystemBar
  * @author xcc
  * @date 2023/7/30
  */
-class ComplexContainerActivity : AppCompatActivity(), SystemBar {
+class ComplexContainerActivity : AppCompatActivity(), SystemBar.Host {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -20,6 +20,7 @@ import android.app.Activity
 import android.app.Application
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
+import androidx.fragment.app.ActivitySystemBarController
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -37,13 +38,24 @@ fun SystemBar.Companion.install(application: Application) {
  */
 interface SystemBar {
 
-    fun <F> F.systemBarController(
+    interface Host
+
+    fun <T> T.systemBarController(
         initializer: (SystemBarController.() -> Unit)? = null
-    ): SystemBarController where F : Fragment, F : SystemBar = run {
-        require(activity == null && lifecycle.currentState === INITIALIZED) {
-            "只能在构造阶段获取${SystemBarController::class.java.simpleName}"
+    ): SystemBarController where T : FragmentActivity, T : SystemBar = run {
+        require(window == null && lifecycle.currentState === INITIALIZED) {
+            "只能在${javaClass.canonicalName}的构造阶段获取${SystemBarController.name}"
         }
-        FragmentSystemBarController(this, repeatThrow = true).also { initializer?.invoke(it) }
+        ActivitySystemBarController(this, repeatThrow = true).attach(initializer)
+    }
+
+    fun <T> T.systemBarController(
+        initializer: (SystemBarController.() -> Unit)? = null
+    ): SystemBarController where T : Fragment, T : SystemBar = run {
+        require(activity == null && lifecycle.currentState === INITIALIZED) {
+            "只能在${javaClass.canonicalName}的构造阶段获取${SystemBarController.name}"
+        }
+        FragmentSystemBarController(this, repeatThrow = true).attach(initializer)
     }
 
     companion object
@@ -51,6 +63,9 @@ interface SystemBar {
 
 internal val SystemBar.Companion.name: String
     get() = SystemBar::class.java.simpleName
+
+internal val SystemBar.Companion.hostName: String
+    get() = "${name}.${SystemBar.Host::class.java.simpleName}"
 
 private object ActivitySystemBarInstaller : ActivityLifecycleCallbacks {
 
@@ -60,11 +75,26 @@ private object ActivitySystemBarInstaller : ActivityLifecycleCallbacks {
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-        if (activity !is SystemBar) return
+        if (activity !is SystemBar && activity !is SystemBar.Host) return
+        require(activity is FragmentActivity) {
+            val activityName = activity.javaClass.canonicalName
+            val componentName = FragmentActivity::class.java.canonicalName
+            val systemBarName = when (activity) {
+                is SystemBar -> SystemBar.name
+                is SystemBar.Host -> SystemBar.hostName
+                else -> throw AssertionError()
+            }
+            "${activityName}必须是${componentName}，才能实现${systemBarName}"
+        }
         val window = activity.window
         window.recordSystemBarInitialColor()
         window.disabledDecorFitsSystemWindows()
-        FragmentSystemBarInstaller.register(activity)
+        if (activity is SystemBar) {
+            ActivitySystemBarController(activity, repeatThrow = false).attach()
+        }
+        if (activity is SystemBar.Host) {
+            FragmentSystemBarInstaller.register(activity)
+        }
     }
 
     override fun onActivityStarted(activity: Activity) = Unit
@@ -77,8 +107,7 @@ private object ActivitySystemBarInstaller : ActivityLifecycleCallbacks {
 
 private object FragmentSystemBarInstaller : FragmentLifecycleCallbacks() {
 
-    fun register(activity: Activity) {
-        if (activity !is FragmentActivity) return
+    fun register(activity: FragmentActivity) {
         val fm = activity.supportFragmentManager
         fm.unregisterFragmentLifecycleCallbacks(this)
         fm.registerFragmentLifecycleCallbacks(this, true)
@@ -90,6 +119,6 @@ private object FragmentSystemBarInstaller : FragmentLifecycleCallbacks() {
             val fragmentName = f.javaClass.canonicalName
             "${fragmentName}为DialogFragment，${SystemBar.name}未支持DialogFragment"
         }
-        FragmentSystemBarController(f, repeatThrow = false)
+        FragmentSystemBarController(f, repeatThrow = false).attach()
     }
 }

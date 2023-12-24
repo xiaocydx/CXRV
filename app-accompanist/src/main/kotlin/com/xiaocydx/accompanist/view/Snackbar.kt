@@ -17,6 +17,7 @@
 package com.xiaocydx.accompanist.view
 
 import android.view.View
+import android.view.Window
 import androidx.annotation.CheckResult
 import com.google.android.material.snackbar.Snackbar
 
@@ -25,6 +26,10 @@ import com.google.android.material.snackbar.Snackbar
 fun View.snackbar() = Snackbar.make(
     this, "", Snackbar.LENGTH_SHORT
 ).setTextMaxLines(Int.MAX_VALUE).dismissAction()
+
+@CheckResult
+@Suppress("SpellCheckingInspection")
+fun Window.snackbar() = decorView.findViewById<View>(android.R.id.content).snackbar()
 
 @CheckResult
 fun Snackbar.short() = setDuration(Snackbar.LENGTH_SHORT)

@@ -19,7 +19,10 @@ package com.xiaocydx.accompanist.systembar
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.FrameLayout
 import androidx.core.view.ViewCompat
@@ -28,6 +31,7 @@ import androidx.core.view.WindowInsetsCompat.Type.navigationBars
 import androidx.core.view.WindowInsetsCompat.Type.statusBars
 import androidx.core.view.doOnAttach
 import androidx.core.view.updatePadding
+import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.windowinsets.isGestureNavigationBar
 
@@ -45,7 +49,7 @@ internal class SystemBarContainer(context: Context) : FrameLayout(context) {
         set(value) {
             if (statusBarDrawable.color == value) return
             statusBarDrawable.color = value
-            invalidate()
+            invalidateDrawable(statusBarDrawable)
         }
 
     var navigationBarColor: Int
@@ -53,7 +57,7 @@ internal class SystemBarContainer(context: Context) : FrameLayout(context) {
         set(value) {
             if (navigationBarDrawable.color == value) return
             navigationBarDrawable.color = value
-            invalidate()
+            invalidateDrawable(navigationBarDrawable)
         }
 
     var statusBarEdgeToEdge: EdgeToEdge = EdgeToEdge.Disabled
@@ -70,12 +74,28 @@ internal class SystemBarContainer(context: Context) : FrameLayout(context) {
             ViewCompat.requestApplyInsets(this)
         }
 
-    fun attach(view: View) = apply {
+    init {
+        layoutParams(matchParent, matchParent)
+    }
+
+    fun setContentView(view: View?) {
         setWillNotDraw(false)
         removeAllViews()
         contentView = view
-        addView(contentView, matchParent, matchParent)
+        if (view != null) {
+            view.layoutParams = when (val params = view.layoutParams) {
+                is MarginLayoutParams -> LayoutParams(params)
+                is ViewGroup.LayoutParams -> LayoutParams(params)
+                else -> LayoutParams(matchParent, matchParent, Gravity.CENTER)
+            }
+            addView(view)
+        }
         doOnAttach(ViewCompat::requestApplyInsets)
+    }
+
+    override fun verifyDrawable(who: Drawable) = when (who) {
+        statusBarDrawable, navigationBarDrawable -> true
+        else -> super.verifyDrawable(who)
     }
 
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {

@@ -73,6 +73,6 @@ internal class SystemBarStateHolder(savaStateHandle: SavedStateHandle) : ViewMod
     private fun isLastIndex(index: Int) = index >= 0 && index == stack.lastIndex
 
     private companion object {
-        const val STACK_KEY = "com.xiaocydx.sample.systembar.STACK_KEY"
+        const val STACK_KEY = "com.xiaocydx.accompanist.systembar.STACK_KEY"
     }
 }

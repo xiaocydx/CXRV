@@ -83,12 +83,3 @@ sealed class EdgeToEdge {
 
 internal val SystemBarController.Companion.name: String
     get() = SystemBarController::class.java.simpleName
-
-internal fun SystemBarController.applyPendingSystemBarConfig() {
-    statusBarColor = statusBarColor
-    navigationBarColor = navigationBarColor
-    statusBarEdgeToEdge = statusBarEdgeToEdge
-    navigationBarEdgeToEdge = navigationBarEdgeToEdge
-    isAppearanceLightStatusBar = isAppearanceLightStatusBar
-    isAppearanceLightNavigationBar = isAppearanceLightNavigationBar
-}

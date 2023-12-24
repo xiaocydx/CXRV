@@ -121,6 +121,19 @@ internal class SystemBarObserver private constructor(
         private val FragmentActivity.stateHolder: SystemBarStateHolder
             get() = ViewModelProvider(this)[SystemBarStateHolder::class.java]
 
+        // TODO: 修复重建后错误的应用状态时机
+        fun create(
+            activity: FragmentActivity,
+            container: SystemBarContainer
+        ) = SystemBarObserver(
+            who = "Activity",
+            window = activity.window,
+            lifecycle = activity.lifecycle,
+            container = container,
+            stateHolder = activity.stateHolder,
+            canDestroyState = { true }
+        )
+
         fun create(
             fragment: Fragment,
             container: SystemBarContainer

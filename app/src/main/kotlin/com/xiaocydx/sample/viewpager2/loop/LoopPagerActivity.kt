@@ -110,7 +110,7 @@ class LoopPagerActivity : AppCompatActivity() {
                 "取消Banner轮播交互"
             }
         }
-        window.decorView.snackbar().setText(text).show()
+        window.snackbar().setText(text).show()
     }
 
     private enum class LoopPagerAction(override val text: String) : Action {

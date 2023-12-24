@@ -46,7 +46,7 @@ class ItemSelectActivity : AppCompatActivity() {
     private fun performItemSelectAction(action: ItemSelectAction, show: Boolean = true) {
         supportFragmentManager.commit { replace(R.id.container, action.clazz.java, null) }
         if (!show) return
-        window.decorView.snackbar().setText("替换为${action.clazz.java.simpleName}").show()
+        window.snackbar().setText("替换为${action.clazz.java.simpleName}").show()
     }
 
     private enum class ItemSelectAction(
