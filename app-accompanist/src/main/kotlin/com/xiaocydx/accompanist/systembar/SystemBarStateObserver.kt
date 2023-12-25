@@ -76,13 +76,13 @@ internal class SystemBarStateObserver private constructor(
         }
     }
 
-    fun setAppearanceLightStatusBar(light: Boolean) {
-        stateHolder.peekState(who)?.isAppearanceLightStatusBar = light
+    fun setAppearanceLightStatusBar(isLight: Boolean) {
+        stateHolder.peekState(who)?.isAppearanceLightStatusBar = isLight
         applyCurrentState()
     }
 
-    fun setAppearanceLightNavigationBar(light: Boolean) {
-        stateHolder.peekState(who)?.isAppearanceLightNavigationBar = light
+    fun setAppearanceLightNavigationBar(isLight: Boolean) {
+        stateHolder.peekState(who)?.isAppearanceLightNavigationBar = isLight
         applyCurrentState()
     }
 

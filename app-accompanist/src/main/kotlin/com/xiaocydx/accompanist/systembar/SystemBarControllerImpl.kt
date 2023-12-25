@@ -97,7 +97,7 @@ internal sealed class SystemBarControllerImpl : SystemBarController {
             observer?.setAppearanceLightNavigationBar(value)
         }
 
-    protected fun SystemBarController.applyPendingSystemBarConfig() {
+    protected fun applyPendingSystemBarConfig() {
         statusBarColor = statusBarColor
         navigationBarColor = navigationBarColor
         statusBarEdgeToEdge = statusBarEdgeToEdge
