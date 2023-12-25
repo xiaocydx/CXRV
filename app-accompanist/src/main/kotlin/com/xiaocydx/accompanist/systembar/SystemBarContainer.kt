@@ -20,29 +20,30 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
-import android.view.Gravity
-import android.view.View
-import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.FrameLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsCompat.Type.navigationBars
 import androidx.core.view.WindowInsetsCompat.Type.statusBars
-import androidx.core.view.doOnAttach
 import androidx.core.view.updatePadding
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.windowinsets.isGestureNavigationBar
 
 /**
+ * [SystemBar]视图容器
+ *
  * @author xcc
  * @date 2023/12/21
  */
 internal class SystemBarContainer(context: Context) : FrameLayout(context) {
     private val statusBarDrawable = ColorDrawable()
     private val navigationBarDrawable = ColorDrawable()
-    private var contentView: View? = null
+
+    init {
+        setWillNotDraw(false)
+    }
 
     var statusBarColor: Int
         get() = statusBarDrawable.color
@@ -78,21 +79,6 @@ internal class SystemBarContainer(context: Context) : FrameLayout(context) {
         layoutParams(matchParent, matchParent)
     }
 
-    fun setContentView(view: View?) {
-        setWillNotDraw(false)
-        removeAllViews()
-        contentView = view
-        if (view != null) {
-            view.layoutParams = when (val params = view.layoutParams) {
-                is MarginLayoutParams -> LayoutParams(params)
-                is ViewGroup.LayoutParams -> LayoutParams(params)
-                else -> LayoutParams(matchParent, matchParent, Gravity.CENTER)
-            }
-            addView(view)
-        }
-        doOnAttach(ViewCompat::requestApplyInsets)
-    }
-
     override fun verifyDrawable(who: Drawable) = when (who) {
         statusBarDrawable, navigationBarDrawable -> true
         else -> super.verifyDrawable(who)
@@ -119,28 +105,12 @@ internal class SystemBarContainer(context: Context) : FrameLayout(context) {
         return super.onApplyWindowInsets(insets)
     }
 
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        checkContentView()
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-    }
-
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        checkContentView()
-        super.onLayout(changed, left, top, right, bottom)
-    }
-
     override fun draw(canvas: Canvas) {
-        checkContentView()
         super.draw(canvas)
         statusBarDrawable.setBounds(0, 0, width, paddingTop)
         navigationBarDrawable.setBounds(0, height - paddingBottom, width, height)
         statusBarDrawable.takeIf { it.bounds.height() > 0 }?.draw(canvas)
         navigationBarDrawable.takeIf { it.bounds.height() > 0 }?.draw(canvas)
-    }
-
-    private fun checkContentView() {
-        check(childCount <= 1)
-        if (childCount == 1) check(getChildAt(0) === contentView)
     }
 
     companion object {

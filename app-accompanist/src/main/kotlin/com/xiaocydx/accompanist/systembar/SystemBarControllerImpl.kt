@@ -19,9 +19,10 @@
 
 package androidx.fragment.app
 
-import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import androidx.core.view.ViewCompat
+import androidx.core.view.doOnAttach
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State.CREATED
 import androidx.lifecycle.Lifecycle.State.INITIALIZED
@@ -49,7 +50,7 @@ import com.xiaocydx.accompanist.systembar.name
  */
 internal sealed class SystemBarControllerImpl : SystemBarController {
     protected var container: SystemBarContainer? = null
-    protected var observer: SystemBarObserver? = null
+    protected var observer: SystemBarStateObserver? = null
     protected abstract val window: Window?
 
     override var statusBarColor = InitialColor
@@ -128,36 +129,38 @@ internal class ActivitySystemBarController(
                 // activity.performCreate()的执行顺序：
                 // 1. activity.onCreate() -> activity.setContentView()
                 // 2. activity.dispatchActivityPostCreated()
-                // 第2步执行到此处将contentView的contentParent替换为container，
-                // 此时containerId为android.R.id.content的Fragment.view还未创建。
-                val contentParent = activity.findViewById<ViewGroup>(android.R.id.content)
-                checkStateBeforeCreate(contentParent)
-                val contentView: View? = contentParent.getChildAt(0)
-                container = createContainerThrowOrNull(contentView)
+                // 第2步执行到此处，将contentView的contentParent替换为container，
+                // 此时containerId为android.R.id.content的Fragment还未创建view。
+                // 第2步之后，不需要支持能再次调用activity.setContentView()，
+                // 因为这是错误的调用情况，会导致已添加的Fragment.view被移除。
+                container = createContainerThrowOrNull()
                 if (container == null) {
                     // Activity构造阶段已创建SystemBarController，
                     // 后注入的SystemBarController不做任何处理。
                     return
                 }
-                observer = SystemBarObserver.create(activity, container!!)
-                contentParent.removeAllViews()
-                container!!.setContentView(contentView)
-                contentParent.addView(container)
+                observer = SystemBarStateObserver.create(activity, container!!)
                 applyPendingSystemBarConfig()
             }
         })
     }
 
-    private fun checkStateBeforeCreate(contentParent: ViewGroup) {
-        check(contentParent.childCount <= 1) {
-            "${activityName}的生命周期状态转换出现异常情况"
+    private fun createContainerThrowOrNull(): SystemBarContainer? {
+        val contentParent = activity.findViewById<ViewGroup>(android.R.id.content)
+        for (index in 0 until contentParent.childCount) {
+            if (contentParent.getChildAt(index) !is SystemBarContainer) continue
+            check(!repeatThrow) { "${activityName}只能关联一个${SystemBarController.name}" }
+            return null
         }
-    }
-
-    private fun createContainerThrowOrNull(contentView: View?): SystemBarContainer? {
-        if (contentView !is SystemBarContainer) return SystemBarContainer(activity)
-        check(!repeatThrow) { "${activityName}只能关联一个${SystemBarController.name}" }
-        return null
+        val container = SystemBarContainer(contentParent.context)
+        while (contentParent.childCount > 0) {
+            val child = contentParent.getChildAt(0)
+            contentParent.removeViewAt(0)
+            container.addView(child)
+        }
+        contentParent.addView(container)
+        container.doOnAttach(ViewCompat::requestApplyInsets)
+        return container
     }
 }
 
@@ -184,30 +187,22 @@ internal class FragmentSystemBarController(
                     // 1. fragment.mView = fragment.onCreateView()
                     // 2. fragment.mView.setViewTreeXXXOwner(fragment.mViewLifecycleOwner)
                     // 3. fragment.mViewLifecycleOwnerLiveData.setValue(fragment.mViewLifecycleOwner)
-                    // 第3步执行到此处将fragment.mView替换为container，并对container设置mViewLifecycleOwner。
-                    checkStateBeforeCreate(owner)
-                    val view = fragment.mView!!
-                    container = createContainerThrowOrNull(view)
+                    // 第3步执行到此处，将fragment.mView替换为container，并对container设置mViewLifecycleOwner。
+                    container = createContainerThrowOrNull(owner)
                     if (container == null) {
                         // Fragment构造阶段已创建SystemBarController，
                         // 后注入的SystemBarController不做任何处理。
                         fragment.viewLifecycleOwnerLiveData.removeObserver(this)
                         return
                     }
-                    observer = SystemBarObserver.create(fragment, container!!)
-                    fragment.mView = container!!.apply {
-                        setContentView(view)
-                        setViewTreeLifecycleOwner(owner)
-                        setViewTreeViewModelStoreOwner(owner as? ViewModelStoreOwner)
-                        setViewTreeSavedStateRegistryOwner(owner as? SavedStateRegistryOwner)
-                    }
+                    observer = SystemBarStateObserver.create(fragment, container!!)
                     applyPendingSystemBarConfig()
                 }
             }
         })
     }
 
-    private fun checkStateBeforeCreate(owner: LifecycleOwner) {
+    private fun createContainerThrowOrNull(owner: LifecycleOwner): SystemBarContainer? {
         val activity = fragment.requireActivity()
         check(activity is SystemBar.Host) {
             "${activity.javaClass.canonicalName}需要实现${SystemBar.hostName}"
@@ -221,11 +216,20 @@ internal class FragmentSystemBarController(
         check(fragment.mView.parent == null) {
             "${fragmentName}的view已有parent，不支持替换parent"
         }
-    }
 
-    private fun createContainerThrowOrNull(view: View): SystemBarContainer? {
-        if (view !is SystemBarContainer) return SystemBarContainer(view.context)
-        check(!repeatThrow) { "${fragmentName}只能关联一个${SystemBarController.name}" }
-        return null
+        val view = fragment.mView
+        if (view is SystemBarContainer) {
+            check(!repeatThrow) { "${fragmentName}只能关联一个${SystemBarController.name}" }
+            return null
+        }
+        val container = SystemBarContainer(view.context)
+        fragment.mView = container.apply {
+            addView(view)
+            setViewTreeLifecycleOwner(owner)
+            setViewTreeViewModelStoreOwner(owner as? ViewModelStoreOwner)
+            setViewTreeSavedStateRegistryOwner(owner as? SavedStateRegistryOwner)
+            doOnAttach(ViewCompat::requestApplyInsets)
+        }
+        return container
     }
 }

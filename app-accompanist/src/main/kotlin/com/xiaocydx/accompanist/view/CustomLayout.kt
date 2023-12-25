@@ -73,6 +73,8 @@ abstract class CustomLayout @JvmOverloads constructor(
 
     override fun generateLayoutParams(p: ViewGroup.LayoutParams) = LayoutParams(p)
 
+    override fun checkLayoutParams(p: ViewGroup.LayoutParams?) = p is LayoutParams
+
     class LayoutParams : MarginLayoutParams {
         constructor(c: Context, attrs: AttributeSet) : super(c, attrs)
         constructor(width: Int, height: Int) : super(width, height)

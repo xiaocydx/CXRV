@@ -25,7 +25,7 @@ import com.xiaocydx.accompanist.systembar.EdgeToEdge.Enabled
 import com.xiaocydx.accompanist.systembar.EdgeToEdge.Gesture
 
 /**
- * SystemBar控制器
+ * [SystemBar]控制器
  *
  * @author xcc
  * @date 2023/12/21
