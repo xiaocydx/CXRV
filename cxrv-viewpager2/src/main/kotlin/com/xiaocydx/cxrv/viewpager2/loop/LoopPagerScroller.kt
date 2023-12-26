@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.recyclerView
 import androidx.recyclerview.widget.smoothScroller
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
+import androidx.viewpager2.widget.ViewPager2.SCROLL_STATE_IDLE
 import androidx.viewpager2.widget.prepareSmoothScrollToPosition
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.DEFAULT_EXTRA_PAGE_LIMIT
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerContent.Companion.PADDING_EXTRA_PAGE_LIMIT
@@ -160,20 +161,26 @@ internal class LoopPagerScroller(
     }
 
     private inner class PageChangeCallbackImpl : OnPageChangeCallback() {
+        private var previous = viewPager2.scrollState
 
         /**
          * 当开始手势拖动时，更新锚点信息，跟修复多指交替滚动不会同时进行
          */
-        override fun onPageScrollStateChanged(state: Int) {
-            if (state == SCROLL_STATE_DRAGGING) updateAnchorInfo(Dragging, content)
+        override fun onPageScrollStateChanged(current: Int) {
+            if (previous == SCROLL_STATE_IDLE
+                    && current == SCROLL_STATE_DRAGGING) {
+                // SCROLL_STATE_SETTLING转为SCROLL_STATE_DRAGGING，
+                // 是平滑滚动被打断的过程，此时更新锚点信息会造成跳动。
+                updateAnchorInfo(Dragging, content)
+            }
+            previous = current
         }
 
         /**
          * 修复多指交替滚动未更新锚点信息的问题，不设置`viewPager2.currentItem`
          */
         override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-            // 判断viewPager2.currentItem避免跟scrollToPosition()和smoothScrollToPosition()产生冲突
-            if (!content.supportLoop() || position == viewPager2.currentItem) return
+            if (!content.supportLoop() || viewPager2.scrollState != SCROLL_STATE_DRAGGING) return
             val headerFirst = content.firstExtraLayoutPosition(isHeader = true)
             val headerLast = content.lastExtraLayoutPosition(isHeader = true)
             val footerFirst = content.firstExtraLayoutPosition(isHeader = false)
