@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="tag_decor_transform_root" type="id" />
+    <item name="tag_decor_window_initial_state" type="id" />
     <item name="tag_vp2_shared_recycled_view_pool" type="id" />
-    <item name="tag_window_initial_status_bar_color" type="id" />
-    <item name="tag_window_initial_navigation_bar_color" type="id" />
 </resources>

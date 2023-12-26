@@ -37,11 +37,9 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.xiaocydx.accompanist.systembar.EdgeToEdge
 import com.xiaocydx.accompanist.systembar.SystemBar
 import com.xiaocydx.accompanist.systembar.SystemBarContainer
-import com.xiaocydx.accompanist.systembar.SystemBarContainer.Companion.InitialColor
 import com.xiaocydx.accompanist.systembar.SystemBarController
 import com.xiaocydx.accompanist.systembar.hostName
-import com.xiaocydx.accompanist.systembar.initialNavigationBarColor
-import com.xiaocydx.accompanist.systembar.initialStatusBarColor
+import com.xiaocydx.accompanist.systembar.initialState
 import com.xiaocydx.accompanist.systembar.name
 
 /**
@@ -49,28 +47,24 @@ import com.xiaocydx.accompanist.systembar.name
  * @date 2023/12/24
  */
 internal sealed class SystemBarControllerImpl : SystemBarController {
+    private var hasStatusBarColor = false
+    private var hasNavigationBarColor = false
     protected var container: SystemBarContainer? = null
     protected var observer: SystemBarStateObserver? = null
     protected abstract val window: Window?
 
-    override var statusBarColor = InitialColor
+    override var statusBarColor = 0
         set(value) {
             field = value
-            if (value != InitialColor) {
-                container?.statusBarColor = value
-            } else if (window != null) {
-                container?.statusBarColor = window!!.initialStatusBarColor
-            }
+            hasStatusBarColor = true
+            container?.statusBarColor = value
         }
 
-    override var navigationBarColor = InitialColor
+    override var navigationBarColor = 0
         set(value) {
             field = value
-            if (value != InitialColor) {
-                observer?.setNavigationBarColor(value)
-            } else if (window != null) {
-                observer?.setNavigationBarColor(window!!.initialNavigationBarColor)
-            }
+            hasNavigationBarColor = true
+            observer?.setNavigationBarColor(value)
         }
 
     override var statusBarEdgeToEdge: EdgeToEdge = EdgeToEdge.Disabled
@@ -98,8 +92,15 @@ internal sealed class SystemBarControllerImpl : SystemBarController {
         }
 
     protected fun applyPendingSystemBarConfig() {
-        statusBarColor = statusBarColor
-        navigationBarColor = navigationBarColor
+        val window = requireNotNull(window)
+        statusBarColor = when {
+            hasStatusBarColor -> statusBarColor
+            else -> window.initialState.statusBarColor
+        }
+        navigationBarColor = when {
+            hasNavigationBarColor -> navigationBarColor
+            else -> window.initialState.navigationBarColor
+        }
         statusBarEdgeToEdge = statusBarEdgeToEdge
         navigationBarEdgeToEdge = navigationBarEdgeToEdge
         isAppearanceLightStatusBar = isAppearanceLightStatusBar

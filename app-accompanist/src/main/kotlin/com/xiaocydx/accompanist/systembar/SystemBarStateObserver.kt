@@ -31,7 +31,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.xiaocydx.accompanist.systembar.SystemBarContainer
-import com.xiaocydx.accompanist.systembar.SystemBarContainer.Companion.InitialColor
 
 /**
  * 负责应用和恢复[SystemBarState]
@@ -152,7 +151,7 @@ internal class SystemBarState(
     var isApplied: Boolean = false,
     var isAppearanceLightStatusBar: Boolean = false,
     var isAppearanceLightNavigationBar: Boolean = false,
-    var navigationBarColor: Int = InitialColor
+    var navigationBarColor: Int = 0
 )
 
 internal class SystemBarStateHolder(savaStateHandle: SavedStateHandle) : ViewModel() {

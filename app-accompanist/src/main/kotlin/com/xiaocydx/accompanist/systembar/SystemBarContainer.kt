@@ -112,8 +112,4 @@ internal class SystemBarContainer(context: Context) : FrameLayout(context) {
         statusBarDrawable.takeIf { it.bounds.height() > 0 }?.draw(canvas)
         navigationBarDrawable.takeIf { it.bounds.height() > 0 }?.draw(canvas)
     }
-
-    companion object {
-        const val InitialColor = 0x00FFFFFF
-    }
 }

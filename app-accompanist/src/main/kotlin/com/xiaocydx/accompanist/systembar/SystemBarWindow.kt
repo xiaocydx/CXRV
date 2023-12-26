@@ -25,33 +25,25 @@ import androidx.core.view.WindowInsetsCompat.Type.statusBars
 import com.xiaocydx.accompanist.R
 import com.xiaocydx.accompanist.windowinsets.consume
 
-internal val Window.initialStatusBarColor: Int
+internal val Window.initialState: WindowInitialState
     get() {
-        val key = R.id.tag_window_initial_status_bar_color
-        var color = decorView.getTag(key) as? Int
-        if (color == null) {
-            color = statusBarColor
-            decorView.setTag(key, color)
+        val key = R.id.tag_decor_window_initial_state
+        var state = decorView.getTag(key) as? WindowInitialState
+        if (state == null) {
+            state = WindowInitialState(this)
+            decorView.setTag(key, state)
         }
-        return color
+        return state
     }
 
-internal val Window.initialNavigationBarColor: Int
-    get() {
-        val key = R.id.tag_window_initial_navigation_bar_color
-        var color = decorView.getTag(key) as? Int
-        if (color == null) {
-            color = navigationBarColor
-            decorView.setTag(key, color)
-        }
-        return color
-    }
+internal data class WindowInitialState(val statusBarColor: Int, val navigationBarColor: Int) {
+    constructor(window: Window) : this(window.statusBarColor, window.navigationBarColor)
+}
 
 internal fun Window.recordSystemBarInitialColor() {
     // 记录StatusBar和NavigationBar的初始背景色，
     // 执行完decorView创建流程，才能获取到背景色。
-    initialStatusBarColor
-    initialNavigationBarColor
+    initialState
 }
 
 internal fun Window.disabledDecorFitsSystemWindows() {
