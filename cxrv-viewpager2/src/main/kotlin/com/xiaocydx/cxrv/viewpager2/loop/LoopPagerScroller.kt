@@ -58,6 +58,11 @@ internal class LoopPagerScroller(
         viewPager2.unregisterOnPageChangeCallback(callback)
     }
 
+    fun stopScrollToCurrent() {
+        if (viewPager2.scrollState == SCROLL_STATE_IDLE) return
+        viewPager2.setCurrentItem(viewPager2.currentItem, false)
+    }
+
     /**
      * [ViewPager2]非平滑滚动至[layoutPosition]
      */

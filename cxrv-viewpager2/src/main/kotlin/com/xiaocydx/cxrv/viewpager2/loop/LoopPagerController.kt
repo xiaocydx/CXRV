@@ -65,6 +65,7 @@ class LoopPagerController(
     private var extraPageLimit = DEFAULT_EXTRA_PAGE_LIMIT
     private var content: LoopPagerContent? = null
     private var scroller: LoopPagerScroller? = null
+    private var listener: StopScrollListener? = null
     private var observer: NotEmptyDataObserver? = null
     private var callbacks: MutableMap<OnPageChangeCallback, CallbackWrapper>? = null
 
@@ -111,6 +112,10 @@ class LoopPagerController(
         )
         scroller?.removeCallbacks()
         scroller = LoopPagerScroller(content!!)
+        if (listener == null) {
+            listener = StopScrollListener()
+            viewPager2.addOnAttachStateChangeListener(listener)
+        }
         viewPager2.adapter = LoopPagerAdapter(content!!, scroller!!)
         initAnchorIfNecessary()
     }
@@ -236,6 +241,23 @@ class LoopPagerController(
         return callbacks!!
     }
 
+    /**
+     * 停止滚动，若平滑滚动未完成，则修正`scrollState`和`currentItem`的布局位置
+     */
+    private inner class StopScrollListener : OnAttachStateChangeListener {
+
+        override fun onViewAttachedToWindow(view: View) {
+            if (observer != null) return
+            scroller?.stopScrollToCurrent()
+        }
+
+        override fun onViewDetachedFromWindow(view: View) {
+            observer?.removeObserver()
+            observer = null
+            scroller?.stopScrollToCurrent()
+        }
+    }
+
     private inner class CallbackWrapper(private val delegate: OnPageChangeCallback) : OnPageChangeCallback() {
 
         override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
@@ -282,6 +304,12 @@ val LoopPagerController.context: Context
 @ScrollState
 val LoopPagerController.scrollState: Int
     get() = viewPager2.scrollState
+
+/**
+ * [ViewPager2]是否附加到window，等同于`ViewPager2.isAttachedToWindow`
+ */
+val LoopPagerController.isAttachedToWindow: Boolean
+    get() = viewPager2.isAttachedToWindow
 
 /**
  * 当前选择的`itemView`，当[scrollState]为[SCROLL_STATE_IDLE]时，可以跟[currentChildren]做对比
