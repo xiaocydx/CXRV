@@ -14,11 +14,12 @@ CXRV是一个基于RecyclerView 1.2.0，提供常用功能的库，全称是Coro
 
 [CXRV（七）常见问题](https://www.yuque.com/u12192380/khwdgb/davrngc6pginrq2w)
 <br><br>
-1. 在根目录的build.gradle添加
+1. 在根目录的settings.gradle添加
 ```
-allprojects {
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        // ...
+        mavenCentral()
         maven { url 'https://jitpack.io' }
     }
 }
