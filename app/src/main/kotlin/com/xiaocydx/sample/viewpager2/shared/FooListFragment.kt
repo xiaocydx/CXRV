@@ -18,6 +18,8 @@ import com.bumptech.glide.Glide
 import com.xiaocydx.accompanist.lifecycle.doOnTargetState
 import com.xiaocydx.accompanist.lifecycle.launchRepeatOnLifecycle
 import com.xiaocydx.accompanist.lifecycle.viewLifecycle
+import com.xiaocydx.accompanist.paging.withPaging
+import com.xiaocydx.accompanist.paging.withSwipeRefresh
 import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
@@ -38,8 +40,6 @@ import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
 import com.xiaocydx.sample.common.Foo
 import com.xiaocydx.sample.common.FooListViewModel
-import com.xiaocydx.accompanist.paging.withPaging
-import com.xiaocydx.accompanist.paging.withSwipeRefresh
 
 /**
  * @author xcc

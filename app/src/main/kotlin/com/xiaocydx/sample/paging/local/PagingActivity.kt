@@ -7,9 +7,10 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import com.xiaocydx.accompanist.view.snackbar
-import com.xiaocydx.accompanist.windowinsets.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.insets.systembar.EdgeToEdge
+import com.xiaocydx.insets.systembar.SystemBar
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.initMenuList
 import com.xiaocydx.sample.databinding.MenuContainerBinding
@@ -27,8 +28,12 @@ import kotlinx.coroutines.flow.onEach
  * @author xcc
  * @date 2022/2/17
  */
-class PagingActivity : AppCompatActivity() {
+class PagingActivity : AppCompatActivity(), SystemBar {
     private val sharedViewModel: PagingSharedViewModel by viewModels()
+
+    init {
+        systemBarController { navigationBarEdgeToEdge = EdgeToEdge.Gesture }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +46,6 @@ class PagingActivity : AppCompatActivity() {
             submitList(MenuAction.values().toList())
             doOnSimpleItemClick(::performMenuAction)
         }.apply {
-            window.enableGestureNavBarEdgeToEdge()
             sharedViewModel.menuAction.onEach {
                 root.closeDrawer(rvMenu)
                 root.snackbar().setText(it.text).show()

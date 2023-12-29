@@ -33,6 +33,10 @@ dependencies {
     compileOnly(project(":cxrv"))
     compileOnly(project(":cxrv-paging"))
     compileOnly(project(":cxrv-viewpager2"))
+    val version = "1.1.1"
+    api("com.github.xiaocydx.Insets:insets:${version}")
+    api("com.github.xiaocydx.Insets:insets-compat:${version}")
+    api("com.github.xiaocydx.Insets:insets-systembar:${version}")
     api("androidx.core:core-ktx:1.7.0")
     api("androidx.appcompat:appcompat:1.6.1")
     api("androidx.fragment:fragment:1.6.2")

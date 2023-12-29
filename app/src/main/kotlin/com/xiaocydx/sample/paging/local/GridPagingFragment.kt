@@ -2,6 +2,8 @@ package com.xiaocydx.sample.paging.local
 
 import com.xiaocydx.accompanist.lifecycle.launchRepeatOnLifecycle
 import com.xiaocydx.accompanist.lifecycle.viewLifecycle
+import com.xiaocydx.accompanist.paging.replaceWithSwipeRefresh
+import com.xiaocydx.accompanist.paging.withPaging
 import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
@@ -10,8 +12,6 @@ import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
-import com.xiaocydx.accompanist.paging.replaceWithSwipeRefresh
-import com.xiaocydx.accompanist.paging.withPaging
 
 /**
  * @author xcc

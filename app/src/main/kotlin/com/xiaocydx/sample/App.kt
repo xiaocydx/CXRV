@@ -1,8 +1,8 @@
 package com.xiaocydx.sample
 
 import android.app.Application
-import com.xiaocydx.accompanist.systembar.SystemBar
-import com.xiaocydx.accompanist.systembar.install
+import com.xiaocydx.insets.systembar.SystemBar
+import com.xiaocydx.insets.systembar.install
 
 /**
  * @author xcc

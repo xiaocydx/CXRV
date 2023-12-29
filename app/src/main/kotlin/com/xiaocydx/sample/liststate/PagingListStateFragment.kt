@@ -10,6 +10,8 @@ import androidx.lifecycle.LiveData
 import com.xiaocydx.accompanist.lifecycle.launchRepeatOnLifecycle
 import com.xiaocydx.accompanist.lifecycle.viewLifecycle
 import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
+import com.xiaocydx.accompanist.paging.replaceWithSwipeRefresh
+import com.xiaocydx.accompanist.paging.withPaging
 import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
@@ -34,8 +36,6 @@ import com.xiaocydx.sample.liststate.MenuAction.CLEAR_ODD
 import com.xiaocydx.sample.liststate.MenuAction.INSERT_ITEM
 import com.xiaocydx.sample.liststate.MenuAction.REFRESH
 import com.xiaocydx.sample.liststate.MenuAction.REMOVE_ITEM
-import com.xiaocydx.accompanist.paging.replaceWithSwipeRefresh
-import com.xiaocydx.accompanist.paging.withPaging
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach

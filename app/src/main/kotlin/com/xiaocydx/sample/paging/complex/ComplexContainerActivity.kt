@@ -3,7 +3,7 @@ package com.xiaocydx.sample.paging.complex
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
-import com.xiaocydx.accompanist.systembar.SystemBar
+import com.xiaocydx.insets.systembar.SystemBar
 
 /**
  * 视频流的过渡动画和分页加载示例

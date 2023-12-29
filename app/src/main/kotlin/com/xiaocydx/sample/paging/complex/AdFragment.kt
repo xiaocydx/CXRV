@@ -4,14 +4,14 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.lifecycle.flowWithLifecycle
+import com.xiaocydx.accompanist.insets.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.accompanist.lifecycle.doOnStateChanged
 import com.xiaocydx.accompanist.lifecycle.viewLifecycle
 import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
-import com.xiaocydx.accompanist.systembar.EdgeToEdge
-import com.xiaocydx.accompanist.systembar.SystemBar
 import com.xiaocydx.accompanist.transition.EnterTransitionController
 import com.xiaocydx.accompanist.transition.transform.TransformReceiver
-import com.xiaocydx.accompanist.windowinsets.enableGestureNavBarEdgeToEdge
+import com.xiaocydx.insets.systembar.EdgeToEdge
+import com.xiaocydx.insets.systembar.SystemBar
 import com.xiaocydx.sample.transition.LOADING_DURATION
 import com.xiaocydx.sample.transition.TransitionFragment
 import com.xiaocydx.sample.transition.TransitionState
