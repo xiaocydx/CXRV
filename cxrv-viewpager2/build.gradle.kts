@@ -56,8 +56,8 @@ android {
 }
 
 dependencies {
-    compileOnly("androidx.recyclerview:recyclerview:1.2.0")
-    compileOnly("androidx.viewpager2:viewpager2:1.0.0")
+    implementation("androidx.recyclerview:recyclerview:1.2.0")
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
     testImplementation("androidx.appcompat:appcompat:1.2.0")
     testImplementation("androidx.test:core:1.5.0")
     testImplementation("com.google.truth:truth:1.0")

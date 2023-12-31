@@ -56,11 +56,11 @@ android {
     }
 }
 dependencies {
-    compileOnly("androidx.lifecycle:lifecycle-common:2.1.0")
-    compileOnly("androidx.lifecycle:lifecycle-viewmodel:2.1.0")
-    compileOnly("androidx.recyclerview:recyclerview:1.2.0")
-    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    implementation("androidx.lifecycle:lifecycle-common:2.1.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.1.0")
+    implementation("androidx.recyclerview:recyclerview:1.2.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
 
     val truth = "com.google.truth:truth:1.0"
     val appcompat = "androidx.appcompat:appcompat:1.2.0"

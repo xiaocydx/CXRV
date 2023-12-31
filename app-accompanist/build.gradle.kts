@@ -33,7 +33,7 @@ dependencies {
     compileOnly(project(":cxrv"))
     compileOnly(project(":cxrv-paging"))
     compileOnly(project(":cxrv-viewpager2"))
-    val version = "1.1.1"
+    val version = "1.1.2"
     api("com.github.xiaocydx.Insets:insets:${version}")
     api("com.github.xiaocydx.Insets:insets-compat:${version}")
     api("com.github.xiaocydx.Insets:insets-systembar:${version}")
@@ -51,6 +51,6 @@ dependencies {
     api("com.squareup.retrofit2:retrofit:2.9.0")
     api("com.squareup.retrofit2:converter-gson:2.9.0")
     api("com.github.bumptech.glide:glide:4.14.2")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
