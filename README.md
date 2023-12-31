@@ -28,10 +28,7 @@ dependencyResolutionManagement {
 2. 在module的build.gradle添加
 ```
 dependencies {
-    // RecyclerView的版本需要1.2.0或以上
-    implementation "androidx.recyclerview:recyclerview:1.2.0"
-    
-    def version = "1.5.2"
+    def version = "1.5.3"
     implementation "com.github.xiaocydx.CXRV:cxrv:${version}"
     implementation "com.github.xiaocydx.CXRV:cxrv-binding:${version}"
     implementation "com.github.xiaocydx.CXRV:cxrv-paging:${version}"
