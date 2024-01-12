@@ -39,17 +39,20 @@ import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
- * [VideoStream]仅在Fragment和Fragment之间、Activity和Activity之间起到传递作用，
+ * [VideoStream]仅在Activity和Activity之间、Fragment和Fragment之间起到传递作用，
  * 为了让实现足够简单，[VideoStream]、[Sender]、[Receiver]的函数仅支持主线程调用。
  *
  * Fragment和Fragment之间不通过ParentFragment的ViewModel共享[Shared]对象，
  * 因为在实际场景中，两个Fragment不一定有相同的ParentFragment，以视频流页面为例，
  * [VideoStreamFragment]可能作为通用页面供多处业务复用，实现为Activity的直接Fragment，
  * 此时两个Fragment没有相同的ParentFragment，如果通过Activity的ViewModel实现共享需求，
- * 那么当两个Fragment都退出返回栈时，该如何清除Activity的ViewModel的[Shared]对象？
+ * 那么当两个Fragment都退出回退栈时，该如何清除Activity的ViewModel的[Shared]对象？
  *
- * 不能在其中一个Fragment退出返回栈时，就清除[Shared]对象，因为另一个Fragment可能还在使用，
+ * 不能在其中一个Fragment退出回退栈时，就清除[Shared]对象，因为另一个Fragment可能还在使用，
  * [VideoStream]提供了简易的解决方案，能否利用依赖注入框架解决上述问题，不在当前讨论范围内。
+ *
+ * **注意**：作为Receiver的Activity，其主题应当包含`windowIsTranslucent= true`，
+ * 这能让作为Sender的Activity跟Receiver一起重建，以及处理事件时可以进行重新布局。
  *
  * @author xcc
  * @date 2023/11/22
