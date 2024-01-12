@@ -138,7 +138,7 @@ fun PrepareFusible<ViewHolder>.holder(
  * 配置ViewHolder的预创建数据，复用[Adapter.onCreateViewHolder]创建和初始化ViewHolder
  *
  * [Adapter.onCreateViewHolder]的实现必须支持多线程调用，才允许调用该函数复用创建和初始化代码，
- * 支持多线程调用的简单判断标准是只有创建逻辑，并且只对创建对象进行赋值（例如对View设置点击事件），
+ * 支持多线程调用的简单判断标准是只有创建逻辑，并且只对创建对象进行赋值（例如对View设置点击监听），
  * 预创建流程对[Adapter.onCreateViewHolder]传入的`parent`，不是RecyclerView，而是虚假的`parent`，
  * 虚假的`parent`提供经过处理的Context，以此获取[PrepareScrap.inflater]提供的[LayoutInflater]。
  *
@@ -164,8 +164,8 @@ fun PrepareFusible<ViewHolder>.holder(
  * ```
  * val fooAdapter: FooAdapter = ...
  * recyclerView.prepareHolder()
- *     .holder(viewType1, count, fooAdapter)
- *     .holder(viewType2, count, fooAdapter)
+ *     .reuse(viewType1, count, fooAdapter)
+ *     .reuse(viewType2, count, fooAdapter)
  *     .putToRecycledViewPool() // 放入RecycledViewPool
  *     .launchIn(lifecycleScope)
  * ```
@@ -197,7 +197,7 @@ fun PrepareFusible<ViewHolder>.reuse(
  * 配置ViewHolder的预创建数据，复用[ViewTypeDelegate.onCreateViewHolder]创建和初始化ViewHolder
  *
  * [ViewTypeDelegate.onCreateViewHolder]的实现必须支持多线程调用，才允许调用该函数复用创建和初始化代码，
- * 支持多线程调用的简单判断标准是只有创建逻辑，并且只对创建对象进行赋值（例如对View设置点击事件），
+ * 支持多线程调用的简单判断标准是只有创建逻辑，并且只对创建对象进行赋值（例如对View设置点击监听），
  * 预创建流程对[ViewTypeDelegate.onCreateViewHolder]传入的`parent`，不是RecyclerView，而是虚假的`parent`，
  * 虚假的`parent`提供经过处理的Context，以此获取[PrepareScrap.inflater]提供的[LayoutInflater]。
  *
