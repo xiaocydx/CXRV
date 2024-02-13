@@ -42,6 +42,7 @@ fun interface ScrapProvider<out T : Any> {
 }
 
 @WorkerThread
+@Suppress("MemberVisibilityCanBePrivate")
 class ScrapInflater internal constructor(
     internal val parent: RecyclerView,
     internal val inflater: LayoutInflater,
@@ -53,25 +54,16 @@ class ScrapInflater internal constructor(
         get() = scrapContext
 
     init {
+        // inflater.context为scrapContext，构建View的四种情况:
+        // 1. inflater.inflate() -> View(scrapContext)
+        // 2. 代码构建 -> View(context) -> View(scrapContext)
+        // 3. LayoutInflater.from(scrapParent.context) -> inflater.inflate() -> View(scrapContext)
+        // 4. 代码构建 -> View(scrapParent.context) -> View(scrapContext)
         assert(inflater.context === scrapContext)
     }
 
     @CheckResult
     fun inflate(@LayoutRes resId: Int): View {
         return inflater.inflate(resId, parent, false)
-    }
-
-    internal inline fun <R> with(block: (ScrapInflater) -> R): R {
-        // inflater.context为scrapContext，构建View的四种情况:
-        // 1. inflater.inflate() -> View(scrapContext)
-        // 2. 代码构建 -> View(context) -> View(scrapContext)
-        // 3. LayoutInflater.from(scrapParent.context) -> inflater.inflate() -> View(scrapContext)
-        // 4. 代码构建 -> View(scrapParent.context) -> View(scrapContext)
-        scrapContext.setInflater(inflater)
-        return try {
-            block(this)
-        } finally {
-            scrapContext.clearInflater()
-        }
     }
 }

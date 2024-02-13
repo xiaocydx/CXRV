@@ -78,17 +78,17 @@ import com.xiaocydx.cxrv.internal.InternalizationApi
  */
 @MainThread
 class MutableStateList<T : Any> constructor() : MutableList<T> {
-    @JvmField internal var modification = 0
     @PublishedApi internal val state: ListState<T> = ListState()
+    internal var modification = 0; private set
     override val size: Int
         get() = state.size
 
-    constructor(elements: Collection<T> = emptyList()) : this() {
-        if (elements.isNotEmpty()) addAll(0, elements)
-    }
-
     init {
         state.addUpdatedListener { modification++ }
+    }
+
+    constructor(elements: Collection<T> = emptyList()) : this() {
+        if (elements.isNotEmpty()) addAll(0, elements)
     }
 
     override fun isEmpty() = size == 0
@@ -211,8 +211,7 @@ class MutableStateList<T : Any> constructor() : MutableList<T> {
         return MutableStateSubList(this, fromIndex, toIndex)
     }
 
-    @PublishedApi
-    internal fun UpdateResult.getOrThrow() = requireNotNull(get())
+    private fun UpdateResult.getOrThrow() = requireNotNull(get())
 }
 
 /**
