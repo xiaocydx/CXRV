@@ -111,10 +111,11 @@ class ComplexListFragment : Fragment(), SystemBar, TransformSender {
         rvComplex = RecyclerView(requireContext())
             .apply { id = complexViewModel.rvId }
             .layoutParams(matchParent, matchParent)
-            .apply { enableGestureNavBarEdgeToEdge() }
             .overScrollNever().grid(spanCount = 2).fixedSize()
             .divider(width = 5.dp, height = 5.dp) { edge(Edge.all()) }
             .adapter(complexAdapter.withPaging())
+            .enableGestureNavBarEdgeToEdge()
+
         return rvComplex.withSwipeRefresh(complexAdapter)
     }
 

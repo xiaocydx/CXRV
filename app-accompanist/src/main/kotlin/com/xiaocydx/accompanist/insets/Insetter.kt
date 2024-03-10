@@ -16,11 +16,16 @@
 
 package com.xiaocydx.accompanist.insets
 
+import androidx.core.view.doOnAttach
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.cxrv.list.enableBoundCheckCompat
-import com.xiaocydx.insets.handleGestureNavBarEdgeToEdgeOnApply
+import com.xiaocydx.insets.insets
 
-fun RecyclerView.enableGestureNavBarEdgeToEdge() {
-    layoutManager?.enableBoundCheckCompat()
-    handleGestureNavBarEdgeToEdgeOnApply()
+fun <T : RecyclerView> T.enableGestureNavBarEdgeToEdge() = apply {
+    if (layoutManager != null) {
+        layoutManager!!.enableBoundCheckCompat()
+    } else {
+        doOnAttach { layoutManager?.enableBoundCheckCompat() }
+    }
+    insets().gestureNavBarEdgeToEdge()
 }

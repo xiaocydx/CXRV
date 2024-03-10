@@ -6,8 +6,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
@@ -38,7 +36,8 @@ import com.xiaocydx.cxrv.paging.isSuccess
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.cxrv.paging.storeIn
-import com.xiaocydx.insets.doOnApplyWindowInsets
+import com.xiaocydx.insets.insets
+import com.xiaocydx.insets.statusBars
 import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
 import com.xiaocydx.sample.databinding.FragmetVideoStreamBinding
@@ -118,6 +117,7 @@ class VideoStreamFragment : Fragment(), SystemBar, TransformReceiver {
             orientation = ORIENTATION_VERTICAL
             replaceWithSwipeRefresh(videoAdapter)
         }
+        binding.tvTitle.insets().paddings(statusBars())
         return binding.root
     }
 
@@ -138,11 +138,6 @@ class VideoStreamFragment : Fragment(), SystemBar, TransformReceiver {
         } else {
             // Fragment重新创建，直接将viewPager2.offscreenPageLimit修改为1
             viewPager2.offscreenPageLimit = 1
-        }
-
-        binding.tvTitle.doOnApplyWindowInsets { v, insets, initialState ->
-            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            v.updatePadding(top = initialState.paddings.top + statusBars.top)
         }
 
         videoViewModel.videoPagingFlow

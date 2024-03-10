@@ -43,9 +43,7 @@ class ArticleListActivity : AppCompatActivity(), SystemBar {
     private val viewModel: ArticleListViewModel by viewModels()
 
     init {
-        systemBarController {
-            navigationBarEdgeToEdge = EdgeToEdge.Gesture
-        }
+        systemBarController { navigationBarEdgeToEdge = EdgeToEdge.Gesture }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,11 +69,11 @@ class ArticleListActivity : AppCompatActivity(), SystemBar {
 
         rvArticle = RecyclerView(this)
             .apply { id = viewModel.rvId }
-            .apply { enableGestureNavBarEdgeToEdge() }
             .layoutParams(matchParent, matchParent)
             .overScrollNever().linear().fixedSize()
             .divider(10.dp, 10.dp) { edge(Edge.all()) }
             .adapter(articleAdapter.withPaging())
+            .enableGestureNavBarEdgeToEdge()
 
         setContentView(rvArticle.withSwipeRefresh(articleAdapter))
     }

@@ -49,7 +49,7 @@ abstract class PagingFragment : Fragment() {
             .apply { id = fooViewModel.rvId }
             .layoutParams(matchParent, matchParent)
             .overScrollNever()
-        rvPaging.enableGestureNavBarEdgeToEdge()
+            .enableGestureNavBarEdgeToEdge()
         it.addView(rvPaging)
     }
 
