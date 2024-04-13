@@ -27,7 +27,9 @@ class ScaleInTransformer(
         val pivotX = width * PIVOT_CENTER
         page.pivotX = pivotX - pivotX * sign * fraction
         page.pivotY = height * PIVOT_CENTER
-        page.scaleY = maxScale + (minScale - maxScale) * fraction
+        val scale = maxScale + (minScale - maxScale) * fraction
+        page.scaleY = scale
+        page.scaleX = scale
     }
 
     private companion object {
