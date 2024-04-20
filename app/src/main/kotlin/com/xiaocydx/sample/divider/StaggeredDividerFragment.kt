@@ -8,7 +8,6 @@ import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.removeItem
 import com.xiaocydx.cxrv.list.staggered
 
@@ -27,7 +26,6 @@ class StaggeredDividerFragment : NormalDividerFragment() {
         super.initView()
         rvDivider
             .staggered(spanCount = 3)
-            .fixedSize()
             .divider(5.dp, 5.dp) {
                 edge(Edge.all())
                 color(0xFF979EC4.toInt())

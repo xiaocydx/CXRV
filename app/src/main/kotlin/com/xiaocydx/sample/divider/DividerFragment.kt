@@ -20,8 +20,6 @@ import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
 import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
-import com.xiaocydx.accompanist.view.overScrollNever
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.sample.common.Foo
 import com.xiaocydx.sample.common.FooType
 import com.xiaocydx.sample.divider.MenuAction.DECREASE_SPAN_COUNT
@@ -50,7 +48,6 @@ abstract class DividerFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext())
         .apply { rvDivider = this }
-        .overScrollNever().fixedSize()
         .layoutParams(matchParent, matchParent)
 
     final override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

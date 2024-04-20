@@ -10,13 +10,11 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
-import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
@@ -51,8 +49,7 @@ class OneToManyFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = RecyclerView(requireContext())
         .layoutParams(matchParent, matchParent)
-        .overScrollNever().linear().fixedSize()
-        .adapter(listAdapter<OneToManyMessage> {
+        .linear().adapter(listAdapter<OneToManyMessage> {
             register(OneToManyTextDelegate()) { it.type == TYPE_TEXT }
             register(OneToManyImageDelegate()) { it.type == TYPE_IMAGE }
             register(OneToManyNotSupportDelegate()) { true }

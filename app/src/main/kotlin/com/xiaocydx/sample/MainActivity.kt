@@ -12,7 +12,6 @@ import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.concat.HeaderFooterActivity
@@ -46,7 +45,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun contentView() = RecyclerView(this)
         .layoutParams(matchParent, matchParent)
-        .overScrollNever().linear().fixedSize()
+        .linear().overScrollNever()
         .adapter(bindingAdapter(
             uniqueId = StartAction::text,
             inflate = ItemStartBinding::inflate

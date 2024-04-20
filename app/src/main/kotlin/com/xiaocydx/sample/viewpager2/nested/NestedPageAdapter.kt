@@ -6,12 +6,10 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.accompanist.view.SimpleViewHolder
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
-import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.concat.toAdapter
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
 
@@ -34,8 +32,7 @@ class NestedPageAdapter : RecyclerView.Adapter<ViewHolder>() {
         // 水平方向ViewPager2（Parent）和垂直方向RecyclerView（Child）
         val pageView = RecyclerView(parent.context)
             .apply { isVp2NestedScrollable = true }
-            .layoutParams(matchParent, matchParent)
-            .overScrollNever().linear().fixedSize()
+            .layoutParams(matchParent, matchParent).linear()
             .adapter(Concat.header(pageHeader).content(pageList).concat())
         return SimpleViewHolder(pageView)
     }

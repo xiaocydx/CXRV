@@ -16,7 +16,6 @@ import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.grid
 
 /**
@@ -39,8 +38,8 @@ abstract class TransitionFragment : Fragment() {
         recyclerView = this
         setBackgroundColor(0xFFE5E5E5.toInt())
         layoutParams(matchParent, matchParent)
-        grid(spanCount = 4).fixedSize()
-        divider(5.dp, 5.dp) { edge(Edge.all()) }
+        grid(spanCount = 4)
+        divider { size(5.dp).edge(Edge.all()) }
         adapter(Concat.header(loadingAdapter).content(contentAdapter).concat())
     }
 

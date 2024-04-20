@@ -70,13 +70,13 @@ class PagingListStateFragment : Fragment(R.layout.fragment_list_state) {
         tvFoo1.text = "PagingList-1"
         fooAdapter1.doOnSimpleItemClick(fooAdapter1::removeItem)
         rvFoo1.linear().fixedSize().adapter(fooAdapter1.withPaging())
-            .divider(5.dp, 5.dp) { edge(Edge.all()).color(0xFF979EC4.toInt()) }
+            .divider { size(5.dp).edge(Edge.all()).color(0xFF979EC4.toInt()) }
             .replaceWithSwipeRefresh(fooAdapter1)
 
         tvFoo2.text = "PagingList-2"
         fooAdapter2.doOnSimpleItemClick(fooAdapter2::removeItem)
         rvFoo2.grid(spanCount = 2).fixedSize().adapter(fooAdapter2.withPaging())
-            .divider(5.dp, 5.dp) { edge(Edge.all()).color(0xFF979EC4.toInt()) }
+            .divider { size(5.dp).edge(Edge.all()).color(0xFF979EC4.toInt()) }
             .replaceWithSwipeRefresh(fooAdapter2)
     }
 

@@ -68,12 +68,12 @@ class NormalListStateFragment : Fragment(R.layout.fragment_list_state) {
         tvFoo1.text = "NormalList-1"
         fooAdapter1.doOnSimpleItemClick(fooAdapter1::removeItem)
         rvFoo1.linear().fixedSize().adapter(fooAdapter1)
-            .divider(5.dp, 5.dp) { edge(Edge.all()).color(0xFFAAA4A3.toInt()) }
+            .divider { size(5.dp).edge(Edge.all()).color(0xFFAAA4A3.toInt()) }
 
         tvFoo2.text = "NormalList-2"
         fooAdapter2.doOnSimpleItemClick(fooAdapter2::removeItem)
         rvFoo2.grid(spanCount = 2).fixedSize().adapter(fooAdapter2)
-            .divider(5.dp, 5.dp) { edge(Edge.all()).color(0xFFAAA4A3.toInt()) }
+            .divider { size(5.dp).edge(Edge.all()).color(0xFFAAA4A3.toInt()) }
     }
 
     private fun FragmentListStateBinding.initCollect() = apply {

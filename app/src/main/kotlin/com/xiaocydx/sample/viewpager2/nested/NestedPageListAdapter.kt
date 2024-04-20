@@ -13,7 +13,6 @@ import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.clear
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.insertItems
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
@@ -44,7 +43,7 @@ fun NestedPageOuterListAdapter(size: Int) = bindingAdapter(
             .apply { isVp2NestedScrollable = true }
             .apply { setRecycledViewPool(sharedPool) }
             .divider(width = 8.dp) { edge(Edge.horizontal()) }
-            .linear(HORIZONTAL).fixedSize().adapter(NestedPageInnerListAdapter())
+            .linear(HORIZONTAL).adapter(NestedPageInnerListAdapter())
             .setRecycleAllViewsOnDetach(maxScrap = 20, saveState = false)
     }
     onBindView { item ->

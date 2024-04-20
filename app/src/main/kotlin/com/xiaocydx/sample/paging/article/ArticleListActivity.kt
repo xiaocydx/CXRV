@@ -71,7 +71,7 @@ class ArticleListActivity : AppCompatActivity(), SystemBar {
             .apply { id = viewModel.rvId }
             .layoutParams(matchParent, matchParent)
             .overScrollNever().linear().fixedSize()
-            .divider(10.dp, 10.dp) { edge(Edge.all()) }
+            .divider { size(10.dp).edge(Edge.all()) }
             .adapter(articleAdapter.withPaging())
             .enableGestureNavBarEdgeToEdge()
 

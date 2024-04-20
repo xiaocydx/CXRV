@@ -10,7 +10,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
-import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.cxrv.binding.BindingHolder
 import com.xiaocydx.cxrv.concat.Concat
 import com.xiaocydx.cxrv.concat.toAdapter
@@ -20,7 +19,6 @@ import com.xiaocydx.cxrv.itemtouch.onDragMoveItem
 import com.xiaocydx.cxrv.itemtouch.onSwipeRemoveItem
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.multitype.listAdapter
 import com.xiaocydx.cxrv.multitype.register
@@ -49,8 +47,7 @@ class ItemTouchActivity : AppCompatActivity() {
      */
     private fun contentView() = RecyclerView(this)
         .layoutParams(matchParent, matchParent)
-        .overScrollNever().linear().fixedSize()
-        .adapter(Concat.content(createListAdapter())
+        .linear().adapter(Concat.content(createListAdapter())
             .header(createView(isHeader = true).toAdapter())
             .footer(createView(isHeader = false).toAdapter())
             .concat())
