@@ -33,7 +33,7 @@ dependencies {
     compileOnly(project(":cxrv"))
     compileOnly(project(":cxrv-paging"))
     compileOnly(project(":cxrv-viewpager2"))
-    val version = "1.1.3"
+    val version = "1.2.2"
     api("com.github.xiaocydx.Insets:insets:${version}")
     api("com.github.xiaocydx.Insets:insets-compat:${version}")
     api("com.github.xiaocydx.Insets:insets-systembar:${version}")

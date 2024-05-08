@@ -12,6 +12,7 @@ import com.xiaocydx.accompanist.transition.EnterTransitionController
 import com.xiaocydx.accompanist.transition.transform.TransformReceiver
 import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
+import com.xiaocydx.insets.systembar.systemBarController
 import com.xiaocydx.sample.transition.LOADING_DURATION
 import com.xiaocydx.sample.transition.TransitionFragment
 import com.xiaocydx.sample.transition.TransitionState

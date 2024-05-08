@@ -40,6 +40,7 @@ import com.xiaocydx.insets.insets
 import com.xiaocydx.insets.statusBars
 import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
+import com.xiaocydx.insets.systembar.systemBarController
 import com.xiaocydx.sample.databinding.FragmetVideoStreamBinding
 import com.xiaocydx.sample.databinding.ItemVideoStreamBinding
 import kotlinx.coroutines.flow.distinctUntilChanged

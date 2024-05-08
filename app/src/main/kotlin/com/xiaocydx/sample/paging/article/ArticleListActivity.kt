@@ -26,6 +26,7 @@ import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
+import com.xiaocydx.insets.systembar.systemBarController
 import com.xiaocydx.sample.*
 import com.xiaocydx.sample.databinding.ItemArticleBinding
 
