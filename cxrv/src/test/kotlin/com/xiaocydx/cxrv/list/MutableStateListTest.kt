@@ -578,4 +578,34 @@ internal class MutableStateListTest {
         assertThat(last.version).isEqualTo(2)
         assertThat(last.op).isEqualTo(UpdateOp.RemoveItems<String>(0, 1))
     }
+
+    @Test
+    fun listEquals() {
+        val list = MutableStateList<String>()
+        list.add("A")
+        assertThat(list == listOf("A")).isTrue()
+        list.add("B")
+        assertThat(list == listOf("A", "B")).isTrue()
+        assertThat(list == listOf("A", "B", "C")).isFalse()
+    }
+
+    @Test
+    fun listHashCode() {
+        val list = MutableStateList<String>()
+        list.add("A")
+        assertThat(list.hashCode() == listOf("A").hashCode()).isTrue()
+        list.add("B")
+        assertThat(list.hashCode() == listOf("A", "B").hashCode()).isTrue()
+        assertThat(list.hashCode() == listOf("A", "B", "C").hashCode()).isFalse()
+    }
+
+    @Test
+    fun listToString() {
+        val list = MutableStateList<String>()
+        list.add("A")
+        assertThat(list.toString() == listOf("A").toString()).isTrue()
+        list.add("B")
+        assertThat(list.toString() == listOf("A", "B").toString()).isTrue()
+        assertThat(list.toString() == listOf("A", "B", "C").toString()).isFalse()
+    }
 }

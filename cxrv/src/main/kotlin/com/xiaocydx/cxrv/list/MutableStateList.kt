@@ -211,6 +211,18 @@ class MutableStateList<T : Any> constructor() : MutableList<T> {
         return MutableStateSubList(this, fromIndex, toIndex)
     }
 
+    override fun equals(other: Any?): Boolean {
+        return state.currentList == other
+    }
+
+    override fun hashCode(): Int {
+        return state.currentList.hashCode()
+    }
+
+    override fun toString(): String {
+        return state.currentList.toString()
+    }
+
     private fun UpdateResult.getOrThrow() = requireNotNull(get())
 }
 
