@@ -2,15 +2,15 @@ CXRV是一个基于RecyclerView 1.2.0，提供常用功能的库，全称是Coro
 <br><br>
 [CXRV（一）概述](https://www.yuque.com/u12192380/khwdgb/fe9gsu)
 
-[CXRV（二）ListAdapter的使用文档](https://www.yuque.com/u12192380/khwdgb/rpbw6f)
+[CXRV（二）ListAdapter](https://www.yuque.com/u12192380/khwdgb/rpbw6f)
 
-[CXRV（三）ViewTypeDelegate的使用文档](https://www.yuque.com/u12192380/khwdgb/qkpmiu)
+[CXRV（三）ViewTypeDelegate](https://www.yuque.com/u12192380/khwdgb/qkpmiu)
 
-[CXRV（四）扩展的使用文档](https://www.yuque.com/u12192380/khwdgb/kcxn6o)
+[CXRV（四）扩展](https://www.yuque.com/u12192380/khwdgb/kcxn6o)
 
-[CXRV（五）ListState的使用文档](https://www.yuque.com/u12192380/khwdgb/uvgw43)
+[CXRV（五）ListState](https://www.yuque.com/u12192380/khwdgb/uvgw43)
 
-[CXRV（六）分页组件的使用文档](https://www.yuque.com/u12192380/khwdgb/gh9sbc)
+[CXRV（六）分页组件](https://www.yuque.com/u12192380/khwdgb/gh9sbc)
 
 [CXRV（七）常见问题](https://www.yuque.com/u12192380/khwdgb/davrngc6pginrq2w)
 <br><br>
