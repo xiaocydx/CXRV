@@ -17,6 +17,7 @@ android {
         androidTestImplementation.extendsFrom(compileOnly)
     }
 }
+
 dependencies {
     implementation(PublishLibs.`androidx-recyclerview`)
     implementation(PublishLibs.`androidx-lifecycle-common`)
