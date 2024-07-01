@@ -2,51 +2,13 @@ import org.jetbrains.kotlin.gradle.utils.extendsFrom
 
 plugins {
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("maven-publish")
-}
-
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            groupId = "com.github.xiaocydx"
-            afterEvaluate { from(components["release"]) }
-        }
-    }
 }
 
 android {
     namespace = "com.xiaocydx.cxrv"
-    compileSdk = 31
-
-    defaultConfig {
-        minSdk = 21
-        targetSdk = 31
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFile("consumer-rules.pro")
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-    }
-
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
+    kotlinOptions { jvmTarget = Versions.jvmTarget }
     testOptions {
         unitTests { isIncludeAndroidResources = true }
     }
@@ -56,21 +18,18 @@ android {
     }
 }
 dependencies {
-    implementation("androidx.lifecycle:lifecycle-common:2.1.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel:2.1.0")
-    implementation("androidx.recyclerview:recyclerview:1.2.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
-
-    val truth = "com.google.truth:truth:1.0"
-    val appcompat = "androidx.appcompat:appcompat:1.2.0"
-    testImplementation(truth)
-    testImplementation(appcompat)
-    testImplementation("androidx.test:core:1.5.0")
-    testImplementation("io.mockk:mockk:1.12.0")
-    testImplementation("org.robolectric:robolectric:4.10.3")
-    androidTestImplementation(truth)
-    androidTestImplementation(appcompat)
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    implementation(PublishLibs.`androidx-recyclerview`)
+    implementation(PublishLibs.`androidx-lifecycle-common`)
+    implementation(PublishLibs.`androidx-lifecycle-viewmodel`)
+    implementation(PublishLibs.coroutines)
+    implementation(PublishLibs.`coroutines-android`)
+    testImplementation(PublishLibs.`androidx-appcompat`)
+    testImplementation(PublishLibs.`androidx-test-core`)
+    testImplementation(PublishLibs.truth)
+    testImplementation(PublishLibs.mockk)
+    testImplementation(PublishLibs.robolectric)
+    androidTestImplementation(PublishLibs.truth)
+    androidTestImplementation(PublishLibs.`androidx-junit`)
+    androidTestImplementation(PublishLibs.`androidx-appcompat`)
+    androidTestImplementation(PublishLibs.`androidx-espresso-core`)
 }
