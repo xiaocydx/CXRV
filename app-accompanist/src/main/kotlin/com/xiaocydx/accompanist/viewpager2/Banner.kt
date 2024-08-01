@@ -19,8 +19,9 @@ package com.xiaocydx.accompanist.viewpager2
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State.STARTED
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.coroutineScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
@@ -58,41 +59,53 @@ fun LoopPagerController.launchBanner(
     intervalMs: Long = 1500,
     durationMs: Long = -1
 ): Job = lifecycle.coroutineScope.launch {
-    val stateFlow = stateIn(scope = this, adapter)
+    val stateFlow = stateIn(adapter, lifecycle, state, scope = this)
     val provider = durationMs.takeIf { it > 0 }?.let {
         LinearSmoothScrollerProvider(it, AccelerateDecelerateInterpolator())
     }
-    lifecycle.repeatOnLifecycle(state) {
-        var scrollJob: Job? = null
-        stateFlow.collect {
-            if (it.canLoopScroll && scrollJob == null) {
-                scrollJob = this@repeatOnLifecycle.launch scroll@{
-                    delay(intervalMs.coerceAtLeast(100))
-                    // 当smoothScrollToPosition()分发新的scrollState时，
-                    // scrollJob还未转换到完成状态，提前置空避免无效取消。
-                    scrollJob = null
-                    if (currentPosition == NO_POSITION) return@scroll
-                    val position = (currentPosition + 1) % adapter.itemCount
-                    smoothScrollToPosition(position, provider = provider)
-                }
-            } else if (!it.canLoopScroll && scrollJob != null) {
-                scrollJob?.cancel()
+    var scrollJob: Job? = null
+    stateFlow.collect {
+        if (it.canScroll && scrollJob == null) {
+            scrollJob = launch scroll@{
+                delay(intervalMs.coerceAtLeast(100))
+                // 当smoothScrollToPosition()分发新的scrollState时，
+                // scrollJob还未转换到完成状态，提前置空避免无效取消。
                 scrollJob = null
+                if (currentPosition == NO_POSITION) return@scroll
+                val position = (currentPosition + 1) % adapter.itemCount
+                smoothScrollToPosition(position, provider = provider)
             }
+        } else if (!it.canScroll && scrollJob != null) {
+            scrollJob?.cancel()
+            scrollJob = null
         }
     }
 }
 
-private fun LoopPagerController.stateIn(scope: CoroutineScope, adapter: Adapter<*>): StateFlow<BannerState> {
-    val stateFlow = MutableStateFlow(BannerState(scrollState, supportLoop(adapter)))
+private fun LoopPagerController.stateIn(
+    adapter: Adapter<*>,
+    lifecycle: Lifecycle,
+    state: Lifecycle.State,
+    scope: CoroutineScope,
+): StateFlow<BannerState> {
+    val stateFlow = MutableStateFlow(BannerState(lifecycle.isActive(state), scrollState, supportLoop(adapter)))
     scope.launch(context = Dispatchers.Main.immediate, start = UNDISPATCHED) {
-        val callback = object : OnPageChangeCallback() {
+        val lifecycleObserver = object : LifecycleEventObserver {
+            override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                val isActive = lifecycle.isActive(state)
+                if (stateFlow.value.isActive == isActive) return
+                stateFlow.update { it.copy(isActive = isActive) }
+            }
+        }
+
+        val pageChangeCallback = object : OnPageChangeCallback() {
             override fun onPageScrollStateChanged(state: Int) {
                 if (stateFlow.value.scrollState == state) return
                 stateFlow.update { it.copy(scrollState = state) }
             }
         }
-        val observer = object : AdapterDataObserver() {
+
+        val adapterDataObserver = object : AdapterDataObserver() {
             override fun onChanged() {
                 val supportLoop = supportLoop(adapter)
                 if (stateFlow.value.supportLoop == supportLoop) return
@@ -104,21 +117,27 @@ private fun LoopPagerController.stateIn(scope: CoroutineScope, adapter: Adapter<
         }
 
         try {
-            registerOnPageChangeCallback(callback)
-            adapter.registerAdapterDataObserver(observer)
+            lifecycle.addObserver(lifecycleObserver)
+            registerOnPageChangeCallback(pageChangeCallback)
+            adapter.registerAdapterDataObserver(adapterDataObserver)
             awaitCancellation()
         } finally {
-            unregisterOnPageChangeCallback(callback)
-            adapter.unregisterAdapterDataObserver(observer)
+            lifecycle.removeObserver(lifecycleObserver)
+            unregisterOnPageChangeCallback(pageChangeCallback)
+            adapter.unregisterAdapterDataObserver(adapterDataObserver)
         }
     }
     return stateFlow
+}
+
+private fun Lifecycle.isActive(state: Lifecycle.State): Boolean {
+    return currentState.isAtLeast(state)
 }
 
 private fun LoopPagerController.supportLoop(adapter: Adapter<*>): Boolean {
     return adapter.itemCount >= supportLoopCount
 }
 
-private data class BannerState(val scrollState: Int, val supportLoop: Boolean) {
-    val canLoopScroll = scrollState == SCROLL_STATE_IDLE && supportLoop
+private data class BannerState(val isActive: Boolean, val scrollState: Int, val supportLoop: Boolean) {
+    val canScroll = isActive && scrollState == SCROLL_STATE_IDLE && supportLoop
 }
