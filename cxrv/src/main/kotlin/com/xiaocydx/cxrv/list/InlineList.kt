@@ -67,6 +67,33 @@ internal value class InlineList<E : Any> private constructor(private val holder:
     }
 
     @CheckResult
+    fun add(element: E): InlineList<E> = when (holder) {
+        null -> InlineList(element)
+        is ArrayList<*> -> {
+            holder as ArrayList<E>
+            holder.add(element)
+            InlineList(holder)
+        }
+        else -> {
+            val list = ArrayList<E>(4)
+            list.add(holder as E)
+            list.add(element)
+            InlineList(list)
+        }
+    }
+
+    @CheckResult
+    fun removeAt(index: Int): InlineList<E> = when (holder) {
+        null -> throwIndexOutOfBoundsException(index)
+        is ArrayList<*> -> {
+            holder as ArrayList<E>
+            holder.removeAt(index)
+            InlineList(holder)
+        }
+        else -> if (index == 0) InlineList(null) else throwIndexOutOfBoundsException(index)
+    }
+
+    @CheckResult
     fun clear(): InlineList<E> = when (val holder = holder) {
         null -> InlineList(null)
         is ArrayList<*> -> {
@@ -75,6 +102,12 @@ internal value class InlineList<E : Any> private constructor(private val holder:
             InlineList(holder)
         }
         else -> InlineList(null)
+    }
+
+    fun indexOf(element: E): Int = when (holder) {
+        null -> -1
+        is ArrayList<*> -> (holder as ArrayList<E>).indexOf(element)
+        else -> 0
     }
 
     fun contains(element: E): Boolean = when (holder) {
@@ -86,6 +119,10 @@ internal value class InlineList<E : Any> private constructor(private val holder:
     private fun throwIndexOutOfBoundsException(index: Int): Nothing {
         throw IndexOutOfBoundsException("Index: $index, Size: $size")
     }
+}
+
+internal fun <E : Any> InlineList<E>.getOrNull(index: Int): E? {
+    return if (index in 0 until size) get(index) else null
 }
 
 internal inline fun <E : Any> InlineList<E>.accessEach(action: (E) -> Unit) {

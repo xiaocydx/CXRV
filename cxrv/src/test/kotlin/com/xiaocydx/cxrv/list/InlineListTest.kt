@@ -57,12 +57,50 @@ internal class InlineListTest {
     }
 
     @Test
+    fun add() {
+        var list = InlineList<Int>()
+        repeat(2) { list = list.add(1) }
+        assertThat(list.size).isEqualTo(2)
+        assertThat(list[0]).isEqualTo(1)
+
+        repeat(2) { list = list.add(2) }
+        assertThat(list.size).isEqualTo(4)
+        assertThat(list[0]).isEqualTo(1)
+        assertThat(list[2]).isEqualTo(2)
+    }
+
+    @Test
+    fun removeAt() {
+        var list = InlineList<Int>()
+        list += 1
+        list = list.removeAt(0)
+        assertThat(list.size).isEqualTo(0)
+
+        list += 1
+        list += 2
+        list = list.removeAt(0)
+        assertThat(list.size).isEqualTo(1)
+        assertThat(list[0]).isEqualTo(2)
+    }
+
+    @Test
     fun clear() {
         var list = InlineList<Int>()
         list += 1
         list += 2
         list = list.clear()
         assertThat(list.size).isEqualTo(0)
+    }
+
+    @Test
+    fun indexOf() {
+        var list = InlineList<Int>()
+        assertThat(list.indexOf(1)).isEqualTo(-1)
+        assertThat(list.indexOf(2)).isEqualTo(-1)
+        list += 1
+        list += 2
+        assertThat(list.indexOf(1)).isEqualTo(0)
+        assertThat(list.indexOf(2)).isEqualTo(1)
     }
 
     @Test
@@ -78,7 +116,7 @@ internal class InlineListTest {
     @Test
     fun throwIndexOutOfBoundsException() {
         var list = InlineList<Int>()
-        var result = runCatching { list[0] }
+        var result: Result<Any> = runCatching { list[0] }
         assertThat(result.exceptionOrNull()).isInstanceOf(IndexOutOfBoundsException::class.java)
 
         list += 1
@@ -87,6 +125,9 @@ internal class InlineListTest {
 
         list += 2
         result = runCatching { list[2] }
+        assertThat(result.exceptionOrNull()).isInstanceOf(IndexOutOfBoundsException::class.java)
+
+        result = runCatching { list = list.removeAt(list.size) }
         assertThat(result.exceptionOrNull()).isInstanceOf(IndexOutOfBoundsException::class.java)
     }
 
