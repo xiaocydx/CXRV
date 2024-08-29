@@ -99,9 +99,9 @@ internal class ItemClickDispatcher(
     /**
      * 触发了点击，说明[pendingClickTargets]中有符合条件的[ClickDispatchTarget]
      */
-    override fun onClick(targtView: View) {
-        val itemView = rv.findContainingItemView(targtView) ?: return
-        pendingClickTargets.perform(itemView, targtView)
+    override fun onClick(targetView: View) {
+        val itemView = rv.findContainingItemView(targetView) ?: return
+        pendingClickTargets.perform(itemView, targetView)
         pendingClickTargets.clear()
     }
 
