@@ -20,9 +20,6 @@ import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnAttachStateChangeListener
-import android.view.View.OnClickListener
-import android.view.View.OnLongClickListener
-import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 
 /**
  * Item点击分发目标
@@ -33,39 +30,49 @@ import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 internal sealed class DispatchTarget(
     private val targetView: (itemView: View, event: MotionEvent) -> View?
 ) : OnAttachStateChangeListener {
-    protected var currentTargetView: View? = null
+    protected var dispatcher: ItemClickDispatcher? = null
         private set
 
-    fun setCurrentTargetView(itemView: View, event: MotionEvent): Boolean {
+    fun onAttachedToDispatcher(dispatcher: ItemClickDispatcher) {
+        require(this.dispatcher == null)
+        this.dispatcher = dispatcher
+    }
+
+    fun onDetachedFromDispatcher(dispatcher: ItemClickDispatcher) {
+        require(this.dispatcher === dispatcher)
+        this.dispatcher = null
+    }
+
+    fun bind(itemView: View, event: MotionEvent): Boolean {
         val targetView = targetView(itemView, event)?.takeIf { it.isAttachedToWindow }
-        if (targetView !== currentTargetView) {
-            // 当前目标视图改变，清除之前目标视图的全部监听
-            clearCurrentTargetViewListeners()
-            targetView?.addOnAttachStateChangeListener(this)
-            currentTargetView = targetView
+        if (targetView != null) {
+            // 避免重复添加
+            unbind(targetView)
+            setListener(targetView)
+            targetView.addOnAttachStateChangeListener(this)
+            dispatcher?.addPendingDispatchTarget(this, targetView)
         }
         return targetView != null
     }
 
+    private fun unbind(targetView: View) {
+        clearListener(targetView)
+        targetView.removeOnAttachStateChangeListener(this)
+        dispatcher?.removePendingDispatchTarget(this, targetView)
+    }
+
+    override fun onViewDetachedFromWindow(targetView: View) {
+        // 避免共享RecycledViewPool场景出现内存泄漏问题
+        unbind(targetView)
+    }
+
     override fun onViewAttachedToWindow(v: View) = Unit
 
-    /**
-     * 当[currentTargetView]从Window上分离时，清除监听，
-     * 避免共享[RecycledViewPool]场景出现内存泄漏问题。
-     */
-    override fun onViewDetachedFromWindow(v: View) {
-        clearCurrentTargetViewListeners()
-    }
+    protected abstract fun setListener(targetView: View)
 
-    private fun clearCurrentTargetViewListeners() {
-        val current = currentTargetView ?: return
-        when (this) {
-            is ClickDispatchTarget -> current.setOnClickListener(null)
-            is LongClickDispatchTarget -> current.setOnLongClickListener(null)
-        }
-        current.removeOnAttachStateChangeListener(this)
-        currentTargetView = null
-    }
+    protected abstract fun clearListener(targetView: View)
+
+    abstract fun perform(itemView: View): Boolean
 }
 
 internal class ClickDispatchTarget(
@@ -75,21 +82,18 @@ internal class ClickDispatchTarget(
 ) : DispatchTarget(targetView) {
     private var lastPerformUptimeMs = 0L
 
-    /**
-     * 将[listener]设置给[currentTargetView]，成功则返回`true`，失败则返回`false`
-     */
-    fun setOnClickListener(listener: OnClickListener): Boolean {
-        currentTargetView?.setOnClickListener(listener) ?: return false
-        return true
+    override fun setListener(targetView: View) {
+        targetView.setOnClickListener(dispatcher)
     }
 
-    /**
-     * 若[view]等于[currentTargetView]且满足执行间隔，则执行[clickHandler]
-     */
-    fun tryPerformClickHandler(view: View, itemView: View) {
-        if (view === currentTargetView && checkPerformInterval()) {
-            clickHandler.invoke(itemView)
-        }
+    override fun clearListener(targetView: View) {
+        targetView.setOnClickListener(null)
+    }
+
+    override fun perform(itemView: View): Boolean {
+        val canPerform = checkPerformInterval()
+        if (canPerform) clickHandler(itemView)
+        return canPerform
     }
 
     private fun checkPerformInterval(): Boolean {
@@ -106,23 +110,15 @@ internal class LongClickDispatchTarget(
     private val longClickHandler: (itemView: View) -> Boolean,
 ) : DispatchTarget(targetView) {
 
-    /**
-     * 将[listener]设置给[currentTargetView]，成功则返回`true`，失败则返回`false`
-     */
-    fun setOnLongClickListener(listener: OnLongClickListener): Boolean {
-        currentTargetView?.setOnLongClickListener(listener) ?: return false
-        return true
+    override fun setListener(targetView: View) {
+        targetView.setOnLongClickListener(dispatcher)
     }
 
-    /**
-     * 若[view]等于[currentTargetView]，则执行[longClickHandler]，
-     * 返回`true`表示执行了[longClickHandler]，并消费了长按，不触发点击，
-     * 返回`false`表示未执行[longClickHandler]，或者执行了但不消费长按。
-     */
-    fun tryPerformLongClickHandler(view: View, itemView: View): Boolean {
-        if (view === currentTargetView) {
-            return longClickHandler.invoke(itemView)
-        }
-        return false
+    override fun clearListener(targetView: View) {
+        targetView.setOnLongClickListener(null)
+    }
+
+    override fun perform(itemView: View): Boolean {
+        return longClickHandler(itemView)
     }
 }

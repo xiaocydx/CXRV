@@ -28,6 +28,7 @@ import com.xiaocydx.cxrv.R
 import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.list.InlineList
 import com.xiaocydx.cxrv.list.accessEach
+import com.xiaocydx.cxrv.list.getOrNull
 import com.xiaocydx.cxrv.list.toList
 
 /**
@@ -48,31 +49,23 @@ internal val RecyclerView.itemClickDispatcher: ItemClickDispatcher
 /**
  * Item点击分发器，支持`itemView`及其子view的点击、长按
  *
- * 1.当RecyclerView的[onInterceptTouchEvent]的触摸事件为[ACTION_DOWN]时，
+ * 1. 当RecyclerView的[onInterceptTouchEvent]的触摸事件为[ACTION_DOWN]时，
  * 找到可能触发点击或者长按的[DispatchTarget]，对其设置点击、长按监听，并添加到待处理集合中。
- * 2.若[onClick]或者[onLongClick]被调用，则说明第1步的待处理集合中有符合条件的[DispatchTarget]，
- * 因此遍历待处理集合，尝试执行点击或者长按的处理程序。
+ * 2. 若[onClick]或者[onLongClick]被调用，则说明第1步的待处理集合中有符合条件的[DispatchTarget]，
+ * 因此遍历待处理集合，执行点击或者长按的处理程序。
  */
 @PublishedApi
 internal class ItemClickDispatcher(
     private val rv: RecyclerView
 ) : SimpleOnItemTouchListener(), OnClickListener, OnLongClickListener {
     private var dispatchTargets = InlineList<DispatchTarget>()
-    private var pendingClickTargets = InlineList<ClickDispatchTarget>()
-    private var pendingLongClickTargets = InlineList<LongClickDispatchTarget>()
+    private val pendingClickTargets = PendingDispatchTargets<ClickDispatchTarget>()
+    private val pendingLongClickTargets = PendingDispatchTargets<LongClickDispatchTarget>()
 
     init {
         rv.addOnItemTouchListener(this)
     }
 
-    /**
-     * 添加点击分发目标
-     *
-     * @param intervalMs   执行[clickHandler]的间隔时间
-     * @param targetView   返回需要触发点击的目标视图
-     * @param clickHandler 触发目标视图点击时的执行程序
-     * @return 调用[Disposable.dispose]移除添加的点击分发目标
-     */
     fun addItemClick(
         intervalMs: Long,
         targetView: (itemView: View, event: MotionEvent) -> View?,
@@ -82,13 +75,6 @@ internal class ItemClickDispatcher(
         target = ClickDispatchTarget(intervalMs, targetView, clickHandler)
     )
 
-    /**
-     * 添加长按分发目标
-     *
-     * @param targetView       返回需要触发长按的目标视图
-     * @param longClickHandler 触发目标视图长按时的执行程序，返回`true`表示消费了长按，松手时不会触发点击
-     * @return 调用[Disposable.dispose]移除添加的长按分发目标
-     */
     fun addLongItemClick(
         targetView: (itemView: View, event: MotionEvent) -> View?,
         longClickHandler: (itemView: View) -> Boolean
@@ -102,20 +88,10 @@ internal class ItemClickDispatcher(
      */
     override fun onInterceptTouchEvent(rv: RecyclerView, event: MotionEvent): Boolean {
         if (event.actionMasked != ACTION_DOWN) return false
-        clearPendingClickTargets()
-        clearPendingLongClickTargets()
-
-        val itemView = rv.findChildViewUnder(event.x, event.y) ?: return false
-        dispatchTargets.accessEach action@{
-            if (!it.setCurrentTargetView(itemView, event)) return@action
-            when {
-                it is ClickDispatchTarget && it.setOnClickListener(this) -> {
-                    addPendingClickTarget(it)
-                }
-                it is LongClickDispatchTarget && it.setOnLongClickListener(this) -> {
-                    addPendingLongClickTarget(it)
-                }
-            }
+        pendingClickTargets.clear()
+        pendingLongClickTargets.clear()
+        rv.findItemView(event) { itemView ->
+            dispatchTargets.accessEach { it.bind(itemView, event) }
         }
         return false
     }
@@ -123,24 +99,19 @@ internal class ItemClickDispatcher(
     /**
      * 触发了点击，说明[pendingClickTargets]中有符合条件的[ClickDispatchTarget]
      */
-    override fun onClick(view: View) {
-        val itemView = rv.findContainingItemView(view) ?: return
-        pendingClickTargets.accessEach { it.tryPerformClickHandler(view, itemView) }
-        clearPendingClickTargets()
+    override fun onClick(targtView: View) {
+        val itemView = rv.findContainingItemView(targtView) ?: return
+        pendingClickTargets.perform(itemView, targtView)
+        pendingClickTargets.clear()
     }
 
     /**
      * 触发了长按，说明[pendingLongClickTargets]中有符合条件的[LongClickDispatchTarget]
      */
-    override fun onLongClick(view: View): Boolean {
-        val itemView = rv.findContainingItemView(view) ?: return false
-        var consumed = false
-        pendingLongClickTargets.accessEach {
-            if (it.tryPerformLongClickHandler(view, itemView)) {
-                consumed = true
-            }
-        }
-        clearPendingLongClickTargets()
+    override fun onLongClick(targetView: View): Boolean {
+        val itemView = rv.findContainingItemView(targetView) ?: return false
+        val consumed = pendingLongClickTargets.perform(itemView, targetView)
+        pendingLongClickTargets.clear()
         return consumed
     }
 
@@ -149,26 +120,78 @@ internal class ItemClickDispatcher(
 
     private fun addDispatchTarget(target: DispatchTarget) {
         dispatchTargets += target
+        target.onAttachedToDispatcher(this)
     }
 
     private fun removeDispatchTarget(target: DispatchTarget) {
         dispatchTargets -= target
+        target.onDetachedFromDispatcher(this)
     }
 
-    private fun addPendingClickTarget(target: ClickDispatchTarget) {
-        pendingClickTargets += target
+    fun addPendingDispatchTarget(target: DispatchTarget, targetView: View) {
+        when (target) {
+            is ClickDispatchTarget -> pendingClickTargets.add(target, targetView)
+            is LongClickDispatchTarget -> pendingLongClickTargets.add(target, targetView)
+        }
     }
 
-    private fun addPendingLongClickTarget(target: LongClickDispatchTarget) {
-        pendingLongClickTargets += target
+    fun removePendingDispatchTarget(target: DispatchTarget, targetView: View) {
+        when (target) {
+            is ClickDispatchTarget -> pendingClickTargets.remove(target, targetView)
+            is LongClickDispatchTarget -> pendingLongClickTargets.remove(target, targetView)
+        }
     }
 
-    private fun clearPendingClickTargets() {
-        pendingClickTargets = pendingClickTargets.clear()
+    private inline fun RecyclerView.findItemView(event: MotionEvent, action: (itemView: View) -> Unit) {
+        val lm = layoutManager ?: return
+        val x = event.x
+        val y = event.y
+        val count = lm.childCount
+        for (i in count - 1 downTo 0) {
+            val child = lm.getChildAt(i)!!
+            val translationX = child.translationX
+            val translationY = child.translationY
+            if (x >= child.left + translationX
+                    && x <= child.right + translationX
+                    && y >= child.top + translationY
+                    && y <= child.bottom + translationY) {
+                action(child)
+            }
+        }
     }
 
-    private fun clearPendingLongClickTargets() {
-        pendingLongClickTargets = pendingLongClickTargets.clear()
+    private class PendingDispatchTargets<T : DispatchTarget> {
+        private var targets = InlineList<T>()
+        private var targetViews = InlineList<View>()
+
+        fun add(target: T, targetView: View) {
+            assert(targets.size == targetViews.size)
+            targets = targets.add(target)
+            targetViews = targetViews.add(targetView)
+        }
+
+        fun remove(target: T, targetView: View) {
+            assert(targets.size == targetViews.size)
+            val index = targets.indexOf(target)
+            if (targetViews.getOrNull(index) !== targetView) return
+            targets = targets.removeAt(index)
+            targetViews = targetViews.removeAt(index)
+        }
+
+        fun clear() {
+            targets = targets.clear()
+            targetViews = targetViews.clear()
+        }
+
+        fun perform(itemView: View, targetView: View): Boolean {
+            assert(targets.size == targetViews.size)
+            var outcome = false
+            for (i in 0 until targetViews.size) {
+                if (targetViews[i] !== targetView) continue
+                if (targets[i].perform(itemView)) outcome = true
+            }
+            return outcome
+        }
     }
 
     private class DispatchTargetDisposable : Disposable {
