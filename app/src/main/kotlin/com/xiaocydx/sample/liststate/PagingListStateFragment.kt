@@ -20,7 +20,6 @@ import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.ListOwner
 import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.removeItem
@@ -69,13 +68,13 @@ class PagingListStateFragment : Fragment(R.layout.fragment_list_state) {
     private fun FragmentListStateBinding.initView() = apply {
         tvFoo1.text = "PagingList-1"
         fooAdapter1.doOnSimpleItemClick(fooAdapter1::removeItem)
-        rvFoo1.linear().fixedSize().adapter(fooAdapter1.withPaging())
+        rvFoo1.linear().adapter(fooAdapter1.withPaging())
             .divider { size(5.dp).edge(Edge.all()).color(0xFF979EC4.toInt()) }
             .replaceWithSwipeRefresh(fooAdapter1)
 
         tvFoo2.text = "PagingList-2"
         fooAdapter2.doOnSimpleItemClick(fooAdapter2::removeItem)
-        rvFoo2.grid(spanCount = 2).fixedSize().adapter(fooAdapter2.withPaging())
+        rvFoo2.grid(spanCount = 2).adapter(fooAdapter2.withPaging())
             .divider { size(5.dp).edge(Edge.all()).color(0xFF979EC4.toInt()) }
             .replaceWithSwipeRefresh(fooAdapter2)
     }

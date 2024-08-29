@@ -11,7 +11,6 @@ import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.bumptech.glide.Glide
-import com.xiaocydx.accompanist.insets.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.accompanist.lifecycle.doOnStateChanged
 import com.xiaocydx.accompanist.lifecycle.launchRepeatOnLifecycle
 import com.xiaocydx.accompanist.lifecycle.viewLifecycle
@@ -34,6 +33,7 @@ import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
+import com.xiaocydx.insets.insets
 import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
 import com.xiaocydx.insets.systembar.systemBarController
@@ -113,10 +113,10 @@ class ComplexListFragment : Fragment(), SystemBar, TransformSender {
             .apply { id = complexViewModel.rvId }
             .layoutParams(matchParent, matchParent)
             .overScrollNever().grid(spanCount = 2).fixedSize()
-            .divider(width = 5.dp, height = 5.dp) { edge(Edge.all()) }
+            .divider { size(5.dp).edge(Edge.all()) }
             .adapter(complexAdapter.withPaging())
-            .enableGestureNavBarEdgeToEdge()
 
+        rvComplex.insets().gestureNavBarEdgeToEdge()
         return rvComplex.withSwipeRefresh(complexAdapter)
     }
 

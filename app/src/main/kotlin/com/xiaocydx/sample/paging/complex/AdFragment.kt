@@ -4,12 +4,12 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.lifecycle.flowWithLifecycle
-import com.xiaocydx.accompanist.insets.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.accompanist.lifecycle.doOnStateChanged
 import com.xiaocydx.accompanist.lifecycle.viewLifecycle
 import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
 import com.xiaocydx.accompanist.transition.EnterTransitionController
 import com.xiaocydx.accompanist.transition.transform.TransformReceiver
+import com.xiaocydx.insets.insets
 import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
 import com.xiaocydx.insets.systembar.systemBarController
@@ -43,7 +43,7 @@ class AdFragment : TransitionFragment(), SystemBar, TransformReceiver {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupDebugLog()
         setReceiverEnterTransition().duration = 200
-        recyclerView?.enableGestureNavBarEdgeToEdge()
+        recyclerView?.insets()?.gestureNavBarEdgeToEdge()
 
         // 沿用EnterTransitionController解决过渡动画卡顿的问题
         val controller = EnterTransitionController(this)

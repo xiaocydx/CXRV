@@ -12,11 +12,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.xiaocydx.accompanist.insets.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.view.overScrollNever
+import com.xiaocydx.insets.insets
 import com.xiaocydx.sample.common.FooListAdapter
 import com.xiaocydx.sample.common.FooListViewModel
 import com.xiaocydx.sample.paging.local.MenuAction.CLEAR_ALL
@@ -49,7 +49,8 @@ abstract class PagingFragment : Fragment() {
             .apply { id = fooViewModel.rvId }
             .layoutParams(matchParent, matchParent)
             .overScrollNever()
-            .enableGestureNavBarEdgeToEdge()
+
+        rvPaging.insets().gestureNavBarEdgeToEdge()
         it.addView(rvPaging)
     }
 

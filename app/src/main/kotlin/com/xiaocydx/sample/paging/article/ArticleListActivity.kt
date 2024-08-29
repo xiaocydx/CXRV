@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
-import com.xiaocydx.accompanist.insets.enableGestureNavBarEdgeToEdge
 import com.xiaocydx.accompanist.lifecycle.launchRepeatOnLifecycle
 import com.xiaocydx.accompanist.paging.withPaging
 import com.xiaocydx.accompanist.paging.withSwipeRefresh
@@ -24,6 +23,7 @@ import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.PagingPrefetch
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
+import com.xiaocydx.insets.insets
 import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
 import com.xiaocydx.insets.systembar.systemBarController
@@ -74,8 +74,8 @@ class ArticleListActivity : AppCompatActivity(), SystemBar {
             .overScrollNever().linear().fixedSize()
             .divider { size(10.dp).edge(Edge.all()) }
             .adapter(articleAdapter.withPaging())
-            .enableGestureNavBarEdgeToEdge()
 
+        rvArticle.insets().gestureNavBarEdgeToEdge()
         setContentView(rvArticle.withSwipeRefresh(articleAdapter))
     }
 

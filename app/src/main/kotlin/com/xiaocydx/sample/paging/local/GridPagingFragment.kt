@@ -8,7 +8,6 @@ import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
@@ -22,7 +21,6 @@ class GridPagingFragment : PagingFragment() {
     override fun initView() {
         rvPaging
             .grid(spanCount = 3)
-            .fixedSize()
             .divider(5.dp, 5.dp) {
                 edge(Edge.all())
                 color(0xFF979EC4.toInt())
