@@ -28,7 +28,7 @@ dependencyResolutionManagement {
 2. 在module的build.gradle添加
 ```
 dependencies {
-    def version = "1.5.5"
+    def version = "1.5.6"
     implementation "com.github.xiaocydx.CXRV:cxrv:${version}"
     implementation "com.github.xiaocydx.CXRV:cxrv-binding:${version}"
     implementation "com.github.xiaocydx.CXRV:cxrv-paging:${version}"
