@@ -163,6 +163,7 @@ internal class ItemClickDispatcher(
     private class PendingDispatchTargets<T : DispatchTarget> {
         private var targets = InlineList<T>()
         private var targetViews = InlineList<View>()
+        private var performTargets = InlineList<T>()
 
         fun add(target: T, targetView: View) {
             assert(targets.size == targetViews.size)
@@ -185,11 +186,18 @@ internal class ItemClickDispatcher(
 
         fun perform(itemView: View, targetView: View): Boolean {
             assert(targets.size == targetViews.size)
-            var outcome = false
             for (i in 0 until targetViews.size) {
                 if (targetViews[i] !== targetView) continue
-                if (targets[i].perform(itemView)) outcome = true
+                performTargets = performTargets.add(targets[i])
             }
+            // perform()可能会同步执行到remove()，
+            // 此时访问targets会出现数组越界异常，
+            // 因此用performTargets遍历执行。
+            var outcome = false
+            performTargets.accessEach {
+                if (it.perform(itemView)) outcome = true
+            }
+            performTargets = performTargets.clear()
             return outcome
         }
     }
