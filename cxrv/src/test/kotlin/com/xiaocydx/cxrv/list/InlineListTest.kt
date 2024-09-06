@@ -96,8 +96,8 @@ internal class InlineListTest {
     fun indexOf() {
         var list = InlineList<Int>()
         assertThat(list.indexOf(1)).isEqualTo(-1)
-        assertThat(list.indexOf(2)).isEqualTo(-1)
         list += 1
+        assertThat(list.indexOf(2)).isEqualTo(-1)
         list += 2
         assertThat(list.indexOf(1)).isEqualTo(0)
         assertThat(list.indexOf(2)).isEqualTo(1)

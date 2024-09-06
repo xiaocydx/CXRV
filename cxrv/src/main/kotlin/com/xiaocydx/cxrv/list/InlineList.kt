@@ -107,7 +107,7 @@ internal value class InlineList<E : Any> private constructor(private val holder:
     fun indexOf(element: E): Int = when (holder) {
         null -> -1
         is ArrayList<*> -> (holder as ArrayList<E>).indexOf(element)
-        else -> 0
+        else -> if (holder == element) 0 else -1
     }
 
     fun contains(element: E): Boolean = when (holder) {
