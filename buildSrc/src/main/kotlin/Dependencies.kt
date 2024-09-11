@@ -62,6 +62,6 @@ object PublishLibs {
     const val `androidx-espresso-core` = "androidx.test.espresso:espresso-core:3.6.0"
     const val junit = "junit:junit:4.13.2"
     const val truth = "com.google.truth:truth:1.1.3"
-    const val mockk = "io.mockk:mockk:1.13.7"
+    const val mockk = "io.mockk:mockk:1.13.12"
     const val robolectric = "org.robolectric:robolectric:4.10.3"
 }
