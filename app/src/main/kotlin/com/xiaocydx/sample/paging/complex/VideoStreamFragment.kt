@@ -27,6 +27,7 @@ import com.xiaocydx.accompanist.transition.transform.Transform
 import com.xiaocydx.accompanist.transition.transform.createTransitionProvider
 import com.xiaocydx.accompanist.transition.transform.postponeEnterTransition
 import com.xiaocydx.accompanist.transition.transform.setReceiverEventEmitter
+import com.xiaocydx.accompanist.transition.transform.setTransformTransition
 import com.xiaocydx.accompanist.videostream.VideoStreamItem
 import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.accompanist.viewpager2.registerOnPageChangeCallback
@@ -121,23 +122,24 @@ class VideoStreamFragment : Fragment(), SystemBar {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        setTransformTransition()
+        setTransformTransitionV1()
+        // setTransformTransitionV2()
         viewLifecycleScope.launchSafely {
             // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重建流程同样适用
             adapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
             viewPager.setCurrentItem(viewModel.selectedPosition.value, false)
             viewPager.registerOnPageChangeCallback(onSelected = viewModel::selectVideo)
         }
+
         viewModel.videoPagingFlow
             .onEach(adapter.pagingCollector)
             .launchRepeatOnLifecycle(viewLifecycle)
     }
 
     /**
-     * 设置Fragment的过渡动画，直到目标视频的封面加载完成，才开始过渡动画，
-     * 非平滑滚动到目标数字人的位置，由`scrollToTargetOnFirstChanged`完成。
+     * 设置Fragment的过渡动画，直到目标视频的封面加载完成，才开始过渡动画
      */
-    private fun setTransformTransition() {
+    private fun setTransformTransitionV1() {
         val receiver = this@VideoStreamFragment
         val transitionProvider = Transform.createTransitionProvider(
             receiver = receiver,
@@ -156,14 +158,26 @@ class VideoStreamFragment : Fragment(), SystemBar {
                 }
             }
         )
-
         Transform.postponeEnterTransition(
             receiver = receiver,
             requestManager = Glide.with(receiver),
             transitionProvider = transitionProvider,
             canStartEnterTransition = { getCurrentBinding()?.ivCover == it }
         )
+        Transform.setReceiverEventEmitter(
+            token = viewModel.sharedId,
+            receiver = receiver,
+            viewPager2 = viewPager,
+            receiverId = { viewModel.getSelectedId() }
+        )
+    }
 
+    /**
+     * 设置Fragment的过渡动画，使用Sender设置的`root`跟Receiver的`view`完成过渡
+     */
+    private fun setTransformTransitionV2() {
+        val receiver = this@VideoStreamFragment
+        Transform.setTransformTransition(receiver)
         Transform.setReceiverEventEmitter(
             token = viewModel.sharedId,
             receiver = receiver,

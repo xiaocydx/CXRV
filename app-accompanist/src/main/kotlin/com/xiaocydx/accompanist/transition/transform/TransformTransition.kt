@@ -41,28 +41,15 @@ import androidx.transition.MatrixEvaluator
 import androidx.transition.PathMotion
 import androidx.transition.Transition
 import androidx.transition.TransitionListenerAdapter
+import androidx.transition.TransitionSet
 import androidx.transition.TransitionValues
+import com.google.android.material.transition.MaterialContainerTransform
 import com.xiaocydx.accompanist.view.RoundRectOutlineProvider
 
 class FadeTransform(receiver: Fragment) : Fade() {
     init {
         addTarget(receiver.requireView())
     }
-}
-
-fun ImageTransform(
-    isEnter: Boolean,
-    receiver: Fragment,
-    receiverRoot: () -> View?,
-    receiverImage: () -> ImageView?,
-    decoration: ImageTransform.Decoration? = null
-): ImageTransform {
-    val state = receiver.requireActivity().transformState
-    val senderRoot = { state.getSenderRoot() }
-    val senderImage = { state.getSenderImage() }
-    return ImageTransform(
-        isEnter, senderRoot, senderImage,
-        receiverRoot, receiverImage, decoration)
 }
 
 class ImageTransform(
@@ -315,4 +302,74 @@ private class TransitionDrawable(
     override fun setAlpha(alpha: Int) = Unit
     override fun setColorFilter(colorFilter: ColorFilter?) = Unit
     override fun getOpacity() = PixelFormat.TRANSLUCENT
+}
+
+/**
+ * [MaterialContainerTransform]不能被继承，利用[TransitionSet]包装一层，
+ * 重写[TransitionSet]相关函数，以实现对捕获时机的监听，当真正开始捕获时，
+ * 才获取`target`进行捕获，[TransitionSet]会触发`childTransition`的回调，
+ * 这也让[MaterialContainerTransform]在动画开始和结束时，能正常完成工作。
+ */
+internal class TransformTransition(
+    private val transform: MaterialContainerTransform,
+    private val targetView: (start: Boolean) -> View?
+) : TransitionSet() {
+
+    init {
+        addTarget(transform.drawingViewId)
+        addTransition(transform)
+    }
+
+    override fun captureStartValues(transitionValues: TransitionValues) {
+        captureValues(transitionValues, start = true)
+    }
+
+    override fun captureEndValues(transitionValues: TransitionValues) {
+        captureValues(transitionValues, start = false)
+    }
+
+    private fun captureValues(transitionValues: TransitionValues, start: Boolean) {
+        // 捕获流程调用自Transition.captureValues()，或者Transition.captureHierarchy()，
+        // 对于这两种情况，将sceneRoot的起始和结束捕获委托给transform，确保能创建属性动画。
+        val view = transitionValues.view
+        if (view == null || view.id != transform.drawingViewId) return
+
+        // 当transform.createAnimator()创建属性动画时，会向上递归查找drawingView，
+        // 若查找不到，则抛出异常，因此在创建属性动画之前，先判断target能否进行查找，
+        // return表示不捕获，startValues或endValues会缺一个，也就不会创建属性动画。
+        val target = targetView(start)
+        if (target == null || !canFindDrawingViewById(target)) return
+
+        // 当前Transition和transform可能被添加了target，先移除再添加，确保元素不重复
+        this.addTargetSafely(target)
+        transform.addTargetSafely(target)
+
+        // 将transitionValues.view替换为target有两个目的：
+        // 1. 确保调用捕获函数能通过当前Transition和transform的Transition.isValidTarget()检查。
+        // 2. 确保transform.captureStartValues()和transform.captureEndValues()能捕获target。
+        transitionValues.view = target
+        if (start) {
+            super.captureStartValues(transitionValues)
+        } else {
+            super.captureEndValues(transitionValues)
+        }
+        this.removeTarget(target)
+        transform.removeTarget(target)
+    }
+
+    private fun Transition.addTargetSafely(target: View) {
+        removeTarget(target)
+        addTarget(target)
+    }
+
+    private fun canFindDrawingViewById(target: View): Boolean {
+        val drawingViewId = transform.drawingViewId
+        var view: View? = target
+        while (view != null) {
+            if (view.id == drawingViewId) return true
+            val parent = view.parent
+            view = if (parent is View) parent else break
+        }
+        return false
+    }
 }

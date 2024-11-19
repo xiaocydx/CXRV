@@ -2,10 +2,14 @@ package com.xiaocydx.sample.paging.complex
 
 import android.os.Bundle
 import android.view.View
+import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.commit
 import androidx.lifecycle.flowWithLifecycle
 import com.xiaocydx.accompanist.lifecycle.viewLifecycle
 import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
 import com.xiaocydx.accompanist.transition.EnterTransitionController
+import com.xiaocydx.accompanist.transition.transform.Transform
+import com.xiaocydx.accompanist.transition.transform.setTransformTransition
 import com.xiaocydx.insets.insets
 import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
@@ -38,6 +42,8 @@ class AdFragment : TransitionFragment(), SystemBar {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        // 为了让示例代码保持简洁，AdFragment重建后没有同步列表位置
+        Transform.setTransformTransition(this)
         recyclerView?.insets()?.gestureNavBarEdgeToEdge()
 
         // 沿用EnterTransitionController解决过渡动画卡顿的问题
@@ -59,5 +65,15 @@ class AdFragment : TransitionFragment(), SystemBar {
                 }
             }
             .launchIn(viewLifecycleScope)
+    }
+
+    companion object {
+        fun show(activity: FragmentActivity, args: Bundle?) {
+            val fm = activity.supportFragmentManager
+            fm.commit {
+                addToBackStack(null)
+                add(android.R.id.content, AdFragment::class.java, args)
+            }
+        }
     }
 }

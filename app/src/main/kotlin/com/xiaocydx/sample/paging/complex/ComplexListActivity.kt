@@ -104,7 +104,6 @@ class ComplexListActivity : AppCompatActivity(), SystemBar {
     }
 
     private fun initCollect() {
-        // TODO: 修复重建效果
         Transform.receiverEvent(
             activity = this, token = viewModel.sharedId
         ).onEach(::setSenderViews).launchIn(lifecycleScope)
@@ -119,7 +118,7 @@ class ComplexListActivity : AppCompatActivity(), SystemBar {
         val args = viewModel.setReceiverState(item)
         when (item.type) {
             TYPE_VIDEO -> VideoStreamFragment.show(this, args)
-            TYPE_AD -> {}
+            TYPE_AD -> AdFragment.show(this, args)
         }
     }
 

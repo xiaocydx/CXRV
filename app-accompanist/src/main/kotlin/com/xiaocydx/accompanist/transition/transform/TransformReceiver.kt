@@ -18,17 +18,26 @@
 
 package com.xiaocydx.accompanist.transition.transform
 
+import android.os.Bundle
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import androidx.core.view.doOnDetach
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
+import androidx.savedstate.SavedStateRegistry
 import androidx.transition.Transition
 import androidx.transition.TransitionSet
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.widget.ViewPager2.SCROLL_STATE_IDLE
+import com.bumptech.glide.RequestManager
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.request.target.ViewTarget
 import com.google.android.material.transition.MaterialArcMotion
+import com.google.android.material.transition.MaterialContainerTransform
 import com.xiaocydx.accompanist.view.setRoundRectOutlineProvider
 import com.xiaocydx.accompanist.viewpager2.registerOnPageChangeCallback
 
@@ -43,11 +52,14 @@ fun Transform.setReceiverEventEmitter(
 ) = viewPager2.doOnLayout {
     var currentId = receiverId()
     val state = receiver.requireActivity().transformState
+
     val emitEvent = fun(event: ReceiverEvent) {
         if (currentId == event.id) return
         currentId = event.id
         state.emitReceiverEvent(event)
     }
+
+    // 滚动停止才发送事件让sender申请重新布局，避免滚动恢复期间出现卡顿
     viewPager2.registerOnPageChangeCallback(
         onScrollStateChanged = changed@{
             if (it != SCROLL_STATE_IDLE) return@changed
@@ -55,9 +67,16 @@ fun Transform.setReceiverEventEmitter(
             emitEvent(ReceiverEvent.Select(token, id))
         }
     )
+    // 当从Window上分离时，尝试发送事件，兼容滚动未停止就退出receiver的情况
     viewPager2.doOnDetach {
         val id = receiverId() ?: return@doOnDetach
         emitEvent(ReceiverEvent.Return(token, id))
+    }
+
+    // 页面重建后主动发送事件让sender申请重新布局
+    ReceiverEventEmitter.register(receiver)
+    if (ReceiverEventEmitter.consume(receiver) && currentId != null) {
+        state.emitReceiverEvent(ReceiverEvent.Select(token, currentId!!))
     }
 }
 
@@ -87,11 +106,59 @@ fun Transform.createTransitionProvider(
         addTransition(ImageTransform(
             isEnter, senderRoot, senderImage,
             receiverRoot, receiverImage, imageDecoration))
-        // 设置运动路径
-        setPathMotion(MaterialArcMotion())
-        duration = 250
-        interpolator = AccelerateDecelerateInterpolator()
+        setDefaultConfig()
     }
+}
+
+/**
+ * 推迟[receiver]的进入过渡动画
+ *
+ * @param receiver Receiver页面
+ * @param canStartEnterTransition 返回`true`，开始进入过渡动画
+ */
+fun Transform.postponeEnterTransition(
+    receiver: Fragment,
+    requestManager: RequestManager,
+    transitionProvider: TransitionProvider,
+    canStartEnterTransition: (target: View) -> Boolean
+) {
+    TransformPostpone(
+        receiver, requestManager,
+        transitionProvider,
+        canStartEnterTransition
+    ).postponeEnterTransition()
+}
+
+/**
+ * 设置[MaterialContainerTransform]
+ *
+ * 使用Sender设置的`root`跟Receiver的`view`完成过渡
+ */
+fun Transform.setTransformTransition(
+    receiver: Fragment,
+    initializer: (MaterialContainerTransform.() -> Unit)? = null
+): Transition {
+    val state = receiver.requireActivity().transformState
+    val transform = MaterialContainerTransform()
+    initializer?.invoke(transform)
+    val transition = TransformTransition(transform) { start ->
+        if (receiver.isAdded) {
+            if (start) state.getSenderRoot() else receiver.view
+        } else {
+            if (start) receiver.view else state.getSenderRoot()
+        }
+    }
+    transition.setDefaultConfig()
+    receiver.enterTransition = transition
+    receiver.returnTransition = transition
+    return transition
+}
+
+private fun Transition.setDefaultConfig() {
+    // 设置运动路径
+    setPathMotion(MaterialArcMotion())
+    duration = 250
+    interpolator = AccelerateDecelerateInterpolator()
 }
 
 sealed class ReceiverEvent(internal val token: String, val id: String) {
@@ -129,4 +196,67 @@ fun TransitionProvider.toProvider(
     val transition = create(isEnter)
     block(isEnter, transition)
     transition
+}
+
+private object ReceiverEventEmitter : SavedStateRegistry.SavedStateProvider {
+    private const val KEY = "com.xiaocydx.accompanist.transition.transform.ReceiverEventEmitter"
+
+    override fun saveState() = Bundle(1)
+
+    fun register(receiver: Fragment) {
+        receiver.savedStateRegistry.unregisterSavedStateProvider(KEY)
+        receiver.savedStateRegistry.registerSavedStateProvider(KEY, this)
+    }
+
+    fun consume(receiver: Fragment): Boolean {
+        return receiver.savedStateRegistry.consumeRestoredStateForKey(KEY) != null
+    }
+}
+
+private class TransformPostpone(
+    fragment: Fragment,
+    private val requestManager: RequestManager,
+    private val transitionProvider: TransitionProvider,
+    private val canStartEnterTransition: (target: View) -> Boolean
+) {
+    private var fragment: Fragment? = fragment
+
+    fun postponeEnterTransition() {
+        fragment?.enterTransition = transitionProvider.create(true)
+        fragment?.returnTransition = transitionProvider.create(false)
+        fragment?.postponeEnterTransition()
+        requestManager.addDefaultRequestListener(object : RequestCompleteListener() {
+            override fun onComplete(target: Target<Any>?) {
+                if (fragment == null || target !is ViewTarget<*, *>) return
+                if (!canStartEnterTransition(target.view)) return
+                startPostponedEnterTransition()
+            }
+        })
+    }
+
+    private fun startPostponedEnterTransition() {
+        fragment?.startPostponedEnterTransition()
+        fragment = null
+    }
+
+    private abstract class RequestCompleteListener : RequestListener<Any> {
+        protected abstract fun onComplete(target: Target<Any>?)
+
+        override fun onLoadFailed(
+            e: GlideException?, model: Any?,
+            target: Target<Any>?, isFirstResource: Boolean
+        ): Boolean {
+            onComplete(target)
+            return false
+        }
+
+        override fun onResourceReady(
+            resource: Any?, model: Any?, target:
+            Target<Any>?, dataSource: DataSource?,
+            isFirstResource: Boolean
+        ): Boolean {
+            onComplete(target)
+            return false
+        }
+    }
 }
