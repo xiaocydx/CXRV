@@ -48,16 +48,16 @@ val urls = arrayOf(
 )
 
 val gifUrls = arrayOf(
-    "https://alifei05.cfp.cn/creative/vcg/800/new/VCG211168385804.gif",
-    "https://tenfei03.cfp.cn/creative/vcg/800/new/VCG211280897919.gif",
-    "https://alifei03.cfp.cn/creative/vcg/800/new/VCG211280814110.gif",
-    "https://tenfei01.cfp.cn/creative/vcg/800/new/VCG211166346104.gif",
-    "https://alifei02.cfp.cn/creative/vcg/800/new/VCG211151553894.gif",
-    "https://tenfei01.cfp.cn/creative/vcg/800/new/VCG211268665808.gif",
-    "https://tenfei03.cfp.cn/creative/vcg/800/new/VCG211308028815.gif",
-    "https://alifei05.cfp.cn/creative/vcg/800/new/VCG211267313448.gif",
-    "https://alifei02.cfp.cn/creative/vcg/800/new/VCG211332127505.gif",
-    "https://alifei05.cfp.cn/creative/vcg/800/new/VCG211267317119.gif"
+    "https://cdn.pixabay.com/animation/2023/12/30/05/06/05-06-20-380_512.gif",
+    "https://cdn.pixabay.com/animation/2023/02/12/10/27/10-27-32-295_512.gif",
+    "https://cdn.pixabay.com/animation/2024/07/26/11/40/11-40-21-137_512.gif",
+    "https://cdn.pixabay.com/animation/2023/09/14/07/21/07-21-23-507_512.gif",
+    "https://cdn.pixabay.com/animation/2022/10/11/23/03/23-03-06-809_512.gif",
+    "https://cdn.pixabay.com/animation/2022/11/12/02/26/02-26-28-943_512.gif",
+    "https://cdn.pixabay.com/animation/2022/08/01/23/46/23-46-23-837_512.gif",
+    "https://cdn.pixabay.com/animation/2024/02/17/14/31/14-31-36-345_512.gif",
+    "https://cdn.pixabay.com/animation/2023/10/23/13/49/13-49-38-946_512.gif",
+    "https://cdn.pixabay.com/animation/2023/02/13/09/42/09-42-58-584_512.gif"
 )
 
 private val fooUrls = gifUrls
