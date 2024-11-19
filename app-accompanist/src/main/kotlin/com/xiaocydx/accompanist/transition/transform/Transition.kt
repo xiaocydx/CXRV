@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.accompanist.transition.transform
+@file:JvmName("TransitionInternalKt")
+@file:Suppress("PackageDirectoryMismatch")
 
-import androidx.transition.Transition
+package androidx.transition
+
+import android.animation.TypeEvaluator
+import android.graphics.Matrix
 import androidx.transition.Transition.TransitionListener
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
@@ -26,16 +30,15 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
 
-/**
- * @author xcc
- * @date 2023/12/15
- */
+@Suppress("FunctionName")
+fun MatrixEvaluator(): TypeEvaluator<Matrix> = TransitionUtils.MatrixEvaluator()
+
 sealed class TransitionEvent {
-    object Start : TransitionEvent()
-    object End : TransitionEvent()
-    object Cancel : TransitionEvent()
-    object Pause : TransitionEvent()
-    object Resume : TransitionEvent()
+    data object Start : TransitionEvent()
+    data object End : TransitionEvent()
+    data object Cancel : TransitionEvent()
+    data object Pause : TransitionEvent()
+    data object Resume : TransitionEvent()
 }
 
 /**

@@ -16,9 +16,11 @@
 package com.xiaocydx.accompanist.view
 
 import android.content.res.Resources
+import android.graphics.Outline
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewOutlineProvider
 import androidx.annotation.Px
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.marginBottom
@@ -95,3 +97,21 @@ suspend fun View.awaitPreDraw() {
 }
 
 class SimpleViewHolder<V : View>(val view: V) : RecyclerView.ViewHolder(view)
+
+fun View.setRoundRectOutlineProvider(@Px corners: Float) {
+    clipToOutline = true
+    outlineProvider = RoundRectOutlineProvider(corners)
+}
+
+fun View.setRoundRectOutlineProvider(@Px corners: Int) {
+    setRoundRectOutlineProvider(corners.toFloat())
+}
+
+class RoundRectOutlineProvider(@Px val corners: Float) : ViewOutlineProvider() {
+
+    constructor(corners: Int) : this(corners.toFloat())
+
+    override fun getOutline(view: View, outline: Outline) {
+        outline.setRoundRect(0, 0, view.width, view.height, corners)
+    }
+}

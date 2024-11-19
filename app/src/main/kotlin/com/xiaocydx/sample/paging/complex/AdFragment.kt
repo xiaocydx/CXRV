@@ -1,14 +1,11 @@
 package com.xiaocydx.sample.paging.complex
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.lifecycle.flowWithLifecycle
-import com.xiaocydx.accompanist.lifecycle.doOnStateChanged
 import com.xiaocydx.accompanist.lifecycle.viewLifecycle
 import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
 import com.xiaocydx.accompanist.transition.EnterTransitionController
-import com.xiaocydx.accompanist.transition.transform.TransformReceiver
 import com.xiaocydx.insets.insets
 import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
@@ -30,7 +27,7 @@ import kotlinx.coroutines.flow.onEach
  * @author xcc
  * @date 2023/8/4
  */
-class AdFragment : TransitionFragment(), SystemBar, TransformReceiver {
+class AdFragment : TransitionFragment(), SystemBar {
 
     init {
         systemBarController {
@@ -41,8 +38,6 @@ class AdFragment : TransitionFragment(), SystemBar, TransformReceiver {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        setupDebugLog()
-        setReceiverEnterTransition().duration = 200
         recyclerView?.insets()?.gestureNavBarEdgeToEdge()
 
         // 沿用EnterTransitionController解决过渡动画卡顿的问题
@@ -64,12 +59,5 @@ class AdFragment : TransitionFragment(), SystemBar, TransformReceiver {
                 }
             }
             .launchIn(viewLifecycleScope)
-    }
-
-    private fun setupDebugLog() {
-        viewLifecycle.doOnStateChanged { source, event ->
-            val currentState = source.lifecycle.currentState
-            Log.d("AdFragment", "currentState = ${currentState}, event = $event")
-        }
     }
 }

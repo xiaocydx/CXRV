@@ -3,13 +3,14 @@ package com.xiaocydx.sample.paging.complex
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.xiaocydx.accompanist.videostream.VideoStream
+import com.xiaocydx.accompanist.videostream.VideoStreamItem
 import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.paging.PagingPrefetch.ItemCount
 import com.xiaocydx.cxrv.paging.appendPrefetch
 import com.xiaocydx.cxrv.paging.storeIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 
 /**
  * @author xcc
@@ -19,8 +20,9 @@ class VideoStreamViewModel(handle: SavedStateHandle) : ViewModel() {
     private val shared = VideoStream.receiver(handle, viewModelScope)
     private val videoList = MutableStateList<VideoStreamItem>()
     private val _selectedPosition = MutableStateFlow(0)
+
+    val sharedId = shared.id
     val selectedPosition = _selectedPosition.asStateFlow()
-    val selectedTitle = selectedPosition.map { videoList.getOrNull(it)?.title ?: "" }
 
     init {
         // 先同步初始状态，后收集videoPagingFlow，发射的分页事件会完成状态的同步
@@ -40,8 +42,7 @@ class VideoStreamViewModel(handle: SavedStateHandle) : ViewModel() {
         _selectedPosition.value = position
     }
 
-    fun syncSenderId() {
-        val item = videoList.getOrNull(selectedPosition.value)
-        item?.id?.let(shared::syncSenderId)
+    fun getSelectedId(): String? {
+        return videoList.getOrNull(_selectedPosition.value)?.id
     }
 }

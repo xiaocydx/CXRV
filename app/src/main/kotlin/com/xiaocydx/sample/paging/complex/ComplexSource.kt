@@ -1,5 +1,8 @@
 package com.xiaocydx.sample.paging.complex
 
+import androidx.annotation.ColorInt
+import com.xiaocydx.accompanist.videostream.VideoStream
+import com.xiaocydx.accompanist.videostream.VideoStreamItem
 import com.xiaocydx.cxrv.paging.LoadParams
 import com.xiaocydx.cxrv.paging.LoadResult
 import com.xiaocydx.cxrv.paging.PagingConfig
@@ -19,6 +22,17 @@ class ComplexSource(
 ) : VideoStream.Source<Int, ComplexItem> {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ComplexItem> {
+        val data = loadData(params)
+        val nextKey = if (params.key >= maxKey) null else params.key + 1
+        return LoadResult.Success(data, nextKey)
+    }
+
+    override fun transform(data: List<ComplexItem>) = data.mapNotNull {
+        if (it.type != ComplexItem.TYPE_VIDEO) return@mapNotNull null
+        VideoStreamItem(it.id, it.linkUrl, it.coverUrl, it.name)
+    }
+
+    private suspend fun loadData(params: LoadParams<Int>): List<ComplexItem> {
         delay(timeMillis)
         val data = (1..params.pageSize).map { num ->
             val id = "${params.key}-$num"
@@ -30,9 +44,26 @@ class ComplexSource(
             }
             ComplexItem(id, url, url, id, type)
         }
-        val nextKey = if (params.key >= maxKey) null else params.key + 1
-        return LoadResult.Success(data, nextKey)
+        return data
     }
+}
 
-    override fun toVideoStreamList(list: List<ComplexItem>) = list.toViewStreamList()
+data class ComplexItem(
+    val id: String,
+    val linkUrl: String,
+    val coverUrl: String,
+    val name: String,
+    val type: String,
+    @ColorInt val typeColor: Int = typeColor(type)
+) {
+    companion object {
+        const val TYPE_VIDEO = "视频"
+        const val TYPE_AD = "广告"
+
+        private fun typeColor(type: String) = when (type) {
+            TYPE_VIDEO -> 0xFFAA5458.toInt()
+            TYPE_AD -> 0xFF79AA91.toInt()
+            else -> throw IllegalArgumentException()
+        }
+    }
 }

@@ -1,4 +1,20 @@
-package com.xiaocydx.sample.paging.complex
+/*
+ * Copyright 2022 xiaocydx
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.xiaocydx.accompanist.videostream
 
 import android.os.Bundle
 import android.os.Looper
@@ -6,8 +22,13 @@ import androidx.annotation.CheckResult
 import androidx.annotation.MainThread
 import androidx.core.os.bundleOf
 import androidx.lifecycle.SavedStateHandle
-import com.xiaocydx.accompanist.transition.transform.SyncTransformSenderId
-import com.xiaocydx.accompanist.transition.transform.TransformSenderId
+import com.xiaocydx.accompanist.videostream.VideoStream.KEY_ID
+import com.xiaocydx.accompanist.videostream.VideoStream.KEY_NAME
+import com.xiaocydx.accompanist.videostream.VideoStream.Receiver
+import com.xiaocydx.accompanist.videostream.VideoStream.Sender
+import com.xiaocydx.accompanist.videostream.VideoStream.Shared
+import com.xiaocydx.accompanist.videostream.VideoStream.Source
+import com.xiaocydx.accompanist.videostream.VideoStream.StatefulSource
 import com.xiaocydx.cxrv.paging.LoadParams
 import com.xiaocydx.cxrv.paging.LoadResult
 import com.xiaocydx.cxrv.paging.LoadStates
@@ -18,13 +39,6 @@ import com.xiaocydx.cxrv.paging.PagingSource
 import com.xiaocydx.cxrv.paging.broadcastIn
 import com.xiaocydx.cxrv.paging.dataMap
 import com.xiaocydx.cxrv.paging.flowMap
-import com.xiaocydx.sample.paging.complex.VideoStream.KEY_ID
-import com.xiaocydx.sample.paging.complex.VideoStream.KEY_NAME
-import com.xiaocydx.sample.paging.complex.VideoStream.Receiver
-import com.xiaocydx.sample.paging.complex.VideoStream.Sender
-import com.xiaocydx.sample.paging.complex.VideoStream.Shared
-import com.xiaocydx.sample.paging.complex.VideoStream.Source
-import com.xiaocydx.sample.paging.complex.VideoStream.StatefulSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,8 +57,8 @@ import kotlin.reflect.KClass
  * 为了让实现足够简单，[VideoStream]、[Sender]、[Receiver]的函数仅支持主线程调用。
  *
  * Fragment和Fragment之间不通过ParentFragment的ViewModel共享[Shared]对象，
- * 因为在实际场景中，两个Fragment不一定有相同的ParentFragment，以视频流页面为例，
- * [VideoStreamFragment]可能作为通用页面供多处业务复用，实现为Activity的直接Fragment，
+ * 因为在实际场景中，两个Fragment不一定有相同的ParentFragment（层级不同），
+ * 视频流页面可能作为通用页面供多处业务复用，实现为Activity的直接Fragment，
  * 此时两个Fragment没有相同的ParentFragment，如果通过Activity的ViewModel实现共享需求，
  * 那么当两个Fragment都退出回退栈时，该如何清除Activity的ViewModel的[Shared]对象？
  *
@@ -151,6 +165,11 @@ object VideoStream {
     @MainThread
     sealed interface Shared {
         /**
+         * 共享id
+         */
+        val id: String
+
+        /**
          * 是否处于活跃状态，当发射`false`时，表示[Sender]和[Receiver]结束共享
          */
         val isActive: StateFlow<Boolean>
@@ -187,11 +206,6 @@ object VideoStream {
         val source: S
 
         /**
-         * 同步id，可用于同步滚动位置
-         */
-        val senderId: TransformSenderId
-
-        /**
          * 分页数据流，是[Receiver.receiverFlow]的上游
          */
         val senderFlow: Flow<PagingData<T>>
@@ -199,7 +213,7 @@ object VideoStream {
         /**
          * 设置[Receiver.Initial]，跟[Receiver.consumeReceiverState]是对称逻辑
          */
-        fun setReceiverState(id: String, list: List<T>?)
+        fun setReceiverState(id: String, data: List<T>?)
 
         /**
          * 将内部状态转换为[Bundle]，作为[Receiver]的页面传参
@@ -216,11 +230,6 @@ object VideoStream {
          * 分页数据流，是[Sender.senderFlow]的下游
          */
         val receiverFlow: Flow<PagingData<VideoStreamItem>>
-
-        /**
-         * 同步[Sender.senderId]
-         */
-        fun syncSenderId(id: String)
 
         /**
          * 消费[Sender.setReceiverState]设置的[Initial]
@@ -253,7 +262,7 @@ object VideoStream {
         val config: PagingConfig
 
         /**
-         * 加载成功的结果，会通过[toViewStreamList]转换为[VideoStreamItem]
+         * 加载成功的结果
          */
         override suspend fun load(params: LoadParams<K>): LoadResult<K, T>
 
@@ -264,7 +273,7 @@ object VideoStream {
          * 过滤后视频流加载结果可能为空，视频流页面会自动触发下一页加载，
          * 因此实现[load]时，不必循环加载补充[VideoStreamItem]。
          */
-        fun toVideoStreamList(list: List<T>): List<VideoStreamItem>
+        fun transform(data: List<T>): List<VideoStreamItem>
     }
 
     /**
@@ -362,19 +371,18 @@ private fun assertMainThread() {
 }
 
 private class VideoStreamShared<T, S>(
-    val id: String, override val source: S
+    override val id: String,
+    override val source: S
 ) : Sender<T, S>, Receiver where T : Any, S : Source<Any, T> {
     private val pager = Pager(source.initKey, source.config, source)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val _isActive = MutableStateFlow(true)
-    private val _senderId = SyncTransformSenderId()
     private var receiverState: Receiver.Initial? = null
 
     override val isActive = _isActive.asStateFlow()
-    override val senderId = _senderId.asSenderId()
     override val senderFlow = pager.flow.broadcastIn(scope)
     override val receiverFlow = senderFlow.flowMap { flow ->
-        flow.dataMap { _, data -> source.toVideoStreamList(data) }
+        flow.dataMap { _, data -> source.transform(data) }
     }
     override val loadStates: LoadStates
         get() = pager.loadStates
@@ -384,7 +392,6 @@ private class VideoStreamShared<T, S>(
             awaitCancellation()
         }.invokeOnCompletion {
             receiverState = null
-            _senderId.close()
             _isActive.value = false
         }
     }
@@ -397,19 +404,12 @@ private class VideoStreamShared<T, S>(
 
     override fun retry() = pager.retry()
 
-    override fun syncSenderId(id: String) {
+    override fun setReceiverState(id: String, data: List<T>?) {
         assertMainThread()
         if (!_isActive.value) return
-        _senderId.sync(id)
-    }
-
-    override fun setReceiverState(id: String, list: List<T>?) {
-        assertMainThread()
-        if (!_isActive.value) return
-        _senderId.record(id)
         receiverState = null
-        if (list.isNullOrEmpty()) return
-        val videoList = source.toVideoStreamList(list)
+        if (data.isNullOrEmpty()) return
+        val videoList = source.transform(data)
         val position = videoList.indexOfFirst { it.id == id }.coerceAtLeast(0)
         receiverState = Receiver.Initial(position, videoList)
     }

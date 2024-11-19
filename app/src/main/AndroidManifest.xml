@@ -49,7 +49,7 @@
             android:name=".paging.local.PagingActivity"
             android:exported="false" />
         <activity
-            android:name=".paging.complex.ComplexContainerActivity"
+            android:name=".paging.complex.ComplexListActivity"
             android:exported="false" />
         <activity
             android:name=".viewpager2.nested.NestedScrollableActivity"
