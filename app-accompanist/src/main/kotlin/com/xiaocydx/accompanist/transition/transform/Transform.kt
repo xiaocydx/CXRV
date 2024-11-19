@@ -29,17 +29,11 @@ import kotlin.math.sign
  * 过渡动画的中间者，负责协调Sender页面和Receiver页面
  *
  * **注意**：当前实现逻辑很简单，只支持两个页面的过渡，不支持多个页面进行嵌套。
- *
- * @author xcc
- * @date 2024/11/19
  */
 object Transform
 
 /**
  * 图片变换
- *
- * @author xcc
- * @date 2024/11/19
  */
 interface ImageTransformer {
 

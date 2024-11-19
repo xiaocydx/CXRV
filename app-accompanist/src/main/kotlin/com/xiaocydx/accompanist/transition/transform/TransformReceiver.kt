@@ -214,21 +214,22 @@ private object ReceiverEventEmitter : SavedStateRegistry.SavedStateProvider {
 }
 
 private class TransformPostpone(
-    fragment: Fragment,
-    private val requestManager: RequestManager,
-    private val transitionProvider: TransitionProvider,
-    private val canStartEnterTransition: (target: View) -> Boolean
+    private var fragment: Fragment?,
+    private var requestManager: RequestManager?,
+    private var transitionProvider: TransitionProvider?,
+    private var canStartEnterTransition: ((target: View) -> Boolean)?
 ) {
-    private var fragment: Fragment? = fragment
 
     fun postponeEnterTransition() {
-        fragment?.enterTransition = transitionProvider.create(true)
-        fragment?.returnTransition = transitionProvider.create(false)
-        fragment?.postponeEnterTransition()
-        requestManager.addDefaultRequestListener(object : RequestCompleteListener() {
+        fragment?.apply {
+            enterTransition = transitionProvider?.create(true)
+            returnTransition = transitionProvider?.create(false)
+            postponeEnterTransition()
+        }
+        requestManager?.addDefaultRequestListener(object : RequestCompleteListener() {
             override fun onComplete(target: Target<Any>?) {
                 if (fragment == null || target !is ViewTarget<*, *>) return
-                if (!canStartEnterTransition(target.view)) return
+                if (canStartEnterTransition?.invoke(target.view) != true) return
                 startPostponedEnterTransition()
             }
         })
@@ -237,6 +238,10 @@ private class TransformPostpone(
     private fun startPostponedEnterTransition() {
         fragment?.startPostponedEnterTransition()
         fragment = null
+        requestManager = null
+        transitionProvider = null
+        transitionProvider = null
+        canStartEnterTransition = null
     }
 
     private abstract class RequestCompleteListener : RequestListener<Any> {

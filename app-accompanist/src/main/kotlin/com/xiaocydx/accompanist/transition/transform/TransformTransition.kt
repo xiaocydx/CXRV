@@ -226,6 +226,71 @@ class ImageTransform(
         return null
     }
 
+    private class TransitionDrawable(
+        pathMotion: PathMotion,
+        private val isEnter: Boolean,
+        private val targetView: ImageView,
+        private val startMatrix: Matrix,
+        private val startBounds: Rect,
+        private val startCorners: Float,
+        private val endMatrix: Matrix,
+        private val endBounds: Rect,
+        private val endCorners: Float,
+        private val decoration: Decoration?
+    ) : Drawable() {
+        private val clipPath = Path()
+        private val decorBounds = RectF()
+        private val sizeEvaluator = IntEvaluator()
+        private val cornersEvaluator = FloatEvaluator()
+        private val matrixEvaluator = MatrixEvaluator()
+        private val motionPathMeasure: PathMeasure
+        private val motionPathLength: Float
+        private val motionPathPoint = FloatArray(2)
+
+        init {
+            val motionPath = pathMotion.getPath(
+                startBounds.left.toFloat(), startBounds.top.toFloat(),
+                endBounds.left.toFloat(), endBounds.top.toFloat()
+            )
+            motionPathMeasure = PathMeasure(motionPath, false)
+            motionPathLength = motionPathMeasure.length
+        }
+
+        var fraction = 0f
+            set(value) {
+                field = value
+                invalidateSelf()
+            }
+
+        override fun draw(canvas: Canvas) {
+            val corners = cornersEvaluator.evaluate(fraction, startCorners, endCorners)
+            val width = sizeEvaluator.evaluate(fraction, startBounds.width(), endBounds.width())
+            val height = sizeEvaluator.evaluate(fraction, startBounds.height(), endBounds.height())
+            val matrix = matrixEvaluator.evaluate(fraction, startMatrix, endMatrix)
+
+            clipPath.reset()
+            clipPath.addRoundRect(
+                0f, 0f,
+                width.toFloat(), height.toFloat(),
+                corners, corners, Path.Direction.CW
+            )
+            motionPathMeasure.getPosTan(motionPathLength * fraction, motionPathPoint, null)
+
+            canvas.withSave {
+                canvas.translate(motionPathPoint[0], motionPathPoint[1])
+                canvas.clipPath(clipPath)
+                decorBounds.set(0f, 0f, width.toFloat(), height.toFloat())
+                decoration?.onDraw(isEnter, decorBounds, fraction, canvas)
+                canvas.withMatrix(matrix) { targetView.drawable?.draw(canvas) }
+                decoration?.onDrawOver(isEnter, decorBounds, fraction, canvas)
+            }
+        }
+
+        override fun setAlpha(alpha: Int) = Unit
+        override fun setColorFilter(colorFilter: ColorFilter?) = Unit
+        override fun getOpacity() = PixelFormat.TRANSLUCENT
+    }
+
     interface Decoration {
         fun onDraw(isEnter: Boolean, bounds: RectF, fraction: Float, canvas: Canvas) = Unit
         fun onDrawOver(isEnter: Boolean, bounds: RectF, fraction: Float, canvas: Canvas) = Unit
@@ -237,71 +302,6 @@ class ImageTransform(
         const val PROPNAME_CORNERS = "ImageTransform:corners"
         const val PROPNAME_ROOT = "ImageTransform:root"
     }
-}
-
-private class TransitionDrawable(
-    pathMotion: PathMotion,
-    private val isEnter: Boolean,
-    private val targetView: ImageView,
-    private val startMatrix: Matrix,
-    private val startBounds: Rect,
-    private val startCorners: Float,
-    private val endMatrix: Matrix,
-    private val endBounds: Rect,
-    private val endCorners: Float,
-    private val decoration: ImageTransform.Decoration?
-) : Drawable() {
-    private val clipPath = Path()
-    private val decorBounds = RectF()
-    private val sizeEvaluator = IntEvaluator()
-    private val cornersEvaluator = FloatEvaluator()
-    private val matrixEvaluator = MatrixEvaluator()
-    private val motionPathMeasure: PathMeasure
-    private val motionPathLength: Float
-    private val motionPathPoint = FloatArray(2)
-
-    init {
-        val motionPath = pathMotion.getPath(
-            startBounds.left.toFloat(), startBounds.top.toFloat(),
-            endBounds.left.toFloat(), endBounds.top.toFloat()
-        )
-        motionPathMeasure = PathMeasure(motionPath, false)
-        motionPathLength = motionPathMeasure.length
-    }
-
-    var fraction = 0f
-        set(value) {
-            field = value
-            invalidateSelf()
-        }
-
-    override fun draw(canvas: Canvas) {
-        val corners = cornersEvaluator.evaluate(fraction, startCorners, endCorners)
-        val width = sizeEvaluator.evaluate(fraction, startBounds.width(), endBounds.width())
-        val height = sizeEvaluator.evaluate(fraction, startBounds.height(), endBounds.height())
-        val matrix = matrixEvaluator.evaluate(fraction, startMatrix, endMatrix)
-
-        clipPath.reset()
-        clipPath.addRoundRect(
-            0f, 0f,
-            width.toFloat(), height.toFloat(),
-            corners, corners, Path.Direction.CW
-        )
-        motionPathMeasure.getPosTan(motionPathLength * fraction, motionPathPoint, null)
-
-        canvas.withSave {
-            canvas.translate(motionPathPoint[0], motionPathPoint[1])
-            canvas.clipPath(clipPath)
-            decorBounds.set(0f, 0f, width.toFloat(), height.toFloat())
-            decoration?.onDraw(isEnter, decorBounds, fraction, canvas)
-            canvas.withMatrix(matrix) { targetView.drawable?.draw(canvas) }
-            decoration?.onDrawOver(isEnter, decorBounds, fraction, canvas)
-        }
-    }
-
-    override fun setAlpha(alpha: Int) = Unit
-    override fun setColorFilter(colorFilter: ColorFilter?) = Unit
-    override fun getOpacity() = PixelFormat.TRANSLUCENT
 }
 
 /**
