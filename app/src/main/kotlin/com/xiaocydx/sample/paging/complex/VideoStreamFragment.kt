@@ -100,6 +100,7 @@ class VideoStreamFragment : Fragment(), SystemBar {
         viewPager = ViewPager2(requireContext()).apply {
             offscreenPageLimit = 1
             orientation = ORIENTATION_VERTICAL
+            setBackgroundColor(Color.BLACK)
         }
 
         adapter = bindingAdapter(
