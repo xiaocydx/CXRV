@@ -32,6 +32,7 @@ import android.graphics.drawable.Drawable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ImageView.ScaleType.FIT_CENTER
 import androidx.core.graphics.withMatrix
 import androidx.core.graphics.withSave
 import androidx.fragment.app.Fragment
@@ -64,6 +65,7 @@ class ImageTransform(
     private val contentParentId = android.R.id.content
 
     init {
+        // 继承ChangeImageTransform只是为了复用捕获matrix的代码
         val superProperties = super.getTransitionProperties()
         val properties = arrayOf(PROPNAME_BOUNDS, PROPNAME_CORNERS, PROPNAME_ROOT)
         transitionProperties = superProperties + properties
@@ -135,9 +137,7 @@ class ImageTransform(
         startValues: TransitionValues?,
         endValues: TransitionValues?
     ): Animator? {
-        if (startValues == null || endValues == null) {
-            return null
-        }
+        if (startValues == null || endValues == null) return null
 
         val startMatrix = startValues.values[PROPNAME_MATRIX] as? Matrix
         val startBounds = startValues.values[PROPNAME_BOUNDS] as? Rect
@@ -160,10 +160,7 @@ class ImageTransform(
         }
 
         val targetImage = if (isEnter) endImage else startImage
-        val otherImage = if (isEnter) startImage else endImage
-        val otherMatrix = if (isEnter) startMatrix else endMatrix
-        targetImage.centerCropMatrix(otherMatrix, otherImage.width, otherImage.height)
-        (otherImage as? TransformImageView)?.postImageTranslate(otherMatrix)
+        adjustMatrix(startImage, endImage, startMatrix, endMatrix)
 
         val drawable = TransitionDrawable(
             pathMotion, isEnter, targetImage,
@@ -224,6 +221,27 @@ class ImageTransform(
             return provider.corners
         }
         return null
+    }
+
+    private fun adjustMatrix(
+        startImage: ImageView, endImage: ImageView,
+        startMatrix: Matrix, endMatrix: Matrix
+    ) {
+        val targetImage = if (isEnter) endImage else startImage
+        val otherImage = if (isEnter) startImage else endImage
+        val otherMatrix = if (isEnter) startMatrix else endMatrix
+        val width = otherImage.width
+        val height = otherImage.height
+
+        if (otherImage is ImageTransformer.Host) {
+            otherImage.transformer.updateMatrix(otherMatrix, targetImage, width, height)
+            otherImage.postImageTranslate(otherMatrix)
+        } else {
+            when (otherImage.scaleType) {
+                FIT_CENTER -> targetImage.fitCenterMatrix(otherMatrix, width, height)
+                else -> targetImage.centerCropMatrix(otherMatrix, width, height)
+            }
+        }
     }
 
     private class TransitionDrawable(

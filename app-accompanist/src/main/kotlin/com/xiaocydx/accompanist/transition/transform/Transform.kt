@@ -38,17 +38,36 @@ object Transform
 interface ImageTransformer {
 
     /**
-     * 更新图片矩阵
+     * 更新[matrix]
+     *
+     * 基于`imageView.drawable`、[width]、[height]，对[matrix]设置结果
      */
-    fun updateMatrix(matrix: Matrix, imageView: ImageView)
+    fun updateMatrix(
+        matrix: Matrix,
+        imageView: ImageView,
+        width: Int = imageView.width,
+        height: Int = imageView.height
+    )
 
     /**
-     * 更新图片平移
+     * 更新[translate]，使得平移不超出[imageView]边界
      *
      * @param translate 已有的平移值
-     * @param imageRect 基于[updateMatrix]的矩阵得到的图片坐标
+     * @param imageRect 基于[updateMatrix]的矩阵，转换得到的图片坐标
      */
     fun updateTranslate(translate: Translate, imageRect: RectF, imageView: ImageView) = Unit
+
+    interface Host {
+        /**
+         * 可设置内置的[fitCenter]和[centerCrop]
+         */
+        var transformer: ImageTransformer
+
+        /**
+         * 对[matrix]左乘最终的x、y平移值
+         */
+        fun postImageTranslate(matrix: Matrix)
+    }
 
     companion object
 }
@@ -81,8 +100,8 @@ fun ImageTransformer.Companion.centerCrop(): ImageTransformer = CenterCropTransf
 
 private object CenterCropTransformer : ImageTransformer {
 
-    override fun updateMatrix(matrix: Matrix, imageView: ImageView) {
-        imageView.centerCropMatrix(matrix)
+    override fun updateMatrix(matrix: Matrix, imageView: ImageView, width: Int, height: Int) {
+        imageView.centerCropMatrix(matrix, width, height)
     }
 
     override fun updateTranslate(translate: Translate, imageRect: RectF, imageView: ImageView) {
@@ -97,8 +116,8 @@ private object CenterCropTransformer : ImageTransformer {
 
 private object FitCenterTransformer : ImageTransformer {
 
-    override fun updateMatrix(matrix: Matrix, imageView: ImageView) {
-        imageView.fitCenterMatrix(matrix)
+    override fun updateMatrix(matrix: Matrix, imageView: ImageView, width: Int, height: Int) {
+        imageView.fitCenterMatrix(matrix, width, height)
     }
 
     override fun updateTranslate(translate: Translate, imageRect: RectF, imageView: ImageView) {

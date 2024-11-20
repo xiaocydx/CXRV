@@ -155,7 +155,6 @@ fun Transform.setTransformTransition(
 }
 
 private fun Transition.setDefaultConfig() {
-    // 设置运动路径
     setPathMotion(MaterialArcMotion())
     duration = 250
     interpolator = AccelerateDecelerateInterpolator()

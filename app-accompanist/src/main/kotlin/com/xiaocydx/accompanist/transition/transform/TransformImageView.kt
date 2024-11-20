@@ -28,26 +28,71 @@ import androidx.appcompat.widget.AppCompatImageView
 /**
  * 基于[ImageTransformer]做平移的ImageView，[ImageTransformer]默认为[fitCenter]
  *
+ * 以展示包含人脸的图片为例，`FaceInfo`是人脸的坐标和尺寸信息，
+ * 调用[setImageTranslateAction]，尽量让人脸居中且不超出边界：
+ * ```
+ * data class FaceInfo(
+ *     val percentX: Float, // 人脸左上角x坐标在原图的百分比
+ *     val percentY: Float, // 人脸左上角y坐标在原图的百分比
+ *     val percentWidth: Float, // 人脸宽度在原图的百分比
+ *     val percentHeight: Float // 人脸高度在原图的百分比
+ * ) {
+ *
+ *     // 获取人脸中心点x到当前图片中心点x的平移值
+ *     fun getToCenterTranslateX(imageWidth: Float): Float {
+ *         val imageCenterX = imageWidth / 2
+ *         val faceWidth = percentWidth * imageWidth
+ *         val faceCenterX = percentX * imageWidth + faceWidth / 2
+ *         return imageCenterX - faceCenterX
+ *     }
+ *
+ *     // 获取人脸中心点y到当前图片中心点y的平移值
+ *     fun getToCenterTranslateY(imageHeight: Float): Float {
+ *         val imageCenterY = imageHeight / 2
+ *         val faceHeight = percentHeight * imageHeight
+ *         val faceCenterY = percentY * imageHeight + faceHeight / 2
+ *         return imageCenterY - faceCenterY
+ *     }
+ * }
+ *
+ * // imageWidth和imageHeight是图片经过矩阵变换后的尺寸
+ * imageView.setImageTransformer(ImageTransformer.centerCrop())
+ * imageView.setImageTranslateAction { imageWidth, imageHeight ->
+ *     val x = faceInfo.getToCenterTranslateX(imageWidth)
+ *     val y = faceInfo.getToCenterTranslateY(imageHeight)
+ *     imageView.setImageExpectTranslateX(x)
+ *     imageView.setImageExpectTranslateY(y)
+ * }
+ * ```
+ *
+ * 图片加载过程，根据人脸信息对Bitmap进行裁剪，也能实现效果，
+ * 这种做法适用于不需要图片原始比例的Bitmap做过渡动画的场景。
+ *
  * @author xcc
  * @date 2024/11/19
  */
 class TransformImageView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
-) : AppCompatImageView(context, attrs) {
+) : AppCompatImageView(context, attrs), ImageTransformer.Host {
     private val matrix = Matrix()
     private val imageRect = RectF()
     private val imageTranslate = Translate()
     private val expectTranslate = Translate()
     private var translateAction: ((Float, Float) -> Unit)? = null
-    private var transformer = ImageTransformer.fitCenter()
     private var isUpdating = false
+
+    override var transformer = ImageTransformer.fitCenter()
+        set(value) {
+            field = value
+            requestUpdateMatrix()
+        }
 
     init {
         scaleType = ScaleType.MATRIX
     }
 
     /**
-     * 设置期望的x平移值，最终的x平移值不会使Image脱离ImageView边界
+     * 设置期望的x平移值，最终的x平移值不会使Image超出ImageView边界
      */
     fun setImageExpectTranslateX(value: Float) {
         if (expectTranslate.x == value) return
@@ -56,7 +101,7 @@ class TransformImageView @JvmOverloads constructor(
     }
 
     /**
-     * 设置期望的y平移值，最终的y平移值不会使Image脱离ImageView边界
+     * 设置期望的y平移值，最终的y平移值不会使Image超出ImageView边界
      */
     fun setImageExpectTranslateY(value: Float) {
         if (expectTranslate.y == value) return
@@ -73,10 +118,7 @@ class TransformImageView @JvmOverloads constructor(
         requestUpdateMatrix()
     }
 
-    /**
-     * 对[matrix]左乘最终的x、y平移值
-     */
-    fun postImageTranslate(matrix: Matrix) {
+    override fun postImageTranslate(matrix: Matrix) {
         matrix.postTranslate(imageTranslate.x, imageTranslate.y)
     }
 
@@ -119,11 +161,6 @@ class TransformImageView @JvmOverloads constructor(
         if (isUpdating) return
         matrix.reset()
         invalidate()
-    }
-
-    fun setImageTransformer(transformer: ImageTransformer) {
-        this.transformer = transformer
-        requestUpdateMatrix()
     }
 
     private fun updateMatrix() {
