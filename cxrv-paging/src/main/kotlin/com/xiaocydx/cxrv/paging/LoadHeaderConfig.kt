@@ -84,12 +84,40 @@ class LoadHeaderConfig @PublishedApi internal constructor() {
      * ```
      * loading<ProgressBar> {
      *     onCreateView { parent -> ProgressBar(parent.context) }
-     *     onVisibleChanged { view, isVisible -> ... }
+     *     onUpdateView { view -> ... }
      * }
      * ```
      */
     inline fun <V : View> loading(block: LoadViewScope<V>.() -> Unit) {
         loadingScope = LoadViewScope<V>().apply(block)
+    }
+
+    /**
+     * 空结果视图
+     *
+     * ```
+     * empty<TextView> {
+     *     onCreateView { parent -> TextView(parent.context) }
+     *     onUpdateView { view -> ... }
+     * }
+     * ```
+     */
+    inline fun <V : View> empty(block: LoadViewScope<V>.() -> Unit) {
+        emptyScope = LoadViewScope<V>().apply(block)
+    }
+
+    /**
+     * 加载失败视图
+     *
+     * ```
+     * failure<TextView> {
+     *     onCreateView { parent -> TextView(parent.context) }
+     *     onUpdateView { view -> ... }
+     * }
+     * ```
+     */
+    inline fun <V : View> failure(block: LoadViewScope<V>.() -> Unit) {
+        failureScope = LoadViewScope<V>().apply(block)
     }
 
     /**
@@ -111,20 +139,6 @@ class LoadHeaderConfig @PublishedApi internal constructor() {
     /**
      * 空结果视图
      *
-     * ```
-     * empty<TextView> {
-     *     onCreateView { parent -> TextView(parent.context) }
-     *     onVisibleChanged { view, isVisible -> ... }
-     * }
-     * ```
-     */
-    inline fun <V : View> empty(block: LoadViewScope<V>.() -> Unit) {
-        emptyScope = LoadViewScope<V>().apply(block)
-    }
-
-    /**
-     * 空结果视图
-     *
      * 若[block]为null，则表示不需要空结果视图。
      * ```
      * emptyView { parent -> TextView(parent.context) }
@@ -136,20 +150,6 @@ class LoadHeaderConfig @PublishedApi internal constructor() {
         } else {
             empty<View> { onCreateView(block) }
         }
-    }
-
-    /**
-     * 加载失败视图
-     *
-     * ```
-     * failure<TextView> {
-     *     onCreateView { parent -> TextView(parent.context) }
-     *     onVisibleChanged { view, isVisible -> exception() }
-     * }
-     * ```
-     */
-    inline fun <V : View> failure(block: LoadViewScope<V>.() -> Unit) {
-        failureScope = LoadViewScope<V>().apply(block)
     }
 
     /**

@@ -38,6 +38,7 @@ class LoadViewScope<V : View> @PublishedApi internal constructor() {
     private var retry: (() -> Unit)? = null
     private var exception: (() -> Throwable?)? = null
     private var onCreateView: OnCreateView<V>? = null
+    private var onUpdateView: OnUpdateView<V>? = null
     private var onVisibleChanged: OnVisibleChanged<V>? = null
 
     /**
@@ -63,6 +64,14 @@ class LoadViewScope<V : View> @PublishedApi internal constructor() {
     }
 
     /**
+     *  创建加载视图后、隐藏后再次显示、显示期间触发更新，调用[block]
+     */
+    fun onUpdateView(block: OnUpdateView<V>) {
+        checkCompleted()
+        onUpdateView = block
+    }
+
+    /**
      * 显示、隐藏加载视图时，调用[block]
      */
     fun onVisibleChanged(block: OnVisibleChanged<V>) {
@@ -79,7 +88,7 @@ class LoadViewScope<V : View> @PublishedApi internal constructor() {
 
     internal fun getViewItem(): LoadViewItem<V>? {
         if (onCreateView == null) return null
-        return LoadViewItem(this, onCreateView!!, onVisibleChanged)
+        return LoadViewItem(this, onCreateView!!, onUpdateView, onVisibleChanged)
     }
 
     private fun checkCompleted() {
@@ -88,11 +97,13 @@ class LoadViewScope<V : View> @PublishedApi internal constructor() {
 }
 
 typealias OnCreateView<V> = LoadViewScope<out V>.(parent: ViewGroup) -> V
+typealias OnUpdateView<V> = LoadViewScope<out V>.(view: V) -> Unit
 typealias OnVisibleChanged<V> = LoadViewScope<out V>.(view: V, isVisible: Boolean) -> Unit
 
 internal class LoadViewItem<V : View>(
     private val scope: LoadViewScope<V>,
     private val onCreateView: OnCreateView<V>,
+    private val onUpdateView: OnUpdateView<V>?,
     private val onVisibleChanged: OnVisibleChanged<V>?,
     private var view: V? = null
 ) {
@@ -107,6 +118,9 @@ internal class LoadViewItem<V : View>(
         if (isFirstVisible || isVisibleChanged) {
             view.isVisible = isVisible
             onVisibleChanged?.invoke(scope, view, isVisible)
+        }
+        if (isVisible) {
+            onUpdateView?.invoke(scope, view)
         }
     }
 }

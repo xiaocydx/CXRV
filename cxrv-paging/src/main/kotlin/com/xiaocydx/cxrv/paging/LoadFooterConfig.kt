@@ -103,12 +103,40 @@ class LoadFooterConfig @PublishedApi internal constructor() {
      * ```
      * loading<ProgressBar> {
      *     onCreateView { parent -> ProgressBar(parent.context) }
-     *     onVisibleChanged { view, isVisible -> ... }
+     *     onUpdateView { view -> ... }
      * }
      * ```
      */
     inline fun <V : View> loading(block: LoadViewScope<V>.() -> Unit) {
         loadingScope = LoadViewScope<V>().apply(block)
+    }
+
+    /**
+     * 加载完全视图
+     *
+     * ```
+     * fully<TextView> {
+     *     onCreateView { parent -> TextView(parent.context) }
+     *     onUpdateView { view -> ... }
+     * }
+     * ```
+     */
+    inline fun <V : View> fully(block: LoadViewScope<V>.() -> Unit) {
+        fullyScope = LoadViewScope<V>().apply(block)
+    }
+
+    /**
+     * 加载失败视图
+     *
+     * ```
+     * failure<TextView> {
+     *     onCreateView { parent -> TextView(parent.context) }
+     *     onUpdateView { view -> ... }
+     * }
+     * ```
+     */
+    inline fun <V : View> failure(block: LoadViewScope<V>.() -> Unit) {
+        failureScope = LoadViewScope<V>().apply(block)
     }
 
     /**
@@ -130,20 +158,6 @@ class LoadFooterConfig @PublishedApi internal constructor() {
     /**
      * 加载完全视图
      *
-     * ```
-     * fully<TextView> {
-     *     onCreateView { parent -> TextView(parent.context) }
-     *     onVisibleChanged { view, isVisible -> ... }
-     * }
-     * ```
-     */
-    inline fun <V : View> fully(block: LoadViewScope<V>.() -> Unit) {
-        fullyScope = LoadViewScope<V>().apply(block)
-    }
-
-    /**
-     * 加载完全视图
-     *
      * 若[block]为null，则表示不需要加载完全视图。
      * ```
      * fullyView { parent -> TextView(parent.context) }
@@ -155,20 +169,6 @@ class LoadFooterConfig @PublishedApi internal constructor() {
         } else {
             fully<View> { onCreateView(block) }
         }
-    }
-
-    /**
-     * 加载失败视图
-     *
-     * ```
-     * failure<TextView> {
-     *     onCreateView { parent -> TextView(parent.context) }
-     *     onVisibleChanged { view, isVisible -> exception() }
-     * }
-     * ```
-     */
-    inline fun <V : View> failure(block: LoadViewScope<V>.() -> Unit) {
-        failureScope = LoadViewScope<V>().apply(block)
     }
 
     /**
