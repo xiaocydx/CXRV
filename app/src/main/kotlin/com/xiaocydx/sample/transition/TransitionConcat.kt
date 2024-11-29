@@ -12,9 +12,9 @@ import com.xiaocydx.sample.databinding.ItemLoadingBinding
 
 class LoadingAdapter : ViewAdapter<ViewHolder>() {
 
-    fun show() = updateItem(show = true, NeedAnim.NOT_ALL)
+    fun show() = show(anim = false)
 
-    fun hide() = updateItem(show = false, NeedAnim.NOT_ALL)
+    fun hide() = hide(anim = false)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(parent.context)

@@ -155,7 +155,7 @@ internal class LoadFooterAdapter(
     private fun updateLoadFooter(visible: Visible) {
         if (this.visible != visible) {
             this.visible = visible
-            updateItem(show = visible != NONE, anim = NeedAnim.NOT_ALL)
+            showOrHideOrUpdate(show = visible != NONE, anim = false)
         }
     }
 

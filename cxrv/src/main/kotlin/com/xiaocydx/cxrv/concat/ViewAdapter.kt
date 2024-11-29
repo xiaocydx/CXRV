@@ -18,6 +18,7 @@ package com.xiaocydx.cxrv.concat
 
 import androidx.annotation.CallSuper
 import androidx.annotation.VisibleForTesting
+import androidx.core.view.OneShotPreDrawListener
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
@@ -36,13 +37,17 @@ import com.xiaocydx.cxrv.internal.doOnPreDraw
  * @date 2021/10/15
  */
 abstract class ViewAdapter<VH : ViewHolder>(
-    private var currentAsItem: Boolean = false
+    currentAsItem: Boolean = false
 ) : Adapter<VH>(), SpanSizeProvider {
     private val controller = ViewController()
+    private var endAnimationAction: OneShotPreDrawListener? = null
     protected val viewHolder: ViewHolder?
         get() = controller.viewHolder
     protected val recyclerView: RecyclerView?
         get() = controller.recyclerView
+
+    var currentAsItem = currentAsItem
+        private set
 
     final override fun getItemCount(): Int = if (currentAsItem) controller.itemCount else 0
 
@@ -93,7 +98,53 @@ abstract class ViewAdapter<VH : ViewHolder>(
 
     @CallSuper
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        removeEndAnimationAction()
         controller.onDetachedFromRecyclerView(recyclerView)
+    }
+
+    /**
+     * 显示Item，[anim]为`false`表示不需要动画
+     */
+    fun show(anim: Boolean = true) {
+        if (currentAsItem) return
+        currentAsItem = true
+        notifyItemInserted(0)
+        if (!anim) setEndAnimationAction()
+    }
+
+    /**
+     * 隐藏Item，[anim]为`false`表示不需要Item动画
+     */
+    fun hide(anim: Boolean = true) {
+        if (!currentAsItem) return
+        currentAsItem = false
+        notifyItemRemoved(0)
+        if (!anim) setEndAnimationAction()
+    }
+
+    /**
+     * 更新Item，[anim]为`false`表示不需要Item动画
+     */
+    fun update(anim: Boolean = true) {
+        if (!currentAsItem) return
+        if (anim) {
+            notifyItemChanged(0)
+        } else {
+            // 重用controller.viewHolder，默认不执行动画
+            notifyItemChanged(0, false)
+        }
+        removeEndAnimationAction()
+    }
+
+    /**
+     * 显示/隐藏/更新Item，[anim]为`false`表示不需要Item动画
+     */
+    fun showOrHideOrUpdate(show: Boolean, anim: Boolean = true) {
+        when {
+            !show -> hide(anim)
+            !currentAsItem -> show(anim)
+            else -> update(anim)
+        }
     }
 
     /**
@@ -102,37 +153,36 @@ abstract class ViewAdapter<VH : ViewHolder>(
      * @param show 是否显示item，`true`-添加或更新item，`false`-移除item
      * @param anim 支持的动画，详细描述[NeedAnim]
      */
+    @Deprecated(
+        message = "函数命名和函数参数存在歧义，拆分实现",
+        replaceWith = ReplaceWith("showOrHideOrUpdate(show, anim)")
+    )
     fun updateItem(show: Boolean, anim: NeedAnim = NeedAnim.ALL) {
-        val previousAsItem = currentAsItem
-        currentAsItem = show
         when {
-            !previousAsItem && currentAsItem -> when (anim) {
-                NeedAnim.ALL,
-                NeedAnim.NOT_CHANGE -> notifyItemInserted(0)
-                NeedAnim.NOT_ALL -> withoutAnim { notifyItemInserted(0) }
-            }
-            previousAsItem && !currentAsItem -> when (anim) {
-                NeedAnim.ALL,
-                NeedAnim.NOT_CHANGE -> notifyItemRemoved(0)
-                NeedAnim.NOT_ALL -> withoutAnim { notifyItemRemoved(0) }
-            }
-            previousAsItem && currentAsItem -> when (anim) {
-                NeedAnim.ALL -> notifyItemChanged(0)
-                NeedAnim.NOT_CHANGE,
-                NeedAnim.NOT_ALL -> notifyItemChanged(0, anim)
-            }
+            !show -> hide(anim = anim != NeedAnim.NOT_ALL)
+            !currentAsItem -> show(anim = anim != NeedAnim.NOT_ALL)
+            else -> update(anim = anim == NeedAnim.ALL)
         }
     }
 
-    private inline fun withoutAnim(block: () -> Unit) {
-        block()
+    private fun setEndAnimationAction() {
+        removeEndAnimationAction()
         val itemAnimator = recyclerView?.itemAnimator ?: return
-        recyclerView?.doOnPreDraw { controller.viewHolder?.let(itemAnimator::endAnimation) }
+        endAnimationAction = recyclerView?.doOnPreDraw {
+            endAnimationAction = null
+            controller.viewHolder?.let(itemAnimator::endAnimation)
+        }
+    }
+
+    private fun removeEndAnimationAction() {
+        endAnimationAction?.removeListener()
+        endAnimationAction = null
     }
 
     /**
      * 需要Item动画
      */
+    @Deprecated("函数命名和函数参数存在歧义，拆分实现")
     enum class NeedAnim {
         /**
          * 需要全部类型的item动画
