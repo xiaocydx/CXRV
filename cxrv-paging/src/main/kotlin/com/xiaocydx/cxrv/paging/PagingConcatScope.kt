@@ -36,8 +36,8 @@ open class PagingConcatScope {
     private var isNeedFooter = true
     private var loadHeader: ViewAdapter<*>? = null
     private var loadFooter: ViewAdapter<*>? = null
-    private var initHeader: (LoadHeaderConfig.() -> Unit)? = null
-    private var initFooter: (LoadFooterConfig.() -> Unit)? = null
+    private var initHeader: (LoadHeaderConfig.(LoadAdapterHandle) -> Unit)? = null
+    private var initFooter: (LoadFooterConfig.(LoadAdapterHandle) -> Unit)? = null
     private var isCompleted = false
 
     /**
@@ -62,23 +62,23 @@ open class PagingConcatScope {
      *     emptyView { parent -> TextView(parent.context) }
      *     failureView { parent -> TextView(parent.context) }
      *
-     *     // 在显示视图时执行某些操作，可以用以下写法
+     *     // 或者用以下写法
      *     loading<ProgressBar> {
      *         onCreateView { parent -> ProgressBar(parent.context) }
-     *         onVisibleChanged { view, isVisible -> ... }
+     *         onUpdateView { view -> ... }
      *     }
      *     empty<TextView> {
      *         onCreateView { parent -> TextView(parent.context) }
-     *         onVisibleChanged { view, isVisible -> ... }
+     *         onUpdateView { view -> ... }
      *     }
      *     failure<TextView> {
      *         onCreateView { parent -> TextView(parent.context) }
-     *         onVisibleChanged { view, isVisible -> exception() }
+     *         onUpdateView { view -> exception() }
      *     }
      * }
      * ```
      */
-    fun loadHeader(block: LoadHeaderConfig.() -> Unit) {
+    fun loadHeader(block: LoadHeaderConfig.(handle: LoadAdapterHandle) -> Unit) {
         checkCompleted()
         loadHeader = null
         initHeader = block
@@ -107,23 +107,23 @@ open class PagingConcatScope {
      *     fullyView { parent -> TextView(parent.context) }
      *     failureView { parent -> TextView(parent.context) }
      *
-     *     // 在显示视图时执行某些操作，可以用以下写法
+     *     // 或者用以下写法
      *     loading<ProgressBar> {
      *         onCreateView { parent -> ProgressBar(parent.context) }
-     *         onVisibleChanged { view, isVisible -> ... }
+     *         onUpdateView { view -> ... }
      *     }
      *     fully<TextView> {
      *         onCreateView { parent -> TextView(parent.context) }
-     *         onVisibleChanged { view, isVisible -> ... }
+     *         onUpdateView { view -> ... }
      *     }
      *     failure<TextView> {
      *         onCreateView { parent -> TextView(parent.context) }
-     *         onVisibleChanged { view, isVisible -> exception() }
+     *         onUpdateView { view -> exception() }
      *     }
      * }
      * ```
      */
-    fun loadFooter(block: LoadFooterConfig.() -> Unit) {
+    fun loadFooter(block: LoadFooterConfig.(handle: LoadAdapterHandle) -> Unit) {
         checkCompleted()
         loadFooter = null
         initFooter = block
@@ -168,8 +168,9 @@ open class PagingConcatScope {
         if (!withDefault && initHeader == null) {
             return null
         }
-        initHeader?.invoke(config)
-        return LoadHeaderAdapter(config, adapter)
+        var handle: LoadAdapterHandle? = null
+        initHeader?.invoke(config, LoadAdapterHandle { handle?.update() })
+        return LoadHeaderAdapter(config, adapter).also { handle = it.toHandle() }
     }
 
     private fun getLoadFooter(adapter: ListAdapter<*, *>): ViewAdapter<*>? {
@@ -182,8 +183,9 @@ open class PagingConcatScope {
         if (!withDefault && initFooter == null) {
             return null
         }
-        initFooter?.invoke(config)
-        return LoadFooterAdapter(config, adapter)
+        var handle: LoadAdapterHandle? = null
+        initFooter?.invoke(config, LoadAdapterHandle { handle?.update() })
+        return LoadFooterAdapter(config, adapter).also { handle = it.toHandle() }
     }
 
     private fun clear() {
@@ -192,4 +194,8 @@ open class PagingConcatScope {
         initFooter = null
         initHeader = null
     }
+}
+
+fun interface LoadAdapterHandle {
+    fun update()
 }
