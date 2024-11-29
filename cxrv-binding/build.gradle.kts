@@ -12,6 +12,7 @@ android {
 
 dependencies {
     compileOnly(project(":cxrv"))
+    compileOnly(project(":cxrv-paging"))
     implementation(PublishLibs.`androidx-recyclerview`)
     implementation(PublishLibs.coroutines)
     implementation(PublishLibs.`coroutines-android`)
