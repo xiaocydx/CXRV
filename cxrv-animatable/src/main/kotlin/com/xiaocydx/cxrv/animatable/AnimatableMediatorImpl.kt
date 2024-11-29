@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("SpellCheckingInspection", "INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+@file:Suppress("SpellCheckingInspection", "INVISIBLE_REFERENCE", "INVISIBLE_MEMBER", "CANNOT_OVERRIDE_INVISIBLE_MEMBER")
 
 package com.xiaocydx.cxrv.animatable
 
@@ -32,9 +32,7 @@ import com.xiaocydx.cxrv.list.accessEach
  * @date 2022/7/23
  */
 @PublishedApi
-internal class AnimatableMediatorImpl(
-    override val recyclerView: RecyclerView
-) : AnimatableMediator, () -> Unit {
+internal class AnimatableMediatorImpl(override val recyclerView: RecyclerView) : AnimatableMediator {
     private var providers = InlineList<AnimatableProvider>()
     private var controllers = InlineList<AnimatableController>()
     private var preDrawListener: PreDrawListener? = null
@@ -46,21 +44,21 @@ internal class AnimatableMediatorImpl(
         }
 
     fun attach(): Disposable {
-        preDrawListener = PreDrawListener(recyclerView, action = this)
-        isDisposed = false
-        return this
-    }
-
-    // checkOnPreDraw()
-    override fun invoke() {
-        if (!canStartAnimatable) {
-            stopAllAnimatable()
-        } else {
-            val childCount = recyclerView.childCount
-            for (index in 0 until childCount) {
-                stopAnimatableOnPreDraw(recyclerView.getChildAt(index))
+        preDrawListener = object : PreDrawListener(recyclerView) {
+            override fun onPreDraw(): Boolean {
+                if (!canStartAnimatable) {
+                    stopAllAnimatable()
+                } else {
+                    val childCount = recyclerView.childCount
+                    for (index in 0 until childCount) {
+                        stopAnimatableOnPreDraw(recyclerView.getChildAt(index))
+                    }
+                }
+                return super.onPreDraw()
             }
         }
+        isDisposed = false
+        return this
     }
 
     override fun startAllAnimatable() {
