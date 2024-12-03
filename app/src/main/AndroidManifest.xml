@@ -40,7 +40,7 @@
             android:name=".concat.HeaderFooterActivity"
             android:exported="false" />
         <activity
-            android:name=".liststate.ListStateActivity"
+            android:name=".list.MutableStateListActivity"
             android:exported="false" />
         <activity
             android:name=".paging.article.ArticleListActivity"

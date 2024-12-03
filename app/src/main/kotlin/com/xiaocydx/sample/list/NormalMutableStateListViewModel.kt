@@ -1,7 +1,6 @@
-package com.xiaocydx.sample.liststate
+package com.xiaocydx.sample.list
 
 import androidx.lifecycle.ViewModel
-import com.xiaocydx.cxrv.list.ListState
 import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.list.asStateFlow
 import com.xiaocydx.sample.common.Foo
@@ -11,10 +10,7 @@ import com.xiaocydx.sample.common.FooType
  * @author xcc
  * @date 2023/8/17
  */
-class NormalListStateViewModel : ViewModel() {
-    /**
-     * [ListState]降级为内部实现，[MutableStateList]替代[ListState]
-     */
+class NormalMutableStateListViewModel : ViewModel() {
     private val list = MutableStateList<Foo>()
 
     init {

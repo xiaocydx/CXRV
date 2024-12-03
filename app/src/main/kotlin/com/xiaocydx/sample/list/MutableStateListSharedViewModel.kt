@@ -1,4 +1,4 @@
-package com.xiaocydx.sample.liststate
+package com.xiaocydx.sample.list
 
 import androidx.lifecycle.ViewModel
 import com.xiaocydx.sample.common.Menu
@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asSharedFlow
  * @author xcc
  * @date 2023/8/17
  */
-class ListStateSharedViewModel : ViewModel() {
+class MutableStateListSharedViewModel : ViewModel() {
     private val _menuAction = MutableSharedFlow<MenuAction>(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
