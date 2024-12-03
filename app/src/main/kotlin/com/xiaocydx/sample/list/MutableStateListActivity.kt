@@ -13,8 +13,8 @@ import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.initMenuList
 import com.xiaocydx.sample.databinding.MenuContainerBinding
-import com.xiaocydx.sample.list.MenuAction.NORMAL
-import com.xiaocydx.sample.list.MenuAction.PAGING
+import com.xiaocydx.sample.list.MenuAction.Normal
+import com.xiaocydx.sample.list.MenuAction.Paging
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.onEach
  * [MutableStateList]示例代码
  *
  * [MutableStateList]可用于普通列表和分页列表两种场景，
- * [MutableStateListFragment]展示了普通列表场景，
+ * [NormalMutableStateListFragment]展示了普通列表场景，
  * [PagingMutableStateListFragment]展示了分页列表场景。
  *
  * @author xcc
@@ -34,7 +34,7 @@ class MutableStateListActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(contentView())
-        if (savedInstanceState == null) replace<MutableStateListFragment>()
+        if (savedInstanceState == null) replace<NormalMutableStateListFragment>()
     }
 
     private fun contentView() = MenuContainerBinding
@@ -50,8 +50,8 @@ class MutableStateListActivity : AppCompatActivity() {
 
     private fun performMenuAction(action: MenuAction) {
         when (action) {
-            NORMAL -> replace<MutableStateListFragment>()
-            PAGING -> replace<PagingMutableStateListFragment>()
+            Normal -> replace<NormalMutableStateListFragment>()
+            Paging -> replace<PagingMutableStateListFragment>()
             else -> {}
         }
         sharedViewModel.submitMenuAction(action)

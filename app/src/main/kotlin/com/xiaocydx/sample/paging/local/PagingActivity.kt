@@ -15,9 +15,9 @@ import com.xiaocydx.insets.systembar.systemBarController
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.initMenuList
 import com.xiaocydx.sample.databinding.MenuContainerBinding
-import com.xiaocydx.sample.paging.local.MenuAction.GIRD
-import com.xiaocydx.sample.paging.local.MenuAction.LINEAR
-import com.xiaocydx.sample.paging.local.MenuAction.STAGGERED
+import com.xiaocydx.sample.paging.local.MenuAction.Gird
+import com.xiaocydx.sample.paging.local.MenuAction.Linear
+import com.xiaocydx.sample.paging.local.MenuAction.Staggered
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -55,9 +55,9 @@ class PagingActivity : AppCompatActivity(), SystemBar {
 
     private fun performMenuAction(action: MenuAction) {
         when (action) {
-            LINEAR -> replace<LinearPagingFragment>()
-            GIRD -> replace<GridPagingFragment>()
-            STAGGERED -> replace<StaggeredPagingFragment>()
+            Linear -> replace<LinearPagingFragment>()
+            Gird -> replace<GridPagingFragment>()
+            Staggered -> replace<StaggeredPagingFragment>()
             else -> {}
         }
         sharedViewModel.submitMenuAction(action)

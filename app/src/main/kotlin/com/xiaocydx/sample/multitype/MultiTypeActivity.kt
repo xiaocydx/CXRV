@@ -16,7 +16,7 @@ import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.Action
 import com.xiaocydx.sample.common.initActionList
 import com.xiaocydx.sample.databinding.ActionContainerBinding
-import com.xiaocydx.sample.multitype.MultiTypeActivity.MultiTypeAction.ONE_TO_ONE
+import com.xiaocydx.sample.multitype.MultiTypeActivity.MultiTypeAction.OneToOne
 import com.xiaocydx.sample.multitype.onetomany.OneToManyFragment
 import com.xiaocydx.sample.multitype.onetoone.OneToOneFragment
 import kotlin.reflect.KClass
@@ -33,7 +33,7 @@ class MultiTypeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(contentView())
         if (savedInstanceState == null) {
-            performMultiTypeAction(ONE_TO_ONE, show = false)
+            performMultiTypeAction(OneToOne, show = false)
         }
     }
 
@@ -55,7 +55,7 @@ class MultiTypeActivity : AppCompatActivity() {
         override val text: String,
         val clazz: KClass<out Fragment>
     ) : Action {
-        ONE_TO_ONE("OneToOne多类型", OneToOneFragment::class),
-        ONE_TO_MANY("OneToMany多类型", OneToManyFragment::class)
+        OneToOne("OneToOne多类型", OneToOneFragment::class),
+        OneToMany("OneToMany多类型", OneToManyFragment::class)
     }
 }

@@ -22,12 +22,12 @@ import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.sample.common.Foo
 import com.xiaocydx.sample.common.FooType
-import com.xiaocydx.sample.divider.MenuAction.DECREASE_SPAN_COUNT
-import com.xiaocydx.sample.divider.MenuAction.INCREASE_SPAN_COUNT
-import com.xiaocydx.sample.divider.MenuAction.INSERT_ITEM
-import com.xiaocydx.sample.divider.MenuAction.REMOVE_ITEM
-import com.xiaocydx.sample.divider.MenuAction.REVERSE_LAYOUT
-import com.xiaocydx.sample.divider.MenuAction.REVERSE_ORIENTATION
+import com.xiaocydx.sample.divider.MenuAction.DecreaseSpanCount
+import com.xiaocydx.sample.divider.MenuAction.IncreaseSpanCount
+import com.xiaocydx.sample.divider.MenuAction.InsertItem
+import com.xiaocydx.sample.divider.MenuAction.RemoveItem
+import com.xiaocydx.sample.divider.MenuAction.ReverseLayout
+import com.xiaocydx.sample.divider.MenuAction.ReverseOrientation
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -64,12 +64,12 @@ abstract class DividerFragment : Fragment() {
     private fun initCollect() {
         sharedViewModel.menuAction.onEach { action ->
             when (action) {
-                REVERSE_LAYOUT -> reverseLayout()
-                REVERSE_ORIENTATION -> reverseOrientation()
-                INCREASE_SPAN_COUNT -> increaseSpanCount()
-                DECREASE_SPAN_COUNT -> decreaseSpanCount()
-                INSERT_ITEM -> insertItem()
-                REMOVE_ITEM -> removeItem()
+                ReverseLayout -> reverseLayout()
+                ReverseOrientation -> reverseOrientation()
+                IncreaseSpanCount -> increaseSpanCount()
+                DecreaseSpanCount -> decreaseSpanCount()
+                InsertItem -> insertItem()
+                RemoveItem -> removeItem()
                 else -> return@onEach
             }
         }.launchIn(viewLifecycleScope)

@@ -28,6 +28,10 @@ import com.xiaocydx.sample.common.Action
 import com.xiaocydx.sample.common.Foo
 import com.xiaocydx.sample.common.FooListAdapter
 import com.xiaocydx.sample.common.initActionList
+import com.xiaocydx.sample.concat.HeaderFooterActivity.HeaderFooterAction.AddFooter
+import com.xiaocydx.sample.concat.HeaderFooterActivity.HeaderFooterAction.AddHeader
+import com.xiaocydx.sample.concat.HeaderFooterActivity.HeaderFooterAction.RemoveFooter
+import com.xiaocydx.sample.concat.HeaderFooterActivity.HeaderFooterAction.RemoveHeader
 import com.xiaocydx.sample.databinding.ActionContentBinding
 
 /**
@@ -71,10 +75,10 @@ class HeaderFooterActivity : AppCompatActivity() {
 
     private fun performHeaderFooterAction(action: HeaderFooterAction) {
         when (action) {
-            HeaderFooterAction.ADD_HEADER -> rvContent.addHeader(header)
-            HeaderFooterAction.REMOVE_HEADER -> rvContent.removeHeader(header)?.let { checkRemoved(it) }
-            HeaderFooterAction.ADD_FOOTER -> rvContent.addFooter(footer)
-            HeaderFooterAction.REMOVE_FOOTER -> rvContent.removeFooter(footer)?.let { checkRemoved(it) }
+            AddHeader -> rvContent.addHeader(header)
+            RemoveHeader -> rvContent.removeHeader(header)?.let { checkRemoved(it) }
+            AddFooter -> rvContent.addFooter(footer)
+            RemoveFooter -> rvContent.removeFooter(footer)?.let { checkRemoved(it) }
         }
     }
 
@@ -104,9 +108,9 @@ class HeaderFooterActivity : AppCompatActivity() {
     private fun createFoo(id: Int): Foo = Foo(id = id.toString(), name = "Foo-$id", num = id)
 
     private enum class HeaderFooterAction(override val text: String) : Action {
-        ADD_HEADER("添加Header"),
-        REMOVE_HEADER("移除Header"),
-        ADD_FOOTER("添加Footer"),
-        REMOVE_FOOTER("移除Footer")
+        AddHeader("添加Header"),
+        RemoveHeader("移除Header"),
+        AddFooter("添加Footer"),
+        RemoveFooter("移除Footer")
     }
 }

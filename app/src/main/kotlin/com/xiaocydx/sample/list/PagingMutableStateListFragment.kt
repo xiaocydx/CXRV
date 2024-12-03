@@ -29,12 +29,12 @@ import com.xiaocydx.cxrv.paging.pagingCollector
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.FooListAdapter
 import com.xiaocydx.sample.databinding.FragmentMutableStateListBinding
-import com.xiaocydx.sample.list.MenuAction.CLEAR_ALL
-import com.xiaocydx.sample.list.MenuAction.CLEAR_EVEN
-import com.xiaocydx.sample.list.MenuAction.CLEAR_ODD
-import com.xiaocydx.sample.list.MenuAction.INSERT_ITEM
-import com.xiaocydx.sample.list.MenuAction.REFRESH
-import com.xiaocydx.sample.list.MenuAction.REMOVE_ITEM
+import com.xiaocydx.sample.list.MenuAction.ClearAll
+import com.xiaocydx.sample.list.MenuAction.ClearEven
+import com.xiaocydx.sample.list.MenuAction.ClearOdd
+import com.xiaocydx.sample.list.MenuAction.InsertItem
+import com.xiaocydx.sample.list.MenuAction.Refresh
+import com.xiaocydx.sample.list.MenuAction.RemoveItem
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -90,12 +90,12 @@ class PagingMutableStateListFragment : Fragment(R.layout.fragment_mutable_state_
 
         sharedViewModel.menuAction.onEach { action ->
             when (action) {
-                REFRESH -> pagingViewModel.refresh()
-                INSERT_ITEM -> pagingViewModel.insertItem()
-                REMOVE_ITEM -> pagingViewModel.removeItem()
-                CLEAR_ODD -> pagingViewModel.clearOdd()
-                CLEAR_EVEN -> pagingViewModel.clearEven()
-                CLEAR_ALL -> pagingViewModel.clearAll()
+                Refresh -> pagingViewModel.refresh()
+                InsertItem -> pagingViewModel.insertItem()
+                RemoveItem -> pagingViewModel.removeItem()
+                ClearOdd -> pagingViewModel.clearOdd()
+                ClearEven -> pagingViewModel.clearEven()
+                ClearAll -> pagingViewModel.clearAll()
                 else -> return@onEach
             }
         }.launchIn(viewLifecycleScope)

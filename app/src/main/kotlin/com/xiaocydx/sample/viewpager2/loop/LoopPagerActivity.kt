@@ -21,6 +21,12 @@ import com.xiaocydx.cxrv.viewpager2.loop.setPageTransformer
 import com.xiaocydx.sample.common.Action
 import com.xiaocydx.sample.common.initActionList
 import com.xiaocydx.sample.databinding.ActivityLoopPagerBinding
+import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity.LoopPagerAction.Append
+import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity.LoopPagerAction.CancelBanner
+import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity.LoopPagerAction.LaunchBanner
+import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity.LoopPagerAction.Refresh
+import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity.LoopPagerAction.Scroll
+import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity.LoopPagerAction.SmoothScroll
 import kotlinx.coroutines.Job
 
 /**
@@ -85,28 +91,28 @@ class LoopPagerActivity : AppCompatActivity() {
         val position = 0
         val timeMillis = 1000L
         val text = when (action) {
-            LoopPagerAction.REFRESH -> {
+            Refresh -> {
                 viewModel.refresh(timeMillis)
                 "${timeMillis / 1000}s后刷新"
             }
-            LoopPagerAction.APPEND -> {
+            Append -> {
                 viewModel.append(timeMillis)
                 "${timeMillis / 1000}s后添加"
             }
-            LoopPagerAction.SCROLL -> {
+            Scroll -> {
                 controller.scrollToPosition(position)
                 "非平滑滚动至\nbindingAdapterPosition = $position"
             }
-            LoopPagerAction.SMOOTH_SCROLL -> {
+            SmoothScroll -> {
                 controller.smoothScrollToPosition(position, LookupDirection.START)
                 "平滑滚动至\nbindingAdapterPosition = $position"
             }
-            LoopPagerAction.LAUNCH_BANNER -> {
+            LaunchBanner -> {
                 bannerJob?.cancel()
                 bannerJob = controller.launchBanner(adapter, lifecycle, durationMs = 500)
                 "启动Banner轮播交互"
             }
-            LoopPagerAction.CANCEL_BANNER -> {
+            CancelBanner -> {
                 bannerJob?.cancel()
                 bannerJob = null
                 "取消Banner轮播交互"
@@ -115,12 +121,14 @@ class LoopPagerActivity : AppCompatActivity() {
         window.snackbar().setText(text).show()
     }
 
-    private enum class LoopPagerAction(override val text: String) : Action {
-        REFRESH("Refresh"),
-        APPEND("Append"),
-        SCROLL("Scroll"),
-        SMOOTH_SCROLL("SmoothScroll"),
-        LAUNCH_BANNER("LaunchBanner"),
-        CANCEL_BANNER("CancelBanner")
+    private enum class LoopPagerAction : Action {
+        Refresh,
+        Append,
+        Scroll,
+        SmoothScroll,
+        LaunchBanner,
+        CancelBanner;
+
+        override val text = name
     }
 }

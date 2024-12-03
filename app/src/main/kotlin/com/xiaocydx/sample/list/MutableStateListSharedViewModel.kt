@@ -24,12 +24,12 @@ class MutableStateListSharedViewModel : ViewModel() {
 }
 
 enum class MenuAction(override val text: String): Menu {
-    NORMAL("普通列表"),
-    PAGING("分页列表"),
-    REFRESH("刷新"),
-    INSERT_ITEM("插入Item"),
-    REMOVE_ITEM("移除Item"),
-    CLEAR_ODD("清除奇数Item"),
-    CLEAR_EVEN("清除偶数Item"),
-    CLEAR_ALL("清除全部Item")
+    Normal("普通列表"),
+    Paging("分页列表"),
+    Refresh("刷新"),
+    InsertItem("插入Item"),
+    RemoveItem("移除Item"),
+    ClearOdd("清除奇数Item"),
+    ClearEven("清除偶数Item"),
+    ClearAll("清除全部Item")
 }

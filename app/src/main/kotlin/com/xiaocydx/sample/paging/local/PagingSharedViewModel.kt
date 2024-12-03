@@ -32,12 +32,12 @@ class PagingSharedViewModel : ViewModel() {
 }
 
 enum class MenuAction(override val text: String): Menu {
-    LINEAR("Linear"),
-    GIRD("Grid"),
-    STAGGERED("Staggered"),
-    REFRESH("刷新"),
-    REVERSE("反转布局"),
-    INSERT_ITEM("插入Item"),
-    REMOVE_ITEM("移除Item"),
-    CLEAR_ALL("清除全部Item")
+    Linear("Linear"),
+    Gird("Grid"),
+    Staggered("Staggered"),
+    Refresh("刷新"),
+    Reverse("反转布局"),
+    InsertItem("插入Item"),
+    RemoveItem("移除Item"),
+    ClearAll("清除全部Item")
 }

@@ -79,14 +79,13 @@ class EnterTransitionActivity : AppCompatActivity() {
         )
     }
 
-    private enum class TransitionAction(
-        override val text: String,
-        val clazz: KClass<out Fragment>
-    ) : Action {
-        JANK("Jank", JankFragment::class),
-        PREPARE("Prepare", PrepareFragment::class),
-        WAIT_END("WaitEnd", WaitEndFragment::class),
-        NOT_WAIT_END(" NotWaitEnd", NotWaitEndFragment::class)
+    private enum class TransitionAction(val clazz: KClass<out Fragment>) : Action {
+        Jank(JankFragment::class),
+        Prepare(PrepareFragment::class),
+        WaitEnd(WaitEndFragment::class),
+        NotWaitEnd(NotWaitEndFragment::class);
+
+        override val text = name
     }
 
     private companion object {

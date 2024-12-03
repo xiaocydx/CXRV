@@ -27,12 +27,12 @@ import com.xiaocydx.cxrv.list.removeItem
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.FooListAdapter
 import com.xiaocydx.sample.databinding.FragmentMutableStateListBinding
-import com.xiaocydx.sample.list.MenuAction.CLEAR_ALL
-import com.xiaocydx.sample.list.MenuAction.CLEAR_EVEN
-import com.xiaocydx.sample.list.MenuAction.CLEAR_ODD
-import com.xiaocydx.sample.list.MenuAction.INSERT_ITEM
-import com.xiaocydx.sample.list.MenuAction.REFRESH
-import com.xiaocydx.sample.list.MenuAction.REMOVE_ITEM
+import com.xiaocydx.sample.list.MenuAction.ClearAll
+import com.xiaocydx.sample.list.MenuAction.ClearEven
+import com.xiaocydx.sample.list.MenuAction.ClearOdd
+import com.xiaocydx.sample.list.MenuAction.InsertItem
+import com.xiaocydx.sample.list.MenuAction.Refresh
+import com.xiaocydx.sample.list.MenuAction.RemoveItem
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -52,7 +52,7 @@ import kotlinx.coroutines.flow.onEach
  * @author xcc
  * @date 2023/8/17
  */
-class MutableStateListFragment : Fragment(R.layout.fragment_mutable_state_list) {
+class NormalMutableStateListFragment : Fragment(R.layout.fragment_mutable_state_list) {
     private val sharedViewModel: MutableStateListSharedViewModel by activityViewModels()
     private val normalViewModel: NormalMutableStateListViewModel by viewModels()
     private val fooAdapter1 = FooListAdapter()
@@ -88,12 +88,12 @@ class MutableStateListFragment : Fragment(R.layout.fragment_mutable_state_list) 
 
         sharedViewModel.menuAction.onEach { action ->
             when (action) {
-                REFRESH -> normalViewModel.refresh()
-                INSERT_ITEM -> normalViewModel.insertItem()
-                REMOVE_ITEM -> normalViewModel.removeItem()
-                CLEAR_ODD -> normalViewModel.clearOdd()
-                CLEAR_EVEN -> normalViewModel.clearEven()
-                CLEAR_ALL -> normalViewModel.clearAll()
+                Refresh -> normalViewModel.refresh()
+                InsertItem -> normalViewModel.insertItem()
+                RemoveItem -> normalViewModel.removeItem()
+                ClearOdd -> normalViewModel.clearOdd()
+                ClearEven -> normalViewModel.clearEven()
+                ClearAll -> normalViewModel.clearAll()
                 else -> return@onEach
             }
         }.launchIn(viewLifecycleScope)

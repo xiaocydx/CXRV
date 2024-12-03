@@ -15,10 +15,10 @@ import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.initMenuList
 import com.xiaocydx.sample.databinding.MenuContainerBinding
-import com.xiaocydx.sample.divider.MenuAction.CONCAT
-import com.xiaocydx.sample.divider.MenuAction.GIRD
-import com.xiaocydx.sample.divider.MenuAction.LINEAR
-import com.xiaocydx.sample.divider.MenuAction.STAGGERED
+import com.xiaocydx.sample.divider.MenuAction.Concat
+import com.xiaocydx.sample.divider.MenuAction.Gird
+import com.xiaocydx.sample.divider.MenuAction.Linear
+import com.xiaocydx.sample.divider.MenuAction.Staggered
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -54,10 +54,10 @@ class DividerActivity : AppCompatActivity() {
 
     private fun performMenuAction(action: MenuAction) {
         when (action) {
-            LINEAR -> replace<LinearDividerFragment>()
-            GIRD -> replace<GridDividerFragment>()
-            STAGGERED -> replace<StaggeredDividerFragment>()
-            CONCAT -> replace<ConcatDividerFragment>()
+            Linear -> replace<LinearDividerFragment>()
+            Gird -> replace<GridDividerFragment>()
+            Staggered -> replace<StaggeredDividerFragment>()
+            Concat -> replace<ConcatDividerFragment>()
             else -> {}
         }
         sharedViewModel.submitMenuAction(action)

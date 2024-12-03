@@ -16,7 +16,7 @@ import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.Action
 import com.xiaocydx.sample.common.initActionList
 import com.xiaocydx.sample.databinding.ActionContainerBinding
-import com.xiaocydx.sample.itemselect.ItemSelectActivity.ItemSelectAction.SINGLE
+import com.xiaocydx.sample.itemselect.ItemSelectActivity.ItemSelectAction.Single
 import kotlin.reflect.KClass
 
 /**
@@ -31,7 +31,7 @@ class ItemSelectActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(contentView())
         if (savedInstanceState == null) {
-            performItemSelectAction(SINGLE, show = false)
+            performItemSelectAction(Single, show = false)
         }
     }
 
@@ -53,7 +53,7 @@ class ItemSelectActivity : AppCompatActivity() {
         override val text: String,
         val clazz: KClass<out Fragment>
     ) : Action {
-        SINGLE("单项选择", SingleSelectionFragment::class),
-        MULTI("多项选择", MultiSelectionFragment::class)
+        Single("单项选择", SingleSelectionFragment::class),
+        Multi("多项选择", MultiSelectionFragment::class)
     }
 }

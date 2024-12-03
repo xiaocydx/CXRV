@@ -19,11 +19,11 @@ import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.insets.insets
 import com.xiaocydx.sample.common.FooListAdapter
 import com.xiaocydx.sample.common.FooListViewModel
-import com.xiaocydx.sample.paging.local.MenuAction.CLEAR_ALL
-import com.xiaocydx.sample.paging.local.MenuAction.INSERT_ITEM
-import com.xiaocydx.sample.paging.local.MenuAction.REFRESH
-import com.xiaocydx.sample.paging.local.MenuAction.REMOVE_ITEM
-import com.xiaocydx.sample.paging.local.MenuAction.REVERSE
+import com.xiaocydx.sample.paging.local.MenuAction.ClearAll
+import com.xiaocydx.sample.paging.local.MenuAction.InsertItem
+import com.xiaocydx.sample.paging.local.MenuAction.Refresh
+import com.xiaocydx.sample.paging.local.MenuAction.RemoveItem
+import com.xiaocydx.sample.paging.local.MenuAction.Reverse
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -65,11 +65,11 @@ abstract class PagingFragment : Fragment() {
     protected open fun initCollect() {
         sharedViewModel.menuAction.onEach { action ->
             when (action) {
-                REFRESH -> fooViewModel.refresh()
-                REVERSE -> reverseLayout()
-                INSERT_ITEM -> fooViewModel.insertItem()
-                REMOVE_ITEM -> fooViewModel.removeItem()
-                CLEAR_ALL -> fooViewModel.clearAll()
+                Refresh -> fooViewModel.refresh()
+                Reverse -> reverseLayout()
+                InsertItem -> fooViewModel.insertItem()
+                RemoveItem -> fooViewModel.removeItem()
+                ClearAll -> fooViewModel.clearAll()
                 else -> return@onEach
             }
         }.launchIn(viewLifecycleScope)

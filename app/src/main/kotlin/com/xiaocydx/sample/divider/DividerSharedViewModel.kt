@@ -23,15 +23,15 @@ class DividerSharedViewModel : ViewModel() {
     }
 }
 
-enum class MenuAction(override val text: String): Menu {
-    LINEAR("Linear"),
-    GIRD("Grid"),
-    STAGGERED("Staggered"),
-    CONCAT("Concat"),
-    REVERSE_LAYOUT("反转布局"),
-    REVERSE_ORIENTATION("反转方向"),
-    INCREASE_SPAN_COUNT("增加SpanCount"),
-    DECREASE_SPAN_COUNT("减少SpanCount"),
-    INSERT_ITEM("插入Item"),
-    REMOVE_ITEM("移除Item")
+enum class MenuAction(override val text: String) : Menu {
+    Linear("Linear"),
+    Gird("Grid"),
+    Staggered("Staggered"),
+    Concat("Concat"),
+    ReverseLayout("反转布局"),
+    ReverseOrientation("反转方向"),
+    IncreaseSpanCount("增加SpanCount"),
+    DecreaseSpanCount("减少SpanCount"),
+    InsertItem("插入Item"),
+    RemoveItem("移除Item")
 }
