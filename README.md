@@ -1,18 +1,24 @@
 CXRV是一个基于RecyclerView 1.2.0，提供常用功能的库，全称是Coroutines and Extensions for RecyclerView
 <br><br>
-[CXRV（一）概述](https://www.yuque.com/u12192380/khwdgb/fe9gsu)
+[CXRV - 概述](https://www.yuque.com/u12192380/khwdgb/fe9gsu)
 
-[CXRV（二）ListAdapter](https://www.yuque.com/u12192380/khwdgb/rpbw6f)
+[CXRV - ListAdapter](https://www.yuque.com/u12192380/khwdgb/rpbw6f)
 
-[CXRV（三）ViewTypeDelegate](https://www.yuque.com/u12192380/khwdgb/qkpmiu)
+[CXRV - ViewTypeDelegate](https://www.yuque.com/u12192380/khwdgb/qkpmiu)
 
-[CXRV（四）扩展](https://www.yuque.com/u12192380/khwdgb/kcxn6o)
+[CXRV - MutableStateList](https://www.yuque.com/u12192380/khwdgb/uvgw43)
 
-[CXRV（五）ListState](https://www.yuque.com/u12192380/khwdgb/uvgw43)
+[CXRV - Extensions](https://www.yuque.com/u12192380/khwdgb/kcxn6o)
 
-[CXRV（六）分页组件](https://www.yuque.com/u12192380/khwdgb/gh9sbc)
+[CXRV - cxrv-binding](https://www.yuque.com/u12192380/zl0316/xp5scx5w0ruldfit)
 
-[CXRV（七）常见问题](https://www.yuque.com/u12192380/khwdgb/davrngc6pginrq2w)
+[CXRV - cxrv-paging](https://www.yuque.com/u12192380/khwdgb/gh9sbc)
+
+[CXRV - cxrv-animatable](https://www.yuque.com/u12192380/zl0316/wa169ok4b4ueaian)
+
+[CXRV - cxrv-viewpager2](https://www.yuque.com/u12192380/zl0316/hvqgw0vmdvl7ipgb)
+
+[CXRV - 常见问题](https://www.yuque.com/u12192380/khwdgb/davrngc6pginrq2w)
 <br><br>
 1. 在根目录的settings.gradle添加
 ```
