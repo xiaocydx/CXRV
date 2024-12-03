@@ -8,7 +8,7 @@ import androidx.fragment.app.commit
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.accompanist.transition.EnterTransitionController
-import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
+import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.Action
@@ -52,8 +52,8 @@ class EnterTransitionActivity : AppCompatActivity() {
 
     private fun contentView() = ActionContainerBinding
         .inflate(layoutInflater).initActionList {
-            submitList(TransitionAction.values().toList())
-            doOnSimpleItemClick(::performTransitionAction)
+            submitList(TransitionAction.entries.toList())
+            doOnItemClick(action = ::performTransitionAction)
         }.root
 
     private fun performTransitionAction(action: TransitionAction) {

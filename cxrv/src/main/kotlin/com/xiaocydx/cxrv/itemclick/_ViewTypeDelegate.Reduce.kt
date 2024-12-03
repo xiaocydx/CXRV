@@ -22,9 +22,7 @@ import android.view.View.OnLongClickListener
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.list.Disposable
-import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.list.getItemOrNull
-import com.xiaocydx.cxrv.list.repeatOnAttach
+import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 
 /**
  * 若触发了[target]的点击，则调用[action]
@@ -35,15 +33,11 @@ import com.xiaocydx.cxrv.list.repeatOnAttach
  * @param intervalMs 执行[action]的间隔时间
  * @param target     需要触发点击的目标视图，若返回`null`则表示不触发点击
  */
-inline fun <ITEM : Any, VH : ViewHolder> ListAdapter<out ITEM, out VH>.doOnItemClick(
+inline fun <ITEM : Any, VH : ViewHolder> ViewTypeDelegate<out ITEM, out VH>.doOnItemClick(
     intervalMs: Long = NO_INTERVAL,
     crossinline target: VH.() -> View? = { itemView },
-    crossinline action: (holder: VH, item: ITEM) -> Unit
-): Disposable = repeatOnAttach { rv ->
-    rv.doOnItemClick(adapter = this, intervalMs, target) { holder, position ->
-        getItemOrNull(position)?.let { action(holder, it) }
-    }
-}
+    crossinline action: (item: ITEM) -> Unit
+): Disposable = doOnItemClick(intervalMs, target) { _, item -> action(item) }
 
 /**
  * 若触发了[target]的长按，则调用[action]
@@ -54,11 +48,7 @@ inline fun <ITEM : Any, VH : ViewHolder> ListAdapter<out ITEM, out VH>.doOnItemC
  *
  * @param target 需要触发点击的目标视图，若返回`null`则表示不触发长按
  */
-inline fun <ITEM : Any, VH : ViewHolder> ListAdapter<out ITEM, out VH>.doOnLongItemClick(
+inline fun <ITEM : Any, VH : ViewHolder> ViewTypeDelegate<out ITEM, out VH>.doOnLongItemClick(
     crossinline target: VH.() -> View? = { itemView },
-    crossinline action: (holder: VH, item: ITEM) -> Boolean
-): Disposable = repeatOnAttach { rv ->
-    rv.doOnLongItemClick(adapter = this, target) { holder, position ->
-        getItemOrNull(position)?.let { action(holder, it) } ?: false
-    }
-}
+    crossinline action: (item: ITEM) -> Boolean
+): Disposable = doOnLongItemClick(target) { _, item -> action(item) }

@@ -3,7 +3,10 @@ package com.xiaocydx.sample.payload
 import android.annotation.SuppressLint
 import com.xiaocydx.cxrv.binding.BindingAdapter
 import com.xiaocydx.cxrv.binding.Inflate
-import com.xiaocydx.cxrv.payload.*
+import com.xiaocydx.cxrv.payload.Payload
+import com.xiaocydx.cxrv.payload.ifNotEquals
+import com.xiaocydx.cxrv.payload.takeOrEmpty
+import com.xiaocydx.cxrv.payload.value
 import com.xiaocydx.sample.databinding.ItemCountBinding
 
 /**

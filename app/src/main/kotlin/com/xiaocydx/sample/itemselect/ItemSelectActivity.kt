@@ -8,7 +8,7 @@ import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.accompanist.view.wrapContent
-import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
+import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.doOnAttach
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.list.submitList
@@ -37,8 +37,8 @@ class ItemSelectActivity : AppCompatActivity() {
 
     private fun contentView() = ActionContainerBinding
         .inflate(layoutInflater).initActionList {
-            submitList(ItemSelectAction.values().toList())
-            doOnSimpleItemClick(::performItemSelectAction)
+            submitList(ItemSelectAction.entries.toList())
+            doOnItemClick(action = ::performItemSelectAction)
             doOnAttach { rv -> rv.grid(spanCount = 2) }
             onCreateView { root.layoutParams(matchParent, wrapContent) }
         }.root

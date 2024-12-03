@@ -18,7 +18,7 @@ import com.xiaocydx.cxrv.concat.addHeader
 import com.xiaocydx.cxrv.concat.removeFooter
 import com.xiaocydx.cxrv.concat.removeHeader
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
+import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.doOnAttach
 import com.xiaocydx.cxrv.list.grid
@@ -62,8 +62,8 @@ class HeaderFooterActivity : AppCompatActivity() {
             this@HeaderFooterActivity.rvContent = rvContent
 
             rvAction.initActionList {
-                submitList(HeaderFooterAction.values().toList())
-                doOnSimpleItemClick(::performHeaderFooterAction)
+                submitList(HeaderFooterAction.entries.toList())
+                doOnItemClick(action = ::performHeaderFooterAction)
                 doOnAttach { rv -> rv.grid(spanCount = 2) }
                 onCreateView { root.layoutParams(matchParent, wrapContent) }
             }

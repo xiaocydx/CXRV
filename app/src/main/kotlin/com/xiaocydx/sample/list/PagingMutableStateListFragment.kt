@@ -15,7 +15,7 @@ import com.xiaocydx.accompanist.paging.withPaging
 import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
+import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.ListOwner
 import com.xiaocydx.cxrv.list.MutableStateList
@@ -67,13 +67,13 @@ class PagingMutableStateListFragment : Fragment(R.layout.fragment_mutable_state_
     @SuppressLint("SetTextI18n")
     private fun FragmentMutableStateListBinding.initView() = apply {
         tvFoo1.text = "PagingList-1"
-        fooAdapter1.doOnSimpleItemClick(fooAdapter1::removeItem)
+        fooAdapter1.doOnItemClick(action = fooAdapter1::removeItem)
         rvFoo1.linear().adapter(fooAdapter1.withPaging())
             .divider { size(5.dp).edge(Edge.all()).color(0xFF979EC4.toInt()) }
             .replaceWithSwipeRefresh(fooAdapter1)
 
         tvFoo2.text = "PagingList-2"
-        fooAdapter2.doOnSimpleItemClick(fooAdapter2::removeItem)
+        fooAdapter2.doOnItemClick(action = fooAdapter2::removeItem)
         rvFoo2.grid(spanCount = 2).adapter(fooAdapter2.withPaging())
             .divider { size(5.dp).edge(Edge.all()).color(0xFF979EC4.toInt()) }
             .replaceWithSwipeRefresh(fooAdapter2)

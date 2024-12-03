@@ -7,7 +7,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import com.xiaocydx.accompanist.view.snackbar
-import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
+import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
@@ -44,8 +44,8 @@ class PagingActivity : AppCompatActivity(), SystemBar {
 
     private fun contentView() = MenuContainerBinding
         .inflate(layoutInflater).initMenuList {
-            submitList(MenuAction.values().toList())
-            doOnSimpleItemClick(::performMenuAction)
+            submitList(MenuAction.entries.toList())
+            doOnItemClick(action = ::performMenuAction)
         }.apply {
             sharedViewModel.menuAction.onEach {
                 root.closeDrawer(rvMenu)

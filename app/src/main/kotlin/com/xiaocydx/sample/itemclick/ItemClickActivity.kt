@@ -4,10 +4,15 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.list.linear
+import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.common.initActionList
 import com.xiaocydx.sample.databinding.ActionContentBinding
-import com.xiaocydx.sample.itemclick.scenes.*
+import com.xiaocydx.sample.itemclick.scenes.AbsoluteScenes
+import com.xiaocydx.sample.itemclick.scenes.ItemClickScenes
+import com.xiaocydx.sample.itemclick.scenes.ListAdapterScenes
+import com.xiaocydx.sample.itemclick.scenes.RelativeScenes
+import com.xiaocydx.sample.itemclick.scenes.ViewTypeDelegateScenes
 
 /**
  * ItemClick示例代码

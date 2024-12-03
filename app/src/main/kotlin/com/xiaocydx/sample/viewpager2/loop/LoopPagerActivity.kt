@@ -10,7 +10,6 @@ import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.accompanist.viewpager2.launchBanner
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
-import com.xiaocydx.cxrv.itemclick.doOnSimpleItemClick
 import com.xiaocydx.cxrv.list.doOnListChanged
 import com.xiaocydx.cxrv.list.listCollector
 import com.xiaocydx.cxrv.list.onEach
@@ -64,8 +63,8 @@ class LoopPagerActivity : AppCompatActivity() {
         }
 
         rvAction.initActionList {
-            submitList(LoopPagerAction.values().toList())
-            doOnSimpleItemClick(::performLoopPagerAction)
+            submitList(LoopPagerAction.entries.toList())
+            doOnItemClick(action = ::performLoopPagerAction)
         }
     }
 
