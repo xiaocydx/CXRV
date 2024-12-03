@@ -5,12 +5,11 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.cxrv.binding.bindingAdapter
-import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
@@ -53,7 +52,7 @@ class MainActivity : AppCompatActivity() {
             submitList(startActionList())
             doOnItemClick(
                 target = { binding.btnStart },
-                action = ::performStartAction
+                action = { performStartAction(it) }
             )
             onBindView { btnStart.text = it.text }
         })
@@ -76,9 +75,8 @@ class MainActivity : AppCompatActivity() {
         "视频流的过渡动画和分页加载示例" to ComplexListActivity::class,
     )
 
-    private fun performStartAction(holder: ViewHolder, action: StartAction) {
-        val context = holder.itemView.context
-        context.startActivity(Intent(context, action.clazz.java))
+    private fun performStartAction(action: StartAction) {
+        startActivity(Intent(this, action.clazz.java))
     }
 
     private infix fun String.to(clazz: KClass<out Activity>) = StartAction(this, clazz)

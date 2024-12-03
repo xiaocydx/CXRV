@@ -13,7 +13,7 @@ import com.xiaocydx.accompanist.lifecycle.viewLifecycleScope
 import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.ListOwner
 import com.xiaocydx.cxrv.list.MutableStateList
@@ -65,13 +65,13 @@ class MutableStateListFragment : Fragment(R.layout.fragment_mutable_state_list) 
     @SuppressLint("SetTextI18n")
     private fun FragmentMutableStateListBinding.initView() = apply {
         tvFoo1.text = "NormalList-1"
-        fooAdapter1.doOnItemClick(action = fooAdapter1::removeItem)
+        fooAdapter1.doOnItemClick { fooAdapter1.removeItem(it) }
         rvFoo1.linear().adapter(fooAdapter1).divider {
             size(5.dp).edge(Edge.all()).color(0xFFAAA4A3.toInt())
         }
 
         tvFoo2.text = "NormalList-2"
-        fooAdapter2.doOnItemClick(action = fooAdapter2::removeItem)
+        fooAdapter2.doOnItemClick { fooAdapter2.removeItem(it) }
         rvFoo2.grid(spanCount = 2).adapter(fooAdapter2).divider {
             size(5.dp).edge(Edge.all()).color(0xFFAAA4A3.toInt())
         }

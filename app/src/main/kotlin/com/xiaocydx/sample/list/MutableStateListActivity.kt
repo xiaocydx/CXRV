@@ -7,7 +7,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import com.xiaocydx.accompanist.view.snackbar
-import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
@@ -40,7 +40,7 @@ class MutableStateListActivity : AppCompatActivity() {
     private fun contentView() = MenuContainerBinding
         .inflate(layoutInflater).initMenuList {
             submitList(MenuAction.entries.toList())
-            doOnItemClick(action = ::performMenuAction)
+            doOnItemClick { performMenuAction(it) }
         }.apply {
             sharedViewModel.menuAction.onEach {
                 root.closeDrawer(rvMenu)

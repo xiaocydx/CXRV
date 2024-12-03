@@ -8,7 +8,7 @@ import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.accompanist.view.wrapContent
-import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.doOnAttach
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.list.submitList
@@ -40,7 +40,7 @@ class MultiTypeActivity : AppCompatActivity() {
     private fun contentView() = ActionContainerBinding
         .inflate(layoutInflater).initActionList {
             submitList(MultiTypeAction.entries.toList())
-            doOnItemClick(action = ::performMultiTypeAction)
+            doOnItemClick { performMultiTypeAction(it) }
             doOnAttach { rv -> rv.grid(spanCount = 2) }
             onCreateView { root.layoutParams(matchParent, wrapContent) }
         }.root

@@ -5,7 +5,7 @@ import com.xiaocydx.cxrv.concat.addFooter
 import com.xiaocydx.cxrv.concat.addHeader
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.removeItem
@@ -32,6 +32,6 @@ class LinearDividerFragment : NormalDividerFragment() {
 
         // 线性布局的分割线跟随itemView的X/Y偏移和alpha而变化
         rvDivider.itemAnimator?.removeDuration = 500
-        fooAdapter.doOnItemClick(action = fooAdapter::removeItem)
+        fooAdapter.doOnItemClick { fooAdapter.removeItem(it) }
     }
 }

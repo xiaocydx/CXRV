@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package com.xiaocydx.cxrv.itemclick
+@file:Suppress("PackageDirectoryMismatch")
+
+package com.xiaocydx.cxrv.itemclick.reduce
 
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.OnLongClickListener
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.xiaocydx.cxrv.itemclick.NO_INTERVAL
+import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
 import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
 

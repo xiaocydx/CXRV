@@ -6,7 +6,7 @@ import com.xiaocydx.cxrv.concat.toAdapter
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.addDividerItemDecoration
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.insertItem
 import com.xiaocydx.cxrv.list.linear
@@ -53,8 +53,8 @@ class ConcatDividerFragment : DividerFragment() {
 
         // 线性布局的分割线跟随itemView的X/Y偏移和alpha而变化
         rvDivider.itemAnimator?.removeDuration = 500
-        fooAdapter1.doOnItemClick(action = fooAdapter1::removeItem)
-        fooAdapter2.doOnItemClick(action = fooAdapter2::removeItem)
+        fooAdapter1.doOnItemClick { fooAdapter1.removeItem(it) }
+        fooAdapter2.doOnItemClick { fooAdapter2.removeItem(it) }
     }
 
     override fun insertItem() {

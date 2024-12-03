@@ -33,7 +33,10 @@ import com.xiaocydx.cxrv.multitype.ViewTypeDelegate
  */
 @Deprecated(
     message = "统一扩展函数命名，去除冗余重载函数，函数引用结合具名参数使用",
-    replaceWith = ReplaceWith("doOnItemClick(action = action)")
+    replaceWith = ReplaceWith(
+        expression = "doOnItemClick(action = action)",
+        imports = arrayOf("com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick")
+    )
 )
 inline fun <ITEM : Any, VH : ViewHolder> ListAdapter<out ITEM, out VH>.doOnSimpleItemClick(
     crossinline action: (item: ITEM) -> Unit
@@ -50,7 +53,10 @@ inline fun <ITEM : Any, VH : ViewHolder> ListAdapter<out ITEM, out VH>.doOnSimpl
  */
 @Deprecated(
     message = "统一扩展函数命名，去除冗余重载函数，函数引用结合具名参数使用",
-    replaceWith = ReplaceWith("doOnItemClick(intervalMs, action = action)")
+    replaceWith = ReplaceWith(
+        expression = "doOnItemClick(intervalMs, action = action)",
+        imports = arrayOf("com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick")
+    )
 )
 inline fun <ITEM : Any, VH : ViewHolder> ListAdapter<out ITEM, out VH>.doOnSimpleItemClick(
     intervalMs: Long,
@@ -67,7 +73,10 @@ inline fun <ITEM : Any, VH : ViewHolder> ListAdapter<out ITEM, out VH>.doOnSimpl
  */
 @Deprecated(
     message = "统一扩展函数命名，去除冗余重载函数，函数引用结合具名参数使用",
-    replaceWith = ReplaceWith("doOnLongItemClick(action = action)")
+    replaceWith = ReplaceWith(
+        expression = "doOnLongItemClick(action = action)",
+        imports = arrayOf("com.xiaocydx.cxrv.itemclick.reduce.doOnLongItemClick")
+    )
 )
 inline fun <ITEM : Any, VH : ViewHolder> ListAdapter<out ITEM, out VH>.doOnSimpleLongItemClick(
     crossinline action: (item: ITEM) -> Boolean
@@ -82,7 +91,10 @@ inline fun <ITEM : Any, VH : ViewHolder> ListAdapter<out ITEM, out VH>.doOnSimpl
  */
 @Deprecated(
     message = "统一扩展函数命名，去除冗余重载函数，函数引用结合具名参数使用",
-    replaceWith = ReplaceWith("doOnItemClick(action = action)")
+    replaceWith = ReplaceWith(
+        expression = "doOnItemClick(action = action)",
+        imports = arrayOf("com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick")
+    )
 )
 inline fun <ITEM : Any, VH : ViewHolder> ViewTypeDelegate<out ITEM, out VH>.doOnSimpleItemClick(
     crossinline action: (item: ITEM) -> Unit
@@ -99,7 +111,10 @@ inline fun <ITEM : Any, VH : ViewHolder> ViewTypeDelegate<out ITEM, out VH>.doOn
  */
 @Deprecated(
     message = "统一扩展函数命名，去除冗余重载函数，函数引用结合具名参数使用",
-    replaceWith = ReplaceWith("doOnItemClick(intervalMs, action = action)")
+    replaceWith = ReplaceWith(
+        expression = "doOnItemClick(intervalMs, action = action)",
+        imports = arrayOf("com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick")
+    )
 )
 inline fun <ITEM : Any, VH : ViewHolder> ViewTypeDelegate<out ITEM, out VH>.doOnSimpleItemClick(
     intervalMs: Long,
@@ -116,7 +131,10 @@ inline fun <ITEM : Any, VH : ViewHolder> ViewTypeDelegate<out ITEM, out VH>.doOn
  */
 @Deprecated(
     message = "统一扩展函数命名，去除冗余重载函数，函数引用结合具名参数使用",
-    replaceWith = ReplaceWith("doOnLongItemClick(action = action)")
+    replaceWith = ReplaceWith(
+        expression = "doOnLongItemClick(action = action)",
+        imports = arrayOf("com.xiaocydx.cxrv.itemclick.reduce.doOnLongItemClick")
+    )
 )
 inline fun <ITEM : Any, VH : ViewHolder> ViewTypeDelegate<out ITEM, out VH>.doOnSimpleLongItemClick(
     crossinline action: (item: ITEM) -> Boolean

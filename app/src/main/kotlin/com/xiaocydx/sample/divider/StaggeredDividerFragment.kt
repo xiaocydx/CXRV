@@ -6,7 +6,7 @@ import com.xiaocydx.cxrv.concat.addFooter
 import com.xiaocydx.cxrv.concat.addHeader
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.removeItem
 import com.xiaocydx.cxrv.list.staggered
@@ -38,6 +38,6 @@ class StaggeredDividerFragment : NormalDividerFragment() {
 
         // 瀑布流布局的分割线不会跟随itemView的X/Y偏移而变化
         rvDivider.itemAnimator?.moveDuration = 500
-        fooAdapter.doOnItemClick(action = fooAdapter::removeItem)
+        fooAdapter.doOnItemClick { fooAdapter.removeItem(it) }
     }
 }

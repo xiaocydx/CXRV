@@ -10,7 +10,7 @@ import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.divider.DividerItemDecoration
 import com.xiaocydx.cxrv.divider.addDividerItemDecoration
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.initMenuList
@@ -44,7 +44,7 @@ class DividerActivity : AppCompatActivity() {
     private fun contentView() = MenuContainerBinding
         .inflate(layoutInflater).initMenuList {
             submitList(MenuAction.entries.toList())
-            doOnItemClick(action = ::performMenuAction)
+            doOnItemClick { performMenuAction(it) }
         }.apply {
             sharedViewModel.menuAction.onEach {
                 root.closeDrawer(rvMenu)
