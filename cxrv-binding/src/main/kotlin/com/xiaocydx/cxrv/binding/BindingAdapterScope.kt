@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.viewbinding.ViewBinding
 import com.xiaocydx.cxrv.internal.RvDslMarker
 import com.xiaocydx.cxrv.list.ListOwner
+import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.setItem
 import com.xiaocydx.cxrv.list.setItems
 
@@ -37,12 +38,8 @@ import com.xiaocydx.cxrv.list.setItems
  *         oldItem.id == newItem.id
  *     }
  * ) {
- *     onCreateView {
- *         ...
- *     }
- *     onBindView { item ->
- *         ...
- *     }
+ *     onCreateView {...}
+ *     onBindView { item -> ... }
  * }
  * ```
  * @param inflate         函数引用`VB::inflate`
@@ -62,12 +59,8 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingAdapter(
  *     uniqueId = Foo::id,
  *     inflate = ItemFooBinding::inflate
  * ) {
- *     onCreateView {
- *         ...
- *     }
- *     onBindView { item ->
- *         ...
- *     }
+ *     onCreateView {...}
+ *     onBindView { item -> ... }
  * }
  * ```
  * @param inflate  函数引用`VB::inflate`
@@ -84,6 +77,50 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingAdapter(
     },
     block = block
 )
+
+/**
+ * 构建并设置[BindingAdapter]，适用于简单列表场景
+ *
+ * ```
+ * recyclerView.binding(
+ *     inflate = ItemFooBinding::inflate,
+ *     areItemsTheSame { oldItem: Foo, newItem: Foo ->
+ *         oldItem.id == newItem.id
+ *     }
+ * ) {
+ *     onCreateView {...}
+ *     onBindView { item -> ... }
+ * }
+ * ```
+ * @param inflate         函数引用`VB::inflate`
+ * @param areItemsTheSame 对应[DiffUtil.ItemCallback.areItemsTheSame]
+ */
+inline fun <RV : RecyclerView, ITEM : Any, VB : ViewBinding> RV.binding(
+    noinline inflate: Inflate<VB>,
+    noinline areItemsTheSame: (oldItem: ITEM, newItem: ITEM) -> Boolean,
+    block: BindingAdapterScope<ITEM, VB>.() -> Unit
+): RV = adapter(bindingAdapter(inflate, areItemsTheSame, block))
+
+/**
+ * 构建并设置[BindingAdapter]，适用于简单列表场景
+ *
+ * ```
+ * recyclerView.binding(
+ *     uniqueId = Foo::id,
+ *     inflate = ItemFooBinding::inflate
+ * ) {
+ *     onCreateView {...}
+ *     onBindView { item -> ... }
+ * }
+ * ```
+ * @param inflate  函数引用`VB::inflate`
+ * @param uniqueId item唯一id，是[DiffUtil.ItemCallback.areItemsTheSame]的简化函数
+ */
+inline fun <RV : RecyclerView, ITEM : Any, VB : ViewBinding> RV.binding(
+    noinline inflate: Inflate<VB>,
+    crossinline uniqueId: (item: ITEM) -> Any?,
+    block: BindingAdapterScope<ITEM, VB>.() -> Unit
+): RV = adapter(bindingAdapter(inflate, uniqueId, block))
 
 /**
  * [BindingAdapter]的构建作用域

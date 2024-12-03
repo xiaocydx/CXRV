@@ -6,10 +6,9 @@ import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.view.wrapContent
 import com.xiaocydx.cxrv.binding.BindingAdapterScope
-import com.xiaocydx.cxrv.binding.bindingAdapter
+import com.xiaocydx.cxrv.binding.binding
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.sample.databinding.ActionContainerBinding
 import com.xiaocydx.sample.databinding.ActionContentBinding
@@ -33,11 +32,11 @@ fun <T : Action> RecyclerView.initActionList(
     linear(RecyclerView.HORIZONTAL)
     divider(10.dp, 10.dp) { edge(Edge.all()) }
     layoutParams(matchParent, wrapContent)
-    adapter(bindingAdapter(
+    binding(
         uniqueId = { item: T -> item.text },
         inflate = ItemButtonBinding::inflate
     ) {
         onBindView { root.text = it.text }
         block()
-    })
+    }
 }

@@ -8,9 +8,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.view.overScrollNever
-import com.xiaocydx.cxrv.binding.bindingAdapter
+import com.xiaocydx.cxrv.binding.binding
 import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
-import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.concat.HeaderFooterActivity
@@ -45,7 +44,7 @@ class MainActivity : AppCompatActivity() {
     private fun contentView() = RecyclerView(this)
         .layoutParams(matchParent, matchParent)
         .linear().overScrollNever()
-        .adapter(bindingAdapter(
+        .binding(
             uniqueId = StartAction::text,
             inflate = ItemStartBinding::inflate
         ) {
@@ -55,7 +54,7 @@ class MainActivity : AppCompatActivity() {
                 action = { performStartAction(it) }
             )
             onBindView { btnStart.text = it.text }
-        })
+        }
 
     private fun startActionList() = listOf(
         "Item点击、长按示例" to ItemClickActivity::class,

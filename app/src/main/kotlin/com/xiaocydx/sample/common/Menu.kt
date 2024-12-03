@@ -5,9 +5,8 @@ import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.cxrv.binding.BindingAdapterScope
-import com.xiaocydx.cxrv.binding.bindingAdapter
+import com.xiaocydx.cxrv.binding.binding
 import com.xiaocydx.cxrv.divider.divider
-import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.sample.databinding.ItemMenuBinding
 import com.xiaocydx.sample.databinding.MenuContainerBinding
@@ -28,11 +27,11 @@ fun <T : Menu> RecyclerView.initMenuList(
         color(0xFFD5D5D5.toInt())
     }
     layoutParams(200.dp, matchParent)
-    adapter(bindingAdapter(
+    binding(
         uniqueId = { item: T -> item.text },
         inflate = ItemMenuBinding::inflate
     ) {
         onBindView { root.text = it.text }
         block()
-    })
+    }
 }
