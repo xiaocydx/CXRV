@@ -6,7 +6,7 @@ CXRV是一个基于RecyclerView 1.2.0，提供常用功能的库，全称是Coro
 
 [CXRV - ViewTypeDelegate](https://www.yuque.com/u12192380/khwdgb/qkpmiu)
 
-[CXRV - ListState](https://www.yuque.com/u12192380/khwdgb/uvgw43)
+[CXRV - MutableStateList](https://www.yuque.com/u12192380/khwdgb/uvgw43)
 
 [CXRV - Extensions](https://www.yuque.com/u12192380/khwdgb/kcxn6o)
 
