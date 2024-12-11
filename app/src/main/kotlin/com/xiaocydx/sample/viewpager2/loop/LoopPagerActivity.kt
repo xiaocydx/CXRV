@@ -19,7 +19,7 @@ import com.xiaocydx.cxrv.viewpager2.loop.LookupDirection
 import com.xiaocydx.cxrv.viewpager2.loop.LoopPagerController
 import com.xiaocydx.cxrv.viewpager2.loop.setPageTransformer
 import com.xiaocydx.sample.common.Action
-import com.xiaocydx.sample.common.initActionList
+import com.xiaocydx.sample.common.actionList
 import com.xiaocydx.sample.databinding.ActivityLoopPagerBinding
 import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity.LoopPagerAction.Append
 import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity.LoopPagerAction.CancelBanner
@@ -55,7 +55,7 @@ class LoopPagerActivity : AppCompatActivity() {
             }
 
             doOnItemClick { holder, item ->
-                holder.itemView.snackbar().setText("""
+                snackbar().setText("""
                 |   item.text = ${item.text}
                 |   layoutPosition = ${holder.layoutPosition}
                 |   bindingAdapterPosition = ${holder.bindingAdapterPosition}
@@ -71,7 +71,7 @@ class LoopPagerActivity : AppCompatActivity() {
             setPageTransformer(ScaleInTransformer(), MarginPageTransformer(10.dp))
         }
 
-        rvAction.initActionList {
+        rvAction.actionList {
             submitList(LoopPagerAction.entries.toList())
             doOnItemClick(action = ::performLoopPagerAction)
         }
@@ -118,7 +118,7 @@ class LoopPagerActivity : AppCompatActivity() {
                 "取消Banner轮播交互"
             }
         }
-        window.snackbar().setText(text).show()
+        snackbar().setText(text).show()
     }
 
     private enum class LoopPagerAction : Action {

@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
+@file:Suppress("SpellCheckingInspection")
+
 package com.xiaocydx.accompanist.view
 
+import android.app.Activity
 import android.view.View
-import android.view.Window
 import androidx.annotation.CheckResult
+import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
 
 @CheckResult
-@Suppress("SpellCheckingInspection")
 fun View.snackbar() = Snackbar.make(
     this, "", Snackbar.LENGTH_SHORT
 ).setTextMaxLines(Int.MAX_VALUE).dismissAction()
-
-@CheckResult
-@Suppress("SpellCheckingInspection")
-fun Window.snackbar() = decorView.findViewById<View>(android.R.id.content).snackbar()
 
 @CheckResult
 fun Snackbar.short() = setDuration(Snackbar.LENGTH_SHORT)
@@ -42,3 +40,9 @@ fun Snackbar.indefinite() = setDuration(Snackbar.LENGTH_INDEFINITE)
 
 @CheckResult
 fun Snackbar.dismissAction(text: CharSequence = "dismiss") = setAction(text) { dismiss() }
+
+@CheckResult
+fun Activity.snackbar() = window.findViewById<View>(android.R.id.content).snackbar()
+
+@CheckResult
+fun Fragment.snackbar() = requireActivity().snackbar()

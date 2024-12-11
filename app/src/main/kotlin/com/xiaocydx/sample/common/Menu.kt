@@ -15,18 +15,13 @@ interface Menu {
     val text: String
 }
 
-fun <T : Menu> MenuContainerBinding.initMenuList(
+fun <T : Menu> MenuContainerBinding.menuList(
     block: BindingAdapterScope<T, ItemMenuBinding>.() -> Unit
-) = apply { rvMenu.initMenuList(block) }
+) = apply { rvMenu.menuList(block) }
 
-fun <T : Menu> RecyclerView.initMenuList(
-    block: BindingAdapterScope<T, ItemMenuBinding>.() -> Unit
-) {
-    linear()
-    divider(height = 0.5f.dp) {
-        color(0xFFD5D5D5.toInt())
-    }
-    layoutParams(200.dp, matchParent)
+fun <T : Menu> RecyclerView.menuList(block: BindingAdapterScope<T, ItemMenuBinding>.() -> Unit) {
+    linear().layoutParams(200.dp, matchParent)
+    divider(height = 0.5f.dp) { color(0xFFD5D5D5.toInt()) }
     binding(
         uniqueId = { item: T -> item.text },
         inflate = ItemMenuBinding::inflate

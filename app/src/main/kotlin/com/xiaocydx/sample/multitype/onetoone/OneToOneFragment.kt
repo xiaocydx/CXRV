@@ -13,7 +13,7 @@ import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.binding.BindingDelegate
 import com.xiaocydx.cxrv.binding.bindingDelegate
-import com.xiaocydx.cxrv.itemclick.doOnItemClick
+import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
@@ -60,10 +60,8 @@ class OneToOneFragment : Fragment() {
             tvUsername.text = item.username
             tvContent.text = item.content
         }
-        doOnItemClick { holder, item ->
-            holder.itemView.snackbar()
-                .setText("文本类型消息 id = ${item.id}")
-                .show()
+        doOnItemClick { item ->
+            snackbar().setText("文本类型消息 id = ${item.id}").show()
         }
     }
 
@@ -76,10 +74,8 @@ class OneToOneFragment : Fragment() {
             tvUsername.text = item.username
             ivContent.setImageResource(item.image)
         }
-        doOnItemClick { holder, item ->
-            holder.itemView.snackbar()
-                .setText("图片类型消息 id = ${item.id}")
-                .show()
+        doOnItemClick { item ->
+            snackbar().setText("图片类型消息 id = ${item.id}").show()
         }
     }
 

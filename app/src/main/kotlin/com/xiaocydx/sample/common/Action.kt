@@ -18,17 +18,15 @@ interface Action {
     val text: String
 }
 
-fun <T : Action> ActionContainerBinding.initActionList(
+fun <T : Action> ActionContainerBinding.actionList(
     block: BindingAdapterScope<T, ItemButtonBinding>.() -> Unit
-) = apply { rvAction.initActionList(block) }
+) = apply { rvAction.actionList(block) }
 
-fun <T : Action> ActionContentBinding.initActionList(
+fun <T : Action> ActionContentBinding.actionList(
     block: BindingAdapterScope<T, ItemButtonBinding>.() -> Unit
-) = apply { rvAction.initActionList(block) }
+) = apply { rvAction.actionList(block) }
 
-fun <T : Action> RecyclerView.initActionList(
-    block: BindingAdapterScope<T, ItemButtonBinding>.() -> Unit
-) {
+fun <T : Action> RecyclerView.actionList(block: BindingAdapterScope<T, ItemButtonBinding>.() -> Unit) {
     linear(RecyclerView.HORIZONTAL)
     divider(10.dp, 10.dp) { edge(Edge.all()) }
     layoutParams(matchParent, wrapContent)

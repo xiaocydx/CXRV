@@ -14,7 +14,7 @@ import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.Action
-import com.xiaocydx.sample.common.initActionList
+import com.xiaocydx.sample.common.actionList
 import com.xiaocydx.sample.databinding.ActionContainerBinding
 import com.xiaocydx.sample.multitype.MultiTypeActivity.MultiTypeAction.OneToOne
 import com.xiaocydx.sample.multitype.onetomany.OneToManyFragment
@@ -38,7 +38,7 @@ class MultiTypeActivity : AppCompatActivity() {
     }
 
     private fun contentView() = ActionContainerBinding
-        .inflate(layoutInflater).initActionList {
+        .inflate(layoutInflater).actionList {
             submitList(MultiTypeAction.entries.toList())
             doOnItemClick { performMultiTypeAction(it) }
             doOnAttach { rv -> rv.grid(spanCount = 2) }
@@ -48,7 +48,7 @@ class MultiTypeActivity : AppCompatActivity() {
     private fun performMultiTypeAction(action: MultiTypeAction, show: Boolean = true) {
         supportFragmentManager.commit { replace(R.id.container, action.clazz.java, null) }
         if (!show) return
-        window.snackbar().setText("替换为${action.clazz.java.simpleName}").show()
+        snackbar().setText("替换为${action.clazz.java.simpleName}").show()
     }
 
     private enum class MultiTypeAction(

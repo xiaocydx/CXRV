@@ -32,6 +32,7 @@ sealed class ItemClickScenes : Action {
             .setIsolateViewTypes(false).build(),
         sub1.listAdapter, sub2.listAdapter
     )
+
     override val text: String
         get() = javaClass.simpleName ?: ""
 

@@ -3,6 +3,7 @@ package com.xiaocydx.sample.paging.local
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
@@ -13,7 +14,7 @@ import com.xiaocydx.insets.systembar.EdgeToEdge
 import com.xiaocydx.insets.systembar.SystemBar
 import com.xiaocydx.insets.systembar.systemBarController
 import com.xiaocydx.sample.R
-import com.xiaocydx.sample.common.initMenuList
+import com.xiaocydx.sample.common.menuList
 import com.xiaocydx.sample.databinding.MenuContainerBinding
 import com.xiaocydx.sample.paging.local.MenuAction.Gird
 import com.xiaocydx.sample.paging.local.MenuAction.Linear
@@ -43,15 +44,10 @@ class PagingActivity : AppCompatActivity(), SystemBar {
     }
 
     private fun contentView() = MenuContainerBinding
-        .inflate(layoutInflater).initMenuList {
+        .inflate(layoutInflater).menuList {
             submitList(MenuAction.entries.toList())
             doOnItemClick { performMenuAction(it) }
-        }.apply {
-            sharedViewModel.menuAction.onEach {
-                root.closeDrawer(rvMenu)
-                root.snackbar().setText(it.text).show()
-            }.launchIn(lifecycleScope)
-        }.root
+        }.root.also(::collectMenuAction)
 
     private fun performMenuAction(action: MenuAction) {
         when (action) {
@@ -61,6 +57,13 @@ class PagingActivity : AppCompatActivity(), SystemBar {
             else -> {}
         }
         sharedViewModel.submitMenuAction(action)
+    }
+
+    private fun collectMenuAction(layout: DrawerLayout) {
+        sharedViewModel.menuAction.onEach {
+            layout.closeDrawers()
+            snackbar().setText(it.text).show()
+        }.launchIn(lifecycleScope)
     }
 
     private inline fun <reified T : Fragment> replace() {

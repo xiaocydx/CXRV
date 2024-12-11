@@ -31,10 +31,10 @@ class NotWaitEndFragment : TransitionFragment() {
             .distinctUntilChanged()
             .onEach { state ->
                 when (state) {
-                    TransitionState.LOADING -> {
+                    TransitionState.Loading -> {
                         loadingAdapter.show()
                     }
-                    TransitionState.CONTENT -> {
+                    TransitionState.Content -> {
                         controller.startPostponeEnterTransitionOrAwait()
                         loadingAdapter.hide()
                         contentAdapter.show()

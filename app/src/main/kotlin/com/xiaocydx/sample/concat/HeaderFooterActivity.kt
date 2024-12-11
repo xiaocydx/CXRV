@@ -27,7 +27,7 @@ import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.common.Action
 import com.xiaocydx.sample.common.Foo
 import com.xiaocydx.sample.common.FooListAdapter
-import com.xiaocydx.sample.common.initActionList
+import com.xiaocydx.sample.common.actionList
 import com.xiaocydx.sample.concat.HeaderFooterActivity.HeaderFooterAction.AddFooter
 import com.xiaocydx.sample.concat.HeaderFooterActivity.HeaderFooterAction.AddHeader
 import com.xiaocydx.sample.concat.HeaderFooterActivity.HeaderFooterAction.RemoveFooter
@@ -56,16 +56,16 @@ class HeaderFooterActivity : AppCompatActivity() {
             // 若在初始化时不添加header和footer，而是后续根据情况动态添加header和footer，
             // 先设置Concat.content(fooAdapter).concat()，后续添加有动画效果且性能更高。
             // rvFoo.adapter(Concat.content(fooAdapter).concat())
-            val fooAdapter = FooListAdapter()
-            fooAdapter.submitList((1..3).map(::createFoo))
+            val fooAdapter = createFooAdapter()
             rvContent.linear().divider(height = 5.dp).adapter(fooAdapter)
+            this@HeaderFooterActivity.rvContent = rvContent
+
             header = createView(isHeader = true)
             footer = createView(isHeader = false)
             rvContent.addHeader(header)
             rvContent.addFooter(footer)
-            this@HeaderFooterActivity.rvContent = rvContent
 
-            rvAction.initActionList {
+            rvAction.actionList {
                 submitList(HeaderFooterAction.entries.toList())
                 doOnItemClick { performHeaderFooterAction(it) }
                 doOnAttach { rv -> rv.grid(spanCount = 2) }
@@ -76,25 +76,16 @@ class HeaderFooterActivity : AppCompatActivity() {
     private fun performHeaderFooterAction(action: HeaderFooterAction) {
         when (action) {
             AddHeader -> rvContent.addHeader(header)
-            RemoveHeader -> rvContent.removeHeader(header)?.let { checkRemoved(it) }
+            RemoveHeader -> rvContent.removeHeader(header)?.let(::checkRemoved)
             AddFooter -> rvContent.addFooter(footer)
-            RemoveFooter -> rvContent.removeFooter(footer)?.let { checkRemoved(it) }
+            RemoveFooter -> rvContent.removeFooter(footer)?.let(::checkRemoved)
         }
     }
 
-    /**
-     * HeaderFooter的实现确保从RecyclerView的缓存中清除已移除的Header和Footer，
-     * 移除Header和Footer后，用[HeaderFooterRemovedChecker]检查是否从缓存中清除，
-     * 若Header和Footer还在缓存中，则抛出[IllegalStateException]异常。
-     *
-     * @param viewAdapter 添加Header和Footer最终是转换成item多类型，
-     * [addHeader]和[addFooter]会将[View.hashCode]作为`viewType`。
-     */
-    private fun checkRemoved(viewAdapter: ViewAdapter<*>) {
-        val viewType = viewAdapter.getItemViewType()
-        val checker = HeaderFooterRemovedChecker(rvContent, viewType)
-        // 由于remove动画结束后，Header和Footer才被回收进缓存，因此在动画结束后检查
-        rvContent.itemAnimator?.isRunning(checker::check) ?: run(checker::check)
+    private fun createFooAdapter() = FooListAdapter().apply {
+        submitList((1..3).map { id ->
+            Foo(id = id.toString(), name = "Foo-$id", num = id)
+        })
     }
 
     private fun createView(isHeader: Boolean) = AppCompatTextView(this).apply {
@@ -105,7 +96,9 @@ class HeaderFooterActivity : AppCompatActivity() {
         setBackgroundColor(if (isHeader) 0xFF92C3FF.toInt() else 0xFF958CFF.toInt())
     }
 
-    private fun createFoo(id: Int): Foo = Foo(id = id.toString(), name = "Foo-$id", num = id)
+    private fun checkRemoved(viewAdapter: ViewAdapter<*>) {
+        HeaderFooterRemovedChecker(rvContent, viewAdapter).check()
+    }
 
     private enum class HeaderFooterAction(override val text: String) : Action {
         AddHeader("添加Header"),

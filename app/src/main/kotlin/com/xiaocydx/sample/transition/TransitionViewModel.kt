@@ -16,12 +16,12 @@ class TransitionViewModel : ViewModel() {
     val rvId = ViewCompat.generateViewId()
     val state = flow {
         delay(LOADING_DURATION)
-        emit(TransitionState.CONTENT)
-    }.stateIn(viewModelScope, Lazily, TransitionState.LOADING)
+        emit(TransitionState.Content)
+    }.stateIn(viewModelScope, Lazily, TransitionState.Loading)
 }
 
 const val LOADING_DURATION = 100L
 
 enum class TransitionState {
-    LOADING, CONTENT
+    Loading, Content
 }

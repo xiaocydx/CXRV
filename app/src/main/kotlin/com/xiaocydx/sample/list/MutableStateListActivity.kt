@@ -3,6 +3,7 @@ package com.xiaocydx.sample.list
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
@@ -11,7 +12,7 @@ import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
-import com.xiaocydx.sample.common.initMenuList
+import com.xiaocydx.sample.common.menuList
 import com.xiaocydx.sample.databinding.MenuContainerBinding
 import com.xiaocydx.sample.list.MenuAction.Normal
 import com.xiaocydx.sample.list.MenuAction.Paging
@@ -38,15 +39,10 @@ class MutableStateListActivity : AppCompatActivity() {
     }
 
     private fun contentView() = MenuContainerBinding
-        .inflate(layoutInflater).initMenuList {
+        .inflate(layoutInflater).menuList {
             submitList(MenuAction.entries.toList())
             doOnItemClick { performMenuAction(it) }
-        }.apply {
-            sharedViewModel.menuAction.onEach {
-                root.closeDrawer(rvMenu)
-                root.snackbar().setText(it.text).show()
-            }.launchIn(lifecycleScope)
-        }.root
+        }.root.also(::collectMenuAction)
 
     private fun performMenuAction(action: MenuAction) {
         when (action) {
@@ -55,6 +51,13 @@ class MutableStateListActivity : AppCompatActivity() {
             else -> {}
         }
         sharedViewModel.submitMenuAction(action)
+    }
+
+    private fun collectMenuAction(layout: DrawerLayout) {
+        sharedViewModel.menuAction.onEach {
+            layout.closeDrawers()
+            snackbar().setText(it.text).show()
+        }.launchIn(lifecycleScope)
     }
 
     private inline fun <reified T : Fragment> replace() {

@@ -12,7 +12,7 @@ import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.sample.R
 import com.xiaocydx.sample.common.Action
-import com.xiaocydx.sample.common.initActionList
+import com.xiaocydx.sample.common.actionList
 import com.xiaocydx.sample.databinding.ActionContainerBinding
 import com.xiaocydx.sample.transition.EnterTransitionActivity.Companion.CUSTOM_ANIMATION
 import kotlin.reflect.KClass
@@ -51,7 +51,7 @@ class EnterTransitionActivity : AppCompatActivity() {
     }
 
     private fun contentView() = ActionContainerBinding
-        .inflate(layoutInflater).initActionList {
+        .inflate(layoutInflater).actionList {
             submitList(TransitionAction.entries.toList())
             doOnItemClick { performTransitionAction(it) }
         }.root
