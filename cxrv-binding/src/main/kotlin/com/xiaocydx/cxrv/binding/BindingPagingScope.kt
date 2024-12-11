@@ -22,96 +22,161 @@ import androidx.viewbinding.ViewBinding
 import com.xiaocydx.cxrv.paging.LoadFooterConfig
 import com.xiaocydx.cxrv.paging.LoadHeaderConfig
 import com.xiaocydx.cxrv.paging.LoadViewScope
-import com.xiaocydx.cxrv.paging.OnCreateView
 
 /**
  * 加载中视图
  *
  * ```
- * loadingView(LoadingBinding::Inflate) {...}
+ * // 简写
+ * loading(LoadingBinding::Inflate) {...}
+ *
+ * // 或者
+ * loading(
+ *     inflate = LoadingBinding::Inflate,
+ *     onCreate = {...}
+ *     onUpdate = {...}
+ * )
  * ```
  */
-inline fun <VB : ViewBinding> LoadHeaderConfig.loadingView(
-    noinline inflate: Inflate<VB>,
-    crossinline block: VB.(completed: LoadCompleted) -> Unit = {}
-) = loadingView(onCreateView(inflate, block))
+fun <VB : ViewBinding> LoadHeaderConfig.loading(
+    inflate: Inflate<VB>,
+    onCreate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+    onUpdate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+) = loading(scopeBlock(inflate, onCreate, onUpdate))
 
 /**
  * 空结果视图
  *
  * ```
- * emptyView(EmptyBinding::Inflate) {...}
+ * // 简写
+ * empty(EmptyBinding::Inflate) {...}
+ *
+ * // 或者
+ * empty(
+ *     inflate = EmptyBinding::Inflate,
+ *     onCreate = {...}
+ *     onUpdate = {...}
+ * )
  * ```
  */
-inline fun <VB : ViewBinding> LoadHeaderConfig.emptyView(
-    noinline inflate: Inflate<VB>,
-    crossinline block: VB.(completed: LoadCompleted) -> Unit = {}
-) = emptyView(onCreateView(inflate, block))
+fun <VB : ViewBinding> LoadHeaderConfig.empty(
+    inflate: Inflate<VB>,
+    onCreate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+    onUpdate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+) = empty(scopeBlock(inflate, onCreate, onUpdate))
 
 /**
  * 加载失败视图
  *
  * ```
- * failureView(FailureBinding::Inflate) { completed ->
- *     completed.retry() // 重新加载
+ * // 简写
+ * failure(FailureBinding::Inflate) { completed ->
  *     completed.exception() // 加载失败的异常
- *     ...
+ *     root.setOnClickListener { completed.retry() } // 点击重新加载
  * }
+ *
+ * // 或者
+ * failure(
+ *     inflate = FailureBinding::Inflate,
+ *     onCreate = { completed -> ... }
+ *     onUpdate = { completed -> ... }
+ * )
  * ```
  */
-inline fun <VB : ViewBinding> LoadHeaderConfig.failureView(
-    noinline inflate: Inflate<VB>,
-    crossinline block: VB.(completed: LoadCompleted) -> Unit = {}
-) = failureView(onCreateView(inflate, block))
+fun <VB : ViewBinding> LoadHeaderConfig.failure(
+    inflate: Inflate<VB>,
+    onCreate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+    onUpdate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+) = failure(scopeBlock(inflate, onCreate, onUpdate))
 
 /**
  * 加载中视图
  *
  * ```
- * loadingView(LoadingBinding::Inflate) {...}
+ * // 简写
+ * loading(LoadingBinding::Inflate) {...}
+ *
+ * // 或者
+ * loading(
+ *     inflate = LoadingBinding::Inflate,
+ *     onCreate = {...}
+ *     onUpdate = {...}
+ * )
  * ```
  */
-inline fun <VB : ViewBinding> LoadFooterConfig.loadingView(
-    noinline inflate: Inflate<VB>,
-    crossinline block: VB.(completed: LoadCompleted) -> Unit = {}
-) = loadingView(onCreateView(inflate, block))
+fun <VB : ViewBinding> LoadFooterConfig.loading(
+    inflate: Inflate<VB>,
+    onCreate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+    onUpdate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+) = loading(scopeBlock(inflate, onCreate, onUpdate))
 
 /**
  * 加载完全视图
  *
  * ```
- * fullyView(FullyBinding::Inflate) {...}
+ * // 简写
+ * fully(FullyBinding::Inflate) {...}
+ *
+ * // 或者
+ * fully(
+ *     inflate = EmptyBinding::Inflate,
+ *     onCreate = {...}
+ *     onUpdate = {...}
+ * )
  * ```
  */
-inline fun <VB : ViewBinding> LoadFooterConfig.fullyView(
-    noinline inflate: Inflate<VB>,
-    crossinline block: VB.(completed: LoadCompleted) -> Unit = {}
-) = fullyView(onCreateView(inflate, block))
+fun <VB : ViewBinding> LoadFooterConfig.fully(
+    inflate: Inflate<VB>,
+    onCreate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+    onUpdate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+) = fully(scopeBlock(inflate, onCreate, onUpdate))
 
 /**
  * 加载失败视图
  *
  * ```
- * failureView(FailureBinding::Inflate) { completed ->
- *     completed.retry() // 重新加载
+ * // 简写
+ * failure(FailureBinding::Inflate) { completed ->
  *     completed.exception() // 加载失败的异常
- *     ...
+ *     root.setOnClickListener { completed.retry() } // 点击重新加载
  * }
+ *
+ * // 或者
+ * failure(
+ *     inflate = FailureBinding::Inflate,
+ *     onCreate = { completed -> ... }
+ *     onUpdate = { completed -> ... }
+ * )
  * ```
  */
-inline fun <VB : ViewBinding> LoadFooterConfig.failureView(
-    noinline inflate: Inflate<VB>,
-    crossinline block: VB.(completed: LoadCompleted) -> Unit = {}
-) = failureView(onCreateView(inflate, block))
+fun <VB : ViewBinding> LoadFooterConfig.failure(
+    inflate: Inflate<VB>,
+    onCreate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+    onUpdate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+) = failure(scopeBlock(inflate, onCreate, onUpdate))
 
 typealias LoadCompleted = LoadViewScope<out View>
 
-@PublishedApi
-internal inline fun <VB : ViewBinding> onCreateView(
-    noinline inflate: Inflate<VB>,
-    crossinline block: VB.(completed: LoadCompleted) -> Unit = {}
-): OnCreateView<out View> = { parent ->
-    val completed = this
-    val inflater = LayoutInflater.from(parent.context)
-    inflate(inflater, parent, false).apply { block(completed) }.root
+private fun <VB : ViewBinding> scopeBlock(
+    inflate: Inflate<VB>,
+    onCreate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+    onUpdate: (VB.(completed: LoadCompleted) -> Unit)? = null,
+): LoadViewScope<View>.() -> Unit = {
+    onCreateView { parent ->
+        val inflater = LayoutInflater.from(parent.context)
+        val binding = inflate(inflater, parent, false)
+        binding.root.setTag(R.id.tag_view_binding, binding)
+        onCreate?.invoke(binding, this)
+        binding.root
+    }
+    if (onUpdate != null) {
+        onUpdateView { root ->
+            @Suppress("UNCHECKED_CAST")
+            val binding = requireNotNull(
+                value = root.getTag(R.id.tag_view_binding) as? VB,
+                lazyMessage = { "root还未关联ViewBinding" }
+            )
+            onUpdate(binding, this)
+        }
+    }
 }
