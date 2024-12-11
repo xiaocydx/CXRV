@@ -196,6 +196,24 @@ open class PagingConcatScope {
     }
 }
 
+/**
+ * 表示[LoadHeaderAdapter]或[LoadFooterAdapter]
+ */
 fun interface LoadAdapterHandle {
+
+    /**
+     * 通知更新，重新执行[LoadViewScope.onUpdateView]：
+     *
+     * ```
+     * loadHeader { handle ->
+     *     empty<TextView> {
+     *         onCreateView { parent -> TextView(parent.context) }
+     *         onUpdateView { view -> ... }
+     *     }
+     *
+     *     // 调用handle.update()通知更新，重新执行onUpdateView { view -> ...}
+     * }
+     * ```
+     */
     fun update()
 }
