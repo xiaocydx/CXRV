@@ -42,19 +42,19 @@ import kotlinx.coroutines.flow.map
  * // 将FooViewModel.broadcastFlow传递给Fragment的ViewModel，
  * // Fragment1和Fragment2共享分页数据流和加载状态，分离列表状态。
  * class Fragment1ViewModel : ViewModel(broadcastFlow: Flow<PagingData<Foo>>) {
- *     private val state = ListState<Foo>()
+ *     private val list = MutableStateList<Foo>()
  *     val flow = broadcastFlow
  *         .flowMap {...} // 转换分页事件流的列表数据
  *         .appendPrefetch(prefetch) // 转换末尾加载的预取策略
- *         .storeIn(state, viewModelScope)
+ *         .storeIn(list, viewModelScope)
  * }
  *
  * class Fragment2ViewModel : ViewModel(broadcastFlow: Flow<PagingData<Foo>>) {
- *     private val state = ListState<Foo>()
+ *     private val list = MutableStateList<Foo>()
  *     val flow = broadcastFlow
  *         .flowMap {...} // 转换分页事件流的列表数据
  *         .appendPrefetch(prefetch) // 转换末尾加载的预取策略
- *         .storeIn(state, viewModelScope)
+ *         .storeIn(list, viewModelScope)
  * }
  * ```
  */
