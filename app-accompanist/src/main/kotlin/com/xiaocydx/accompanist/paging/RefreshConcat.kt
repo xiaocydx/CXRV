@@ -120,27 +120,25 @@ private fun ViewGroup.findSwipeRefresh(): DefaultSwipeRefreshLayout? {
 }
 
 internal class DefaultSwipeRefreshLayout(context: Context) : SwipeRefreshLayout(context) {
+    private val handler = RefreshCompleteHandler()
     private var collector: PagingCollector<*>? = null
-    private val controller = RefreshCompleteController()
 
     init {
-        setOnRefreshListener {
-            controller.refreshAtLeast(duration = 300)
-        }
+        setOnRefreshListener { handler.refreshAtLeast(duration = 300) }
     }
 
     fun setAdapter(adapter: ListAdapter<*, *>?) {
         val collector: PagingCollector<*>? = adapter?.pagingCollector
         if (this.collector == collector) return
         val previous = this.collector
-        previous?.removeLoadStatesListener(controller)
-        previous?.removeHandleEventListener(controller)
+        previous?.removeLoadStatesListener(handler)
+        previous?.removeHandleEventListener(handler)
         this.collector = collector
-        collector?.addLoadStatesListener(controller)
-        collector?.addHandleEventListener(controller)
+        collector?.addLoadStatesListener(handler)
+        collector?.addHandleEventListener(handler)
     }
 
-    private inner class RefreshCompleteController : HandleEventListener<Any>, LoadStatesListener {
+    private inner class RefreshCompleteHandler : HandleEventListener<Any>, LoadStatesListener {
         private var refreshCompleteWhen = 0L
 
         /**
