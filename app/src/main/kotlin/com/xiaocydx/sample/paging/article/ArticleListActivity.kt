@@ -1,6 +1,5 @@
 package com.xiaocydx.sample.paging.article
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -12,9 +11,11 @@ import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.view.overScrollNever
+import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.binding.bindingAdapter
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
+import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.itemtouch.itemTouch
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
@@ -39,7 +40,7 @@ import com.xiaocydx.sample.databinding.ItemArticleBinding
  */
 class ArticleListActivity : AppCompatActivity(), SystemBar {
     private lateinit var rvArticle: RecyclerView
-    private lateinit var articleAdapter: ListAdapter<ArticleInfo, *>
+    private lateinit var articleAdapter: ListAdapter<Article, *>
     private val viewModel: ArticleListViewModel by viewModels()
 
     init {
@@ -52,19 +53,21 @@ class ArticleListActivity : AppCompatActivity(), SystemBar {
         initCollect()
     }
 
-    @SuppressLint("SetTextI18n")
     private fun initView() {
         articleAdapter = bindingAdapter(
-            uniqueId = ArticleInfo::id,
+            uniqueId = Article::id,
             inflate = ItemArticleBinding::inflate
         ) {
-            itemTouch {
-                onSwipe { position, _ -> viewModel.deleteArticle(position) }
-            }
             onBindView {
-                tvTitle.text = it.title ?: ""
-                tvAuthor.text = "作者：${it.author ?: ""}"
+                tvTitle.text = it.title
+                tvDesc.text = it.desc
+                tvType.text = it.type
             }
+            itemTouch {
+                onSwipe { position, _ -> viewModel.removeArticle(position) }
+                onDrag { from, to -> viewModel.moveArticle(from, to) }
+            }
+            doOnItemClick { snackbar().setText("未实现文章跳转").show() }
         }
 
         rvArticle = RecyclerView(this)

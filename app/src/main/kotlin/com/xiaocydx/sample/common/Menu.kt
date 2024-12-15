@@ -4,6 +4,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
+import com.xiaocydx.accompanist.view.onClick
 import com.xiaocydx.cxrv.binding.BindingAdapterScope
 import com.xiaocydx.cxrv.binding.binding
 import com.xiaocydx.cxrv.divider.divider
@@ -17,7 +18,10 @@ interface Menu {
 
 fun <T : Menu> MenuContainerBinding.menuList(
     block: BindingAdapterScope<T, ItemMenuBinding>.() -> Unit
-) = apply { rvMenu.menuList(block) }
+) = apply {
+    rvMenu.menuList(block)
+    btnMenu.onClick { root.openDrawer(rvMenu) }
+}
 
 fun <T : Menu> RecyclerView.menuList(block: BindingAdapterScope<T, ItemMenuBinding>.() -> Unit) {
     linear().layoutParams(200.dp, matchParent)
