@@ -262,7 +262,7 @@ fun ListOwner<*>.clear() = submitList(emptyList())
 @MainThread
 inline fun <T : Any> ListOwner<T>.submitChange(
     change: MutableList<T>.() -> Unit
-): UpdateResult = currentList.toMutableList().apply(change).let(this::submitList)
+): UpdateResult = currentList.toMutableList().apply(change).let(::submitList)
 
 /**
  * 提交转换的列表，该函数必须在主线程调用
@@ -279,7 +279,7 @@ inline fun <T : Any> ListOwner<T>.submitChange(
 @MainThread
 inline fun <T : Any> ListOwner<T>.submitTransform(
     transform: MutableList<T>.() -> List<T>
-): UpdateResult = currentList.toMutableList().transform().let(this::submitList)
+): UpdateResult = currentList.toMutableList().transform().let(::submitList)
 
 /**
  * 遍历[ListOwner.currentList]，设置[block]返回的第一个不空的item，该函数必须在主线程调用
