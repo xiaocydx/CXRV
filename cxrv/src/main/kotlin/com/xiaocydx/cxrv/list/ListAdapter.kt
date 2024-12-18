@@ -16,11 +16,7 @@
 
 package com.xiaocydx.cxrv.list
 
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.annotation.CallSuper
-import androidx.annotation.LayoutRes
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
@@ -39,7 +35,8 @@ import kotlinx.coroutines.Dispatchers
  * @date 2021/9/9
  */
 abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
-        Adapter<VH>(), ListOwner<ITEM>, DiffScope<ITEM>, SpanSizeProvider {
+        Adapter<VH>(), ListOwner<ITEM>, DiffScope<ITEM>,
+        CreateScope, SpanSizeProvider {
     private var tags: HashMap<String, Any?>? = null
     private var callbacks = InlineList<AdapterAttachCallback>()
     private var listeners = InlineList<ViewHolderListener<in VH>>()
@@ -52,19 +49,6 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
         private set
     final override val currentList: List<ITEM>
         get() = differ.currentList
-
-    /**
-     * 可用于[onCreateViewHolder]中创建itemView
-     */
-    protected val ViewGroup.inflater: LayoutInflater
-        get() = LayoutInflater.from(context)
-
-    /**
-     * 可用于[onCreateViewHolder]中创建itemView
-     */
-    protected fun ViewGroup.inflate(@LayoutRes resource: Int): View {
-        return inflater.inflate(resource, this, false)
-    }
 
     /**
      * 通过[VH]获取item

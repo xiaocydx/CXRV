@@ -16,12 +16,9 @@
 
 package com.xiaocydx.cxrv.multitype
 
-import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.CallSuper
 import androidx.annotation.IntRange
-import androidx.annotation.LayoutRes
 import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
@@ -33,6 +30,7 @@ import com.xiaocydx.cxrv.list.AdapterAttachCallback
 import com.xiaocydx.cxrv.list.DiffScope
 import com.xiaocydx.cxrv.list.InlineList
 import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.CreateScope
 import com.xiaocydx.cxrv.list.accessEach
 import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.getItem
@@ -48,7 +46,8 @@ import com.xiaocydx.cxrv.list.setItem
  * @author xcc
  * @date 2021/10/8
  */
-abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : DiffScope<ITEM>, SpanSizeProvider {
+abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> :
+        DiffScope<ITEM>, CreateScope, SpanSizeProvider {
     private var maxScrap: Int = 0
     private var callbacks = InlineList<AdapterAttachCallback>()
 
@@ -72,27 +71,6 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : DiffScope<ITEM>, 
         get() = requireNotNull(_adapter) {
             "请先调用ViewTypeDelegate.attachAdapter()，关联ListAdapter。"
         }
-
-    /**
-     * 可用于[onCreateViewHolder]中创建itemView
-     */
-    protected val ViewGroup.inflater: LayoutInflater
-        get() = LayoutInflater.from(context)
-
-    /**
-     * 可用于[onCreateViewHolder]中创建itemView
-     */
-    protected fun ViewGroup.inflate(@LayoutRes resource: Int): View {
-        return inflater.inflate(resource, this, false)
-    }
-
-    /**
-     * 可用于[onViewRecycled]中清除itemView及其子View的点击、长按监听
-     */
-    fun View.clearClickListener() {
-        setOnClickListener(null)
-        setOnLongClickListener(null)
-    }
 
     /**
      * 通过[VH]获取item
