@@ -216,4 +216,10 @@ abstract class ListAdapter<ITEM : Any, VH : ViewHolder> :
         assertMainThread()
         return differ.updateList(op, dispatch)
     }
+
+    @MainThread
+    internal fun cancel() {
+        assertMainThread()
+        differ.cancel()
+    }
 }

@@ -12,8 +12,7 @@ import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.clear
-import com.xiaocydx.cxrv.list.insertItems
+import com.xiaocydx.cxrv.list.asInner
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
 import com.xiaocydx.cxrv.viewpager2.nested.isVp2NestedScrollable
@@ -43,18 +42,16 @@ fun NestedPageOuterListAdapter(size: Int) = bindingAdapter(
             .apply { isVp2NestedScrollable = true }
             .apply { setRecycledViewPool(sharedPool) }
             .divider(width = 8.dp) { edge(Edge.horizontal()) }
-            .linear(HORIZONTAL).adapter(NestedPageInnerListAdapter())
+            .linear(HORIZONTAL) { initialPrefetchItemCount = 5 }
+            .adapter(NestedPageInnerListAdapter())
             .setRecycleAllViewsOnDetach(maxScrap = 20, saveState = false)
     }
     onBindView { item ->
         tvTitle.text = item.title
         rvInner.adapter.let {
             @Suppress("UNCHECKED_CAST")
-            it as? ListAdapter<InnerItem, *>
-        }?.apply {
-            clear()
-            insertItems(item.data)
-        }
+            it as ListAdapter<InnerItem, *>
+        }.asInner().replaceList(item.data)
     }
     onViewAttachedToWindow {
         val state = savedStates.remove(holder.item.id)

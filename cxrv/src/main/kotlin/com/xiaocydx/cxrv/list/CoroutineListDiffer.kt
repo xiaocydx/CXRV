@@ -472,6 +472,7 @@ class CoroutineListDiffer<T : Any>(
         fun cancel() {
             // 先清空queue，再处理current，
             // 避免current被cancel后取下一个。
+            val queue = queue?.takeIf { it.isNotEmpty() }
             queue?.forEach { it.cancel() }
             queue?.clear()
             current?.cancel()

@@ -45,6 +45,10 @@ internal fun RecyclerView.isViewHolderRemoved(child: View): Boolean {
     return getChildViewHolder(child)?.isRemoved ?: return false
 }
 
+internal fun RecyclerView.clearPendingUpdates() {
+    mAdapterHelper.takeIf { it.hasPendingUpdates() }?.reset()
+}
+
 internal class SimpleViewHolder(itemView: View) : ViewHolder(itemView) {
 
     fun isNotReuseUpdatedViewHolder(parent: ViewGroup): Boolean {
