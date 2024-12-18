@@ -19,14 +19,26 @@ package com.xiaocydx.cxrv.multitype
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.*
+import androidx.annotation.CallSuper
 import androidx.annotation.IntRange
-import androidx.recyclerview.widget.DiffUtil
+import androidx.annotation.LayoutRes
+import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.concat.SpanSizeProvider
 import com.xiaocydx.cxrv.internal.assertMainThread
-import com.xiaocydx.cxrv.list.*
+import com.xiaocydx.cxrv.list.AdapterAttachCallback
+import com.xiaocydx.cxrv.list.DiffScope
+import com.xiaocydx.cxrv.list.InlineList
+import com.xiaocydx.cxrv.list.ListAdapter
+import com.xiaocydx.cxrv.list.accessEach
+import com.xiaocydx.cxrv.list.adapter
+import com.xiaocydx.cxrv.list.getItem
+import com.xiaocydx.cxrv.list.getItemOrNull
+import com.xiaocydx.cxrv.list.removeItemAt
+import com.xiaocydx.cxrv.list.setItem
 
 /**
  * ViewType委托类
@@ -36,7 +48,7 @@ import com.xiaocydx.cxrv.list.*
  * @author xcc
  * @date 2021/10/8
  */
-abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider {
+abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : DiffScope<ITEM>, SpanSizeProvider {
     private var maxScrap: Int = 0
     private var callbacks = InlineList<AdapterAttachCallback>()
 
@@ -190,42 +202,6 @@ abstract class ViewTypeDelegate<ITEM : Any, VH : ViewHolder> : SpanSizeProvider 
      * 消费并返回[maxScrap]，该函数用于避免多次设置回收上限
      */
     internal fun consumeMaxScrap() = maxScrap.also { maxScrap = 0 }
-
-    /**
-     * 对应[DiffUtil.ItemCallback.areItemsTheSame]
-     *
-     * [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
-     *
-     * 确定局部更新的类型，通常对比item的`key`即可，如果[oldItem]和[newItem]的`key`不一样，
-     * 函数返回`false`，那么[oldItem]是remove更新，[newItem]是insert更新，不会是change更新或move更新。
-     */
-    @MainThread
-    @WorkerThread
-    abstract fun areItemsTheSame(oldItem: ITEM, newItem: ITEM): Boolean
-
-    /**
-     * 对应[DiffUtil.ItemCallback.areContentsTheSame]
-     *
-     * 1. [areItemsTheSame]返回true -> 调用[areContentsTheSame]。
-     * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
-     *
-     * 确定不是remove和insert更新后，再确定是否为change更新，返回`false`表示change更新，
-     * 默认实现是[oldItem]和[newItem]进行`equals()`对比，推荐数据实体使用data class。
-     */
-    @MainThread
-    @WorkerThread
-    open fun areContentsTheSame(oldItem: ITEM, newItem: ITEM): Boolean = oldItem == newItem
-
-    /**
-     * 对应[DiffUtil.ItemCallback.getChangePayload]
-     *
-     * 1. [areItemsTheSame]返回true -> [areContentsTheSame]返回false -> 调用[getChangePayload]。
-     * 2. [ListOwner.setItem]和[ListOwner.setItems]会复用该函数进行差异对比。
-     *
-     * 确定是change更新后，再获取Payload对象，默认实现是返回`null`。
-     */
-    @MainThread
-    open fun getChangePayload(oldItem: ITEM, newItem: ITEM): Any? = null
 
     /**
      * 对应[Adapter.onCreateViewHolder]
