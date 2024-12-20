@@ -1,35 +1,25 @@
 package com.xiaocydx.sample
 
-import android.app.Activity
-import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
-import com.xiaocydx.accompanist.view.overScrollNever
-import com.xiaocydx.cxrv.binding.binding
+import com.xiaocydx.cxrv.binding.bindingDelegate
+import com.xiaocydx.cxrv.concat.Concat
+import com.xiaocydx.cxrv.concat.toAdapter
+import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
+import com.xiaocydx.cxrv.list.adapter
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
-import com.xiaocydx.sample.animatable.AnimatableMediatorActivity
-import com.xiaocydx.sample.concat.HeaderFooterActivity
-import com.xiaocydx.sample.databinding.ItemStartBinding
-import com.xiaocydx.sample.divider.DividerActivity
-import com.xiaocydx.sample.itemclick.ItemClickActivity
-import com.xiaocydx.sample.itemselect.ItemSelectActivity
-import com.xiaocydx.sample.itemtouch.ItemTouchActivity
-import com.xiaocydx.sample.list.MutableStateListActivity
-import com.xiaocydx.sample.multitype.MultiTypeActivity
-import com.xiaocydx.sample.paging.article.ArticleListActivity
-import com.xiaocydx.sample.paging.complex.ComplexListActivity
-import com.xiaocydx.sample.paging.local.PagingActivity
-import com.xiaocydx.sample.payload.PayloadActivity
-import com.xiaocydx.sample.transition.EnterTransitionActivity
-import com.xiaocydx.sample.viewpager2.loop.LoopPagerActivity
-import com.xiaocydx.sample.viewpager2.nested.NestedScrollableActivity
-import com.xiaocydx.sample.viewpager2.shared.SharedPoolActivity
-import kotlin.reflect.KClass
+import com.xiaocydx.cxrv.multitype.listAdapter
+import com.xiaocydx.cxrv.multitype.register
+import com.xiaocydx.sample.databinding.ItemSampleCategoryBinding
+import com.xiaocydx.sample.databinding.ItemSampleElementBinding
+import com.xiaocydx.sample.databinding.SmapleHeaderBinding
 
 /**
  * @author xcc
@@ -42,45 +32,42 @@ class MainActivity : AppCompatActivity() {
         setContentView(contentView())
     }
 
-    private fun contentView() = RecyclerView(this)
-        .layoutParams(matchParent, matchParent)
-        .linear().overScrollNever()
-        .binding(
-            uniqueId = StartAction::text,
-            inflate = ItemStartBinding::inflate
-        ) {
-            submitList(startActionList())
-            doOnItemClick(
-                target = { binding.btnStart },
-                action = { performStartAction(it) }
-            )
-            onBindView { btnStart.text = it.text }
+    private fun contentView(): View {
+        val header = SmapleHeaderBinding
+            .inflate(layoutInflater).root
+            .layoutParams(matchParent, 100.dp)
+            .toAdapter()
+
+        val sampleList = SampleList()
+        val content = listAdapter {
+            submitList(sampleList.filter())
+            register(bindingDelegate(
+                uniqueId = SampleItem.Category::title,
+                inflate = ItemSampleCategoryBinding::inflate
+            ) {
+                onBindView {
+                    tvTitle.text = it.title
+                    ivSelected.setImageResource(it.selectedResId)
+                }
+                getChangePayload(sampleList::categoryPayload)
+                doOnItemClick { submitList(sampleList.toggle(it)) }
+            })
+
+            register(bindingDelegate(
+                uniqueId = SampleItem.Element::title,
+                inflate = ItemSampleElementBinding::inflate
+            ) {
+                onBindView {
+                    tvTitle.text = it.title
+                    tvDesc.text = it.desc
+                }
+                doOnItemClick { it.perform(this@MainActivity) }
+            })
         }
 
-    private fun startActionList() = listOf(
-        "Item点击、长按示例" to ItemClickActivity::class,
-        "Item拖动、侧滑示例" to ItemTouchActivity::class,
-        "Item单选、多选示例" to ItemSelectActivity::class,
-        "MultiType示例" to MultiTypeActivity::class,
-        "Payload更新示例" to PayloadActivity::class,
-        "HeaderFooter示例" to HeaderFooterActivity::class,
-        "Divider示例" to DividerActivity::class,
-        "MutableStateList示例" to MutableStateListActivity::class,
-        "Paging示例（本地测试）" to PagingActivity::class,
-        "Paging示例（网络请求）" to ArticleListActivity::class,
-        "ViewPager2共享池示例" to SharedPoolActivity::class,
-        "ViewPager2循环页面示例" to LoopPagerActivity::class,
-        "ViewPager2滚动冲突处理示例" to NestedScrollableActivity::class,
-        "AnimatableMediator示例" to AnimatableMediatorActivity::class,
-        "Fragment过渡动画卡顿优化示例" to EnterTransitionActivity::class,
-        "视频流的过渡动画和分页加载示例" to ComplexListActivity::class,
-    )
-
-    private fun performStartAction(action: StartAction) {
-        startActivity(Intent(this, action.clazz.java))
+        return RecyclerView(this)
+            .linear().divider(height = 2.dp)
+            .layoutParams(matchParent, matchParent)
+            .adapter(Concat.header(header).content(content).concat())
     }
-
-    private infix fun String.to(clazz: KClass<out Activity>) = StartAction(this, clazz)
-
-    private data class StartAction(val text: String, val clazz: KClass<out Activity>)
 }
