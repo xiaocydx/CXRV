@@ -41,11 +41,11 @@ class AnimatableMediatorFragment : Fragment() {
         divider(10.dp, 10.dp) { edge(Edge.top().horizontal()) }
 
         setAnimatableMediator {
-            // 动图受RecyclerView滚动
+            // 动图受RecyclerView滚动控制
             controlledByScroll()
-            // 动图父级ViewPager2控制
+            // 动图受父级ViewPager2滚动控制
             controlledByParentViewPager2()
-            // 跳转至透明主题的Activity，可以启用该函数，动图受RESUMED状态控制
+            // 跳转至透明主题的Activity，可以启用该函数，动图受RESUMED控制
             // controlledByLifecycle(viewLifecycle, RESUMED)
             registerImageView(animatableAdapter, visiableRatio = 0.5f) { view.imageView }
         }
