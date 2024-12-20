@@ -60,8 +60,6 @@ val gifUrls = arrayOf(
     "https://cdn.pixabay.com/animation/2023/02/13/09/42/09-42-58-584_512.gif"
 )
 
-private val fooUrls = gifUrls
-
 class FooSource(
     private val maxKey: Int,
     private val resultType: ResultType,
@@ -93,7 +91,7 @@ class FooSource(
             num % 2 != 0 -> FooType.TYPE1
             else -> FooType.TYPE2
         }
-        val url = fooUrls[num % fooUrls.size]
+        val url = urls[num % urls.size]
         return Foo(id = "$tag-$num", name = "Foo-$num", num, url, type)
     }
 

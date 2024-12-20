@@ -17,8 +17,8 @@ import kotlinx.coroutines.flow.onStart
 /**
  * 视图控制器 + [FooListViewModel]作为UI层
  *
- * 视图控制器可以在非活跃/重建期间取消收集[flow]，
- * 在恢复活跃/重建后，重新收集分页[flow]，更新/恢复视图。
+ * 视图控制器可以在非活跃/重建期间取消收集[pagingFlow]，
+ * 在恢复活跃/重建后，重新收集[pagingFlow]，更新/恢复视图。
  *
  * @author xcc
  * @date 2022/2/17
@@ -67,7 +67,7 @@ class FooListViewModel(
      * 在视图控制器处于非活跃/重建期间，上游冷流仍然可以发射数据，
      * 在视图控制器恢复活跃/重建后，重新收集转换后的热流，完成更新/恢复视图。
      */
-    val flow = pager.flow
+    val pagingFlow = pager.flow
         .onStart { isLoaded = true }
         .flowMap { flow ->
             flow.itemMap { loadType, item ->

@@ -12,6 +12,7 @@ import com.xiaocydx.cxrv.binding.binding
 import com.xiaocydx.cxrv.itemclick.reduce.doOnItemClick
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.list.submitList
+import com.xiaocydx.sample.animatable.AnimatableMediatorActivity
 import com.xiaocydx.sample.concat.HeaderFooterActivity
 import com.xiaocydx.sample.databinding.ItemStartBinding
 import com.xiaocydx.sample.divider.DividerActivity
@@ -70,6 +71,7 @@ class MainActivity : AppCompatActivity() {
         "ViewPager2共享池示例" to SharedPoolActivity::class,
         "ViewPager2循环页面示例" to LoopPagerActivity::class,
         "ViewPager2滚动冲突处理示例" to NestedScrollableActivity::class,
+        "AnimatableMediator示例" to AnimatableMediatorActivity::class,
         "Fragment过渡动画卡顿优化示例" to EnterTransitionActivity::class,
         "视频流的过渡动画和分页加载示例" to ComplexListActivity::class,
     )

@@ -31,7 +31,7 @@ class GridPagingFragment : PagingFragment() {
 
     override fun initCollect() {
         super.initCollect()
-        fooViewModel.flow
+        fooViewModel.pagingFlow
             .onEach(fooAdapter.pagingCollector)
             .launchRepeatOnLifecycle(viewLifecycle)
     }

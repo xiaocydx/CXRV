@@ -27,7 +27,10 @@ class SharedPoolActivity : AppCompatActivity() {
     }
 
     private fun ActivitySharedPoolBinding.initView() = apply {
-        categoryAdapter = FooCategoryAdapter(this@SharedPoolActivity)
+        categoryAdapter = FooCategoryAdapter(
+            activity = this@SharedPoolActivity,
+            createFragment = { FooListFragment.newInstance(it.id) }
+        )
         viewPager2.apply {
             offscreenPageLimit = 1
             adapter = categoryAdapter

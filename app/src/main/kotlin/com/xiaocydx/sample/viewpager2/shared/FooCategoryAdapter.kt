@@ -10,7 +10,10 @@ import com.xiaocydx.accompanist.view.overScrollNever
  * @author xcc
  * @date 2022/11/10
  */
-class FooCategoryAdapter(activity: FragmentActivity) : FragmentStateAdapter(activity) {
+class FooCategoryAdapter(
+    activity: FragmentActivity,
+    private val createFragment: (category: FooCategory) -> Fragment
+) : FragmentStateAdapter(activity) {
     private var list: MutableList<FooCategory> = mutableListOf()
 
     fun submitList(newList: List<FooCategory>): Boolean {
@@ -34,7 +37,7 @@ class FooCategoryAdapter(activity: FragmentActivity) : FragmentStateAdapter(acti
     }
 
     override fun createFragment(position: Int): Fragment {
-        return FooListFragment.newInstance(getItem(position).id)
+        return createFragment(getItem(position))
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {

@@ -39,9 +39,9 @@ class FooListAdapterError(
     /**
      * 2. 对`itemView`设置的[OnClickListener]会捕获外部[FooListFragment]（访问了TAG），
      * 当RecyclerView从Window上分离时，`itemView`会被回收进`sharedRecycledViewPool`,
-     * 这会间接导致已销毁的[FooListFragment]无法被GC，即出现内存泄漏问题。
+     * 这会间接导致已销毁的[FooListFragment]无法被GC，出现内存泄漏问题。
      *
-     * 滚动[ViewPager2]，让[FooListFragment]被销毁，等待一段时间后，就能看到[LeakCanary]的内存泄漏提示。
+     * 滚动[ViewPager2]销毁[FooListFragment]，等待一段时间后，就能看到[LeakCanary]的内存泄漏提示。
      */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FooViewHolder {
         val itemView = FooItemView(parent.context)
@@ -55,10 +55,6 @@ class FooListAdapterError(
         return holder
     }
 
-    /**
-     * 3. 调用`GifDrawable.stop()`、`WebpDrawable.stop()`停止动图，
-     * 出现相同动图url的[ImageView]内容绘制混乱的问题。
-     */
     override fun onBindViewHolder(
         holder: FooViewHolder,
         item: Foo

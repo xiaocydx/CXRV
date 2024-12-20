@@ -32,7 +32,7 @@ class StaggeredPagingFragment : PagingFragment() {
     override fun initCollect() {
         super.initCollect()
         fooViewModel.enableMultiTypeFoo()
-        fooViewModel.flow
+        fooViewModel.pagingFlow
             .onEach(fooAdapter.pagingCollector)
             .launchRepeatOnLifecycle(viewLifecycle)
     }

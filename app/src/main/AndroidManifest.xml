@@ -66,5 +66,8 @@
         <activity
             android:name=".divider.DividerActivity"
             android:exported="false" />
+        <activity
+            android:name=".animatable.AnimatableMediatorActivity"
+            android:exported="false" />
     </application>
 </manifest>

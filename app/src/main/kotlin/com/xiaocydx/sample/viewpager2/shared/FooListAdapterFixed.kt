@@ -4,10 +4,8 @@ import android.util.Log
 import android.view.ViewGroup
 import android.widget.ImageView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestBuilder
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.request.target.Target
-import com.xiaocydx.accompanist.glide.intoIsolate
 import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -31,8 +29,7 @@ class FooListAdapterFixed(
      * [Glide]对被共享复用的[ImageView]再次加载图片时，未及时移除上一个[RequestManager]记录的[Target]，
      * 当上一个[RequestManager.onDestroy]被调用时，`clear(Target)`对被共享复用的[ImageView]设置占位图。
      */
-    private val fragment: FooListFragment,
-    private val categoryId: Long
+    private val fragment: FooListFragment
 ) : ListAdapter<Foo, FooViewHolder>() {
 
     /**
@@ -49,8 +46,8 @@ class FooListAdapterFixed(
     /**
      * 2. [doOnItemClick]会在合适的时机会清除状态，
      * 避免`sharedRecycledViewPool`场景出现内存泄漏问题。
-     * 或者不使用 [doOnItemClick]，而是在[onBindViewHolder]设置[OnClickListener]，
-     * 在[onViewRecycled]置空[OnClickListener]，确保逻辑对称，避免内存泄漏问题。
+     * 不使用[doOnItemClick]，需要在[onBindViewHolder]设置[OnClickListener]，
+     * 在[onViewRecycled]置空[OnClickListener]，确保逻辑对称，避免出现内存泄漏。
      */
     init {
         doOnItemClick { holder, item ->
@@ -65,20 +62,6 @@ class FooListAdapterFixed(
         return FooViewHolder(FooItemView(parent.context))
     }
 
-    /**
-     * 3. [RequestBuilder.intoIsolate]
-     * 能解决调用`GifDrawable.stop()`、`WebpDrawable.stop()`停止动图，
-     * 出现相同动图url的[ImageView]内容绘制混乱的问题。
-     *
-     * [RequestBuilder.intoIsolate]做的事：
-     * 1. 对缓存键混入附带categoryId的`signature`。
-     * 2. 继承[ImageViewTarget]，重写`equals()`和`hashCode()`。
-     * 因为对缓存键混入了`signature`，所以对被共享复用的[ImageView]再次加载图片时，
-     * 即使url跟之前的一致，也不会看作是同一请求, 这在一定程度上降低了资源重用率。
-     *
-     * **注意**：由于对缓存键混入了`signature`，并且重写了[ImageViewTarget]的`equals()`和`hashCode()`,
-     * 因此[RequestBuilder.intoIsolate]也能解决上面提到的未及时清除[Target]造成的问题，可作为解决方案2。
-     */
     override fun onBindViewHolder(
         holder: FooViewHolder,
         item: Foo
@@ -86,7 +69,7 @@ class FooListAdapterFixed(
         textView.text = item.name
         requestManager.load(item.url).centerCrop()
             .placeholder(R.color.placeholder_color)
-            .intoIsolate(imageView, categoryId)
+            .into(imageView)
     }
 
     override fun areItemsTheSame(oldItem: Foo, newItem: Foo): Boolean {

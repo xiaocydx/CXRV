@@ -25,14 +25,9 @@ import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
 import com.xiaocydx.accompanist.view.overScrollNever
 import com.xiaocydx.accompanist.viewpager2.setVp2SharedRecycledViewPoolOnAttach
-import com.xiaocydx.cxrv.animatable.controlledByParentViewPager2
-import com.xiaocydx.cxrv.animatable.controlledByScroll
-import com.xiaocydx.cxrv.animatable.registerImageView
-import com.xiaocydx.cxrv.animatable.setAnimatableMediator
 import com.xiaocydx.cxrv.divider.Edge
 import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.list.ListAdapter
-import com.xiaocydx.cxrv.list.autoDispose
 import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.linear
 import com.xiaocydx.cxrv.paging.onEach
@@ -74,21 +69,23 @@ class FooListFragment : Fragment() {
         layoutParams(matchParent, matchParent)
         overScrollNever().linear().fixedSize()
         divider(10.dp, 10.dp) { edge(Edge.top().horizontal()) }
-        initFooAdapter()
+        initFooAdapter(useFixed = true)
         initParentViewPager2()
     }.withSwipeRefresh(fooAdapter)
 
     /**
-     * [FooListAdapterFixed]中讲述了`sharedRecycledViewPool`场景的一些注意事项：
+     * [FooListAdapterFixed]讲述了`sharedRecycledViewPool`场景的一些注意事项：
      * 1. 除了有视图设置逻辑，还要有视图重置逻辑，逻辑对称才能避免内存泄漏问题。
      * 2. 若使用[Glide]对[ImageView]加载图片，则需要和父级关联或者做另外处理。
      */
-    private fun RecyclerView.initFooAdapter() {
-        // FooListAdapterError列举了问题点
-        // fooAdapter = FooListAdapterError(this@FooListFragment)
-
-        // FooListAdapterFixed修复FooListAdapterError列举的问题
-        fooAdapter = FooListAdapterFixed(this@FooListFragment, categoryId)
+    private fun RecyclerView.initFooAdapter(useFixed: Boolean) {
+        fooAdapter = if (!useFixed) {
+            // FooListAdapterError列举了问题点
+            FooListAdapterError(this@FooListFragment)
+        } else {
+            // FooListAdapterFixed修复FooListAdapterError列举的问题
+            FooListAdapterFixed(this@FooListFragment)
+        }
 
         // 连接LoadHeaderAdapter、fooAdapter、LoadFooterAdapter，
         // 将连接后的ConcatAdapter设置给RecyclerView，完成初始化。
@@ -108,27 +105,19 @@ class FooListFragment : Fragment() {
             // 回收进sharedRecycledViewPool的上限，是当前子View数量的3倍，
             // 这是一种简易策略，意图是最多回收3页满数量的View，供重建复用。
             3 * initialState.childCount
-        }.autoDispose(viewLifecycle)
-
-        // 4. 设置动图受RecyclerView滚动、父级ViewPager2控制
-        setAnimatableMediator {
-            controlledByScroll()
-            controlledByParentViewPager2()
-            // 若跳转至透明主题的Activity，则可以启用该函数，动图受RESUMED状态控制
-            // controlledByLifecycle(viewLifecycle, RESUMED)
-            registerImageView(fooAdapter, visiableRatio = 0.5f) { view.imageView }
         }
     }
 
     /**
-     * 1. 若[FooListViewModel.isLoaded] = `false`，则当[viewLifecycle]状态为[RESUMED]时，
-     * 才收集[FooListViewModel.flow]，开始列表分页加载，达到首次懒加载的目的。
-     * 2. 否则当[viewLifecycle]状态为[STARTED]时，收集[FooListViewModel.flow]，
+     * 1. 若`fooViewModel.isLoaded = false`，则当[viewLifecycle]状态为[RESUMED]时，
+     * 才收集[FooListViewModel.pagingFlow]，开始列表分页加载，达到首次懒加载的目的。
+     *
+     * 2. 否则当[viewLifecycle]状态为[STARTED]时，收集[FooListViewModel.pagingFlow]，
      * 确保[ViewPager2]的滚动过程能及时对[RecyclerView]添加`itemView`。
      */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         viewLifecycle.doOnTargetState(if (fooViewModel.isLoaded) STARTED else RESUMED) {
-            fooViewModel.flow
+            fooViewModel.pagingFlow
                 .onEach(fooAdapter.pagingCollector)
                 .launchRepeatOnLifecycle(viewLifecycle)
         }
