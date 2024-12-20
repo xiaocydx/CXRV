@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
             ) {
                 onBindView {
                     tvTitle.text = it.title
-                    ivSelected.setImageResource(it.selectedResId)
+                    ivSelected.setImageResource(it.resId)
                 }
                 getChangePayload(sampleList::categoryPayload)
                 doOnItemClick { submitList(sampleList.toggle(it)) }

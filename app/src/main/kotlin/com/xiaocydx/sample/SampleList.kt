@@ -3,9 +3,9 @@
 package com.xiaocydx.sample
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import androidx.annotation.CheckResult
-import androidx.fragment.app.FragmentActivity
 import com.xiaocydx.sample.SampleItem.Category
 import com.xiaocydx.sample.SampleItem.Element
 import com.xiaocydx.sample.animatable.AnimatableMediatorActivity
@@ -45,7 +45,7 @@ class SampleList {
         val position = source.indexOf(category)
         val isSelected = !category.isSelected()
         val selectedResId = if (isSelected) selectedId else unselectedId
-        source[position] = category.copy(selectedResId = selectedResId)
+        source[position] = category.copy(resId = selectedResId)
         return filter()
     }
 
@@ -70,141 +70,75 @@ class SampleList {
         return if (oldItem.isSelected() != newItem.isSelected()) "change" else null
     }
 
-    private fun Category.isSelected(): Boolean {
-        return selectedResId == selectedId
-    }
+    private fun Category.isSelected() = resId == selectedId
 
     private fun ListAdapter() = listOf(
-        Category(title = "ListAdapter", selectedResId = unselectedId),
-        StartActivity(
-            title = "ListAdapter",
-            desc = "MutableStateList示例代码演示了如何使用ListAdapter",
-            clazz = MutableStateListActivity::class
-        )
+        "ListAdapter" and unselectedId,
+        "ListAdapter" and "MutableStateList示例代码演示了如何使用" to MutableStateListActivity::class
     )
 
     private fun ViewTypeDelegate() = listOf(
-        Category(title = "ViewTypeDelegate", selectedResId = unselectedId),
-        StartActivity(
-            title = "ViewTypeDelegate",
-            desc = "基于ListAdapter实现的多类型方案",
-            clazz = MultiTypeActivity::class
-        )
+        "ViewTypeDelegate" and unselectedId,
+        "ViewTypeDelegate" and "基于ListAdapter实现的多类型方案" to MultiTypeActivity::class
     )
 
     private fun MutableStateList() = listOf(
-        Category(title = "MutableStateList", selectedResId = unselectedId),
-        StartActivity(
-            title = "MutableStateList",
-            desc = "Lifecycle处于非活跃状态时，仅修改列表数据",
-            clazz = MutableStateListActivity::class
-        )
+        "MutableStateList" and unselectedId,
+        "MutableStateList" and "Lifecycle处于非活跃状态时，仅修改列表数据" to MutableStateListActivity::class
     )
 
     private fun Extensions() = listOf(
-        Category(title = "Extensions", selectedResId = unselectedId),
-        StartActivity(
-            title = "HeaderFooter",
-            desc = "基于ConcatAdapter实现的HeaderFooter",
-            clazz = HeaderFooterActivity::class
-        ),
-        StartActivity(
-            title = "ItemClick",
-            desc = "确保共享RecycledViewPool场景不会出现内存泄漏问题",
-            clazz = ItemClickActivity::class
-        ),
-        StartActivity(
-            title = "ItemTouch",
-            desc = "基于ItemTouchHelper实现，提取出业务场景常用的函数",
-            clazz = ItemTouchActivity::class
-        ),
-        StartActivity(
-            title = "ItemSelect",
-            desc = "单项选择和多项选择",
-            clazz = ItemSelectActivity::class
-        ),
-        StartActivity(
-            title = "Divider",
-            desc = "基于ItemDecoration实现的通用分割线",
-            clazz = DividerActivity::class
-        )
+        "Extensions" and unselectedId,
+        "HeaderFooter" and "基于ConcatAdapter实现的HeaderFooter" to HeaderFooterActivity::class,
+        "ItemClick" and "确保共享RecycledViewPool场景不会出现内存泄漏问题" to ItemClickActivity::class,
+        "ItemTouch" and "基于ItemTouchHelper实现，提取出业务场景常用的函数" to ItemTouchActivity::class,
+        "ItemSelect" and "单项选择和多项选择" to ItemSelectActivity::class,
+        "Divider" and "基于ItemDecoration实现的通用分割线" to DividerActivity::class
     )
 
     private fun `cxrv-paging`() = listOf(
-        Category(title = "cxrv-paging", selectedResId = unselectedId),
-        StartActivity(
-            title = "本地数据",
-            desc = "不同LayoutManager的分页加载效果",
-            clazz = PagingActivity::class
-        ),
-        StartActivity(
-            title = "网络数据",
-            desc = "WanAndroid文章列表的分页加载效果（使用预取策略）",
-            clazz = ArticleListActivity::class
-        )
+        "cxrv-paging" and unselectedId,
+        "本地数据" and "不同LayoutManager的分页加载效果" to PagingActivity::class,
+        "网络数据" and "WanAndroid文章列表的分页加载效果（使用预取策略）" to ArticleListActivity::class
     )
 
     private fun `cxrv-animatable`() = listOf(
-        Category(title = "cxrv-animatable", selectedResId = unselectedId),
-        StartActivity(
-            title = "AnimatableMediator",
-            desc = "控制全部Animatable的开始和停止",
-            clazz = AnimatableMediatorActivity::class
-        )
+        "cxrv-animatable" and unselectedId,
+        "AnimatableMediator" and "控制全部Animatable的开始和停止" to AnimatableMediatorActivity::class
     )
 
     private fun `cxrv-viewpager2`() = listOf(
-        Category(title = "cxrv-viewpager2", selectedResId = unselectedId),
-        StartActivity(
-            title = "Vp2NestedScrollable",
-            desc = "ViewPager2滚动冲突处理方案",
-            clazz = NestedScrollableActivity::class
-        ),
-        StartActivity(
-            title = "LoopPagerController",
-            desc = "ViewPager2的循环页面控制器",
-            clazz = LoopPagerActivity::class
-        )
+        "cxrv-viewpager2" and unselectedId,
+        "Vp2NestedScrollable" and "ViewPager2滚动冲突处理方案" to NestedScrollableActivity::class,
+        "LoopPagerController" and "ViewPager2的循环页面控制器" to LoopPagerActivity::class
     )
 
     private fun Scene() = listOf(
-        Category(title = "Scene", selectedResId = unselectedId),
-        StartActivity(
-            title = "Payload",
-            desc = "Payload对象的二进制方案",
-            clazz = PayloadActivity::class
-        ),
-        StartActivity(
-            title = "ViewPager2共享池",
-            desc = "使用共享池优化Fragment重建",
-            clazz = SharedPoolActivity::class
-        ),
-        StartActivity(
-            title = "Fragment过渡动画卡顿优化",
-            desc = "Fragment过渡动画卡顿的原因及优化方案",
-            clazz = EnterTransitionActivity::class
-        ),
-        StartActivity(
-            title = "视频流的过渡动画和分页加载",
-            desc = "使用简易的过渡动画框架，共享分页数据流",
-            clazz = ComplexListActivity::class
-        )
+        "Scene" and unselectedId,
+        "Payload" and "Payload对象的二进制方案" to PayloadActivity::class,
+        "ViewPager2共享池" and "使用共享池优化Fragment重建" to SharedPoolActivity::class,
+        "Fragment过渡动画卡顿优化" and "Fragment过渡动画卡顿的原因及优化方案" to EnterTransitionActivity::class,
+        "视频流的过渡动画和分页加载" and "使用简易的过渡动画框架，共享分页数据流" to ComplexListActivity::class,
     )
 }
 
 sealed class SampleItem {
-    data class Category(val title: String, val selectedResId: Int) : SampleItem()
-    sealed class Element(open val title: String, open val desc: String) : SampleItem() {
-        abstract fun perform(activity: FragmentActivity)
+    data class Category(val title: String, val resId: Int) : SampleItem()
+
+    data class Element(
+        val title: String,
+        val desc: String,
+        private val clazz: KClass<out Activity>? = null
+    ) : SampleItem() {
+        fun perform(context: Context) {
+            clazz ?: return
+            context.startActivity(Intent(context, clazz.java))
+        }
     }
 }
 
-private data class StartActivity(
-    override val title: String,
-    override val desc: String,
-    val clazz: KClass<out Activity>
-) : Element(title, desc) {
-    override fun perform(activity: FragmentActivity) {
-        activity.startActivity(Intent(activity, clazz.java))
-    }
-}
+private infix fun String.and(resId: Int) = Category(title = this, resId = resId)
+
+private infix fun String.and(desc: String) = Element(title = this, desc = desc)
+
+private infix fun Element.to(clazz: KClass<out Activity>) = copy(clazz = clazz)
