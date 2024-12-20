@@ -39,12 +39,8 @@ import com.xiaocydx.cxrv.list.setItems
  *         oldItem.id == newItem.id
  *     }
  * ) {
- *     onCreateView {
- *         ...
- *     }
- *     onBindView { item ->
- *         ...
- *     }
+ *     onCreateView {...}
+ *     onBindView { item -> ... }
  * }
  * ```
  *
@@ -68,12 +64,8 @@ inline fun <ITEM : Any, VB : ViewBinding> bindingDelegate(
  *     uniqueId = Foo::id,
  *     inflate = ItemFooBinding::inflate
  * ) {
- *     onCreateView {
- *         ...
- *     }
- *     onBindView { item ->
- *         ...
- *     }
+ *     onCreateView {...}
+ *     onBindView { item -> ... }
  * }
  * ```
  *
