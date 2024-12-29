@@ -31,4 +31,5 @@ dependencies {
     api(CommonLibs.glide)
     api(CommonLibs.coroutines)
     api(CommonLibs.`coroutines-android`)
+    implementation(PublishLibs.hiddenapibypass)
 }
