@@ -120,15 +120,14 @@ internal class LoadFooterAdapter(
         loadStates = collector.displayLoadStates
         val visible = loadStates.toVisible()
         if (visible == FULLY) {
-            var removeFooter = true
-            if (previous.refresh.isIncomplete) {
-                // 由于当前加载状态的流转过程可能是RecyclerView的重建恢复流程，
-                // 因此假设重建之前FULLY视图已显示，此次先显示FULLY视图，参与下一帧的测量和布局，
-                // 确保正常恢复RecyclerView的滚动位置，在下一帧布局完成后，再判断是否需要显示FULLY视图。
-                removeFooter = false
+            val appendToComplete = previous.appendToComplete(loadStates)
+            if (previous.refresh.isIncomplete && !appendToComplete) {
+                // 当前加载状态的流转过程可能是RecyclerView的重建恢复流程，
+                // 假设重建之前FULLY视图已显示，此次先显示FULLY视图，参与下一帧的测量和布局，
+                // 确保正常恢复RecyclerView的滚动位置，在下一帧布局完成后，再判断是否需要显示。
                 updateLoadFooter(FULLY)
             }
-            postponeHandleFullyVisible(removeFooter)
+            postponeHandleFullyVisible(removeFooter = appendToComplete)
         } else {
             updateLoadFooter(visible)
         }
