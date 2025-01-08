@@ -17,8 +17,6 @@
 package com.xiaocydx.cxrv.multitype
 
 import android.view.ViewGroup
-import androidx.annotation.VisibleForTesting
-import androidx.annotation.VisibleForTesting.PROTECTED
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xiaocydx.cxrv.list.ListAdapter
@@ -108,8 +106,7 @@ open class MultiTypeAdapter<T : Any>
         return multiType.getViewTypeDelegate(viewType).getSpanSize(position, spanCount)
     }
 
-    @VisibleForTesting(otherwise = PROTECTED)
-    public override fun areItemsTheSame(oldItem: T, newItem: T): Boolean = with(multiType) {
+    override fun areItemsTheSame(oldItem: T, newItem: T): Boolean = with(multiType) {
         // 当两个item的Class不同时，viewType也不同，属于一对一关系,
         // 以替换item为例，此时会以removeAndInsert的方式更新列表。
         if (oldItem.javaClass != newItem.javaClass) return false
@@ -126,8 +123,7 @@ open class MultiTypeAdapter<T : Any>
         oldTheSame && getViewTypeDelegate(newViewType).areItemsTheSame(oldItem, newItem)
     }
 
-    @VisibleForTesting(otherwise = PROTECTED)
-    public override fun areContentsTheSame(oldItem: T, newItem: T): Boolean = with(multiType) {
+    override fun areContentsTheSame(oldItem: T, newItem: T): Boolean = with(multiType) {
         val oldViewType = getItemViewType(oldItem)
         val newViewType = getItemViewType(newItem)
         // 当两个item的viewType不同时，不需要调用areContentsTheSame()和getChangePayload()，
@@ -136,8 +132,7 @@ open class MultiTypeAdapter<T : Any>
         oldViewType == newViewType && getViewTypeDelegate(oldViewType).areContentsTheSame(oldItem, newItem)
     }
 
-    @VisibleForTesting(otherwise = PROTECTED)
-    public override fun getChangePayload(oldItem: T, newItem: T): Any? = with(multiType) {
+    override fun getChangePayload(oldItem: T, newItem: T): Any? = with(multiType) {
         val viewType = getItemViewType(oldItem)
         getViewTypeDelegate(viewType).getChangePayload(oldItem, newItem)
     }
