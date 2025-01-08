@@ -24,7 +24,10 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.ViewController
+import com.xiaocydx.cxrv.internal.childEach
 import com.xiaocydx.cxrv.internal.doOnPreDraw
+import com.xiaocydx.cxrv.list.InlineList
+import com.xiaocydx.cxrv.list.accessEach
 
 /**
  * View适配器，用于构建HeaderFooter
@@ -40,7 +43,9 @@ abstract class ViewAdapter<VH : ViewHolder>(
     currentAsItem: Boolean = false
 ) : Adapter<VH>(), SpanSizeProvider {
     private val controller = ViewController()
+    private var endAnimationList = InlineList<ViewHolder>()
     private var endAnimationAction: OneShotPreDrawListener? = null
+
     protected val viewHolder: ViewHolder?
         get() = controller.viewHolder
     protected val recyclerView: RecyclerView?
@@ -167,10 +172,20 @@ abstract class ViewAdapter<VH : ViewHolder>(
 
     private fun setEndAnimationAction() {
         removeEndAnimationAction()
-        val itemAnimator = recyclerView?.itemAnimator ?: return
-        endAnimationAction = recyclerView?.doOnPreDraw {
+        val rv = recyclerView ?: return
+        val itemAnimator = rv.itemAnimator ?: return
+        endAnimationAction = rv.doOnPreDraw {
             endAnimationAction = null
-            controller.viewHolder?.let(itemAnimator::endAnimation)
+            val viewType = controller.viewHolder?.itemViewType ?: return@doOnPreDraw
+            // 存在remove和add同时出现的情况，结束这两个ViewHolder的动画
+            rv.childEach { child ->
+                val holder = rv.getChildViewHolder(child) ?: return@childEach
+                if (holder.itemViewType == viewType) endAnimationList += holder
+            }
+            // 遍历child时不能调用endAnimation()，会同步移除和回收child，
+            // endAnimationList.size最大为2，controller已将回收上限设为1。
+            endAnimationList.accessEach { itemAnimator.endAnimation(it) }
+            endAnimationList = endAnimationList.clear()
         }
     }
 
