@@ -142,15 +142,29 @@ fun interface HandleEventListener<T : Any> {
 }
 
 /**
- * 提供用于推断状态视图显示情况的加载状态集合
+ * 转换出用于推断状态视图显示情况的加载状态集合
  */
-fun interface DisplayLoadStatesProvider {
+fun interface DisplayTransformer {
 
     /**
      * @param previous 之前的加载状态集合
      * @param current  当前的加载状态集合
      */
-    fun get(previous: LoadStates, current: LoadStates): LoadStates
+    fun transform(previous: LoadStates, current: LoadStates): LoadStates
+
+    companion object {
+
+        /**
+         * 加载中的流转过程，将加载状态从[LoadState.Loading]转换为[LoadState.Incomplete]
+         */
+        val NonLoading = DisplayTransformer { previous, current ->
+            when {
+                previous.refreshToLoading(current) -> current.copy(refresh = LoadState.Incomplete)
+                previous.appendToLoading(current) -> current.copy(append = LoadState.Incomplete)
+                else -> current
+            }
+        }
+    }
 }
 
 /**
@@ -165,7 +179,7 @@ class PagingCollector<T : Any> internal constructor(
     private var appendTrigger: AppendTrigger? = null
     private var loadStatesListeners = InlineList<LoadStatesListener>()
     private var handleEventListeners = InlineList<HandleEventListener<in T>>()
-    private var displayLoadStatesProvider: DisplayLoadStatesProvider? = null
+    private var displayTransformer: DisplayTransformer? = null
 
     /**
      * 跟上游`Flow<PagingData<T>>`一致的加载状态集合
@@ -195,26 +209,23 @@ class PagingCollector<T : Any> internal constructor(
     /**
      * 刷新加载，获取新的[PagingData]
      *
-     * [provider]提供用于推断状态视图显示情况的加载状态集合，
-     * 以下拉刷新不用显示[LoadState.Loading]的状态视图为例：
+     * [transformer]转换出推断状态视图显示情况的加载状态集合，
+     * 以下拉刷新不需要显示[LoadState.Loading]的状态视图为例：
      * ```
-     * refresh provider@{ previous, current ->
-     *    if (!previous.refreshToLoading(current)) return@provider current
-     *    current.copy(refresh = LoadState.Incomplete)
-     * }
+     * refresh(DisplayTransformer.NonLoading)
      * ```
      *
-     * 刷新加载中的流转过程，将加载状态从[LoadState.Loading]更改为[LoadState.Incomplete]，
-     * 更改结果保存在[displayLoadStates]。通过[addLoadStatesListener]实现状态视图的代码，
+     * 刷新加载中的流转过程，将加载状态从[LoadState.Loading]转换为[LoadState.Incomplete]，
+     * 转换结果保存在[displayLoadStates]。通过[addLoadStatesListener]实现状态视图的代码，
      * 需要在[LoadStatesListener]触发时，获取[displayLoadStates]推断状态视图的显示情况，
      * [LoadHeaderAdapter.onLoadStatesChanged]演示了这个过程。
      *
-     * [provider]仅对此次刷新加载生效，即刷新加载完成后就移除[provider]。
+     * [transformer]仅对此次刷新加载生效，即刷新加载完成后就移除[transformer]。
      */
     @MainThread
-    fun refresh(provider: DisplayLoadStatesProvider? = null) {
+    fun refresh(transformer: DisplayTransformer? = null) {
         assertMainThread()
-        setDisplayLoadStatesProvider(provider)
+        setDisplayTransformer(transformer)
         mediator?.refresh()
     }
 
@@ -407,8 +418,8 @@ class PagingCollector<T : Any> internal constructor(
         if (loadStates == newStates) return
         val previous = loadStates
         loadStates = newStates
-        displayLoadStates = displayLoadStatesProvider?.get(previous, newStates) ?: newStates
-        if (previous.refreshToComplete(newStates)) displayLoadStatesProvider = null
+        displayLoadStates = displayTransformer?.transform(previous, newStates) ?: newStates
+        if (previous.refreshToComplete(newStates)) setDisplayTransformer(null)
         loadStatesListeners.reverseAccessEach { it.onLoadStatesChanged(previous, loadStates) }
     }
 
@@ -421,8 +432,8 @@ class PagingCollector<T : Any> internal constructor(
 
     @MainThread
     @VisibleForTesting
-    internal fun setDisplayLoadStatesProvider(provider: DisplayLoadStatesProvider?) {
-        displayLoadStatesProvider = provider
+    internal fun setDisplayTransformer(transformer: DisplayTransformer?) {
+        displayTransformer = transformer
     }
 
     private class PostponeHandleEventForRefreshScroll : HandleEventListener<Any> {

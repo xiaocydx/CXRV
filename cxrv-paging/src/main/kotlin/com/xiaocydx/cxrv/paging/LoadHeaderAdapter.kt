@@ -111,7 +111,7 @@ internal class LoadHeaderAdapter(
 
     private fun LoadStates.toVisible(): Visible = when {
         adapter.hasDisplayItem -> NONE
-        this.isIncomplete -> NONE
+        this.isIncomplete && this != collector.loadStates -> NONE
         this.isLoading -> if (config.loadingScope != null) LOADING else NONE
         this.isFailure -> if (config.failureScope != null) FAILURE else NONE
         this.isFully -> if (config.emptyScope != null) EMPTY else NONE

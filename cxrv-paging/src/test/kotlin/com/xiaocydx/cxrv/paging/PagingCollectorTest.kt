@@ -79,10 +79,7 @@ internal class PagingCollectorTest {
 
     @Test
     fun displayLoadStates() {
-        collector.setDisplayLoadStatesProvider provider@{ previous, current ->
-            if (!previous.refreshToLoading(current)) return@provider current
-            current.copy(refresh = LoadState.Incomplete)
-        }
+        collector.setDisplayTransformer(DisplayTransformer.NonLoading)
         collector.setLoadState(loadType = LoadType.REFRESH, newState = LoadState.Loading)
         assertThat(collector.loadStates).isEqualTo(LoadStates(LoadState.Loading, LoadState.Incomplete))
         assertThat(collector.displayLoadStates).isEqualTo(LoadStates(LoadState.Incomplete, LoadState.Incomplete))
