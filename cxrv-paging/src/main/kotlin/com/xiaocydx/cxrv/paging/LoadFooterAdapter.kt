@@ -160,7 +160,7 @@ internal class LoadFooterAdapter(
     }
 
     /**
-     * 在[handleFullyVisibleWhilePreDraw]被调用时判断是否显示FULLY视图
+     * 在[handleFullyVisibleOnPreDraw]被调用时判断是否显示FULLY视图
      *
      * [removeFooter] == `true`满足的场景：
      * 末尾加载完全时，会在FULLY视图前面插入item，
@@ -175,7 +175,7 @@ internal class LoadFooterAdapter(
     /**
      * 该函数在视图树draw之前被调用，即RV布局流程完成后被调用
      */
-    private fun handleFullyVisibleWhilePreDraw() {
+    private fun handleFullyVisibleOnPreDraw() {
         if (!isPostponeHandleFullyVisible) return
         isPostponeHandleFullyVisible = false
         if (!loadStates.isFully) return
@@ -222,7 +222,7 @@ internal class LoadFooterAdapter(
 
     private inner class PreDrawListenerImpl(rv: RecyclerView) : PreDrawListener(rv) {
         override fun onPreDraw(): Boolean {
-            handleFullyVisibleWhilePreDraw()
+            handleFullyVisibleOnPreDraw()
             return super.onPreDraw()
         }
 
