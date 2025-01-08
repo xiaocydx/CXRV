@@ -44,9 +44,9 @@ internal class LoadHeaderAdapter(
 ) : ViewAdapter<ViewHolder>(), LoadStatesListener, ListChangedListener<Any> {
     private var visible: Visible = NONE
     private var loadStates: LoadStates = LoadStates.Incomplete
+    private val collector = adapter.pagingCollector
 
     init {
-        val collector = adapter.pagingCollector
         config.complete(
             retry = collector::retry,
             exception = { collector.loadStates.exception }
@@ -56,13 +56,13 @@ internal class LoadHeaderAdapter(
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
         adapter.addListChangedListener(this)
-        adapter.pagingCollector.addLoadStatesListener(this)
+        collector.addLoadStatesListener(this)
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
         adapter.removeListChangedListener(this)
-        adapter.pagingCollector.removeLoadStatesListener(this)
+        collector.removeLoadStatesListener(this)
     }
 
     override fun getItemViewType(): Int = hashCode()
@@ -105,12 +105,13 @@ internal class LoadHeaderAdapter(
     }
 
     override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
-        loadStates = current
-        updateLoadHeader(current.toVisible())
+        loadStates = collector.displayLoadStates
+        updateLoadHeader(loadStates.toVisible())
     }
 
     private fun LoadStates.toVisible(): Visible = when {
         adapter.hasDisplayItem -> NONE
+        this.isIncomplete -> NONE
         this.isLoading -> if (config.loadingScope != null) LOADING else NONE
         this.isFailure -> if (config.failureScope != null) FAILURE else NONE
         this.isFully -> if (config.emptyScope != null) EMPTY else NONE

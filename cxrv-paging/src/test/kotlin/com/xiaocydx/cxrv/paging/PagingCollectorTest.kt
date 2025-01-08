@@ -71,18 +71,21 @@ internal class PagingCollectorTest {
     fun executeOnceAutoDispose() {
         val handler: LoadStatesListener = mockk(relaxed = true)
         val disposable = collector.doOnLoadStatesChanged(once = true, handler)
-
-        collector.setLoadState(
-            loadType = LoadType.REFRESH,
-            newState = LoadState.Loading
-        )
+        collector.setLoadState(loadType = LoadType.REFRESH, newState = LoadState.Loading)
         assertDisposed(disposable)
-
-        collector.setLoadState(
-            loadType = LoadType.REFRESH,
-            newState = LoadState.Success(isFully = true)
-        )
+        collector.setLoadState(loadType = LoadType.REFRESH, newState = LoadState.Success(isFully = true))
         verify(exactly = 1) { handler.onLoadStatesChanged(any(), any()) }
+    }
+
+    @Test
+    fun displayLoadStates() {
+        collector.setDisplayLoadStatesProvider provider@{ previous, current ->
+            if (!previous.refreshToLoading(current)) return@provider current
+            current.copy(refresh = LoadState.Incomplete)
+        }
+        collector.setLoadState(loadType = LoadType.REFRESH, newState = LoadState.Loading)
+        assertThat(collector.loadStates).isEqualTo(LoadStates(LoadState.Loading, LoadState.Incomplete))
+        assertThat(collector.displayLoadStates).isEqualTo(LoadStates(LoadState.Incomplete, LoadState.Incomplete))
     }
 
     private fun assertDisposed(disposable: Disposable) {

@@ -50,9 +50,9 @@ internal class LoadFooterAdapter(
     private var isPostponeHandleFullyVisible = false
     private var loadStates: LoadStates = LoadStates.Incomplete
     private var preDrawListener: PreDrawListenerImpl? = null
+    private val collector = adapter.pagingCollector
 
     init {
-        val collector = adapter.pagingCollector
         config.complete(
             retry = collector::retry,
             exception = { collector.loadStates.exception }
@@ -62,14 +62,14 @@ internal class LoadFooterAdapter(
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
         adapter.addListChangedListener(this)
-        adapter.pagingCollector.addLoadStatesListener(this)
+        collector.addLoadStatesListener(this)
         preDrawListener = PreDrawListenerImpl(recyclerView)
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
         adapter.removeListChangedListener(this)
-        adapter.pagingCollector.removeLoadStatesListener(this)
+        collector.removeLoadStatesListener(this)
         preDrawListener?.removeListener()
         preDrawListener = null
     }
@@ -117,8 +117,8 @@ internal class LoadFooterAdapter(
     }
 
     override fun onLoadStatesChanged(previous: LoadStates, current: LoadStates) {
-        loadStates = current
-        val visible = current.toVisible()
+        loadStates = collector.displayLoadStates
+        val visible = loadStates.toVisible()
         if (visible == FULLY) {
             var removeFooter = true
             if (previous.refresh.isIncomplete) {

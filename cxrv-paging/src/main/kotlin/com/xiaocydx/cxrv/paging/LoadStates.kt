@@ -120,6 +120,11 @@ fun LoadStates.getState(
 }
 
 /**
+ * 当前状态集合和[states]对比，是否为刷新加载中的流转过程
+ */
+fun LoadStates.refreshToLoading(states: LoadStates) = refreshTo(states, LoadState::isLoading)
+
+/**
  * 当前状态集合和[states]对比，是否为刷新加载成功的流转过程
  */
 fun LoadStates.refreshToSuccess(states: LoadStates) = refreshTo(states, LoadState::isSuccess)
@@ -140,6 +145,11 @@ fun LoadStates.refreshToComplete(states: LoadStates) = refreshTo(states, LoadSta
  * 当前状态集合和[states]对比，是否为刷新加载完全的流转过程
  */
 fun LoadStates.refreshToFully(states: LoadStates) = refreshTo(states, LoadState::isFully)
+
+/**
+ * 当前状态集合和[states]对比，是否为末尾加载中的流转过程
+ */
+fun LoadStates.appendToLoading(states: LoadStates) = appendTo(states, LoadState::isLoading)
 
 /**
  * 当前状态集合和[states]对比，是否为末尾加载成功的流转过程

@@ -142,6 +142,18 @@ fun interface HandleEventListener<T : Any> {
 }
 
 /**
+ * 提供用于推断状态视图显示情况的加载状态集合
+ */
+fun interface DisplayLoadStatesProvider {
+
+    /**
+     * @param previous 之前的加载状态集合
+     * @param current  当前的加载状态集合
+     */
+    fun get(previous: LoadStates, current: LoadStates): LoadStates
+}
+
+/**
  * 分页数据收集器，负责收集指定流的[PagingData]
  */
 class PagingCollector<T : Any> internal constructor(
@@ -153,7 +165,19 @@ class PagingCollector<T : Any> internal constructor(
     private var appendTrigger: AppendTrigger? = null
     private var loadStatesListeners = InlineList<LoadStatesListener>()
     private var handleEventListeners = InlineList<HandleEventListener<in T>>()
+    private var displayLoadStatesProvider: DisplayLoadStatesProvider? = null
+
+    /**
+     * 跟上游`Flow<PagingData<T>>`一致的加载状态集合
+     */
     var loadStates: LoadStates = LoadStates.Incomplete
+        private set
+
+    /**
+     * 用于推断状态视图显示情况的加载状态集合，默认等于[loadStates]，
+     * 可结合[refresh]的注释和[LoadHeaderAdapter]理解该属性的作用。
+     */
+    var displayLoadStates: LoadStates = LoadStates.Incomplete
         private set
 
     init {
@@ -170,10 +194,27 @@ class PagingCollector<T : Any> internal constructor(
 
     /**
      * 刷新加载，获取新的[PagingData]
+     *
+     * [provider]提供用于推断状态视图显示情况的加载状态集合，
+     * 以下拉刷新不用显示[LoadState.Loading]的状态视图为例：
+     * ```
+     * refresh provider@{ previous, current ->
+     *    if (!previous.refreshToLoading(current)) return@provider current
+     *    current.copy(refresh = LoadState.Incomplete)
+     * }
+     * ```
+     *
+     * 刷新加载中的流转过程，将加载状态从[LoadState.Loading]更改为[LoadState.Incomplete]，
+     * 更改结果保存在[displayLoadStates]。通过[addLoadStatesListener]实现状态视图的代码，
+     * 需要在[LoadStatesListener]触发时，获取[displayLoadStates]推断状态视图的显示情况，
+     * [LoadHeaderAdapter.onLoadStatesChanged]演示了这个过程。
+     *
+     * [provider]仅对此次刷新加载生效，即刷新加载完成后就移除[provider]。
      */
     @MainThread
-    fun refresh() {
+    fun refresh(provider: DisplayLoadStatesProvider? = null) {
         assertMainThread()
+        setDisplayLoadStatesProvider(provider)
         mediator?.refresh()
     }
 
@@ -366,20 +407,22 @@ class PagingCollector<T : Any> internal constructor(
         if (loadStates == newStates) return
         val previous = loadStates
         loadStates = newStates
-        loadStatesListeners.reverseAccessEach {
-            it.onLoadStatesChanged(previous, loadStates)
-        }
+        displayLoadStates = displayLoadStatesProvider?.get(previous, newStates) ?: newStates
+        if (previous.refreshToComplete(newStates)) displayLoadStatesProvider = null
+        loadStatesListeners.reverseAccessEach { it.onLoadStatesChanged(previous, loadStates) }
     }
 
     @MainThread
     @VisibleForTesting
     internal fun setLoadState(loadType: LoadType, newState: LoadState) {
         if (loadStates.getState(loadType) == newState) return
-        val previous = loadStates
-        loadStates = loadStates.modifyState(loadType, newState)
-        loadStatesListeners.reverseAccessEach {
-            it.onLoadStatesChanged(previous, loadStates)
-        }
+        setLoadStates(loadStates.modifyState(loadType, newState))
+    }
+
+    @MainThread
+    @VisibleForTesting
+    internal fun setDisplayLoadStatesProvider(provider: DisplayLoadStatesProvider?) {
+        displayLoadStatesProvider = provider
     }
 
     private class PostponeHandleEventForRefreshScroll : HandleEventListener<Any> {
