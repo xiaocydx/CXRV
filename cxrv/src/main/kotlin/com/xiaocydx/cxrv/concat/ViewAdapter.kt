@@ -16,6 +16,7 @@
 
 package com.xiaocydx.cxrv.concat
 
+import android.view.Choreographer.FrameCallback
 import androidx.annotation.CallSuper
 import androidx.annotation.VisibleForTesting
 import androidx.core.view.OneShotPreDrawListener
@@ -24,10 +25,10 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.ViewController
-import com.xiaocydx.cxrv.internal.childEach
+import com.xiaocydx.cxrv.internal.currentAnimationTimeNanos
 import com.xiaocydx.cxrv.internal.doOnPreDraw
-import com.xiaocydx.cxrv.list.InlineList
-import com.xiaocydx.cxrv.list.accessEach
+import com.xiaocydx.cxrv.internal.postTraversalCallback
+import com.xiaocydx.cxrv.internal.removeTraversalCallback
 
 /**
  * View适配器，用于构建HeaderFooter
@@ -43,8 +44,8 @@ abstract class ViewAdapter<VH : ViewHolder>(
     currentAsItem: Boolean = false
 ) : Adapter<VH>(), SpanSizeProvider {
     private val controller = ViewController()
-    private var endAnimationList = InlineList<ViewHolder>()
-    private var endAnimationAction: OneShotPreDrawListener? = null
+    private val dispatcher = NotifyDispatcher()
+    private var itemCount = if (currentAsItem) controller.itemCount else 0
 
     protected val viewHolder: ViewHolder?
         get() = controller.viewHolder
@@ -54,7 +55,7 @@ abstract class ViewAdapter<VH : ViewHolder>(
     var currentAsItem = currentAsItem
         private set
 
-    final override fun getItemCount(): Int = if (currentAsItem) controller.itemCount else 0
+    final override fun getItemCount(): Int = itemCount
 
     final override fun getItemViewType(position: Int): Int = getItemViewType()
 
@@ -103,52 +104,42 @@ abstract class ViewAdapter<VH : ViewHolder>(
 
     @CallSuper
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        removeEndAnimationAction()
+        dispatcher.cancel()
         controller.onDetachedFromRecyclerView(recyclerView)
     }
 
     /**
-     * 显示Item，[anim]为`false`表示不需要动画
+     * 显示Item，[anim]为`false`表示不运行动画
      */
     fun show(anim: Boolean = true) {
         if (currentAsItem) return
-        currentAsItem = true
-        notifyItemInserted(0)
-        if (!anim) setEndAnimationAction()
+        dispatcher.dispatch(anim, current = true)
     }
 
     /**
-     * 隐藏Item，[anim]为`false`表示不需要Item动画
+     * 隐藏Item，[anim]为`false`表示不运行动画
      */
     fun hide(anim: Boolean = true) {
         if (!currentAsItem) return
-        currentAsItem = false
-        notifyItemRemoved(0)
-        if (!anim) setEndAnimationAction()
+        dispatcher.dispatch(anim, current = false)
     }
 
     /**
-     * 更新Item，[anim]为`false`表示不需要Item动画
+     * 更新Item，不运行动画
      */
-    fun update(anim: Boolean = true) {
+    fun update() {
         if (!currentAsItem) return
-        if (anim) {
-            notifyItemChanged(0)
-        } else {
-            // 重用controller.viewHolder，默认不执行动画
-            notifyItemChanged(0, false)
-        }
-        removeEndAnimationAction()
+        dispatcher.dispatch(anim = false, current = true)
     }
 
     /**
-     * 显示/隐藏/更新Item，[anim]为`false`表示不需要Item动画
+     * 显示/隐藏/更新Item，[anim]为`false`表示不运行动画
      */
     fun showOrHideOrUpdate(show: Boolean, anim: Boolean = true) {
         when {
             !show -> hide(anim)
             !currentAsItem -> show(anim)
-            else -> update(anim)
+            else -> update()
         }
     }
 
@@ -166,32 +157,64 @@ abstract class ViewAdapter<VH : ViewHolder>(
         when {
             !show -> hide(anim = anim != NeedAnim.NOT_ALL)
             !currentAsItem -> show(anim = anim != NeedAnim.NOT_ALL)
-            else -> update(anim = anim == NeedAnim.ALL)
+            else -> update()
         }
     }
 
-    private fun setEndAnimationAction() {
-        removeEndAnimationAction()
-        val rv = recyclerView ?: return
-        val itemAnimator = rv.itemAnimator ?: return
-        endAnimationAction = rv.doOnPreDraw {
-            endAnimationAction = null
-            val viewType = controller.viewHolder?.itemViewType ?: return@doOnPreDraw
-            // 存在remove和add同时出现的情况，结束这两个ViewHolder的动画
-            rv.childEach { child ->
-                val holder = rv.getChildViewHolder(child) ?: return@childEach
-                if (holder.itemViewType == viewType) endAnimationList += holder
+    private inner class NotifyDispatcher {
+        private var anim = false
+        private var notifyItemAction: FrameCallback? = null
+        private var endAnimationAction: OneShotPreDrawListener? = null
+
+        fun dispatch(anim: Boolean, current: Boolean) {
+            this.anim = anim
+            val previousAsItem = currentAsItem
+            currentAsItem = current
+            if (notifyItemAction != null) return
+
+            // notifyItemAction执行之前不更新itemCount，
+            // 避免其它SubAdapter更新时计算出错误的位置。
+            notifyItemAction = FrameCallback {
+                notifyItemAction = null
+                itemCount = if (currentAsItem) controller.itemCount else 0
+                when {
+                    !previousAsItem && currentAsItem -> {
+                        notifyItemInserted(0)
+                        endAnimationActionOnPreDraw()
+                    }
+                    previousAsItem && !currentAsItem -> {
+                        notifyItemRemoved(0)
+                        endAnimationActionOnPreDraw()
+                    }
+                    previousAsItem && currentAsItem -> {
+                        // 重用controller.viewHolder，默认不执行动画
+                        notifyItemChanged(0, false)
+                    }
+                }
             }
-            // 遍历child时不能调用endAnimation()，会同步移除和回收child，
-            // endAnimationList.size最大为2，controller已将回收上限设为1。
-            endAnimationList.accessEach { itemAnimator.endAnimation(it) }
-            endAnimationList = endAnimationList.clear()
+            // postTraversalCallback()会调用recyclerView.requestLayout()，
+            // 即使当前执行在Input/Animation Callback，也能在当前帧完成布局。
+            controller.recyclerView?.postTraversalCallback(notifyItemAction!!)
         }
-    }
 
-    private fun removeEndAnimationAction() {
-        endAnimationAction?.removeListener()
-        endAnimationAction = null
+        fun cancel() {
+            // 直接执行notifyItemAction，更新itemCount
+            notifyItemAction?.doFrame(currentAnimationTimeNanos)
+            notifyItemAction?.let { controller.recyclerView?.removeTraversalCallback(it) }
+            notifyItemAction = null
+            endAnimationAction?.removeListener()
+            endAnimationAction = null
+        }
+
+        private fun endAnimationActionOnPreDraw() {
+            val rv = controller.recyclerView ?: return
+            val itemAnimator = rv.itemAnimator ?: return
+            if (anim || !rv.isAttachedToWindow) return
+            endAnimationAction = rv.doOnPreDraw {
+                endAnimationAction = null
+                controller.viewHolder?.let(itemAnimator::endAnimation)
+            }
+        }
     }
 
     /**

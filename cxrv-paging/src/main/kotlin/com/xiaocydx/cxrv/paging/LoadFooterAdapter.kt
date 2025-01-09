@@ -213,7 +213,7 @@ internal class LoadFooterAdapter(
         } else false
     }
 
-    internal fun toHandle() = LoadAdapterHandle { update(anim = ANIM) }
+    internal fun toHandle() = LoadAdapterHandle { update() }
 
     private enum class Visible {
         NONE, LOADING, FAILURE, FULLY
