@@ -7,5 +7,5 @@
     <item name="tag_item_touch_dispatcher" type="id" />
     <item name="tag_view_touch_temp_info" type="id" />
     <item name="tag_view_has_transient_state" type="id" />
-    <item name="tag_view_traversal_proxy" type="id" />
+    <item name="tag_view_broadcast_proxy" type="id" />
 </resources>

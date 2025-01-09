@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-@file:JvmName("_ViewHolderInternalKt")
+@file:JvmName("_RecyclerViewInternalKt")
 @file:Suppress("PackageDirectoryMismatch")
 
 package androidx.recyclerview.widget
 
 import android.view.View
 import android.view.ViewGroup
-import androidx.recyclerview.widget.RecyclerView.*
-import com.xiaocydx.cxrv.concat.ViewAdapter
+import androidx.recyclerview.widget.RecyclerView.LayoutParams
+import androidx.recyclerview.widget.RecyclerView.ViewCacheExtension
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 
 internal val View.holder: ViewHolder?
     get() = (layoutParams as? LayoutParams)?.mViewHolder
@@ -36,17 +37,12 @@ internal val RecyclerView.isPreLayout: Boolean
 internal val RecyclerView.cacheViews: List<ViewHolder>
     get() = mRecycler?.mCachedViews ?: emptyList()
 
-internal fun RecyclerView.isHeaderOrFooterOrRemoved(child: View): Boolean {
-    val holder = getChildViewHolder(child) ?: return false
-    return holder.bindingAdapter is ViewAdapter<*> || holder.isRemoved
-}
-
-internal fun RecyclerView.isViewHolderRemoved(child: View): Boolean {
-    return getChildViewHolder(child)?.isRemoved ?: return false
-}
-
 internal fun RecyclerView.clearPendingUpdates() {
     mAdapterHelper.takeIf { it.hasPendingUpdates() }?.reset()
+}
+
+internal fun RecyclerView.assertNotInLayoutOrScroll() {
+    assertNotInLayoutOrScroll(null)
 }
 
 internal class SimpleViewHolder(itemView: View) : ViewHolder(itemView) {

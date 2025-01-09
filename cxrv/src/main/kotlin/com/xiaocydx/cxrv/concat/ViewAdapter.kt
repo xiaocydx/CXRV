@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.recyclerview.widget.ViewController
+import androidx.recyclerview.widget.assertNotInLayoutOrScroll
 import com.xiaocydx.cxrv.internal.currentAnimationTimeNanos
 import com.xiaocydx.cxrv.internal.doOnPreDraw
 import com.xiaocydx.cxrv.internal.postTraversalCallback
@@ -167,6 +168,8 @@ abstract class ViewAdapter<VH : ViewHolder>(
         private var endAnimationAction: OneShotPreDrawListener? = null
 
         fun dispatch(anim: Boolean, current: Boolean) {
+            // 保持notifyItemXXX()原有的断言，不在布局过程做调度
+            controller.recyclerView?.assertNotInLayoutOrScroll()
             this.anim = anim
             val previousAsItem = currentAsItem
             currentAsItem = current

@@ -26,7 +26,6 @@ import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.animation.AnimationUtils
 import android.widget.FrameLayout
-import androidx.core.view.ViewCompat
 import com.xiaocydx.cxrv.R
 import com.xiaocydx.cxrv.list.InlineList
 import com.xiaocydx.cxrv.list.reverseAccessEach
@@ -41,74 +40,74 @@ internal val currentAnimationTimeNanos: Long
     get() = AnimationUtils.currentAnimationTimeMillis() * 1_000_000
 
 /**
- * 添加[callback]到[TraversalProxy]，调用[View.requestLayout]申请重新布局，
+ * 添加[callback]到[BroadcastProxy]，调用[View.requestLayout]申请重新布局，
  * 实现确保[callback]在`doFrame`消息中、[View.onMeasure]重新布局之前执行。
  *
- * 若添加[callback]失败、[TraversalProxy]和[TraversalDispatcher]被移除，则同步执行[callback]。
+ * 若添加[callback]失败、[BroadcastProxy]或[BroadcastFrame]被移除，则同步执行[callback]。
  *
  * 该函数用于跟[View]的布局严格同步，[Choreographer.postFrameCallbackDelayed]设置负延时的做法，
  * 在Animation Callback下无效，因为添加的负延时[FrameCallback]是在下一帧执行，不是在当前帧执行。
  */
 internal fun View.postTraversalCallback(callback: FrameCallback) {
-    getTraversalProxy().postTraversalCallback(callback)
+    broadcastProxy.postTraversalCallback(callback)
 }
 
 /**
  * 移除[postTraversalCallback]添加的[callback]
  */
 internal fun View.removeTraversalCallback(callback: FrameCallback) {
-    getTraversalProxy().removeTraversalCallback(callback)
+    broadcastProxy.removeTraversalCallback(callback)
 }
 
-private fun View.getTraversalProxy(): TraversalProxy {
-    var proxy = getTag(R.id.tag_view_traversal_proxy) as? TraversalProxy
-    if (proxy == null) {
-        proxy = TraversalProxy(this)
-        setTag(R.id.tag_view_traversal_proxy, proxy)
+private val View.broadcastProxy: BroadcastProxy
+    get() {
+        var proxy = getTag(R.id.tag_view_broadcast_proxy) as? BroadcastProxy
+        if (proxy == null) {
+            proxy = BroadcastProxy(this)
+            setTag(R.id.tag_view_broadcast_proxy, proxy)
+        }
+        return proxy
     }
-    return proxy
-}
 
-internal class TraversalProxy(private val view: View) {
-    private var dispatcher: TraversalDispatcher? = null
+private class BroadcastProxy(private val view: View) {
+    private var broadcastFrame: BroadcastFrame? = null
     private var callbacks = InlineList<FrameCallback>()
 
     init {
         view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) = Unit
-            override fun onViewDetachedFromWindow(v: View) = detachFromDispatcher()
+            override fun onViewDetachedFromWindow(v: View) = unregisterFromBroadcastFrame()
         })
     }
 
     fun postTraversalCallback(callback: FrameCallback) {
-        if (dispatcher == null && view.isAttachedToWindow) {
-            // dispatcher未获取或被移除, 尝试获取dispatcher
-            attachToDispatcher()
+        if (broadcastFrame == null && view.isAttachedToWindow) {
+            // broadcastFrame未获取或被移除, 尝试获取
+            registerToBroadcastFrame()
         }
-        if (dispatcher == null) {
+        if (broadcastFrame == null) {
             // 添加callback失败，同步执行callback
             callback.doFrame(currentAnimationTimeNanos)
             return
         }
         callbacks += callback
-        // view和dispatcher都申请重新布局，dispatcher比view先执行
         view.requestLayout()
-        dispatcher?.scheduleTraversal()
+        broadcastFrame?.scheduleTraversal()
     }
 
     fun removeTraversalCallback(callback: FrameCallback) {
         callbacks -= callback
     }
 
-    fun attachToDispatcher() {
-        dispatcher = TraversalDispatcher.get(view)
-        dispatcher?.register(this)
+    fun registerToBroadcastFrame() {
+        broadcastFrame = BroadcastFrame.get(view)
+        broadcastFrame?.register(this)
     }
 
-    fun detachFromDispatcher() {
-        dispatcher?.unregister(this)
-        dispatcher = null
-        // TraversalProxy或TraversalDispatcher被移除，同步执行callback
+    fun unregisterFromBroadcastFrame() {
+        broadcastFrame?.unregister(this)
+        broadcastFrame = null
+        // this或broadcastFrame被移除，同步执行callback
         dispatchTraversalCallbacks()
     }
 
@@ -119,12 +118,12 @@ internal class TraversalProxy(private val view: View) {
     }
 }
 
-private class TraversalDispatcher private constructor(context: Context) : View(context) {
-    private var proxyList = InlineList<TraversalProxy>()
-    private var canNotifyProxyDetached = true
+private class BroadcastFrame private constructor(context: Context) : View(context) {
+    private var canDispatchUnregister = true
+    private var proxyList = InlineList<BroadcastProxy>()
 
     /**
-     * `parent`是[FrameLayout]才能确保按child顺序进行测量（TraversalDispatcher是第0位），
+     * `parent`是[FrameLayout]才能确保按child顺序进行测量，[BroadcastFrame]是第0位child，
      * [requestApplyInsets]和[dispatchApplyWindowInsets]为替补方案，尽可能确保child顺序。
      */
     private val isDispatchOnMeasure: Boolean
@@ -135,19 +134,21 @@ private class TraversalDispatcher private constructor(context: Context) : View(c
         visibility = INVISIBLE
     }
 
-    fun register(proxy: TraversalProxy) {
+    fun register(proxy: BroadcastProxy) {
         proxyList += proxy
     }
 
-    fun unregister(proxy: TraversalProxy) {
+    fun unregister(proxy: BroadcastProxy) {
         proxyList -= proxy
     }
 
     fun scheduleTraversal() {
         if (isDispatchOnMeasure) {
-            ensureFirstInParent()
+            ensureFirstMeasure()
         } else if (!isLayoutRequested) {
-            ViewCompat.requestApplyInsets(this)
+            // 调用requestApplyInsets()后，再次调用没有状态拦截，
+            // 利用requestLayout()添加的isLayoutRequested做拦截。
+            requestApplyInsets()
         }
         requestLayout()
     }
@@ -166,21 +167,21 @@ private class TraversalDispatcher private constructor(context: Context) : View(c
         proxyList.reverseAccessEach { it.dispatchTraversalCallbacks() }
     }
 
-    private fun ensureFirstInParent() {
+    private fun ensureFirstMeasure() {
         val parent = parent as? ViewGroup ?: return
         val first = parent.getChildAt(0)
         if (first !== this) {
-            canNotifyProxyDetached = false
+            canDispatchUnregister = false
             parent.removeView(this)
             parent.addView(this, 0)
-            canNotifyProxyDetached = true
+            canDispatchUnregister = true
         }
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        if (!canNotifyProxyDetached) return
-        proxyList.reverseAccessEach { it.detachFromDispatcher() }
+        if (!canDispatchUnregister) return
+        proxyList.reverseAccessEach { it.unregisterFromBroadcastFrame() }
         proxyList = proxyList.clear()
     }
 
@@ -190,13 +191,13 @@ private class TraversalDispatcher private constructor(context: Context) : View(c
 
     companion object {
 
-        fun get(view: View): TraversalDispatcher? {
+        fun get(view: View): BroadcastFrame? {
             val rootView = view.rootView as? ViewGroup ?: return null
             require(rootView !== view) { "view.rootView不能是view自身" }
-            rootView.childEach { if (it is TraversalDispatcher) return it }
-            val dispatcher = TraversalDispatcher(rootView.context)
-            rootView.addView(dispatcher, 0)
-            return dispatcher
+            rootView.childEach { if (it is BroadcastFrame) return it }
+            val broadcastFrame = BroadcastFrame(rootView.context)
+            rootView.addView(broadcastFrame, 0)
+            return broadcastFrame
         }
     }
 }
