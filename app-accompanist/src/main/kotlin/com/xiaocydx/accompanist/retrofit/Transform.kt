@@ -148,13 +148,13 @@ private class TransformCallAdapter(
 
     private data class ParameterizedTypeImpl(
         private val rawType: Type,
-        private val responseType: Type
+        private val dataType: Type
     ) : ParameterizedType {
         override fun getOwnerType(): Type? = null
 
         override fun getRawType(): Type = rawType
 
-        override fun getActualTypeArguments(): Array<Type> = arrayOf(responseType)
+        override fun getActualTypeArguments(): Array<Type> = arrayOf(dataType)
     }
 
     private class CallImpl<T>(
