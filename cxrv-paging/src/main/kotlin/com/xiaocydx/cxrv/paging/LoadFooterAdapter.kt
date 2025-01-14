@@ -154,7 +154,7 @@ internal class LoadFooterAdapter(
     private fun updateLoadFooter(visible: Visible) {
         if (this.visible != visible) {
             this.visible = visible
-            showOrHideOrUpdate(show = visible != NONE, anim = ANIM)
+            showOrHideOrUpdate(show = visible != NONE, anim = false)
         }
     }
 
@@ -229,9 +229,5 @@ internal class LoadFooterAdapter(
             super.onViewAttachedToWindow(view)
             postponeHandleFullyVisible()
         }
-    }
-
-    private companion object {
-        const val ANIM = false
     }
 }

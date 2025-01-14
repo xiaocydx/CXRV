@@ -121,7 +121,7 @@ internal class LoadHeaderAdapter(
     private fun updateLoadHeader(visible: Visible) {
         if (this.visible != visible) {
             this.visible = visible
-            showOrHideOrUpdate(show = visible != NONE, anim = ANIM)
+            showOrHideOrUpdate(show = visible != NONE, anim = false)
         }
     }
 
@@ -129,9 +129,5 @@ internal class LoadHeaderAdapter(
 
     private enum class Visible {
         NONE, LOADING, FAILURE, EMPTY
-    }
-
-    private companion object {
-        const val ANIM = false
     }
 }
