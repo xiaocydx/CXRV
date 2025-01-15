@@ -195,9 +195,14 @@ abstract class ViewAdapter<VH : ViewHolder>(
                     }
                 }
             }
-            // postTraversalCallback()会调用recyclerView.requestLayout()，
-            // 即使当前执行在Input/Animation Callback，也能在当前帧完成布局。
-            controller.recyclerView?.postTraversalCallback(notifyItemAction!!)
+
+            if (controller.recyclerView == null) {
+                notifyItemAction!!.doFrame(currentAnimationTimeNanos)
+            } else {
+                // postTraversalCallback()会调用recyclerView.requestLayout()，
+                // 即使当前执行在Input/Animation Callback，也能在当前帧完成布局。
+                controller.recyclerView!!.postTraversalCallback(notifyItemAction!!)
+            }
         }
 
         fun cancel() {
