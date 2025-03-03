@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Slide
+import androidx.transition.Transition
 import com.xiaocydx.accompanist.view.dp
 import com.xiaocydx.accompanist.view.layoutParams
 import com.xiaocydx.accompanist.view.matchParent
@@ -45,10 +46,13 @@ abstract class TransitionFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         if (arguments?.getBoolean(CUSTOM_ANIMATION) == true) return
-        enterTransition = Slide(Gravity.RIGHT).apply {
-            addTarget(view)
-            duration = 300L
-        }
+        setEnterTransition(view, Slide(Gravity.RIGHT))
+    }
+
+    protected fun setEnterTransition(view: View, transition: Transition) {
+        transition.duration = 300L
+        transition.addTarget(view)
+        enterTransition = transition
     }
 
     override fun onDestroyView() {

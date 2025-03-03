@@ -15,6 +15,7 @@ import com.xiaocydx.sample.common.Action
 import com.xiaocydx.sample.common.actionList
 import com.xiaocydx.sample.databinding.ActionContainerBinding
 import com.xiaocydx.sample.transition.EnterTransitionActivity.Companion.CUSTOM_ANIMATION
+import com.xiaocydx.sample.transition.EnterTransitionActivity.TransitionAction.AnimatorRT
 import kotlin.reflect.KClass
 
 /**
@@ -37,6 +38,9 @@ import kotlin.reflect.KClass
  * 并开始Fragment过渡动画，此时的交互体验接近Activity的窗口动画，即看到Fragment页面就有列表内容，
  * 而不是先显示Loading，再看到列表内容。
  *
+ * 5. [AnimatorRTFragment]在RenderThread上运行Fragment过渡动画，解决[JankFragment]的卡顿问题。
+ * 此方案为备用方案，未经过版本兼容测试。
+ *
  * **注意**：[EnterTransitionController]不只是优化`Fragment.enterTransition`，
  * 将[CUSTOM_ANIMATION]设为`true`，可以验证[setCustomAnimations]的优化效果。
  *
@@ -52,7 +56,7 @@ class EnterTransitionActivity : AppCompatActivity() {
 
     private fun contentView() = ActionContainerBinding
         .inflate(layoutInflater).actionList {
-            submitList(TransitionAction.entries.toList())
+            submitList(transitionActions())
             doOnItemClick { performTransitionAction(it) }
         }.root
 
@@ -79,11 +83,17 @@ class EnterTransitionActivity : AppCompatActivity() {
         )
     }
 
+    private fun transitionActions() = run {
+        val actions = TransitionAction.entries.toList()
+        if (CUSTOM_ANIMATION) actions - AnimatorRT else actions
+    }
+
     private enum class TransitionAction(val clazz: KClass<out Fragment>) : Action {
         Jank(JankFragment::class),
         Prepare(PrepareFragment::class),
         WaitEnd(WaitEndFragment::class),
-        NotWaitEnd(NotWaitEndFragment::class);
+        NotWaitEnd(NotWaitEndFragment::class),
+        AnimatorRT(AnimatorRTFragment::class);
 
         override val text = name
     }

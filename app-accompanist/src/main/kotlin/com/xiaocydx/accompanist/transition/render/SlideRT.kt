@@ -24,7 +24,7 @@ import androidx.transition.TransitionValues
 import com.xiaocydx.accompanist.transition.render.AnimatorRT.Property
 
 /**
- * 运行在RenderThread的[Slide]过渡动画
+ * 在RenderThread上运行的[Slide]过渡动画
  *
  * @author xcc
  * @date 2024/12/29
@@ -33,26 +33,38 @@ class SlideRT(slideEdge: Int) : Slide(slideEdge) {
 
     override fun onAppear(
         sceneRoot: ViewGroup,
-        view: View?,
+        view: View,
         startValues: TransitionValues?,
         endValues: TransitionValues?
     ): Animator? {
-        if (view == null || endValues == null) return null
+        if (endValues == null) return null
         val slideCalculator = mSlideCalculator.get(this)
         val endY = view.translationY
         val endX = view.translationX
         val startX = getGoneX.invoke(slideCalculator, sceneRoot, view) as Float
         val startY = getGoneY.invoke(slideCalculator, sceneRoot, view) as Float
-        if (startX == endX && startY == endY) return null
-
-        val animatorRT = if (startX != endX) {
-            view.translationX = startX
-            AnimatorRT.create(view, Property.TRANSLATION_X, endX)
-        } else {
-            view.translationY = startY
-            AnimatorRT.create(view, Property.TRANSLATION_Y, endX)
+        val animatorRT = when {
+            startX == endX && startY == endY -> null
+            startX != endX -> {
+                view.translationX = startX
+                AnimatorRT.create(view, Property.TRANSLATION_X, endX)
+            }
+            else -> {
+                view.translationY = startY
+                AnimatorRT.create(view, Property.TRANSLATION_Y, endX)
+            }
         }
-        return animatorRT.toSafeAnimator()
+        return animatorRT?.toSafeAnimator()
+    }
+
+    override fun onDisappear(
+        sceneRoot: ViewGroup,
+        view: View,
+        startValues: TransitionValues?,
+        endValues: TransitionValues?
+    ): Animator? {
+        // FIXME: disappear改用AnimatorRT，没有运行动画，不符合预期
+        return super.onDisappear(sceneRoot, view, startValues, endValues)
     }
 
     companion object {

@@ -26,7 +26,7 @@ import android.view.View
 import androidx.annotation.RequiresApi
 
 /**
- * 运行在RenderThread的属性动画
+ * 在RenderThread上运行的属性动画
  *
  * **注意**：
  * [AnimatorRT.create]传入的`view`作为RenderNodeAnimator的RenderNode，
