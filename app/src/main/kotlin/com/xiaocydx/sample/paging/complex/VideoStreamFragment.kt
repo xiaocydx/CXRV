@@ -33,7 +33,7 @@ import com.xiaocydx.accompanist.view.snackbar
 import com.xiaocydx.accompanist.viewpager2.registerOnPageChangeCallback
 import com.xiaocydx.cxrv.binding.BindingHolder
 import com.xiaocydx.cxrv.binding.bindingAdapter
-import com.xiaocydx.cxrv.itemclick.doOnLongItemClick
+import com.xiaocydx.cxrv.itemclick.reduce.doOnLongItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.MutableStateList
 import com.xiaocydx.cxrv.paging.Pager
@@ -111,11 +111,14 @@ class VideoStreamFragment : Fragment(), SystemBar {
                 tvName.insets().paddings(navigationBars())
             }
             onBindView {
+                // ivCover.scaleType为centerCrop，
+                // fitCenter()加载原图比例，避免裁剪，
+                // 加载结果的Bitmap用于过渡动画的绘制。
                 requestManager.load(it.coverUrl)
                     .fitCenter().into(ivCover)
                 tvName.text = it.name
             }
-            doOnLongItemClick { _, _ -> smoothScrollToFirst() }
+            doOnLongItemClick { smoothScrollToFirst() }
         }
 
         viewPager.adapter = adapter
@@ -123,8 +126,8 @@ class VideoStreamFragment : Fragment(), SystemBar {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        setTransformTransitionV1()
-        // setTransformTransitionV2()
+        if (USE_TRANSITION_V1) setTransformTransitionV1() else setTransformTransitionV2()
+
         viewLifecycleScope.launchSafely {
             // 首次刷新完成后，再选中位置和注册页面回调，这个处理对Fragment重建流程同样适用
             adapter.pagingCollector.loadStatesFlow().first { it.refresh.isSuccess }
@@ -161,7 +164,7 @@ class VideoStreamFragment : Fragment(), SystemBar {
         )
         Transform.postponeEnterTransition(
             receiver = receiver,
-            requestManager = Glide.with(receiver),
+            requestManager = requestManager,
             transitionProvider = transitionProvider,
             canStartEnterTransition = { getCurrentBinding()?.ivCover == it }
         )
@@ -202,9 +205,10 @@ class VideoStreamFragment : Fragment(), SystemBar {
     }
 
     companion object {
+        private const val USE_TRANSITION_V1 = true
+
         fun show(activity: FragmentActivity, args: Bundle?) {
-            val fm = activity.supportFragmentManager
-            fm.commit {
+            activity.supportFragmentManager.commit {
                 addToBackStack(null)
                 add(android.R.id.content, VideoStreamFragment::class.java, args)
             }

@@ -29,7 +29,6 @@ import com.xiaocydx.cxrv.divider.divider
 import com.xiaocydx.cxrv.itemclick.doOnItemClick
 import com.xiaocydx.cxrv.list.ListAdapter
 import com.xiaocydx.cxrv.list.adapter
-import com.xiaocydx.cxrv.list.fixedSize
 import com.xiaocydx.cxrv.list.grid
 import com.xiaocydx.cxrv.paging.onEach
 import com.xiaocydx.cxrv.paging.pagingCollector
@@ -95,7 +94,7 @@ class ComplexListActivity : AppCompatActivity(), SystemBar {
         rv = RecyclerView(this)
             .apply { id = viewModel.rvId }
             .layoutParams(matchParent, matchParent)
-            .overScrollNever().grid(spanCount = 2).fixedSize()
+            .overScrollNever().grid(spanCount = 2)
             .divider { size(5.dp).edge(Edge.all()) }
             .adapter(adapter.withPaging())
 
