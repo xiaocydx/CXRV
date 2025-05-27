@@ -24,6 +24,7 @@ import com.xiaocydx.cxrv.internal.PreDrawListener
 import com.xiaocydx.cxrv.list.Disposable
 import com.xiaocydx.cxrv.list.InlineList
 import com.xiaocydx.cxrv.list.accessEach
+import com.xiaocydx.cxrv.list.toList
 
 /**
  * [AnimatableMediator]的实现类
@@ -125,8 +126,8 @@ internal class AnimatableMediatorImpl(override val recyclerView: RecyclerView) :
     }
 
     override fun dispose() {
-        providers.accessEach { it.dispose() }
-        controllers.accessEach { it.dispose() }
+        providers.toList().forEach { it.dispose() }
+        controllers.toList().forEach { it.dispose() }
         preDrawListener?.removeListener()
         providers = InlineList()
         controllers = InlineList()
