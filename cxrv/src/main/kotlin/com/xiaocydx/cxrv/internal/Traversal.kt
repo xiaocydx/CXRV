@@ -17,6 +17,7 @@
 package com.xiaocydx.cxrv.internal
 
 import android.content.Context
+import android.graphics.Canvas
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
 import android.view.KeyEvent
@@ -88,8 +89,11 @@ private class BroadcastProxy(private val view: View) {
             return
         }
         callbacks += callback
-        view.requestLayout()
         broadcastFrame?.scheduleTraversal()
+    }
+
+    fun requestLayoutIfNecessary() {
+        if (callbacks.size > 0) view.requestLayout()
     }
 
     fun removeTraversalCallback(callback: FrameCallback) {
@@ -116,13 +120,10 @@ private class BroadcastProxy(private val view: View) {
 }
 
 private class BroadcastFrame private constructor(context: Context) : View(context) {
-    private var canUnregisterOnDetached = true
+    private val scheduleTraversalRunner = Runnable { scheduleTraversal() }
     private var proxyList = InlineList<BroadcastProxy>()
-
-    init {
-        setWillNotDraw(true)
-        visibility = INVISIBLE
-    }
+    private var canUnregisterOnDetached = true
+    private var isScheduled = false
 
     fun register(proxy: BroadcastProxy) {
         proxyList += proxy
@@ -133,6 +134,9 @@ private class BroadcastFrame private constructor(context: Context) : View(contex
     }
 
     fun scheduleTraversal() {
+        removeCallbacks(scheduleTraversalRunner)
+        proxyList.reverseAccessEach { it.requestLayoutIfNecessary() }
+
         ensureFirstMeasure()
         requestLayout()
         if (parent !is FrameLayout) {
@@ -141,6 +145,13 @@ private class BroadcastFrame private constructor(context: Context) : View(contex
             // requestApplyInsets()是替补方案，尽可能让BroadcastFrame在其它child之前执行。
             requestApplyInsets()
         }
+
+        // 调用scheduleTraversal()时，当前可能处于measure、layout阶段，
+        // 此时调用requestLayout()会被parent的flag拦截，不会有下一帧。
+        // 因此调用invalidate()，在onDraw()判断isScheduled是否被重置，
+        // 若isScheduled未被重置，则表示被拦截，需要重新调度。
+        invalidate()
+        isScheduled = true
     }
 
     override fun dispatchApplyWindowInsets(insets: WindowInsets): WindowInsets {
@@ -153,7 +164,16 @@ private class BroadcastFrame private constructor(context: Context) : View(contex
         setMeasuredDimension(0, 0)
     }
 
+    override fun onDraw(canvas: Canvas) {
+        if (isScheduled) {
+            isScheduled = false
+            // 前置流程可能会添加同步屏障，因此不使用post()
+            postOnAnimation(scheduleTraversalRunner)
+        }
+    }
+
     private fun consumeTraversalCallbacks() {
+        isScheduled = false
         proxyList.reverseAccessEach { it.consumeTraversalCallbacks() }
     }
 
@@ -171,6 +191,7 @@ private class BroadcastFrame private constructor(context: Context) : View(contex
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         if (!canUnregisterOnDetached) return
+        removeCallbacks(scheduleTraversalRunner)
         proxyList.reverseAccessEach { it.unregisterFromBroadcastFrame() }
         proxyList = proxyList.clear()
     }
