@@ -17,18 +17,18 @@ object CommonLibs {
     const val `androidx-swiperefreshlayout` = "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     const val material = "com.google.android.material:material:1.7.0"
 
-    private const val cxrvVersion = "1.5.4"
+    private const val cxrvVersion = "1.5.11"
     const val cxrv = "com.github.xiaocydx.CXRV:cxrv:${cxrvVersion}"
     const val `cxrv-binding` = "com.github.xiaocydx.CXRV:cxrv-binding:${cxrvVersion}"
     const val `cxrv-paging` = "com.github.xiaocydx.CXRV:cxrv-paging:${cxrvVersion}"
     const val `cxrv-animatable` = "com.github.xiaocydx.CXRV:cxrv-animatable:${cxrvVersion}"
     const val `cxrv-viewpager2` = "com.github.xiaocydx.CXRV:cxrv-viewpager2:${cxrvVersion}"
 
-    private const val inputViewVersion = "1.3.4"
+    private const val inputViewVersion = "1.3.7"
     const val inputview = "com.github.xiaocydx.InputView:inputview:${inputViewVersion}"
     const val `inputview-compat` = "com.github.xiaocydx.InputView:inputview-compat:${inputViewVersion}"
 
-    private const val insetsVersion = "1.2.6"
+    private const val insetsVersion = "1.2.8"
     const val insets = "com.github.xiaocydx.Insets:insets:${insetsVersion}"
     const val `insets-compat` = "com.github.xiaocydx.Insets:insets-compat:${insetsVersion}"
     const val `insets-systembar` = "com.github.xiaocydx.Insets:insets-systembar:${insetsVersion}"
@@ -55,7 +55,7 @@ object PublishLibs {
 
     const val coroutines = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
     const val `coroutines-android` = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
-    const val hiddenapibypass = "org.lsposed.hiddenapibypass:hiddenapibypass:4.3"
+    const val hiddenapibypass = "org.lsposed.hiddenapibypass:hiddenapibypass:+"
 
     const val `androidx-test-core` = "androidx.test:core:1.5.0"
     const val `androidx-junit` = "androidx.test.ext:junit:1.2.0"
