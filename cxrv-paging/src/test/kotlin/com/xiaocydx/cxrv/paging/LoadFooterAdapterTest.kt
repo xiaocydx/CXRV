@@ -49,7 +49,7 @@ import org.robolectric.annotation.Config
 internal class LoadFooterAdapterTest {
     private val listAdapter = TestListAdapter()
     private val collector = listAdapter.pagingCollector
-    private val onCreateView: OnCreateView<View> = spyk({ View(it.context) })
+    private val onCreateView = spyk(OnCreateViewImpl { View(it.context) })
     private lateinit var scenario: ActivityScenario<TestActivity>
 
     @Before
@@ -64,7 +64,7 @@ internal class LoadFooterAdapterTest {
 
     @Test
     fun createAndShowLoadingView() {
-        val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
+        val onVisibleChanged = spyk(OnVisibleChangedImpl { _, _ ->
             assertThat(exception()).isNull()
         })
         val concatAdapter = getConcatAdapter {
@@ -85,7 +85,7 @@ internal class LoadFooterAdapterTest {
 
     @Test
     fun createAndShowFullyView() {
-        val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
+        val onVisibleChanged = spyk(OnVisibleChangedImpl { _, _ ->
             assertThat(exception()).isNull()
         })
         val concatAdapter = getConcatAdapter {
@@ -106,7 +106,7 @@ internal class LoadFooterAdapterTest {
 
     @Test
     fun createAndShowFailureView() {
-        val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
+        val onVisibleChanged = spyk(OnVisibleChangedImpl { _, _ ->
             assertThat(exception()).isNotNull()
         })
         val concatAdapter = getConcatAdapter {
@@ -128,7 +128,7 @@ internal class LoadFooterAdapterTest {
 
     @Test
     fun insertItemCreateAndShowFullyView() {
-        val onVisibleChanged: OnVisibleChanged<View> = spyk({ _, _ ->
+        val onVisibleChanged = spyk(OnVisibleChangedImpl { _, _ ->
             assertThat(exception()).isNull()
         })
         val concatAdapter = getConcatAdapter {
@@ -165,4 +165,14 @@ internal class LoadFooterAdapterTest {
             return object : ViewHolder(View(parent.context)) {}
         }
     }
+
+    //region 解决Kotlin 2.x编译报错
+    private class OnCreateViewImpl(val block: OnCreateView<View>) : OnCreateView<View> {
+        override fun invoke(p1: LoadViewScope<out View>, p2: ViewGroup) = block(p1, p2)
+    }
+
+    private class OnVisibleChangedImpl(val block: OnVisibleChanged<View>) : OnVisibleChanged<View> {
+        override fun invoke(p1: LoadViewScope<out View>, p2: View, p3: Boolean) = block(p1, p2, p3)
+    }
+    //endregion
 }

@@ -81,7 +81,7 @@ class PrepareFlow<T : Any> internal constructor(
      * [prepareDispatcher]回到[ChoreographerContext]，通过Choreographer调度一次，
      * [ChoreographerContext]回到[mainDispatcher]，都是主线程Looper，不产生调度。
      */
-    @Suppress("INVISIBLE_MEMBER")
+    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
     override suspend fun collect(collector: FlowCollector<Scrap<T>>) = channelFlow {
         val scrapInfoList = scrapInfoList.filter { it.count > 0 }
         val channelCapacity: Int = scrapInfoList.sumOf { it.count }
